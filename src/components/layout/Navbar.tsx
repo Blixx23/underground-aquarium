@@ -1,0 +1,177 @@
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Menu, X, Fish, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const nav = [
+  { label: "Marketplace", href: "/marketplace" },
+  {
+    label: "Resources",
+    children: [
+      { label: "Fish Species", href: "/species" },
+      { label: "Glossary", href: "/glossary" },
+      { label: "Blog", href: "/blog" },
+    ],
+  },
+  { label: "Events", href: "/events" },
+  { label: "Community", href: "/community" },
+];
+
+export default function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [dropdown, setDropdown] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handler);
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  return (
+    <header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+        scrolled
+          ? "bg-ocean-950/95 backdrop-blur-xl border-b border-ocean-800/50 py-3"
+          : "bg-transparent py-5"
+      )}
+    >
+      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative w-10 h-10">
+            <div className="absolute inset-0 rounded-full bg-ocean-600/30 group-hover:bg-ocean-500/40 transition-all duration-300 animate-glow-pulse" />
+            <div className="relative z-10 flex items-center justify-center w-full h-full">
+              <Fish className="w-5 h-5 text-ocean-300 group-hover:text-ocean-200 transition-colors" />
+            </div>
+          </div>
+          <div>
+            <span
+              className="block text-sm font-display text-ocean-200 tracking-[0.15em] leading-none group-hover:text-white transition-colors"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              UNDERGROUND
+            </span>
+            <span
+              className="block text-xs tracking-[0.3em] text-ocean-400 group-hover:text-ocean-300 transition-colors"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              AQUARIUM
+            </span>
+          </div>
+        </Link>
+
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-1">
+          {nav.map((item) =>
+            item.children ? (
+              <div
+                key={item.label}
+                className="relative"
+                onMouseEnter={() => setDropdown(item.label)}
+                onMouseLeave={() => setDropdown(null)}
+              >
+                <button className="flex items-center gap-1 px-4 py-2 text-sm tracking-wide text-ocean-300 hover:text-white transition-colors font-body">
+                  {item.label}
+                  <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                </button>
+                {dropdown === item.label && (
+                  <div className="absolute top-full left-0 mt-1 py-2 w-48 bg-ocean-900/95 backdrop-blur-xl border border-ocean-700/50 rounded-xl shadow-2xl shadow-ocean-950/80">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className="block px-4 py-2.5 text-sm text-ocean-300 hover:text-white hover:bg-ocean-800/60 transition-all"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href!}
+                className="px-4 py-2 text-sm tracking-wide text-ocean-300 hover:text-white transition-colors font-body"
+              >
+                {item.label}
+              </Link>
+            )
+          )}
+        </nav>
+
+        {/* CTA Buttons */}
+        <div className="hidden md:flex items-center gap-3">
+          <Link
+            href="/login"
+            className="px-4 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/sell"
+            className="px-5 py-2.5 text-sm font-medium bg-ocean-600 hover:bg-ocean-500 text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-ocean-600/30 tracking-wide"
+          >
+            Start Selling
+          </Link>
+        </div>
+
+        {/* Mobile Toggle */}
+        <button
+          className="md:hidden p-2 text-ocean-300 hover:text-white"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      {open && (
+        <div className="md:hidden bg-ocean-950/98 backdrop-blur-xl border-t border-ocean-800/50 px-6 pb-6 pt-4">
+          {nav.map((item) =>
+            item.children ? (
+              <div key={item.label}>
+                <p className="px-2 py-3 text-xs uppercase tracking-widest text-ocean-500 font-mono">
+                  {item.label}
+                </p>
+                {item.children.map((child) => (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    onClick={() => setOpen(false)}
+                    className="block px-4 py-2.5 text-ocean-300 hover:text-white"
+                  >
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href!}
+                onClick={() => setOpen(false)}
+                className="block px-2 py-3 text-ocean-200 hover:text-white border-b border-ocean-800/30"
+              >
+                {item.label}
+              </Link>
+            )
+          )}
+          <div className="mt-4 flex flex-col gap-3">
+            <Link href="/login" className="text-center py-3 text-ocean-300">
+              Sign In
+            </Link>
+            <Link
+              href="/sell"
+              className="text-center py-3 bg-ocean-600 text-white rounded-xl font-medium"
+            >
+              Start Selling
+            </Link>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

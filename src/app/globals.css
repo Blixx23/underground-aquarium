@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Cinzel Decorative', Georgia, serif;
+  --font-body: 'Crimson Pro', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; padding: 0; margin: 0; }
+html { scroll-behavior: smooth; }
+body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 18px; line-height: 1.7; overflow-x: hidden; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #020b18; }
+::-webkit-scrollbar-thumb { background: #1264a0; border-radius: 3px; }
+::selection { background: rgba(26,130,204,0.35); color: #edf7fe; }
+.noise::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.water-shimmer { background: linear-gradient(90deg, transparent 0%, rgba(26,130,204,0.08) 25%, rgba(58,163,232,0.12) 50%, rgba(26,130,204,0.08) 75%, transparent 100%); background-size: 200% 100%; animation: shimmer 4s linear infinite; }
+.glow-text { text-shadow: 0 0 40px rgba(58,163,232,0.5), 0 0 80px rgba(26,130,204,0.25); }
+.card-deep { background: rgba(7,34,54,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(26,130,204,0.15); }
+.card-deep:hover { border-color: rgba(26,130,204,0.4); box-shadow: 0 0 30px rgba(26,130,204,0.1); }
+.bubble { position: absolute; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(58,163,232,0.4), rgba(26,130,204,0.1)); border: 1px solid rgba(58,163,232,0.3); animation: bubble var(--duration, 4s) ease-in-out infinite; animation-delay: var(--delay, 0s); }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes fadeUp { 0% { opacity: 0; transform: translateY(24px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes bubble { 0% { transform: translateY(0) scale(1); opacity: 0.6; } 50% { transform: translateY(-20px) scale(1.05); opacity: 0.9; } 100% { transform: translateY(-40px) scale(0.8); opacity: 0; } }
+@keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(26,130,204,0.3); } 50% { box-shadow: 0 0 40px rgba(26,130,204,0.6); } }
+@layer utilities { .font-display { font-family: var(--font-display) !important; } .font-body { font-family: var(--font-body); } .font-mono { font-family: var(--font-mono); } }
