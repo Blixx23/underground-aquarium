@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,9 +59,10 @@ export default async function MarketplacePage() {
             {products.map((product) => {
               const image = product.images?.[0];
               return (
-                <div
+                <Link
                   key={product.id}
-                  className="group rounded-2xl overflow-hidden bg-ocean-900/60 border border-ocean-800/60 hover:border-ocean-600/70 transition-colors duration-300"
+                  href={`/marketplace/${product.slug}`}
+                  className="group block rounded-2xl overflow-hidden bg-ocean-900/60 border border-ocean-800/60 hover:border-ocean-600/70 transition-colors duration-300"
                 >
                   <div className="relative aspect-[4/3] bg-gradient-to-br from-ocean-800 to-ocean-950 flex items-center justify-center overflow-hidden">
                     {image ? (
@@ -97,7 +99,7 @@ export default async function MarketplacePage() {
                       <p className="text-xs text-ocean-500">{product.stock} in stock</p>
                     )}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
