@@ -1,7 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Fish, ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Menu, X, Fish, ChevronDown, User as UserIcon, LogOut } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -23,11 +26,39 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState<string | null>(null);
 
+  // --- Auth state ---
+  const [supabase] = useState(() => createClient());
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  const displayName =
+    (user?.user_metadata?.username as string | undefined) ||
+    user?.email?.split("@")[0] ||
+    "Account";
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setUser(null);
+    setOpen(false);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header
@@ -105,12 +136,31 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/login"
-            className="px-4 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
-          >
-            Sign In
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
+              >
+                <UserIcon className="w-4 h-4" />
+                {displayName}
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
+            >
+              Sign In
+            </Link>
+          )}
           <Link
             href="/sell"
             className="px-5 py-2.5 text-sm font-medium bg-ocean-600 hover:bg-ocean-500 text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-ocean-600/30 tracking-wide"
@@ -160,11 +210,34 @@ export default function Navbar() {
             )
           )}
           <div className="mt-4 flex flex-col gap-3">
-            <Link href="/login" className="text-center py-3 text-ocean-300">
-              Sign In
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/profile"
+                  onClick={() => setOpen(false)}
+                  className="text-center py-3 text-ocean-200"
+                >
+                  {displayName}
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="text-center py-3 text-ocean-300"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="text-center py-3 text-ocean-300"
+              >
+                Sign In
+              </Link>
+            )}
             <Link
               href="/sell"
+              onClick={() => setOpen(false)}
               className="text-center py-3 bg-ocean-600 text-white rounded-xl font-medium"
             >
               Start Selling
