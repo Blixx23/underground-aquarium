@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Fish, Loader2 } from "lucide-react";
+import { Fish, Loader2, ImagePlus } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,6 +27,9 @@ export default function SellPage() {
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
   const [isLiveAnimal, setIsLiveAnimal] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [converting, setConverting] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +40,41 @@ export default function SellPage() {
       setCheckingAuth(false);
     });
   }, [supabase]);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    setError(null);
+
+    let file = selected;
+    const isHeic =
+      /image\/hei[cf]/i.test(selected.type) || /\.(heic|heif)$/i.test(selected.name);
+
+    if (isHeic) {
+      setConverting(true);
+      try {
+        const heic2any = (await import("heic2any")).default;
+        const result = await heic2any({
+          blob: selected,
+          toType: "image/jpeg",
+          quality: 0.9,
+        });
+        const blob = Array.isArray(result) ? result[0] : result;
+        file = new File([blob], selected.name.replace(/\.(heic|heif)$/i, ".jpg"), {
+          type: "image/jpeg",
+        });
+      } catch (err) {
+        console.error("HEIC conversion failed:", err);
+        setError("That photo couldn't be processed. Try a JPG or PNG instead.");
+        setConverting(false);
+        return;
+      }
+      setConverting(false);
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,7 +100,6 @@ export default function SellPage() {
         return;
       }
 
-      // Get or create the seller's store
       let storeId: string;
       const { data: existingStore } = await supabase
         .from("stores")
@@ -92,7 +129,22 @@ export default function SellPage() {
         storeId = newStore.id;
       }
 
-      // Create the product
+      let imageUrls: string[] = [];
+      if (imageFile) {
+        const fileExt = imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+        const filePath = `${currentUser.id}/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, imageFile);
+        if (uploadError) throw uploadError;
+        const { data: publicUrlData } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(filePath);
+        imageUrls = [publicUrlData.publicUrl];
+      }
+
       const productSlug = `${slugify(name)}-${Math.random().toString(36).slice(2, 8)}`;
       const { data: newProduct, error: productError } = await supabase
         .from("products")
@@ -105,6 +157,7 @@ export default function SellPage() {
           stock: stock === "" ? null : parseInt(stock, 10),
           is_live_animal: isLiveAnimal,
           is_active: true,
+          images: imageUrls.length ? imageUrls : null,
         })
         .select("slug")
         .single();
@@ -155,7 +208,7 @@ export default function SellPage() {
         </p>
         <h1 className="font-display text-4xl text-white mb-3">List something for sale</h1>
         <p className="text-ocean-400 mb-10">
-          Fill in the details below. Photos come next — for now, let&apos;s get the listing up.
+          Fill in the details below and add a photo to make it shine.
         </p>
 
         {error && (
@@ -174,6 +227,36 @@ export default function SellPage() {
               placeholder="Galaxy Koi Betta"
               className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm text-ocean-300 mb-2">Photo (optional)</label>
+            <label className="block cursor-pointer rounded-xl border border-dashed border-ocean-700/60 bg-ocean-900/40 hover:border-ocean-500 transition-colors overflow-hidden">
+              {converting ? (
+                <div className="h-56 flex flex-col items-center justify-center text-ocean-400">
+                  <Loader2 className="w-8 h-8 mb-2 animate-spin" />
+                  <span className="text-sm">Converting photo…</span>
+                </div>
+              ) : imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="w-full h-56 object-cover" />
+              ) : (
+                <div className="h-56 flex flex-col items-center justify-center text-ocean-500">
+                  <ImagePlus className="w-8 h-8 mb-2" />
+                  <span className="text-sm">Click to add a photo</span>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*,.heic,.heif"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+            {imagePreview && !converting && (
+              <p className="text-xs text-ocean-500 mt-2">
+                Click the image to choose a different one.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -225,7 +308,7 @@ export default function SellPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || converting}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ocean-700 text-white font-medium hover:bg-ocean-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
