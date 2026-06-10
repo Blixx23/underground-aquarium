@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-
+import Bubbles from "@/components/Bubbles";
 export const metadata: Metadata = {
   title: {
     default: "UndergroundAquarium — The Hobbyist-First Aquarium Marketplace",
@@ -21,7 +21,6 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
 };
-
 export default function RootLayout({
   children,
 }: {
@@ -38,6 +37,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <Bubbles />
         <Navbar />
         <main>{children}</main>
         <Footer />

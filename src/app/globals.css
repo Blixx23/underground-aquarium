@@ -27,3 +27,22 @@ body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-
 @keyframes bubble { 0% { transform: translateY(0) scale(1); opacity: 0.6; } 50% { transform: translateY(-20px) scale(1.05); opacity: 0.9; } 100% { transform: translateY(-40px) scale(0.8); opacity: 0; } }
 @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(26,130,204,0.3); } 50% { box-shadow: 0 0 40px rgba(26,130,204,0.6); } }
 @layer utilities { .font-display { font-family: var(--font-display) !important; } .font-body { font-family: var(--font-body); } .font-mono { font-family: var(--font-mono); } }
+
+/* Ambient rising bubbles */
+@keyframes bubbleRise {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  8%   { opacity: 0.5; }
+  85%  { opacity: 0.25; }
+  100% { transform: translateY(-110vh) translateX(20px) scale(0.4); opacity: 0; }
+}
+.uw-bubble {
+  position: absolute;
+  bottom: -50px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(199,228,250,0.5), rgba(58,163,232,0.1));
+  border: 1px solid rgba(125,196,240,0.2);
+  animation-name: bubbleRise;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}

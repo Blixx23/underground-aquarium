@@ -4,7 +4,7 @@ import { ShoppingBag, Users, ArrowRight } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg,#020b18 0%,#041525 40%,#072236 100%)"}}>
+    <section style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"transparent"}}>
       <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"600px",height:"400px",background:"radial-gradient(ellipse,rgba(18,100,160,0.2) 0%,transparent 70%)",pointerEvents:"none"}}/>
       <div style={{position:"relative",zIndex:10,maxWidth:"860px",margin:"0 auto",padding:"120px 24px 60px",textAlign:"center"}}>
         <h1 style={{fontFamily:"'Cinzel Decorative',Georgia,serif",fontSize:"clamp(2.2rem,6vw,5rem)",color:"#ffffff",lineHeight:1.1,marginBottom:"24px",textShadow:"0 0 80px rgba(58,163,232,0.5)"}}>

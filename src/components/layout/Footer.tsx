@@ -51,9 +51,9 @@ export default function Footer() {
                 { icon: Twitter, href: "#" },
                 { icon: Github, href: "#" },
                 { icon: Mail, href: "mailto:hello@undergroundaquarium.com" },
-              ].map(({ icon: Icon, href }) => (
+              ].map(({ icon: Icon, href }, i) => (
                 <a
-                  key={href}
+                  key={i}
                   href={href}
                   className="w-8 h-8 rounded-lg bg-ocean-800/60 border border-ocean-700/40 flex items-center justify-center text-ocean-400 hover:text-ocean-200 hover:border-ocean-500/60 transition-all"
                 >
