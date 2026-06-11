@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Fish, Plus, Trash2, Loader2 } from "lucide-react";
+import { Fish, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Listing = {
@@ -95,14 +95,23 @@ export default function ListingsGrid({ listings }: { listings: Listing[] }) {
                 </div>
               </Link>
 
-              <button
-                type="button"
-                onClick={() => setConfirmingId(p.id)}
-                aria-label={`Delete ${p.name}`}
-                className="absolute top-2 right-2 grid place-items-center w-8 h-8 rounded-lg bg-ocean-950/80 text-ocean-200 border border-ocean-700/60 hover:bg-coral-500/30 hover:text-coral-200 hover:border-coral-500/50 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="absolute top-2 right-2 flex gap-1.5">
+                <Link
+                  href={`/listings/${p.id}/edit`}
+                  aria-label={`Edit ${p.name}`}
+                  className="grid place-items-center w-8 h-8 rounded-lg bg-ocean-950/80 text-ocean-200 border border-ocean-700/60 hover:bg-ocean-800 hover:text-white hover:border-ocean-600 transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingId(p.id)}
+                  aria-label={`Delete ${p.name}`}
+                  className="grid place-items-center w-8 h-8 rounded-lg bg-ocean-950/80 text-ocean-200 border border-ocean-700/60 hover:bg-coral-500/30 hover:text-coral-200 hover:border-coral-500/50 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
 
               {isConfirming && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-ocean-950/90 backdrop-blur-sm p-4 text-center">

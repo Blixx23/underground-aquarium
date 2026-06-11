@@ -29,7 +29,6 @@ export default async function ProfilePage() {
     .eq("id", user.id)
     .maybeSingle();
 
-  // This user's own listings (via the store they own)
   const { data: stores } = await supabase
     .from("stores")
     .select("id")
