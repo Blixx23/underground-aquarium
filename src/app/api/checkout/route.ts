@@ -72,6 +72,9 @@ export async function POST(request: Request) {
     const origin = request.headers.get("origin") ?? new URL(request.url).origin;
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      shipping_address_collection: {
+        allowed_countries: ["US"],
+      },
       line_items: [
         {
           quantity: 1,

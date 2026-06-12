@@ -3,6 +3,18 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+type ShippingDetails = {
+  name?: string | null;
+  address?: {
+    line1?: string | null;
+    line2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+  } | null;
+};
+
 export async function POST(request: Request) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -28,6 +40,14 @@ export async function POST(request: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.order_id;
 
+    const shipping =
+      (session as unknown as {
+        collected_information?: { shipping_details?: ShippingDetails | null } | null;
+      }).collected_information?.shipping_details ??
+      (session as unknown as { shipping_details?: ShippingDetails | null })
+        .shipping_details ??
+      null;
+
     if (orderId) {
       const { error } = await supabaseAdmin
         .from("orders")
@@ -38,6 +58,7 @@ export async function POST(request: Request) {
             typeof session.payment_intent === "string"
               ? session.payment_intent
               : session.payment_intent?.id ?? null,
+          shipping_address: shipping,
         })
         .eq("id", orderId);
 

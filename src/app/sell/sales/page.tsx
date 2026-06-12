@@ -4,6 +4,18 @@ import { Package, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PLATFORM_FEE_LABEL } from "@/lib/config";
 
+type ShippingAddress = {
+  name?: string | null;
+  address?: {
+    line1?: string | null;
+    line2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+  } | null;
+};
+
 type Sale = {
   id: string;
   product_name: string | null;
@@ -11,6 +23,7 @@ type Sale = {
   platform_fee: number;
   status: string;
   created_at: string;
+  shipping_address: ShippingAddress | null;
 };
 
 const statusStyles: Record<string, string> = {
@@ -39,7 +52,9 @@ export default async function SalesPage() {
   if (storeIds.length > 0) {
     const { data } = await supabase
       .from("orders")
-      .select("id, product_name, amount_total, platform_fee, status, created_at")
+      .select(
+        "id, product_name, amount_total, platform_fee, status, created_at, shipping_address"
+      )
       .in("store_id", storeIds)
       .order("created_at", { ascending: false });
     sales = (data ?? []) as Sale[];
@@ -86,30 +101,51 @@ export default async function SalesPage() {
               {sales.map((sale) => (
                 <li
                   key={sale.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4"
+                  className="rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4"
                 >
-                  <div>
-                    <p className="text-white font-medium">
-                      {sale.product_name ?? "Item"}
-                    </p>
-                    <p className="text-sm text-ocean-400">
-                      {new Date(sale.created_at).toLocaleDateString()} · $
-                      {(sale.amount_total / 100).toFixed(2)}
-                    </p>
-                    <p className="text-xs text-emerald-300/80 mt-0.5">
-                      You earn $
-                      {((sale.amount_total - sale.platform_fee) / 100).toFixed(2)}{" "}
-                      after {PLATFORM_FEE_LABEL} fee
-                    </p>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-white font-medium">
+                        {sale.product_name ?? "Item"}
+                      </p>
+                      <p className="text-sm text-ocean-400">
+                        {new Date(sale.created_at).toLocaleDateString()} · $
+                        {(sale.amount_total / 100).toFixed(2)}
+                      </p>
+                      <p className="text-xs text-emerald-300/80 mt-0.5">
+                        You earn $
+                        {((sale.amount_total - sale.platform_fee) / 100).toFixed(2)}{" "}
+                        after {PLATFORM_FEE_LABEL} fee
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border capitalize ${
+                        statusStyles[sale.status] ??
+                        "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
+                      }`}
+                    >
+                      {sale.status}
+                    </span>
                   </div>
-                  <span
-                    className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border capitalize ${
-                      statusStyles[sale.status] ??
-                      "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
-                    }`}
-                  >
-                    {sale.status}
-                  </span>
+
+                  {sale.shipping_address?.address && (
+                    <div className="mt-3 pt-3 border-t border-ocean-800/60 text-sm">
+                      <span className="text-ocean-500">Ship to: </span>
+                      <span className="text-ocean-200">
+                        {sale.shipping_address.name}
+                        {" — "}
+                        {[
+                          sale.shipping_address.address.line1,
+                          sale.shipping_address.address.line2,
+                          sale.shipping_address.address.city,
+                          sale.shipping_address.address.state,
+                          sale.shipping_address.address.postal_code,
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
