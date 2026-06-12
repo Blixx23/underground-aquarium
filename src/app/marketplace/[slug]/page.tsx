@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Fish, ArrowLeft } from "lucide-react";
+import { Fish, ArrowLeft, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import BuyButton from "./buy-button";
 
@@ -12,6 +12,7 @@ type Product = {
   stock: number | null;
   images: string[] | null;
   is_live_animal: boolean | null;
+  species_slug: string | null;
 };
 
 export default async function ProductPage({
@@ -24,7 +25,9 @@ export default async function ProductPage({
 
   const { data } = await supabase
     .from("products")
-    .select("id, name, slug, description, price, stock, images, is_live_animal")
+    .select(
+      "id, name, slug, description, price, stock, images, is_live_animal, species_slug"
+    )
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
@@ -52,6 +55,16 @@ export default async function ProductPage({
   }
 
   const image = product.images?.[0];
+
+  let species: { common_name: string } | null = null;
+  if (product.species_slug) {
+    const { data: sp } = await supabase
+      .from("species")
+      .select("common_name")
+      .eq("slug", product.species_slug)
+      .maybeSingle();
+    species = (sp as { common_name: string } | null) ?? null;
+  }
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
@@ -100,6 +113,16 @@ export default async function ProductPage({
                   {product.description}
                 </p>
               </div>
+            )}
+
+            {species && product.species_slug && (
+              <Link
+                href={`/species/${product.species_slug}`}
+                className="inline-flex items-center gap-2 mb-8 px-4 py-2.5 rounded-xl bg-ocean-900/60 border border-ocean-800/60 text-ocean-200 hover:border-ocean-500 hover:text-white transition-colors"
+              >
+                <BookOpen className="w-4 h-4 text-emerald-400" />
+                Care guide: {species.common_name}
+              </Link>
             )}
 
             <BuyButton productId={product.id} stock={product.stock} />
