@@ -4,8 +4,6 @@ import { Resend } from "resend";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 type ShippingDetails = {
   name?: string | null;
   address?: {
@@ -104,9 +102,14 @@ export async function POST(request: Request) {
       const amount = (updatedOrder.amount_total / 100).toFixed(2);
       const productName = updatedOrder.product_name ?? "Item";
 
+      // Create the email client only if a key is configured (keeps builds safe).
+      const resend = process.env.RESEND_API_KEY
+        ? new Resend(process.env.RESEND_API_KEY)
+        : null;
+
       // Email the seller that they made a sale.
       try {
-        if (updatedOrder?.store_id) {
+        if (resend && updatedOrder?.store_id) {
           const { data: store } = await supabaseAdmin
             .from("stores")
             .select("owner_id, name")
@@ -141,7 +144,7 @@ export async function POST(request: Request) {
       // Email the buyer a receipt.
       try {
         const buyerEmail = session.customer_details?.email;
-        if (buyerEmail) {
+        if (resend && buyerEmail) {
           await resend.emails.send({
             from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
             to: buyerEmail,
