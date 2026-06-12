@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { Resend } from "resend";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 type ShippingDetails = {
   name?: string | null;
@@ -14,6 +17,14 @@ type ShippingDetails = {
     country?: string | null;
   } | null;
 };
+
+function formatAddress(s: ShippingDetails | null): string {
+  if (!s || !s.address) return "No shipping address provided.";
+  const a = s.address;
+  const cityLine = [a.city, a.state, a.postal_code].filter(Boolean).join(", ");
+  const lines = [a.line1, a.line2, cityLine, a.country].filter(Boolean);
+  return [s.name, ...lines].filter(Boolean).join("<br>");
+}
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -61,7 +72,7 @@ export async function POST(request: Request) {
           shipping_address: shipping,
         })
         .eq("id", orderId)
-        .select("product_id")
+        .select("product_id, product_name, amount_total, store_id")
         .single();
 
       if (error) {
@@ -88,6 +99,64 @@ export async function POST(request: Request) {
             `Product ${updatedOrder.product_id} stock: ${product.stock} -> ${newStock}`
           );
         }
+      }
+
+      const amount = (updatedOrder.amount_total / 100).toFixed(2);
+      const productName = updatedOrder.product_name ?? "Item";
+
+      // Email the seller that they made a sale.
+      try {
+        if (updatedOrder?.store_id) {
+          const { data: store } = await supabaseAdmin
+            .from("stores")
+            .select("owner_id, name")
+            .eq("id", updatedOrder.store_id)
+            .maybeSingle();
+
+          if (store?.owner_id) {
+            const { data: ownerData } =
+              await supabaseAdmin.auth.admin.getUserById(store.owner_id);
+            const sellerEmail = ownerData?.user?.email;
+
+            if (sellerEmail) {
+              await resend.emails.send({
+                from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
+                to: sellerEmail,
+                subject: `You sold ${productName}`,
+                html: `
+                  <h2>You made a sale</h2>
+                  <p><strong>${productName}</strong> — $${amount}</p>
+                  <p><strong>Ship to:</strong><br>${formatAddress(shipping)}</p>
+                  <p>Log in to your shop to see the full order.</p>
+                `,
+              });
+              console.log(`Sale email sent to seller ${sellerEmail}.`);
+            }
+          }
+        }
+      } catch (emailErr) {
+        console.error("Seller email failed:", emailErr);
+      }
+
+      // Email the buyer a receipt.
+      try {
+        const buyerEmail = session.customer_details?.email;
+        if (buyerEmail) {
+          await resend.emails.send({
+            from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
+            to: buyerEmail,
+            subject: "Your Underground Aquarium order",
+            html: `
+              <h2>Thanks for your order</h2>
+              <p><strong>${productName}</strong> — $${amount}</p>
+              <p>The seller has been notified and will ship your order soon.</p>
+              <p>You can view your orders any time from your account.</p>
+            `,
+          });
+          console.log(`Receipt email sent to buyer ${buyerEmail}.`);
+        }
+      } catch (emailErr) {
+        console.error("Buyer email failed:", emailErr);
       }
     }
   }
