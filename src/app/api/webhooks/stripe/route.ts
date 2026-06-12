@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       null;
 
     if (orderId) {
-      const { error } = await supabaseAdmin
+      const { data: updatedOrder, error } = await supabaseAdmin
         .from("orders")
         .update({
           status: "paid",
@@ -60,13 +60,35 @@ export async function POST(request: Request) {
               : session.payment_intent?.id ?? null,
           shipping_address: shipping,
         })
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .select("product_id")
+        .single();
 
       if (error) {
         console.error("Failed to mark order paid:", error.message);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
       console.log(`Order ${orderId} marked paid.`);
+
+      // Decrement stock on the sold product (never below 0).
+      if (updatedOrder?.product_id) {
+        const { data: product } = await supabaseAdmin
+          .from("products")
+          .select("stock")
+          .eq("id", updatedOrder.product_id)
+          .maybeSingle();
+
+        if (product && typeof product.stock === "number") {
+          const newStock = Math.max(0, product.stock - 1);
+          await supabaseAdmin
+            .from("products")
+            .update({ stock: newStock })
+            .eq("id", updatedOrder.product_id);
+          console.log(
+            `Product ${updatedOrder.product_id} stock: ${product.stock} -> ${newStock}`
+          );
+        }
+      }
     }
   }
 
