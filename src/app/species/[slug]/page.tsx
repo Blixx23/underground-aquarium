@@ -8,6 +8,21 @@ export const revalidate = 3600;
 
 type Params = { params: Promise<{ slug: string }> };
 
+function firstImage(images: unknown): string | null {
+  let arr: unknown = images;
+  if (typeof images === "string") {
+    try {
+      arr = JSON.parse(images);
+    } catch {
+      return null;
+    }
+  }
+  if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === "string") {
+    return arr[0];
+  }
+  return null;
+}
+
 export async function generateStaticParams() {
   const { data } = await supabasePublic.from("species").select("slug");
   return (data ?? []).map((s) => ({ slug: s.slug as string }));
@@ -63,6 +78,16 @@ export default async function SpeciesDetailPage({ params }: Params) {
     b: number | null,
     unit: string
   ): string | null => (a != null && b != null ? `${a}–${b}${unit}` : null);
+
+  // Live marketplace listings tagged to this species
+  const { data: listings } = await supabasePublic
+    .from("products")
+    .select("name, slug, price, images, stock")
+    .eq("species_slug", s.slug)
+    .eq("is_active", true)
+    .gt("stock", 0)
+    .order("created_at", { ascending: false })
+    .limit(12);
 
   let parent: { slug: string; common_name: string } | null = null;
   if (s.parent_slug) {
@@ -178,6 +203,46 @@ export default async function SpeciesDetailPage({ params }: Params) {
           <Stat label="Suitability" value={s.suitability} />
           <Stat label="Origin" value={s.origin} />
         </dl>
+
+        {listings && listings.length > 0 && (
+          <div className="border-t border-white/10 pt-8 mb-8">
+            <h2 className="text-sm font-medium uppercase tracking-wide text-ocean-400 mb-4">
+              Available now ({listings.length})
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {listings.map((p) => {
+                const img = firstImage(p.images);
+                return (
+                  <Link
+                    key={p.slug}
+                    href={`/marketplace/${p.slug}`}
+                    className="block rounded-xl bg-white/5 border border-white/10 overflow-hidden hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+                  >
+                    {img ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={img}
+                        alt={p.name}
+                        loading="lazy"
+                        className="w-full h-28 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-28 bg-white/5" />
+                    )}
+                    <div className="p-3">
+                      <p className="text-white text-sm font-medium leading-snug">
+                        {p.name}
+                      </p>
+                      <p className="text-emerald-300 text-sm mt-1">
+                        ${Number(p.price).toFixed(2)}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {s.body && (
           <p className="text-ocean-300 leading-relaxed mb-10">{s.body}</p>
