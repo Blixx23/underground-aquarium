@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Fish, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import BuyButton from "./buy-button";
 
 type Product = {
   id: string;
@@ -101,11 +102,7 @@ export default async function ProductPage({
               </div>
             )}
 
-            <div className="rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4">
-              <p className="text-sm text-ocean-400">
-                Seller contact and checkout are coming soon.
-              </p>
-            </div>
+            <BuyButton productId={product.id} stock={product.stock} />
           </div>
         </div>
       </div>
