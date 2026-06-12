@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, Wallet } from "lucide-react";
+import { Plus, Wallet, ShoppingBag, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
 import ListingsGrid from "./listings-grid";
@@ -34,6 +34,7 @@ export default async function ProfilePage() {
     .select("id")
     .eq("owner_id", user.id);
   const storeIds = (stores ?? []).map((s) => (s as { id: string }).id);
+  const hasShop = storeIds.length > 0;
 
   let listings: Listing[] = [];
   if (storeIds.length > 0) {
@@ -59,11 +60,27 @@ export default async function ProfilePage() {
           <h2 className="font-display text-2xl text-white">Your listings</h2>
           <div className="flex items-center gap-3">
             <Link
-              href="/sell/payouts"
+              href="/orders"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-ocean-200 text-sm hover:bg-white/5 transition-colors"
             >
-              <Wallet className="w-4 h-4" /> Payouts
+              <ShoppingBag className="w-4 h-4" /> My Orders
             </Link>
+            {hasShop && (
+              <>
+                <Link
+                  href="/sell/sales"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-ocean-200 text-sm hover:bg-white/5 transition-colors"
+                >
+                  <Receipt className="w-4 h-4" /> Sales
+                </Link>
+                <Link
+                  href="/sell/payouts"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-ocean-200 text-sm hover:bg-white/5 transition-colors"
+                >
+                  <Wallet className="w-4 h-4" /> Payouts
+                </Link>
+              </>
+            )}
             <Link
               href="/sell"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ocean-700 text-white text-sm hover:bg-ocean-600 transition-colors"
