@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Search,
   X,
@@ -10,7 +11,13 @@ import {
   CheckCircle2,
   Info,
   Fish,
+  Save,
+  Trash2,
+  FolderOpen,
+  Globe,
+  ImagePlus,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import {
   buildTank,
   type Species,
@@ -18,12 +25,155 @@ import {
   type Issue,
 } from "@/lib/tankBuilder/engine";
 
+const FREE_TANK_LIMIT = 1;
+const MAX_PHOTOS = 6;
+const MAX_PHOTO_BYTES = 25 * 1024 * 1024; // generous input cap; we compress below
+const MAX_DIM = 1920; // longest edge after resize
+
+// Resize + compress an image to a small JPEG before upload.
+// Throws if the file can't be decoded (caller falls back to the original).
+async function compressImage(file: File): Promise<Blob> {
+  const dataUrl: string = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("read failed"));
+    reader.readAsDataURL(file);
+  });
+
+  const img: HTMLImageElement = await new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error("decode failed"));
+    im.src = dataUrl;
+  });
+
+  let { width, height } = img;
+  if (width > MAX_DIM || height > MAX_DIM) {
+    const scale = Math.min(MAX_DIM / width, MAX_DIM / height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("no canvas context");
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const blob: Blob | null = await new Promise((resolve) =>
+    canvas.toBlob((b) => resolve(b), "image/jpeg", 0.82)
+  );
+  if (!blob) throw new Error("encode failed");
+  return blob;
+}
+
+type SavedTank = {
+  id: string;
+  name: string;
+  gallons: number | null;
+  items: { slug: string; qty: number }[];
+  updated_at: string;
+  is_public: boolean;
+  images: string[];
+};
+
 export default function TankBuilder({ species }: { species: Species[] }) {
+  const [supabase] = useState(() => createClient());
+
   const [gallonsInput, setGallonsInput] = useState("");
   const [stock, setStock] = useState<StockItem[]>([]);
   const [query, setQuery] = useState("");
 
+  // Saved-tanks state
+  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [savedTanks, setSavedTanks] = useState<SavedTank[]>([]);
+  const [tankName, setTankName] = useState("");
+  const [currentTankId, setCurrentTankId] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState<string | null>(null);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [deepLinkDone, setDeepLinkDone] = useState(false);
+
   const gallons = parseFloat(gallonsInput) || 0;
+
+  const speciesBySlug = useMemo(() => {
+    const m = new Map<string, Species>();
+    for (const s of species) m.set(s.slug, s);
+    return m;
+  }, [species]);
+
+  const refreshTanks = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("tanks")
+        .select("id,name,gallons,items,updated_at,is_public,images")
+        .order("updated_at", { ascending: false });
+      setSavedTanks((data as SavedTank[]) ?? []);
+    } catch {
+      // RLS returns nothing for signed-out users; ignore
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      if (data.user) {
+        setUser({ id: data.user.id });
+        refreshTanks();
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [supabase, refreshTanks]);
+
+  const loadTank = useCallback(
+    (t: SavedTank) => {
+      setGallonsInput(t.gallons != null ? String(t.gallons) : "");
+      const items = Array.isArray(t.items) ? t.items : [];
+      setStock(
+        items
+          .map((it) => {
+            const sp = speciesBySlug.get(it.slug);
+            return sp ? { species: sp, qty: it.qty } : null;
+          })
+          .filter((x): x is StockItem => x !== null)
+      );
+      setCurrentTankId(t.id);
+      setTankName(t.name);
+      setIsPublic(!!t.is_public);
+      setImages(Array.isArray(t.images) ? t.images : []);
+      setSaveMsg(null);
+      setPhotoMsg(null);
+      setShowUpgrade(false);
+      if (typeof window !== "undefined")
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [speciesBySlug]
+  );
+
+  // Auto-load a tank when arriving from a profile link (/tank-builder?tank=ID)
+  useEffect(() => {
+    if (deepLinkDone || typeof window === "undefined") return;
+    const id = new URLSearchParams(window.location.search).get("tank");
+    if (!id) {
+      setDeepLinkDone(true);
+      return;
+    }
+    if (savedTanks.length === 0) return; // wait until tanks have loaded
+    const t = savedTanks.find((x) => x.id === id);
+    if (t) {
+      loadTank(t);
+      window.history.replaceState({}, "", "/tank-builder");
+    }
+    setDeepLinkDone(true);
+  }, [savedTanks, deepLinkDone, loadTank]);
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -54,6 +204,145 @@ export default function TankBuilder({ species }: { species: Species[] }) {
   }
   function remove(slug: string) {
     setStock((prev) => prev.filter((it) => it.species.slug !== slug));
+  }
+
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!user) return;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = ""; // allow re-selecting the same file later
+    if (files.length === 0) return;
+    setPhotoMsg(null);
+    setUploading(true);
+    let count = images.length;
+    try {
+      for (const file of files) {
+        if (count >= MAX_PHOTOS) {
+          setPhotoMsg(`Up to ${MAX_PHOTOS} photos per tank.`);
+          break;
+        }
+        if (!file.type.startsWith("image/")) {
+          setPhotoMsg("Images only, please.");
+          continue;
+        }
+        if (file.size > MAX_PHOTO_BYTES) {
+          setPhotoMsg("That photo is too large (max 25 MB).");
+          continue;
+        }
+
+        // Resize/compress; fall back to the original if it can't be decoded
+        let blob: Blob = file;
+        let ext = "jpg";
+        let contentType = "image/jpeg";
+        try {
+          blob = await compressImage(file);
+        } catch {
+          blob = file;
+          ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+          contentType = file.type || "image/jpeg";
+        }
+
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage
+          .from("tank-photos")
+          .upload(path, blob, { contentType });
+        if (error) {
+          setPhotoMsg("A photo failed to upload — try again.");
+          continue;
+        }
+        const { data } = supabase.storage
+          .from("tank-photos")
+          .getPublicUrl(path);
+        setImages((prev) => [...prev, data.publicUrl]);
+        count++;
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removePhoto(url: string) {
+    setImages((prev) => prev.filter((u) => u !== url));
+  }
+
+  async function saveTank() {
+    if (!user || busy) return;
+    setSaveMsg(null);
+    setShowUpgrade(false);
+    const items = stock.map((s) => ({ slug: s.species.slug, qty: s.qty }));
+    const name = tankName.trim() || "My Tank";
+
+    // Free-tier limit only applies to creating a NEW tank
+    if (!currentTankId && savedTanks.length >= FREE_TANK_LIMIT) {
+      setShowUpgrade(true);
+      return;
+    }
+
+    setBusy(true);
+    try {
+      if (currentTankId) {
+        const { error } = await supabase
+          .from("tanks")
+          .update({
+            name,
+            gallons: gallons || null,
+            items,
+            is_public: isPublic,
+            images,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", currentTankId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("tanks")
+          .insert({
+            user_id: user.id,
+            name,
+            gallons: gallons || null,
+            items,
+            is_public: isPublic,
+            images,
+          })
+          .select("id,name,gallons,items,updated_at,is_public,images")
+          .single();
+        if (error) throw error;
+        if (data) setCurrentTankId((data as SavedTank).id);
+      }
+      setSaveMsg("Saved.");
+      await refreshTanks();
+    } catch {
+      setSaveMsg("Couldn't save — please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteTank(id: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await supabase.from("tanks").delete().eq("id", id);
+      if (id === currentTankId) {
+        setCurrentTankId(null);
+      }
+      await refreshTanks();
+    } catch {
+      // ignore
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function newBuild() {
+    setCurrentTankId(null);
+    setTankName("");
+    setGallonsInput("");
+    setStock([]);
+    setIsPublic(false);
+    setImages([]);
+    setSaveMsg(null);
+    setPhotoMsg(null);
+    setShowUpgrade(false);
   }
 
   const conflicts = result.issues.filter((i) => i.level === "conflict");
@@ -171,7 +460,7 @@ export default function TankBuilder({ species }: { species: Species[] }) {
 
         {/* Selected fish */}
         {hasStock ? (
-          <div className="space-y-2 mb-8">
+          <div className="space-y-2 mb-6">
             {stock.map(({ species: s, qty }) => (
               <div
                 key={s.slug}
@@ -214,12 +503,203 @@ export default function TankBuilder({ species }: { species: Species[] }) {
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center mb-8">
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center mb-6">
             <Fish className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
             <p className="text-white font-medium mb-1">Start adding fish</p>
             <p className="text-ocean-400 text-sm">
               Search above to drop your first species in and the checks begin.
             </p>
+          </div>
+        )}
+
+        {/* Save bar */}
+        {user ? (
+          <div className="rounded-xl bg-white/5 border border-white/10 p-4 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <input
+                type="text"
+                value={tankName}
+                onChange={(e) => setTankName(e.target.value)}
+                placeholder="Name this build (e.g. 29-gal community)"
+                className="flex-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-ocean-400 focus:outline-none focus:border-emerald-500/40"
+              />
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={saveTank}
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-4 py-2.5 text-sm font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {currentTankId ? "Update" : "Save tank"}
+                </button>
+                {currentTankId && (
+                  <button
+                    onClick={newBuild}
+                    className="rounded-lg border border-white/10 text-ocean-300 px-3 py-2.5 text-sm hover:text-white hover:border-white/20 transition-colors"
+                  >
+                    New
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Post to profile toggle */}
+            <label className="flex items-center gap-2 mt-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="h-4 w-4 rounded accent-emerald-500"
+              />
+              <span className="flex items-center gap-1.5 text-sm text-ocean-300">
+                <Globe className="w-3.5 h-3.5" />
+                Show this tank on my profile (public)
+              </span>
+            </label>
+
+            {isPublic && currentTankId && (
+              <Link
+                href={`/tanks/${currentTankId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-2 text-xs text-emerald-400 hover:text-emerald-300"
+              >
+                View public page →
+              </Link>
+            )}
+
+            {/* Photos */}
+            <div className="mt-4">
+              <p className="text-[11px] uppercase tracking-wide text-ocean-400 mb-2">
+                Photos
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {images.map((url) => (
+                  <div
+                    key={url}
+                    className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt="Tank photo"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={() => removePhoto(url)}
+                      aria-label="Remove photo"
+                      className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 rounded-full p-0.5 text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                {images.length < MAX_PHOTOS && (
+                  <label className="w-20 h-20 rounded-lg border border-dashed border-white/20 flex flex-col items-center justify-center cursor-pointer hover:border-white/40 text-ocean-400 text-[10px] gap-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handlePhotoSelect}
+                      disabled={uploading}
+                    />
+                    {uploading ? (
+                      <span>Uploading…</span>
+                    ) : (
+                      <>
+                        <ImagePlus className="w-5 h-5" />
+                        <span>Add</span>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+              {photoMsg && (
+                <p className="text-[11px] text-ocean-500 mt-2">{photoMsg}</p>
+              )}
+              <p className="text-[11px] text-ocean-500 mt-2">
+                Up to {MAX_PHOTOS} photos. Big photos are resized automatically;
+                they show publicly once the tank is posted.
+              </p>
+            </div>
+
+            {saveMsg && <p className="text-xs text-ocean-400 mt-2">{saveMsg}</p>}
+            {!currentTankId && !showUpgrade && (
+              <p className="text-[11px] text-ocean-500 mt-2">
+                Free plan saves {FREE_TANK_LIMIT} tank.
+              </p>
+            )}
+            {showUpgrade && (
+              <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
+                <p className="text-amber-300 text-sm font-medium">
+                  You&apos;ve used your free saved tank
+                </p>
+                <p className="text-ocean-300 text-xs mt-0.5">
+                  Unlimited saved tanks are coming with a paid plan. For now you
+                  can update or delete your existing tank.
+                </p>
+              </div>
+            )}
+
+            {/* Saved tanks list */}
+            {savedTanks.length > 0 && (
+              <div className="mt-4 border-t border-white/10 pt-4 space-y-2">
+                <p className="text-[11px] uppercase tracking-wide text-ocean-400">
+                  Your saved tanks
+                </p>
+                {savedTanks.map((t) => (
+                  <div
+                    key={t.id}
+                    className={
+                      "flex items-center gap-3 rounded-lg border px-3 py-2 " +
+                      (t.id === currentTankId
+                        ? "bg-emerald-500/10 border-emerald-500/30"
+                        : "bg-white/5 border-white/10")
+                    }
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white text-sm truncate flex items-center gap-2">
+                        {t.name}
+                        {t.is_public && (
+                          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5">
+                            <Globe className="w-2.5 h-2.5" /> Posted
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-ocean-400 text-xs">
+                        {t.gallons ? `${t.gallons} gal · ` : ""}
+                        {(t.items?.length ?? 0)} species
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => loadTank(t)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 text-ocean-200 px-2.5 py-1.5 text-xs hover:text-white hover:border-white/20 transition-colors"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" /> Load
+                    </button>
+                    <button
+                      onClick={() => deleteTank(t.id)}
+                      aria-label="Delete tank"
+                      disabled={busy}
+                      className="w-8 h-8 rounded-lg text-ocean-400 hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl bg-white/5 border border-white/10 p-4 mb-8 text-sm text-ocean-300">
+            <Link
+              href="/login"
+              className="text-emerald-400 hover:text-emerald-300 font-medium"
+            >
+              Sign in
+            </Link>{" "}
+            to save your tank builds and come back to them later.
           </div>
         )}
 

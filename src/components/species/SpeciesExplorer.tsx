@@ -34,6 +34,7 @@ const GROUP_ORDER = [
   "Loaches",
   "Cichlids - New World",
   "Cichlids - African Rift Lake",
+  "Cichlids - West African",
   "Rainbowfish",
   "Killifish",
   "Oddballs & Specialty",

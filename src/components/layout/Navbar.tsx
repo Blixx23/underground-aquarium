@@ -12,6 +12,7 @@ const nav = [
   {
     label: "Resources",
     children: [
+      { label: "Tank Builder", href: "/tank-builder" },
       { label: "Fish Species", href: "/species" },
       { label: "Glossary", href: "/glossary" },
       { label: "Blog", href: "/blog" },
