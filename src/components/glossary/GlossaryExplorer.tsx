@@ -35,7 +35,9 @@ export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
   const categories = useMemo(() => {
     const present = new Set(terms.map((t) => t.category));
     const ordered = CATEGORY_ORDER.filter((c) => present.has(c));
-    const extras = [...present].filter((c) => !CATEGORY_ORDER.includes(c)).sort();
+    const extras = [...present]
+      .filter((c) => !CATEGORY_ORDER.includes(c))
+      .sort();
     return [...ordered, ...extras];
   }, [terms]);
 
@@ -72,19 +74,19 @@ export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
   }
 
   return (
-    <main className="min-h-screen pt-28 pb-20 px-6">
+    <main className="min-h-screen pt-24 pb-20 px-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-4">
+        <div className="max-w-2xl mb-6">
+          <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-2">
             Knowledge Base
           </p>
-          <h1 className="font-display text-4xl sm:text-5xl text-white mb-4">
+          <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
             The Aquarium Glossary
           </h1>
-          <p className="text-ocean-200 text-lg">
+          <p className="text-ocean-300">
             {terms.length} fishkeeping terms in plain English. Search, filter by
-            topic, or jump to a letter — tap any term for the full explanation.
+            topic, or jump to a letter.
           </p>
         </div>
 
@@ -110,7 +112,7 @@ export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
         </div>
 
         {/* Category chips */}
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div className="flex flex-wrap gap-2 mb-4">
           {["All", ...categories].map((cat) => {
             const active = category === cat;
             return (
@@ -118,7 +120,7 @@ export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
                 key={cat}
                 onClick={() => setCategory(cat)}
                 className={
-                  "px-3.5 py-1.5 rounded-full text-sm border transition-colors " +
+                  "px-3 py-1 rounded-full text-sm border transition-colors " +
                   (active
                     ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
                     : "bg-white/5 border-white/10 text-ocean-300 hover:text-white hover:border-white/20")
@@ -131,7 +133,7 @@ export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
         </div>
 
         {/* A–Z jump bar */}
-        <div className="flex flex-wrap gap-1 mb-6 pb-6 border-b border-white/10">
+        <div className="flex flex-wrap gap-1 mb-4 pb-4 border-b border-white/10">
           {ALPHABET.map((letter) => {
             const has = availableLetters.has(letter);
             return (
@@ -170,7 +172,11 @@ export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
         ) : (
           <div className="space-y-10">
             {[...grouped.keys()].sort().map((letter) => (
-              <section key={letter} id={`letter-${letter}`} className="scroll-mt-28">
+              <section
+                key={letter}
+                id={`letter-${letter}`}
+                className="scroll-mt-28"
+              >
                 <h2 className="font-display text-2xl text-emerald-400 mb-4">
                   {letter}
                 </h2>

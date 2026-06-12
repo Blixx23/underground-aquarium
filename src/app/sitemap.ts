@@ -6,10 +6,22 @@ const baseUrl = "https://www.undergroundaquarium.com";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = ["", "/marketplace", "/sell", "/vendor-guide", "/glossary", "/blog"];
+  const staticRoutes = [
+    "",
+    "/marketplace",
+    "/sell",
+    "/vendor-guide",
+    "/glossary",
+    "/species",
+    "/blog",
+  ];
 
   const { data: terms } = await supabasePublic
     .from("glossary_terms")
+    .select("slug");
+
+  const { data: species } = await supabasePublic
+    .from("species")
     .select("slug");
 
   const staticEntries = staticRoutes.map((route) => ({
@@ -26,5 +38,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticEntries, ...termEntries];
+  const speciesEntries = (species ?? []).map((s) => ({
+    url: `${baseUrl}/species/${s.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticEntries, ...termEntries, ...speciesEntries];
 }
