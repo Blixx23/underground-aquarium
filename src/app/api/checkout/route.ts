@@ -36,11 +36,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Seller not found." }, { status: 404 });
     }
 
-    // TEMPORARILY DISABLED FOR TESTING so you can buy your own listing.
-    // Re-enable this block before launch.
-    // if (store.owner_id === user.id) {
-    //   return NextResponse.json({ error: "You can't buy your own listing." }, { status: 400 });
-    // }
+    // Sellers can't buy their own listings.
+    if (store.owner_id === user.id) {
+      return NextResponse.json({ error: "You can't buy your own listing." }, { status: 400 });
+    }
 
     if (!store.stripe_account_id) {
       return NextResponse.json(
