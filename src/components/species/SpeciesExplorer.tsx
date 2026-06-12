@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, X } from "lucide-react";
+import { Search, X, Filter, ChevronDown } from "lucide-react";
 
 type Species = {
   slug: string;
@@ -54,6 +54,7 @@ function suitabilityStyle(s: string | null) {
 export default function SpeciesExplorer({ species }: { species: Species[] }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string>("All");
+  const [showFilters, setShowFilters] = useState(false);
 
   const groups = useMemo(() => {
     const present = new Set(species.map((s) => s.group_name ?? ""));
@@ -127,7 +128,7 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
           <p className="text-ocean-300">
             {species.length} aquarium species and varieties with real care data.
             Search by name, scientific name, or trade code (try “L046”), or
-            filter by group below.
+            filter by group.
           </p>
         </div>
 
@@ -152,25 +153,47 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
           )}
         </div>
 
-        {/* Group chips */}
-        <div className="flex flex-wrap gap-2 mb-5 pb-5 border-b border-white/10">
-          {["All", ...groups].map((g) => {
-            const active = group === g;
-            return (
-              <button
-                key={g}
-                onClick={() => setGroup(g)}
-                className={
-                  "px-3 py-1 rounded-full text-sm border transition-colors " +
-                  (active
-                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-                    : "bg-white/5 border-white/10 text-ocean-300 hover:text-white hover:border-white/20")
-                }
-              >
-                {g}
-              </button>
-            );
-          })}
+        {/* Mobile filter toggle */}
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          aria-expanded={showFilters}
+          className="sm:hidden w-full flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-ocean-200 mb-4"
+        >
+          <span className="flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            {group === "All" ? "Filter by group" : group}
+          </span>
+          <ChevronDown
+            className={
+              "w-4 h-4 transition-transform " + (showFilters ? "rotate-180" : "")
+            }
+          />
+        </button>
+
+        {/* Group chips — collapsible on mobile, always shown on desktop */}
+        <div className={(showFilters ? "block" : "hidden") + " sm:block"}>
+          <div className="flex flex-wrap gap-2 mb-5 pb-5 border-b border-white/10">
+            {["All", ...groups].map((g) => {
+              const active = group === g;
+              return (
+                <button
+                  key={g}
+                  onClick={() => {
+                    setGroup(g);
+                    setShowFilters(false);
+                  }}
+                  className={
+                    "px-3 py-1 rounded-full text-sm border transition-colors " +
+                    (active
+                      ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                      : "bg-white/5 border-white/10 text-ocean-300 hover:text-white hover:border-white/20")
+                  }
+                >
+                  {g}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Result count */}

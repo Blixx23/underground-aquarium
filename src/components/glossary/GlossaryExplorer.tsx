@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, X } from "lucide-react";
+import { Search, X, Filter, ChevronDown } from "lucide-react";
 
 type Term = {
   slug: string;
@@ -31,6 +31,7 @@ const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("All");
+  const [showFilters, setShowFilters] = useState(false);
 
   const categories = useMemo(() => {
     const present = new Set(terms.map((t) => t.category));
@@ -111,29 +112,51 @@ export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
           )}
         </div>
 
-        {/* Category chips */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {["All", ...categories].map((cat) => {
-            const active = category === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className={
-                  "px-3 py-1 rounded-full text-sm border transition-colors " +
-                  (active
-                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-                    : "bg-white/5 border-white/10 text-ocean-300 hover:text-white hover:border-white/20")
-                }
-              >
-                {cat}
-              </button>
-            );
-          })}
+        {/* Mobile filter toggle */}
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          aria-expanded={showFilters}
+          className="sm:hidden w-full flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-ocean-200 mb-4"
+        >
+          <span className="flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            {category === "All" ? "Filter by topic" : category}
+          </span>
+          <ChevronDown
+            className={
+              "w-4 h-4 transition-transform " + (showFilters ? "rotate-180" : "")
+            }
+          />
+        </button>
+
+        {/* Category chips — collapsible on mobile, always shown on desktop */}
+        <div className={(showFilters ? "block" : "hidden") + " sm:block"}>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {["All", ...categories].map((cat) => {
+              const active = category === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setCategory(cat);
+                    setShowFilters(false);
+                  }}
+                  className={
+                    "px-3 py-1 rounded-full text-sm border transition-colors " +
+                    (active
+                      ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                      : "bg-white/5 border-white/10 text-ocean-300 hover:text-white hover:border-white/20")
+                  }
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* A–Z jump bar */}
-        <div className="flex flex-wrap gap-1 mb-4 pb-4 border-b border-white/10">
+        {/* A–Z jump bar — desktop only */}
+        <div className="hidden sm:flex flex-wrap gap-1 mb-4 pb-4 border-b border-white/10">
           {ALPHABET.map((letter) => {
             const has = availableLetters.has(letter);
             return (
