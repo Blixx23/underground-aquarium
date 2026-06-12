@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserPlus, Package, DollarSign, ArrowRight } from "lucide-react";
+import { PLATFORM_FEE_LABEL } from "@/lib/config";
 
 const steps = [
   {
@@ -18,7 +19,7 @@ const steps = [
     num: "03",
     icon: DollarSign,
     title: "Get Paid",
-    desc: "Orders come in, you ship, and we pay out directly. Just a 10% commission on completed sales — nothing else.",
+    desc: `Orders come in, you ship, and we pay out directly. Just a ${PLATFORM_FEE_LABEL} commission on completed sales — nothing else.`,
   },
 ];
 

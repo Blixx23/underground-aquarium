@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
 import ListingsGrid from "./listings-grid";
@@ -57,12 +57,20 @@ export default async function ProfilePage() {
       <section className="w-full max-w-4xl mt-14">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-2xl text-white">Your listings</h2>
-          <Link
-            href="/sell"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ocean-700 text-white text-sm hover:bg-ocean-600 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> New listing
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/sell/payouts"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-ocean-200 text-sm hover:bg-white/5 transition-colors"
+            >
+              <Wallet className="w-4 h-4" /> Payouts
+            </Link>
+            <Link
+              href="/sell"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ocean-700 text-white text-sm hover:bg-ocean-600 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> New listing
+            </Link>
+          </div>
         </div>
 
         <ListingsGrid listings={listings} />

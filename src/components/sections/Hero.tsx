@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { ShoppingBag, Users, ArrowRight } from "lucide-react";
+import { PLATFORM_FEE_LABEL } from "@/lib/config";
 
 export default function Hero() {
   return (
@@ -22,7 +23,7 @@ export default function Hero() {
           </Link>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px",maxWidth:"400px",margin:"0 auto"}}>
-          {[["Free","To Join"],["10%","Commission"],["∞","Species"]].map(([v,l])=>(
+          {[["Free","To Join"],[PLATFORM_FEE_LABEL,"Commission"],["∞","Species"]].map(([v,l])=>(
             <div key={l} style={{textAlign:"center"}}>
               <div style={{fontFamily:"Georgia,serif",fontSize:"1.9rem",color:"#c2e4fa",textShadow:"0 0 20px rgba(58,163,232,0.5)"}}>{v}</div>
               <div style={{fontFamily:"monospace",fontSize:"9px",letterSpacing:"0.1em",color:"#1a82cc",textTransform:"uppercase",marginTop:"4px"}}>{l}</div>
