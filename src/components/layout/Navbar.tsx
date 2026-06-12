@@ -15,6 +15,7 @@ const nav = [
       { label: "Fish Species", href: "/species" },
       { label: "Glossary", href: "/glossary" },
       { label: "Blog", href: "/blog" },
+      { label: "Vendor Guide", href: "/vendor-guide" },
     ],
   },
   { label: "Events", href: "/events" },

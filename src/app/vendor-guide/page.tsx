@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Vendor Guide — UndergroundAquarium",
+  title: "Vendor Guide",
   description:
     "Everything you need to start selling fish, plants, and gear on UndergroundAquarium — from your first listing to your first payout.",
 };

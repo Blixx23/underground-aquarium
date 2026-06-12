@@ -3,7 +3,9 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Bubbles from "@/components/Bubbles";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.undergroundaquarium.com"),
   title: {
     default: "UndergroundAquarium — The Hobbyist-First Aquarium Marketplace",
     template: "%s | UndergroundAquarium",
@@ -14,13 +16,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "UndergroundAquarium — The Hobbyist-First Aquarium Marketplace",
     description: "Buy, sell, and connect with aquarium enthusiasts.",
-    url: "https://undergroundaquarium.com",
+    url: "https://www.undergroundaquarium.com",
     siteName: "UndergroundAquarium",
     type: "website",
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
 };
+
 export default function RootLayout({
   children,
 }: {
