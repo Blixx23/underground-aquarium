@@ -1,11 +1,148 @@
-export default function Page() {
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Fish, Waves } from "lucide-react";
+import { supabasePublic } from "@/lib/supabase/public";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Community Tanks",
+  description:
+    "Browse real aquariums planned and shared by the Underground Aquarium community.",
+};
+
+type TankItem = { slug: string; qty: number };
+
+type CommunityTank = {
+  id: string;
+  user_id: string;
+  name: string | null;
+  gallons: number | null;
+  items: TankItem[] | null;
+  images: string[] | null;
+  updated_at: string;
+};
+
+type ProfileRow = {
+  id: string;
+  username: string | null;
+  full_name: string | null;
+};
+
+export default async function CommunityPage() {
+  const { data } = await supabasePublic
+    .from("tanks")
+    .select("id,user_id,name,gallons,items,images,updated_at")
+    .eq("is_public", true)
+    .order("updated_at", { ascending: false })
+    .limit(60);
+
+  const tanks = (data ?? []) as CommunityTank[];
+
+  // Look up each poster's profile
+  const userIds = Array.from(
+    new Set(tanks.map((t) => t.user_id).filter(Boolean))
+  );
+  let profileById = new Map<string, ProfileRow>();
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabasePublic
+      .from("profiles")
+      .select("id,username,full_name")
+      .in("id", userIds);
+    profileById = new Map(
+      ((profiles as ProfileRow[]) ?? []).map((p) => [p.id, p])
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center pt-20">
-      <div className="text-center">
-        <p className="text-xs font-mono tracking-widest text-ocean-500 uppercase mb-4">Coming Soon</p>
-        <h1 className="font-display text-4xl text-white mb-4">/community</h1>
-        <p className="text-ocean-400">This page is under construction — Phase 2 incoming.</p>
+    <main className="min-h-screen pt-24 pb-20 px-6">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="max-w-2xl mb-8">
+          <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-2">
+            Community
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
+            Community tanks
+          </h1>
+          <p className="text-ocean-300">
+            Real aquariums planned and shared by fellow hobbyists. Browse builds
+            for inspiration, see what fish live together, then plan your own.
+          </p>
+        </div>
+
+        {tanks.length === 0 ? (
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center">
+            <Fish className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
+            <p className="text-white font-medium mb-1">No tanks posted yet</p>
+            <p className="text-ocean-400 text-sm mb-4">
+              Be the first to share a build with the community.
+            </p>
+            <Link
+              href="/tank-builder"
+              className="text-emerald-400 hover:text-emerald-300 text-sm font-medium"
+            >
+              Plan a tank →
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tanks.map((t) => {
+              const items = Array.isArray(t.items) ? t.items : [];
+              const images = Array.isArray(t.images) ? t.images : [];
+              const cover = images[0];
+              const species = items.length;
+              const p = profileById.get(t.user_id);
+              const username = p?.username ?? null;
+              const name = p?.full_name || p?.username || "An aquarist";
+              return (
+                <div
+                  key={t.id}
+                  className="rounded-xl bg-white/5 border border-white/10 overflow-hidden transition-colors hover:border-emerald-500/40"
+                >
+                  <Link href={`/tanks/${t.id}`} className="group block">
+                    <div className="aspect-[4/3] bg-ocean-950/60 relative">
+                      {cover ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={cover}
+                          alt={t.name ?? "Community tank"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Waves className="w-8 h-8 text-ocean-700" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-4 pt-4">
+                      <h3 className="text-white font-medium truncate group-hover:text-emerald-300 transition-colors">
+                        {t.name ?? "Untitled tank"}
+                      </h3>
+                      <p className="text-ocean-400 text-sm mt-1">
+                        {t.gallons ? `${t.gallons} gal · ` : ""}
+                        {species} species
+                      </p>
+                    </div>
+                  </Link>
+                  <div className="px-4 pb-4 pt-2">
+                    {username ? (
+                      <Link
+                        href={`/u/${username}`}
+                        className="text-ocean-500 text-xs hover:text-emerald-300 transition-colors"
+                      >
+                        by {name}
+                      </Link>
+                    ) : (
+                      <p className="text-ocean-500 text-xs">by {name}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </div>
+    </main>
   );
 }

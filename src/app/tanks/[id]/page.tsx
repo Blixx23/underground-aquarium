@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Pencil, Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
+import ReportButton from "@/components/tanks/ReportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -164,7 +165,7 @@ export default async function TankPage({ params }: Params) {
           </div>
         )}
 
-        {/* Footer CTA */}
+        {/* Footer */}
         <div className="mt-10 border-t border-white/10 pt-8">
           <Link
             href="/tank-builder"
@@ -172,6 +173,11 @@ export default async function TankPage({ params }: Params) {
           >
             <Fish className="w-4 h-4" /> Plan your own tank
           </Link>
+          {!isOwner && (
+            <div className="mt-6">
+              <ReportButton tankId={t.id} />
+            </div>
+          )}
         </div>
       </div>
     </main>
