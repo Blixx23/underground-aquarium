@@ -5,6 +5,8 @@ import { Pencil, Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
 import ReportButton from "@/components/tanks/ReportButton";
+import TankLikes from "@/components/tanks/TankLikes";
+import TankComments from "@/components/tanks/TankComments";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +50,6 @@ export default async function TankPage({ params }: Params) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // RLS: anyone can read a public tank; the owner can also read their own.
   const { data: tank, error } = await supabase
     .from("tanks")
     .select("id,user_id,name,gallons,items,images,is_public,updated_at")
@@ -62,7 +63,6 @@ export default async function TankPage({ params }: Params) {
   const images = Array.isArray(t.images) ? t.images : [];
   const isOwner = !!user && user.id === t.user_id;
 
-  // Look up species details for the contents list
   const slugs = items.map((it) => it.slug);
   let bySlug = new Map<string, SpeciesRow>();
   if (slugs.length > 0) {
@@ -74,6 +74,73 @@ export default async function TankPage({ params }: Params) {
       ((speciesRows as SpeciesRow[]) ?? []).map((s) => [s.slug, s])
     );
   }
+
+  // Likes
+  const { count: likeCountRaw } = await supabase
+    .from("tank_likes")
+    .select("*", { count: "exact", head: true })
+    .eq("tank_id", id);
+  const likeCount = likeCountRaw ?? 0;
+  let liked = false;
+  if (user) {
+    const { data: myLike } = await supabase
+      .from("tank_likes")
+      .select("tank_id")
+      .eq("tank_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    liked = !!myLike;
+  }
+
+  // Comments
+  const { data: commentRows } = await supabase
+    .from("tank_comments")
+    .select("id,user_id,body,created_at")
+    .eq("tank_id", id)
+    .order("created_at", { ascending: true });
+  const commentList = (commentRows ?? []) as {
+    id: string;
+    user_id: string;
+    body: string;
+    created_at: string;
+  }[];
+
+  const authorIds = new Set(commentList.map((c) => c.user_id));
+  if (user) authorIds.add(user.id);
+  let profileById = new Map<string, { username: string | null; name: string }>();
+  if (authorIds.size > 0) {
+    const { data: profs } = await supabasePublic
+      .from("profiles")
+      .select("id,username,full_name")
+      .in("id", Array.from(authorIds));
+    profileById = new Map(
+      (
+        (profs as {
+          id: string;
+          username: string | null;
+          full_name: string | null;
+        }[]) ?? []
+      ).map((p) => [
+        p.id,
+        { username: p.username, name: p.full_name || p.username || "Aquarist" },
+      ])
+    );
+  }
+
+  const initialComments = commentList.map((c) => {
+    const prof = profileById.get(c.user_id);
+    return {
+      id: c.id,
+      userId: c.user_id,
+      authorName: prof?.name || "Aquarist",
+      authorUsername: prof?.username ?? null,
+      body: c.body,
+      createdAt: c.created_at,
+    };
+  });
+  const currentProfile = user ? profileById.get(user.id) : undefined;
+  const currentUserName = currentProfile?.name ?? null;
+  const currentUserUsername = currentProfile?.username ?? null;
 
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
@@ -96,23 +163,40 @@ export default async function TankPage({ params }: Params) {
         <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
           {t.name}
         </h1>
-        <p className="text-ocean-300 mb-8">
+        <p className="text-ocean-300 mb-6">
           {t.gallons ? `${t.gallons} gallon tank` : "Tank"} ·{" "}
           {items.length} {items.length === 1 ? "species" : "species"}
         </p>
 
-        {/* Photos */}
-        {images.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
-            {images.map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
-                src={src}
-                alt={`${t.name} photo ${i + 1}`}
-                className="w-full rounded-xl border border-white/10 object-cover"
+        {/* Photos + like */}
+        {images.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              {images.map((src, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={i}
+                  src={src}
+                  alt={`${t.name} photo ${i + 1}`}
+                  className="w-full rounded-xl border border-white/10 object-cover"
+                />
+              ))}
+            </div>
+            <div className="mb-10">
+              <TankLikes
+                tankId={t.id}
+                initialCount={likeCount}
+                initialLiked={liked}
               />
-            ))}
+            </div>
+          </>
+        ) : (
+          <div className="mb-10">
+            <TankLikes
+              tankId={t.id}
+              initialCount={likeCount}
+              initialLiked={liked}
+            />
           </div>
         )}
 
@@ -164,6 +248,18 @@ export default async function TankPage({ params }: Params) {
             })}
           </div>
         )}
+
+        {/* Comments */}
+        <div className="mt-12">
+          <TankComments
+            tankId={t.id}
+            initialComments={initialComments}
+            currentUserId={user?.id ?? null}
+            currentUserName={currentUserName}
+            currentUserUsername={currentUserUsername}
+            isOwner={isOwner}
+          />
+        </div>
 
         {/* Footer */}
         <div className="mt-10 border-t border-white/10 pt-8">

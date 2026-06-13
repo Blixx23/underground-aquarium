@@ -25,7 +25,7 @@ import {
   type Issue,
 } from "@/lib/tankBuilder/engine";
 
-const FREE_TANK_LIMIT = 1;
+const FREE_TANK_LIMIT = 3;
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_BYTES = 25 * 1024 * 1024; // generous input cap; we compress below
 const MAX_DIM = 1920; // longest edge after resize
@@ -553,7 +553,7 @@ export default function TankBuilder({ species }: { species: Species[] }) {
               />
               <span className="flex items-center gap-1.5 text-sm text-ocean-300">
                 <Globe className="w-3.5 h-3.5" />
-                Show this tank on my profile (public)
+                Share this tank with the community
               </span>
             </label>
 
@@ -627,17 +627,17 @@ export default function TankBuilder({ species }: { species: Species[] }) {
             {saveMsg && <p className="text-xs text-ocean-400 mt-2">{saveMsg}</p>}
             {!currentTankId && !showUpgrade && (
               <p className="text-[11px] text-ocean-500 mt-2">
-                Free plan saves {FREE_TANK_LIMIT} tank.
+                Free plan saves {FREE_TANK_LIMIT} tanks.
               </p>
             )}
             {showUpgrade && (
               <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
                 <p className="text-amber-300 text-sm font-medium">
-                  You&apos;ve used your free saved tank
+                  You&apos;ve used all your free saved tanks
                 </p>
                 <p className="text-ocean-300 text-xs mt-0.5">
                   Unlimited saved tanks are coming with a paid plan. For now you
-                  can update or delete your existing tank.
+                  can update or delete an existing one.
                 </p>
               </div>
             )}
