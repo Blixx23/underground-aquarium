@@ -31,7 +31,20 @@ type ProfileRow = {
   full_name: string | null;
 };
 
-export default async function CommunityPage() {
+const SORTS = [
+  { key: "newest", label: "Newest" },
+  { key: "liked", label: "Most liked" },
+  { key: "discussed", label: "Most discussed" },
+] as const;
+
+export default async function CommunityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string }>;
+}) {
+  const { sort } = await searchParams;
+  const activeSort = sort === "liked" || sort === "discussed" ? sort : "newest";
+
   const { data } = await supabasePublic
     .from("tanks")
     .select("id,user_id,name,gallons,items,images,updated_at")
@@ -80,6 +93,19 @@ export default async function CommunityPage() {
         (commentCountById.get(r.tank_id) ?? 0) + 1
       );
     }
+  }
+
+  // Sort by the active tab (newest already comes from the query)
+  const sortedTanks = [...tanks];
+  if (activeSort === "liked") {
+    sortedTanks.sort(
+      (a, b) => (likeCountById.get(b.id) ?? 0) - (likeCountById.get(a.id) ?? 0)
+    );
+  } else if (activeSort === "discussed") {
+    sortedTanks.sort(
+      (a, b) =>
+        (commentCountById.get(b.id) ?? 0) - (commentCountById.get(a.id) ?? 0)
+    );
   }
 
   // Which of these tanks has the current viewer already liked?
@@ -131,71 +157,98 @@ export default async function CommunityPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tanks.map((t) => {
-              const items = Array.isArray(t.items) ? t.items : [];
-              const images = Array.isArray(t.images) ? t.images : [];
-              const cover = images[0];
-              const species = items.length;
-              const p = profileById.get(t.user_id);
-              const username = p?.username ?? null;
-              const name = p?.full_name || p?.username || "An aquarist";
-              const likes = likeCountById.get(t.id) ?? 0;
-              const comments = commentCountById.get(t.id) ?? 0;
-              return (
-                <div
-                  key={t.id}
-                  className="rounded-xl bg-white/5 border border-white/10 overflow-hidden transition-colors hover:border-emerald-500/40"
-                >
-                  <Link href={`/tanks/${t.id}`} className="group block">
-                    <div className="aspect-[4/3] bg-ocean-950/60 relative">
-                      {cover ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={cover}
-                          alt={t.name ?? "Community tank"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Waves className="w-8 h-8 text-ocean-700" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-4 pt-4">
-                      <h3 className="text-white font-medium truncate group-hover:text-emerald-300 transition-colors">
-                        {t.name ?? "Untitled tank"}
-                      </h3>
-                      <p className="text-ocean-400 text-sm mt-1">
-                        {t.gallons ? `${t.gallons} gal · ` : ""}
-                        {species} species
-                      </p>
-                    </div>
+          <>
+            {/* Sort tabs */}
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              {SORTS.map((opt) => {
+                const active = activeSort === opt.key;
+                return (
+                  <Link
+                    key={opt.key}
+                    href={
+                      opt.key === "newest"
+                        ? "/community"
+                        : `/community?sort=${opt.key}`
+                    }
+                    className={
+                      "rounded-lg px-3 py-1.5 text-sm border transition-colors " +
+                      (active
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                        : "border-white/10 text-ocean-300 hover:text-white hover:border-white/20")
+                    }
+                  >
+                    {opt.label}
                   </Link>
-                  <div className="px-4 pb-4 pt-2 flex items-center justify-between gap-2">
-                    {username ? (
-                      <Link
-                        href={`/u/${username}`}
-                        className="text-ocean-500 text-xs hover:text-emerald-300 transition-colors truncate"
-                      >
-                        by {name}
-                      </Link>
-                    ) : (
-                      <p className="text-ocean-500 text-xs truncate">
-                        by {name}
-                      </p>
-                    )}
-                    <CardActions
-                      tankId={t.id}
-                      initialLikes={likes}
-                      initialLiked={likedSet.has(t.id)}
-                      commentCount={comments}
-                    />
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sortedTanks.map((t) => {
+                const items = Array.isArray(t.items) ? t.items : [];
+                const images = Array.isArray(t.images) ? t.images : [];
+                const cover = images[0];
+                const species = items.length;
+                const p = profileById.get(t.user_id);
+                const username = p?.username ?? null;
+                const name = p?.full_name || p?.username || "An aquarist";
+                const likes = likeCountById.get(t.id) ?? 0;
+                const comments = commentCountById.get(t.id) ?? 0;
+                return (
+                  <div
+                    key={t.id}
+                    className="rounded-xl bg-white/5 border border-white/10 overflow-hidden transition-colors hover:border-emerald-500/40"
+                  >
+                    <Link href={`/tanks/${t.id}`} className="group block">
+                      <div className="aspect-[4/3] bg-ocean-950/60 relative">
+                        {cover ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={cover}
+                            alt={t.name ?? "Community tank"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Waves className="w-8 h-8 text-ocean-700" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="px-4 pt-4">
+                        <h3 className="text-white font-medium truncate group-hover:text-emerald-300 transition-colors">
+                          {t.name ?? "Untitled tank"}
+                        </h3>
+                        <p className="text-ocean-400 text-sm mt-1">
+                          {t.gallons ? `${t.gallons} gal · ` : ""}
+                          {species} species
+                        </p>
+                      </div>
+                    </Link>
+                    <div className="px-4 pb-4 pt-2 flex items-center justify-between gap-2">
+                      {username ? (
+                        <Link
+                          href={`/u/${username}`}
+                          className="text-ocean-500 text-xs hover:text-emerald-300 transition-colors truncate"
+                        >
+                          by {name}
+                        </Link>
+                      ) : (
+                        <p className="text-ocean-500 text-xs truncate">
+                          by {name}
+                        </p>
+                      )}
+                      <CardActions
+                        tankId={t.id}
+                        initialLikes={likes}
+                        initialLiked={likedSet.has(t.id)}
+                        commentCount={comments}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </main>
