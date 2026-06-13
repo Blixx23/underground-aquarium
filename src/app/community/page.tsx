@@ -125,18 +125,10 @@ export default async function CommunityPage({
     );
   }
 
-  // Featured = most-liked tank that has a photo (tiebreak: newest)
-  const photoTanks = tanks.filter(
-    (t) => Array.isArray(t.images) && t.images.length > 0
-  );
-  let featured: CommunityTank | null = null;
-  if (photoTanks.length > 0) {
-    featured = [...photoTanks].sort((a, b) => {
-      const d = (likeCountById.get(b.id) ?? 0) - (likeCountById.get(a.id) ?? 0);
-      if (d !== 0) return d;
-      return (b.updated_at ?? "").localeCompare(a.updated_at ?? "");
-    })[0];
-  }
+// Featured = the top tank of the current sort that has a photo
+  const featured: CommunityTank | null =
+    sortedTanks.find((t) => Array.isArray(t.images) && t.images.length > 0) ??
+    null;
   const featuredId = featured?.id;
   const gridTanks = sortedTanks.filter((t) => t.id !== featuredId);
 
