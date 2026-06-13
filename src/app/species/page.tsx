@@ -7,7 +7,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Freshwater Species",
   description:
-    "A curated freshwater aquarium species database with real care data — temperature, pH, tank size, temperament and more. Searchable by name, scientific name, or trade code, including pleco L-numbers and Corydoras.",
+    "A curated freshwater aquarium species database with real care data — temperature, pH, size, and temperament for every species.",
 };
 
 export default async function SpeciesPage() {

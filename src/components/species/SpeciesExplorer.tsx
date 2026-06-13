@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, X, Filter, ChevronDown } from "lucide-react";
+import SuggestSpecies from "@/app/species/SuggestSpecies";
 
 type Species = {
   slug: string;
@@ -206,74 +207,89 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
 
         {/* Results */}
         {filtered.length === 0 ? (
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center">
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-8">
             <p className="text-white font-medium mb-1">No species found</p>
-            <p className="text-ocean-400 text-sm">
-              Try a different search or clear your filters.
+            <p className="text-ocean-400 text-sm mb-6">
+              {query.trim()
+                ? `We don't have a match for "${query.trim()}" yet. Want it added to the database?`
+                : "Try a different search or clear your filters."}
             </p>
+            {query.trim() && (
+              <SuggestSpecies
+                key={query}
+                initialName={query.trim()}
+                defaultOpen
+              />
+            )}
           </div>
         ) : (
-          <div className="space-y-10">
-            {orderedKeys.map((key) => (
-              <section key={key}>
-                <h2 className="font-display text-2xl text-emerald-400 mb-4">
-                  {key}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {grouped.get(key)!.map((s) => (
-                    <Link
-                      key={s.slug}
-                      href={`/species/${s.slug}`}
-                      className="block rounded-xl bg-white/5 border border-white/10 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-white font-medium">
-                          {s.common_name}
-                        </h3>
-                        <div className="flex flex-wrap justify-end gap-1 shrink-0">
-                          {(s.trade_codes ?? []).map((c) => (
+          <>
+            <div className="space-y-10">
+              {orderedKeys.map((key) => (
+                <section key={key}>
+                  <h2 className="font-display text-2xl text-emerald-400 mb-4">
+                    {key}
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {grouped.get(key)!.map((s) => (
+                      <Link
+                        key={s.slug}
+                        href={`/species/${s.slug}`}
+                        className="block rounded-xl bg-white/5 border border-white/10 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-white font-medium">
+                            {s.common_name}
+                          </h3>
+                          <div className="flex flex-wrap justify-end gap-1 shrink-0">
+                            {(s.trade_codes ?? []).map((c) => (
+                              <span
+                                key={c}
+                                className="text-[11px] font-mono uppercase tracking-wide text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5"
+                              >
+                                {c}
+                              </span>
+                            ))}
+                            {s.entry_type === "variety" && (
+                              <span className="text-[11px] uppercase tracking-wide text-ocean-300 bg-white/5 border border-white/10 rounded px-1.5 py-0.5">
+                                variety
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {s.scientific_name && (
+                          <p className="italic text-ocean-400 text-sm mt-0.5">
+                            {s.scientific_name}
+                          </p>
+                        )}
+                        {statLine(s) && (
+                          <p className="text-ocean-300 text-sm mt-2 font-mono">
+                            {statLine(s)}
+                          </p>
+                        )}
+                        {s.suitability &&
+                          s.suitability !== "Common" &&
+                          s.suitability !== "Intermediate" && (
                             <span
-                              key={c}
-                              className="text-[11px] font-mono uppercase tracking-wide text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5"
+                              className={
+                                "inline-block mt-2 text-[11px] uppercase tracking-wide rounded-full border px-2 py-0.5 " +
+                                suitabilityStyle(s.suitability)
+                              }
                             >
-                              {c}
-                            </span>
-                          ))}
-                          {s.entry_type === "variety" && (
-                            <span className="text-[11px] uppercase tracking-wide text-ocean-300 bg-white/5 border border-white/10 rounded px-1.5 py-0.5">
-                              variety
+                              {s.suitability}
                             </span>
                           )}
-                        </div>
-                      </div>
-                      {s.scientific_name && (
-                        <p className="italic text-ocean-400 text-sm mt-0.5">
-                          {s.scientific_name}
-                        </p>
-                      )}
-                      {statLine(s) && (
-                        <p className="text-ocean-300 text-sm mt-2 font-mono">
-                          {statLine(s)}
-                        </p>
-                      )}
-                      {s.suitability &&
-                        s.suitability !== "Common" &&
-                        s.suitability !== "Intermediate" && (
-                          <span
-                            className={
-                              "inline-block mt-2 text-[11px] uppercase tracking-wide rounded-full border px-2 py-0.5 " +
-                              suitabilityStyle(s.suitability)
-                            }
-                          >
-                            {s.suitability}
-                          </span>
-                        )}
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            <div className="mt-12 border-t border-white/10 pt-8">
+              <SuggestSpecies />
+            </div>
+          </>
         )}
       </div>
     </main>
