@@ -1,6 +1,17 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, Wallet, ShoppingBag, Receipt, Fish, Globe, Lock } from "lucide-react";
+import {
+  Plus,
+  Wallet,
+  ShoppingBag,
+  Receipt,
+  Fish,
+  Globe,
+  Lock,
+  User as UserIcon,
+  MapPin,
+  ExternalLink,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
 import ListingsGrid from "./listings-grid";
@@ -62,112 +73,147 @@ export default async function ProfilePage() {
     .order("updated_at", { ascending: false });
   const tanks = (tanksData ?? []) as SavedTank[];
 
+  const displayName = profile?.full_name || profile?.username || "Your profile";
+
+  const actions = [
+    { href: "/tank-builder", label: "Tank Builder", Icon: Fish },
+    { href: "/sell", label: "New listing", Icon: Plus },
+    { href: "/orders", label: "My orders", Icon: ShoppingBag },
+    ...(hasShop
+      ? [
+          { href: "/sell/sales", label: "Sales", Icon: Receipt },
+          { href: "/sell/payouts", label: "Payouts", Icon: Wallet },
+        ]
+      : []),
+  ];
+
   return (
-    <main className="flex min-h-screen flex-col items-center px-4 pt-28 pb-20">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
-        <p className="mb-3 font-mono text-xs uppercase tracking-widest text-ocean-500">Your account</p>
-        <h1 className="mb-1 font-display text-3xl text-white">Profile</h1>
-        <p className="mb-6 text-sm text-ocean-400">{user.email}</p>
-        <ProfileForm userId={user.id} profile={profile} />
-      </div>
-
-      {/* Saved tanks */}
-      <section className="w-full max-w-4xl mt-14">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <h2 className="font-display text-2xl text-white">Your saved tanks</h2>
-          <Link
-            href="/tank-builder"
-            className="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-ocean-200 text-sm hover:bg-white/5 transition-colors whitespace-nowrap"
-          >
-            <Fish className="w-4 h-4" /> Tank Builder
-          </Link>
-        </div>
-
-        {tanks.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-            <p className="text-ocean-300 text-sm mb-2">
-              You haven&apos;t saved any tanks yet.
-            </p>
-            <Link
-              href="/tank-builder"
-              className="text-emerald-400 hover:text-emerald-300 text-sm font-medium"
-            >
-              Plan your first tank →
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {tanks.map((t) => {
-              const count = Array.isArray(t.items) ? t.items.length : 0;
-              return (
-                <Link
-                  key={t.id}
-                  href={`/tanks/${t.id}`}
-                  className="block rounded-xl border border-white/10 bg-white/5 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-white font-medium truncate">{t.name}</h3>
-                    {t.is_public ? (
-                      <span className="inline-flex items-center gap-1 shrink-0 text-[10px] uppercase tracking-wide text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5">
-                        <Globe className="w-2.5 h-2.5" /> Posted
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 shrink-0 text-[10px] uppercase tracking-wide text-ocean-400 bg-white/5 border border-white/10 rounded px-1.5 py-0.5">
-                        <Lock className="w-2.5 h-2.5" /> Private
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-ocean-400 text-sm mt-1">
-                    {t.gallons ? `${t.gallons} gal · ` : ""}
-                    {count} species
-                  </p>
-                  <p className="text-ocean-500 text-xs mt-2">
-                    Updated {new Date(t.updated_at).toLocaleDateString()}
-                  </p>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="w-full max-w-4xl mt-14">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <h2 className="font-display text-2xl text-white">Your listings</h2>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Link
-              href="/orders"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-ocean-200 text-sm hover:bg-white/5 transition-colors whitespace-nowrap"
-            >
-              <ShoppingBag className="w-4 h-4" /> My Orders
-            </Link>
-            {hasShop && (
-              <>
-                <Link
-                  href="/sell/sales"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-ocean-200 text-sm hover:bg-white/5 transition-colors whitespace-nowrap"
-                >
-                  <Receipt className="w-4 h-4" /> Sales
-                </Link>
-                <Link
-                  href="/sell/payouts"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 text-ocean-200 text-sm hover:bg-white/5 transition-colors whitespace-nowrap"
-                >
-                  <Wallet className="w-4 h-4" /> Payouts
-                </Link>
-              </>
+    <main className="min-h-screen px-4 pt-28 pb-20">
+      <div className="mx-auto w-full max-w-4xl">
+        {/* Identity header */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur">
+          <div className="flex items-start gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/10 bg-ocean-800/60">
+              <UserIcon className="h-7 w-7 text-ocean-300" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate font-display text-2xl text-white sm:text-3xl">
+                {displayName}
+              </h1>
+              {profile?.username && (
+                <p className="text-sm text-ocean-400">@{profile.username}</p>
+              )}
+              <p className="mt-0.5 truncate text-sm text-ocean-500">
+                {user.email}
+              </p>
+              {profile?.location && (
+                <p className="mt-1 flex items-center gap-1 text-sm text-ocean-400">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {profile.location}
+                </p>
+              )}
+            </div>
+            {profile?.username && (
+              <Link
+                href={`/u/${profile.username}`}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-xs text-ocean-200 transition-colors hover:bg-white/5"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">View public profile</span>
+                <span className="sm:hidden">Public</span>
+              </Link>
             )}
-            <Link
-              href="/sell"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ocean-700 text-white text-sm hover:bg-ocean-600 transition-colors whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4" /> New listing
-            </Link>
           </div>
         </div>
 
-        <ListingsGrid listings={listings} />
-      </section>
+        {/* Quick actions */}
+        <div className="mt-8">
+          <p className="mb-3 font-mono text-xs uppercase tracking-widest text-ocean-500">
+            Quick actions
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {actions.map((a) => (
+              <Link
+                key={a.href}
+                href={a.href}
+                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-colors hover:border-emerald-500/40 hover:bg-white/10"
+              >
+                <a.Icon className="h-5 w-5 text-ocean-300" />
+                <span className="text-sm text-ocean-200">{a.label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Your tanks */}
+        <section className="mt-10">
+          <h2 className="mb-4 font-display text-2xl text-white">Your tanks</h2>
+          {tanks.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+              <p className="mb-2 text-sm text-ocean-300">
+                You haven&apos;t saved any tanks yet.
+              </p>
+              <Link
+                href="/tank-builder"
+                className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
+              >
+                Plan your first tank →
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {tanks.map((t) => {
+                const count = Array.isArray(t.items) ? t.items.length : 0;
+                return (
+                  <Link
+                    key={t.id}
+                    href={`/tanks/${t.id}`}
+                    className="block rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:border-emerald-500/40 hover:bg-white/10"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="truncate font-medium text-white">
+                        {t.name}
+                      </h3>
+                      {t.is_public ? (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300/90">
+                          <Globe className="h-2.5 w-2.5" /> Posted
+                        </span>
+                      ) : (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-ocean-400">
+                          <Lock className="h-2.5 w-2.5" /> Private
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-ocean-400">
+                      {t.gallons ? `${t.gallons} gal · ` : ""}
+                      {count} species
+                    </p>
+                    <p className="mt-2 text-xs text-ocean-500">
+                      Updated {new Date(t.updated_at).toLocaleDateString()}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Your listings */}
+        <section className="mt-10">
+          <h2 className="mb-4 font-display text-2xl text-white">
+            Your listings
+          </h2>
+          <ListingsGrid listings={listings} />
+        </section>
+
+        {/* Edit profile */}
+        <section className="mt-10">
+          <h2 className="mb-4 font-display text-2xl text-white">Edit profile</h2>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
+            <ProfileForm userId={user.id} profile={profile} />
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
