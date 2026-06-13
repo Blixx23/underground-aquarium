@@ -250,7 +250,7 @@ export default async function TankPage({ params }: Params) {
         )}
 
         {/* Comments */}
-        <div className="mt-12">
+        <div id="comments" className="mt-12">
           <TankComments
             tankId={t.id}
             initialComments={initialComments}

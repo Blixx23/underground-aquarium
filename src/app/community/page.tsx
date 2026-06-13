@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Fish, Waves } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import { createClient } from "@/lib/supabase/server";
+import CardActions from "@/components/tanks/CardActions";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,7 @@ export default async function CommunityPage() {
     .limit(60);
 
   const tanks = (data ?? []) as CommunityTank[];
+  const tankIds = tanks.map((t) => t.id);
 
   // Look up each poster's profile
   const userIds = Array.from(
@@ -51,6 +54,48 @@ export default async function CommunityPage() {
       .in("id", userIds);
     profileById = new Map(
       ((profiles as ProfileRow[]) ?? []).map((p) => [p.id, p])
+    );
+  }
+
+  // Tally likes + comments per tank
+  let likeCountById = new Map<string, number>();
+  let commentCountById = new Map<string, number>();
+  if (tankIds.length > 0) {
+    const [{ data: likeRows }, { data: commentRows }] = await Promise.all([
+      supabasePublic
+        .from("tank_likes")
+        .select("tank_id")
+        .in("tank_id", tankIds),
+      supabasePublic
+        .from("tank_comments")
+        .select("tank_id")
+        .in("tank_id", tankIds),
+    ]);
+    for (const r of (likeRows as { tank_id: string }[]) ?? []) {
+      likeCountById.set(r.tank_id, (likeCountById.get(r.tank_id) ?? 0) + 1);
+    }
+    for (const r of (commentRows as { tank_id: string }[]) ?? []) {
+      commentCountById.set(
+        r.tank_id,
+        (commentCountById.get(r.tank_id) ?? 0) + 1
+      );
+    }
+  }
+
+  // Which of these tanks has the current viewer already liked?
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let likedSet = new Set<string>();
+  if (user && tankIds.length > 0) {
+    const { data: myLikes } = await supabase
+      .from("tank_likes")
+      .select("tank_id")
+      .eq("user_id", user.id)
+      .in("tank_id", tankIds);
+    likedSet = new Set(
+      ((myLikes as { tank_id: string }[]) ?? []).map((r) => r.tank_id)
     );
   }
 
@@ -95,6 +140,8 @@ export default async function CommunityPage() {
               const p = profileById.get(t.user_id);
               const username = p?.username ?? null;
               const name = p?.full_name || p?.username || "An aquarist";
+              const likes = likeCountById.get(t.id) ?? 0;
+              const comments = commentCountById.get(t.id) ?? 0;
               return (
                 <div
                   key={t.id}
@@ -125,17 +172,25 @@ export default async function CommunityPage() {
                       </p>
                     </div>
                   </Link>
-                  <div className="px-4 pb-4 pt-2">
+                  <div className="px-4 pb-4 pt-2 flex items-center justify-between gap-2">
                     {username ? (
                       <Link
                         href={`/u/${username}`}
-                        className="text-ocean-500 text-xs hover:text-emerald-300 transition-colors"
+                        className="text-ocean-500 text-xs hover:text-emerald-300 transition-colors truncate"
                       >
                         by {name}
                       </Link>
                     ) : (
-                      <p className="text-ocean-500 text-xs">by {name}</p>
+                      <p className="text-ocean-500 text-xs truncate">
+                        by {name}
+                      </p>
                     )}
+                    <CardActions
+                      tankId={t.id}
+                      initialLikes={likes}
+                      initialLiked={likedSet.has(t.id)}
+                      commentCount={comments}
+                    />
                   </div>
                 </div>
               );
