@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, X, MapPin, Store } from "lucide-react";
+import { Search, X, MapPin, Store, BadgeCheck } from "lucide-react";
 
 type StoreRow = {
   slug: string;
@@ -11,6 +11,7 @@ type StoreRow = {
   state: string | null;
   description: string | null;
   tags: string[] | null;
+  claimed_by: string | null;
 };
 
 export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
@@ -126,7 +127,14 @@ export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
                     href={`/stores/${s.slug}`}
                     className="block rounded-xl bg-white/5 border border-white/10 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
                   >
-                    <h3 className="text-white font-medium">{s.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-white font-medium">{s.name}</h3>
+                      {s.claimed_by && (
+                        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-1.5 py-0.5 shrink-0">
+                          <BadgeCheck className="w-3 h-3" /> Claimed
+                        </span>
+                      )}
+                    </div>
                     {(s.city || s.state) && (
                       <p className="text-ocean-400 text-sm mt-1 flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5" />

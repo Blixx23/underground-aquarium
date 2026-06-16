@@ -18,12 +18,13 @@ type StoreRow = {
   state: string | null;
   description: string | null;
   tags: string[] | null;
+  claimed_by: string | null;
 };
 
 export default async function StoresPage() {
   const { data } = await supabasePublic
     .from("fish_stores")
-    .select("slug, name, city, state, description, tags")
+    .select("slug, name, city, state, description, tags, claimed_by")
     .eq("status", "published")
     .order("city", { ascending: true })
     .order("name", { ascending: true });
