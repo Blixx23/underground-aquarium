@@ -13,6 +13,7 @@ import { supabasePublic } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import ClaimStore from "../ClaimStore";
 import EditStore from "../EditStore";
+import StoreReviews from "../StoreReviews";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,65 @@ export default async function StoreDetailPage({ params }: Params) {
   } = await supabase.auth.getUser();
   const isOwner = !!user && store.claimed_by === user.id;
 
+  // Reviews
+  const { data: reviewRows } = await supabasePublic
+    .from("store_reviews")
+    .select("id,user_id,rating,body,created_at")
+    .eq("store_id", store.id)
+    .order("created_at", { ascending: false });
+  const reviewList = (reviewRows ?? []) as {
+    id: string;
+    user_id: string;
+    rating: number;
+    body: string | null;
+    created_at: string;
+  }[];
+
+  const authorIds = new Set(reviewList.map((r) => r.user_id));
+  if (user) authorIds.add(user.id);
+  let nameById = new Map<string, string>();
+  if (authorIds.size > 0) {
+    const { data: profs } = await supabasePublic
+      .from("profiles")
+      .select("id,username,full_name")
+      .in("id", Array.from(authorIds));
+    nameById = new Map(
+      (
+        (profs as {
+          id: string;
+          username: string | null;
+          full_name: string | null;
+        }[]) ?? []
+      ).map((p) => [p.id, p.full_name || p.username || "Aquarist"])
+    );
+  }
+
+  const reviewIds = reviewList.map((r) => r.id);
+  let respByReview = new Map<string, string>();
+  if (reviewIds.length > 0) {
+    const { data: resps } = await supabasePublic
+      .from("review_responses")
+      .select("review_id,body")
+      .in("review_id", reviewIds);
+    respByReview = new Map(
+      ((resps as { review_id: string; body: string }[]) ?? []).map((r) => [
+        r.review_id,
+        r.body,
+      ])
+    );
+  }
+
+  const initialReviews = reviewList.map((r) => ({
+    id: r.id,
+    userId: r.user_id,
+    authorName: nameById.get(r.user_id) || "Aquarist",
+    rating: r.rating,
+    body: r.body,
+    createdAt: r.created_at,
+    response: respByReview.get(r.id) ?? null,
+  }));
+  const currentUserName = user ? nameById.get(user.id) ?? null : null;
+
   const place = [store.city, store.state].filter(Boolean).join(", ");
   const fullAddress = [store.address, place].filter(Boolean).join(", ");
   const directionsQuery = encodeURIComponent(
@@ -100,7 +160,7 @@ export default async function StoreDetailPage({ params }: Params) {
             <ArrowLeft className="w-4 h-4" /> All fish stores
           </Link>
         </div>
-        
+
         <EditStore
           store={{
             id: store.id,
@@ -189,6 +249,14 @@ export default async function StoreDetailPage({ params }: Params) {
         >
           <Navigation className="w-4 h-4" /> Get directions
         </Link>
+
+        <StoreReviews
+          storeId={store.id}
+          initialReviews={initialReviews}
+          currentUserId={user?.id ?? null}
+          currentUserName={currentUserName}
+          isOwner={isOwner}
+        />
 
         <ClaimStore
           storeId={store.id}
