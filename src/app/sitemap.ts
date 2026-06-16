@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/glossary",
     "/species",
     "/tank-builder",
+    "/stores",
     "/blog",
   ];
 
@@ -24,6 +25,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: species } = await supabasePublic
     .from("species")
     .select("slug");
+
+  const { data: stores } = await supabasePublic
+    .from("fish_stores")
+    .select("slug")
+    .eq("status", "published");
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
@@ -46,5 +52,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticEntries, ...termEntries, ...speciesEntries];
+  const storeEntries = (stores ?? []).map((s) => ({
+    url: `${baseUrl}/stores/${s.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticEntries, ...termEntries, ...speciesEntries, ...storeEntries];
 }

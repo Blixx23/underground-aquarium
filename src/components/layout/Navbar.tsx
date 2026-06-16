@@ -14,6 +14,7 @@ const nav = [
     children: [
       { label: "Tank Builder", href: "/tank-builder" },
       { label: "Fish Species", href: "/species" },
+      { label: "Fish Stores", href: "/stores" },
       { label: "Glossary", href: "/glossary" },
       { label: "Blog", href: "/blog" },
       { label: "Vendor Guide", href: "/vendor-guide" },
