@@ -10,12 +10,16 @@ import {
   Navigation,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import { createClient } from "@/lib/supabase/server";
+import ClaimStore from "../ClaimStore";
+import EditStore from "../EditStore";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }> };
 
 type StoreRow = {
+  id: string;
   slug: string;
   name: string;
   address: string | null;
@@ -26,13 +30,14 @@ type StoreRow = {
   hours: string | null;
   description: string | null;
   tags: string[] | null;
+  claimed_by: string | null;
 };
 
 async function getStore(slug: string) {
   const { data } = await supabasePublic
     .from("fish_stores")
     .select(
-      "slug, name, address, city, state, phone, website, hours, description, tags"
+      "id, slug, name, address, city, state, phone, website, hours, description, tags, claimed_by"
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -58,6 +63,12 @@ export default async function StoreDetailPage({ params }: Params) {
   const store = await getStore(slug);
   if (!store) notFound();
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isOwner = !!user && store.claimed_by === user.id;
+
   const place = [store.city, store.state].filter(Boolean).join(", ");
   const fullAddress = [store.address, place].filter(Boolean).join(", ");
   const directionsQuery = encodeURIComponent(
@@ -81,12 +92,29 @@ export default async function StoreDetailPage({ params }: Params) {
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
       <div className="max-w-2xl mx-auto">
-        <Link
-          href="/stores"
-          className="inline-flex items-center gap-2 text-ocean-300 hover:text-white transition-colors text-sm mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" /> All fish stores
-        </Link>
+        <div className="mb-6">
+          <Link
+            href="/stores"
+            className="inline-flex items-center gap-2 text-ocean-300 hover:text-white transition-colors text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" /> All fish stores
+          </Link>
+        </div>
+        
+        <EditStore
+          store={{
+            id: store.id,
+            address: store.address,
+            city: store.city,
+            state: store.state,
+            phone: store.phone,
+            website: store.website,
+            hours: store.hours,
+            description: store.description,
+            tags: store.tags,
+          }}
+          isOwner={isOwner}
+        />
 
         <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-2">
           Local Fish Store
@@ -161,6 +189,12 @@ export default async function StoreDetailPage({ params }: Params) {
         >
           <Navigation className="w-4 h-4" /> Get directions
         </Link>
+
+        <ClaimStore
+          storeId={store.id}
+          storeName={store.name}
+          claimed={!!store.claimed_by}
+        />
       </div>
     </main>
   );
