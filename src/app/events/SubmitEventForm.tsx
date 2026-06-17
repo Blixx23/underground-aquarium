@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import EventCoverUpload from "./EventCoverUpload";
 
 type Store = { id: string; name: string };
 
@@ -267,26 +268,23 @@ export default function SubmitEventForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Capacity (optional)</label>
-          <input
-            type="number"
-            value={capacity}
-            onChange={(e) => setCapacity(e.target.value)}
-            placeholder="Leave blank for unlimited"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Cover image URL (optional)</label>
-          <input
-            value={coverImage}
-            onChange={(e) => setCoverImage(e.target.value)}
-            placeholder="https://..."
-            className={inputClass}
-          />
-        </div>
+      <div>
+        <label className={labelClass}>Capacity (optional)</label>
+        <input
+          type="number"
+          value={capacity}
+          onChange={(e) => setCapacity(e.target.value)}
+          placeholder="Leave blank for unlimited"
+          className={inputClass}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Cover image (optional)</label>
+        <EventCoverUpload
+          value={coverImage || null}
+          onChange={(u) => setCoverImage(u ?? "")}
+        />
       </div>
 
       {error && <p className="text-sm text-red-300">{error}</p>}
