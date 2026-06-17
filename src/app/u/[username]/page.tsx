@@ -30,6 +30,14 @@ type CommunityTank = {
   updated_at: string;
 };
 
+type FavoriteStore = {
+  id: string;
+  slug: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+};
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { username } = await params;
   const { data: profile } = await supabasePublic
@@ -99,6 +107,32 @@ export default async function PublicProfilePage({ params }: Params) {
   const tanks = (tanksData ?? []) as CommunityTank[];
   const displayName = profile.full_name || profile.username || "Aquarist";
   const websiteUrl = profile.website ? normalizeUrl(profile.website) : null;
+
+  // Local stores this person has favorited (newest first, published only)
+  const { data: favRows } = await supabasePublic
+    .from("store_favorites")
+    .select("fish_store_id, created_at")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false });
+
+  const favStoreIds = ((favRows ?? []) as { fish_store_id: string }[]).map(
+    (r) => r.fish_store_id
+  );
+
+  let favoriteStores: FavoriteStore[] = [];
+  if (favStoreIds.length > 0) {
+    const { data: storeRows } = await supabasePublic
+      .from("fish_stores")
+      .select("id, slug, name, city, state")
+      .in("id", favStoreIds)
+      .eq("status", "published");
+    const byId = new Map(
+      ((storeRows ?? []) as FavoriteStore[]).map((s) => [s.id, s])
+    );
+    favoriteStores = favStoreIds
+      .map((id) => byId.get(id))
+      .filter((s): s is FavoriteStore => !!s);
+  }
 
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
@@ -218,6 +252,35 @@ export default async function PublicProfilePage({ params }: Params) {
               );
             })}
           </div>
+        )}
+
+        {favoriteStores.length > 0 && (
+          <>
+            <h2 className="font-display text-2xl text-emerald-400 mb-4 mt-12">
+              Favorited stores
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {favoriteStores.map((s) => {
+                const place = [s.city, s.state].filter(Boolean).join(", ");
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/stores/${s.slug}`}
+                    className="block rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+                  >
+                    <p className="text-white text-sm font-medium truncate">
+                      {s.name}
+                    </p>
+                    {place && (
+                      <p className="text-ocean-400 text-xs mt-0.5 inline-flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> {place}
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </main>
