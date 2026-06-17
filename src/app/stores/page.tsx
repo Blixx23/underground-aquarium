@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Local Fish Stores",
   description:
-    "Find local aquarium and fish stores across California. Search by name, city, or specialty, see what each shop carries, and get directions.",
+    "Find local aquarium and fish stores near you. Search by name, city, or specialty, see what each shop carries, and get directions.",
 };
 
 type StoreRow = {
@@ -88,7 +88,7 @@ export default async function StoresPage() {
             Find a fish store
           </h1>
           <p className="text-ocean-300">
-            Real aquarium shops worth visiting across California. Search by name,
+            Real aquarium shops worth visiting, wherever you are. Search by name,
             city, or what they specialize in.
           </p>
         </div>
