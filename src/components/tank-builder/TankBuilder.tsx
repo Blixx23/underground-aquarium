@@ -72,6 +72,42 @@ const WATER_FIELDS: {
   { key: "kh", label: "KH", unit: "dKH", placeholder: "e.g. 5", step: "1" },
 ];
 
+// Format a saved reading's timestamp, e.g. "Jun 16, 2026 · 3:40 PM".
+function fmtReadingDate(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const time = d.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${date} · ${time}`;
+}
+
+// One-line summary of whatever values a saved reading contains.
+function readingSummary(r: {
+  temp_f: number | null;
+  ph: number | null;
+  ammonia_ppm: number | null;
+  nitrite_ppm: number | null;
+  nitrate_ppm: number | null;
+  gh: number | null;
+  kh: number | null;
+}): string {
+  const parts: string[] = [];
+  if (r.temp_f != null) parts.push(`Temp ${r.temp_f}°F`);
+  if (r.ph != null) parts.push(`pH ${r.ph}`);
+  if (r.ammonia_ppm != null) parts.push(`Ammonia ${r.ammonia_ppm} ppm`);
+  if (r.nitrite_ppm != null) parts.push(`Nitrite ${r.nitrite_ppm} ppm`);
+  if (r.nitrate_ppm != null) parts.push(`Nitrate ${r.nitrate_ppm} ppm`);
+  if (r.gh != null) parts.push(`GH ${r.gh} dGH`);
+  if (r.kh != null) parts.push(`KH ${r.kh} dKH`);
+  return parts.length ? parts.join(" · ") : "No values recorded";
+}
+
 // Resize + compress an image to a small JPEG before upload.
 // Throws if the file can't be decoded (caller falls back to the original).
 async function compressImage(file: File): Promise<Blob> {
@@ -120,6 +156,19 @@ type SavedTank = {
   images: string[];
 };
 
+type WaterLog = {
+  id: string;
+  measured_at: string;
+  temp_f: number | null;
+  ph: number | null;
+  ammonia_ppm: number | null;
+  nitrite_ppm: number | null;
+  nitrate_ppm: number | null;
+  gh: number | null;
+  kh: number | null;
+  note: string | null;
+};
+
 export default function TankBuilder({ species }: { species: Species[] }) {
   const [supabase] = useState(() => createClient());
 
@@ -131,6 +180,11 @@ export default function TankBuilder({ species }: { species: Species[] }) {
   const [view, setView] = useState<"compatibility" | "water">("compatibility");
   // Water reading inputs (kept as strings so boxes can be left blank).
   const [water, setWater] = useState<Record<WaterFieldKey, string>>(EMPTY_WATER);
+  // Logging a reading
+  const [note, setNote] = useState("");
+  const [readings, setReadings] = useState<WaterLog[]>([]);
+  const [readingMsg, setReadingMsg] = useState<string | null>(null);
+  const [readingBusy, setReadingBusy] = useState(false);
 
   // Saved-tanks state
   const [user, setUser] = useState<{ id: string } | null>(null);
@@ -166,6 +220,25 @@ export default function TankBuilder({ species }: { species: Species[] }) {
     }
   }, [supabase]);
 
+  const refreshReadings = useCallback(
+    async (tankId: string) => {
+      try {
+        const { data } = await supabase
+          .from("water_logs")
+          .select(
+            "id,measured_at,temp_f,ph,ammonia_ppm,nitrite_ppm,nitrate_ppm,gh,kh,note"
+          )
+          .eq("tank_id", tankId)
+          .order("measured_at", { ascending: false })
+          .limit(20);
+        setReadings((data as WaterLog[]) ?? []);
+      } catch {
+        setReadings([]);
+      }
+    },
+    [supabase]
+  );
+
   useEffect(() => {
     let active = true;
     supabase.auth.getUser().then(({ data }) => {
@@ -179,6 +252,16 @@ export default function TankBuilder({ species }: { species: Species[] }) {
       active = false;
     };
   }, [supabase, refreshTanks]);
+
+  // Load (or clear) the reading history whenever the active tank changes.
+  useEffect(() => {
+    if (currentTankId) {
+      refreshReadings(currentTankId);
+    } else {
+      setReadings([]);
+    }
+    setReadingMsg(null);
+  }, [currentTankId, refreshReadings]);
 
   const loadTank = useCallback(
     (t: SavedTank) => {
@@ -407,6 +490,52 @@ export default function TankBuilder({ species }: { species: Species[] }) {
     }
   }
 
+  async function saveReading() {
+    if (!user || !currentTankId || readingBusy) return;
+    if (waterResult.status === "empty") {
+      setReadingMsg("Enter at least one value first.");
+      return;
+    }
+    setReadingBusy(true);
+    setReadingMsg(null);
+    try {
+      const { error } = await supabase.from("water_logs").insert({
+        tank_id: currentTankId,
+        user_id: user.id,
+        measured_at: new Date().toISOString(),
+        temp_f: reading.temp_f,
+        ph: reading.ph,
+        ammonia_ppm: reading.ammonia_ppm,
+        nitrite_ppm: reading.nitrite_ppm,
+        nitrate_ppm: reading.nitrate_ppm,
+        gh: reading.gh,
+        kh: reading.kh,
+        note: note.trim() || null,
+      });
+      if (error) throw error;
+      setReadingMsg("Reading saved.");
+      setNote("");
+      await refreshReadings(currentTankId);
+    } catch {
+      setReadingMsg("Couldn't save the reading — please try again.");
+    } finally {
+      setReadingBusy(false);
+    }
+  }
+
+  async function deleteReading(id: string) {
+    if (readingBusy) return;
+    setReadingBusy(true);
+    try {
+      await supabase.from("water_logs").delete().eq("id", id);
+      if (currentTankId) await refreshReadings(currentTankId);
+    } catch {
+      // ignore
+    } finally {
+      setReadingBusy(false);
+    }
+  }
+
   function newBuild() {
     setCurrentTankId(null);
     setTankName("");
@@ -418,6 +547,7 @@ export default function TankBuilder({ species }: { species: Species[] }) {
     setPhotoMsg(null);
     setShowUpgrade(false);
     setWater(EMPTY_WATER);
+    setNote("");
   }
 
   const conflicts = result.issues.filter((i) => i.level === "conflict");
@@ -1066,6 +1196,94 @@ export default function TankBuilder({ species }: { species: Species[] }) {
                 <p className="text-ocean-200 text-sm">
                   Nothing to flag from what you&apos;ve entered.
                 </p>
+              </div>
+            )}
+
+            {/* Log this reading */}
+            {user ? (
+              currentTankId ? (
+                <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+                  <h2 className="text-sm font-medium uppercase tracking-wide text-ocean-400 mb-3">
+                    Log this reading
+                  </h2>
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Optional note (e.g. after a 30% water change)"
+                    className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-ocean-400 focus:outline-none focus:border-emerald-500/40 mb-3"
+                  />
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={saveReading}
+                      disabled={readingBusy || waterResult.status === "empty"}
+                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-4 py-2.5 text-sm font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save reading
+                    </button>
+                    {readingMsg && (
+                      <span className="text-xs text-ocean-400">{readingMsg}</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-ocean-500 mt-2">
+                    Saved to “{tankName.trim() || "My Tank"}”.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-ocean-300">
+                  Save your tank above first, then you can log readings to it and
+                  build up a history over time.
+                </div>
+              )
+            ) : (
+              <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-ocean-300">
+                <Link
+                  href="/login"
+                  className="text-emerald-400 hover:text-emerald-300 font-medium"
+                >
+                  Sign in
+                </Link>{" "}
+                to save readings and track your water over time.
+              </div>
+            )}
+
+            {/* Recent readings */}
+            {user && currentTankId && readings.length > 0 && (
+              <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+                <h2 className="text-sm font-medium uppercase tracking-wide text-ocean-400 mb-3">
+                  Recent readings
+                </h2>
+                <div className="space-y-2">
+                  {readings.map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-start gap-3 rounded-lg bg-white/5 border border-white/10 px-3 py-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-ocean-400 text-xs">
+                          {fmtReadingDate(r.measured_at)}
+                        </p>
+                        <p className="text-white text-sm mt-0.5 break-words">
+                          {readingSummary(r)}
+                        </p>
+                        {r.note && (
+                          <p className="text-ocean-400 text-xs mt-1 italic break-words">
+                            {r.note}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => deleteReading(r.id)}
+                        aria-label="Delete reading"
+                        disabled={readingBusy}
+                        className="w-8 h-8 rounded-lg text-ocean-400 hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center transition-colors disabled:opacity-50 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
