@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     const { data: store } = await supabase
       .from("stores")
-      .select("id, owner_id, stripe_account_id")
+      .select("id, owner_id, stripe_account_id, payouts_enabled")
       .eq("id", product.store_id)
       .maybeSingle();
     if (!store) {
@@ -41,9 +41,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "You can't buy your own listing." }, { status: 400 });
     }
 
-    if (!store.stripe_account_id) {
+    // Seller must have a connected account AND have finished payout setup,
+    // so we know the money can actually reach them at release time.
+    if (!store.stripe_account_id || !store.payouts_enabled) {
       return NextResponse.json(
-        { error: "This seller hasn't set up payouts yet, so they can't accept payments." },
+        { error: "This seller hasn't finished setting up payouts yet, so they can't accept payments." },
         { status: 400 }
       );
     }

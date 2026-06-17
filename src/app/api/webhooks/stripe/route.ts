@@ -45,6 +45,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
+  // A connected (seller) account changed — keep our payout-readiness flag in
+  // sync. Fires when a seller finishes onboarding (enabled = true) or if Stripe
+  // later restricts them (enabled = false).
+  if (event.type === "account.updated") {
+    const account = event.data.object as Stripe.Account;
+    const enabled = Boolean(
+      account.details_submitted && account.payouts_enabled
+    );
+    const { error } = await supabaseAdmin
+      .from("stores")
+      .update({ payouts_enabled: enabled })
+      .eq("stripe_account_id", account.id);
+    if (error) {
+      console.error("Failed to update payouts_enabled:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    console.log(`Account ${account.id} payouts_enabled -> ${enabled}`);
+    return NextResponse.json({ received: true });
+  }
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.order_id;
