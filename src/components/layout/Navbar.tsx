@@ -13,6 +13,7 @@ const nav = [
     label: "Resources",
     children: [
       { label: "Tank Builder", href: "/tank-builder" },
+      { label: "Water Check", href: "/water-check" },
       { label: "Fish Species", href: "/species" },
       { label: "Fish Stores", href: "/stores" },
       { label: "Glossary", href: "/glossary" },
