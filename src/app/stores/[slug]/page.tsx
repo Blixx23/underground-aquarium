@@ -15,6 +15,7 @@ import ClaimStore from "../ClaimStore";
 import EditStore from "../EditStore";
 import StoreReviews from "../StoreReviews";
 import StorePosts from "../StorePosts";
+import StoreFavoriteButton from "@/components/StoreFavoriteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,23 @@ export default async function StoreDetailPage({ params }: Params) {
     data: { user },
   } = await supabase.auth.getUser();
   const isOwner = !!user && store.claimed_by === user.id;
+
+  // Favorites: total count + whether the current user has favorited this store
+  const { count: favoriteCount } = await supabasePublic
+    .from("store_favorites")
+    .select("*", { count: "exact", head: true })
+    .eq("fish_store_id", store.id);
+
+  let isFavorited = false;
+  if (user) {
+    const { data: favRow } = await supabase
+      .from("store_favorites")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("fish_store_id", store.id)
+      .maybeSingle();
+    isFavorited = !!favRow;
+  }
 
   // Reviews
   const { data: reviewRows } = await supabasePublic
@@ -262,14 +280,21 @@ export default async function StoreDetailPage({ params }: Params) {
           )}
         </div>
 
-        <Link
-          href={directionsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-5 py-3 text-sm font-medium hover:bg-emerald-500/25 transition-colors"
-        >
-          <Navigation className="w-4 h-4" /> Get directions
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-5 py-3 text-sm font-medium hover:bg-emerald-500/25 transition-colors"
+          >
+            <Navigation className="w-4 h-4" /> Get directions
+          </Link>
+          <StoreFavoriteButton
+            storeId={store.id}
+            initialFavorited={isFavorited}
+            initialCount={favoriteCount ?? 0}
+          />
+        </div>
 
         <StorePosts
           storeId={store.id}
