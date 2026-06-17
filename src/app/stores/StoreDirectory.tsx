@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, X, MapPin, Store, BadgeCheck } from "lucide-react";
+import {
+  Search,
+  X,
+  MapPin,
+  Store,
+  BadgeCheck,
+  Navigation,
+  LocateFixed,
+} from "lucide-react";
 
 type StoreRow = {
   slug: string;
@@ -12,17 +20,61 @@ type StoreRow = {
   description: string | null;
   tags: string[] | null;
   claimed_by: string | null;
+  lat: number | null;
+  lng: number | null;
 };
+
+function milesBetween(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 3958.8;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
   const [query, setQuery] = useState("");
   const [activeType, setActiveType] = useState<string | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
 
   const allTypes = useMemo(() => {
     const set = new Set<string>();
     for (const s of stores) for (const t of s.tags ?? []) set.add(t);
     return [...set].sort();
   }, [stores]);
+
+  function findMe() {
+    if (locating) return;
+    if (!("geolocation" in navigator)) {
+      setLocError("Your browser doesn't support location.");
+      return;
+    }
+    setLocating(true);
+    setLocError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+      },
+      () => {
+        setLocError("Couldn't get your location. Check browser permissions.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -36,6 +88,23 @@ export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
     });
   }, [stores, query, activeType]);
 
+  const withDistance = useMemo(() => {
+    if (!coords) return null;
+    return filtered
+      .map((s) => ({
+        store: s,
+        miles:
+          s.lat != null && s.lng != null
+            ? milesBetween(coords.lat, coords.lng, s.lat, s.lng)
+            : null,
+      }))
+      .sort((a, b) => {
+        if (a.miles == null) return 1;
+        if (b.miles == null) return -1;
+        return a.miles - b.miles;
+      });
+  }, [filtered, coords]);
+
   const byCity = useMemo(() => {
     const map = new Map<string, StoreRow[]>();
     for (const s of filtered) {
@@ -47,6 +116,49 @@ export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
   }, [filtered]);
 
   const cities = [...byCity.keys()].sort();
+
+  function card(s: StoreRow, miles: number | null) {
+    return (
+      <Link
+        key={s.slug}
+        href={`/stores/${s.slug}`}
+        className="block rounded-xl bg-white/5 border border-white/10 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <h3 className="text-white font-medium">{s.name}</h3>
+          {s.claimed_by && (
+            <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-1.5 py-0.5 shrink-0">
+              <BadgeCheck className="w-3 h-3" /> Claimed
+            </span>
+          )}
+        </div>
+        {(s.city || s.state) && (
+          <p className="text-ocean-400 text-sm mt-1 flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5" />
+            {[s.city, s.state].filter(Boolean).join(", ")}
+          </p>
+        )}
+        {miles != null && (
+          <p className="text-emerald-300 text-xs mt-1 flex items-center gap-1">
+            <Navigation className="w-3 h-3" />
+            {miles < 0.1 ? "Less than 0.1" : miles.toFixed(1)} mi away
+          </p>
+        )}
+        {s.tags && s.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {s.tags.slice(0, 4).map((t) => (
+              <span
+                key={t}
+                className="text-[11px] uppercase tracking-wide text-ocean-300 bg-white/5 border border-white/10 rounded px-1.5 py-0.5"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+      </Link>
+    );
+  }
 
   return (
     <div>
@@ -70,6 +182,28 @@ export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
             </button>
           )}
         </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {coords ? (
+            <button
+              onClick={() => setCoords(null)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-300 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500/25 transition-colors"
+            >
+              <LocateFixed className="w-3.5 h-3.5" /> Sorted by distance · clear
+            </button>
+          ) : (
+            <button
+              onClick={findMe}
+              disabled={locating}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 text-ocean-300 px-3 py-1.5 text-xs font-medium hover:text-white hover:border-white/20 transition-colors disabled:opacity-50"
+            >
+              <LocateFixed className="w-3.5 h-3.5" />
+              {locating ? "Locating…" : "Find shops near me"}
+            </button>
+          )}
+        </div>
+
+        {locError && <p className="text-xs text-red-300">{locError}</p>}
 
         {allTypes.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -104,57 +238,33 @@ export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
         <p className="text-ocean-400 text-sm">
           {filtered.length} {filtered.length === 1 ? "store" : "stores"}
           {query || activeType ? " found" : ""}
+          {coords ? " · nearest first" : ""}
         </p>
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center">
           <Store className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
-          <p className="text-white font-medium mb-1">No stores match your search</p>
+          <p className="text-white font-medium mb-1">
+            No stores match your search
+          </p>
           <p className="text-ocean-400 text-sm">
             Try a different name, city, or type.
           </p>
+        </div>
+      ) : withDistance ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {withDistance.map(({ store, miles }) => card(store, miles))}
         </div>
       ) : (
         <div className="space-y-10">
           {cities.map((city) => (
             <section key={city}>
-              <h2 className="font-display text-2xl text-emerald-400 mb-4">{city}</h2>
+              <h2 className="font-display text-2xl text-emerald-400 mb-4">
+                {city}
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {byCity.get(city)!.map((s) => (
-                  <Link
-                    key={s.slug}
-                    href={`/stores/${s.slug}`}
-                    className="block rounded-xl bg-white/5 border border-white/10 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-white font-medium">{s.name}</h3>
-                      {s.claimed_by && (
-                        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-1.5 py-0.5 shrink-0">
-                          <BadgeCheck className="w-3 h-3" /> Claimed
-                        </span>
-                      )}
-                    </div>
-                    {(s.city || s.state) && (
-                      <p className="text-ocean-400 text-sm mt-1 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5" />
-                        {[s.city, s.state].filter(Boolean).join(", ")}
-                      </p>
-                    )}
-                    {s.tags && s.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {s.tags.slice(0, 4).map((t) => (
-                          <span
-                            key={t}
-                            className="text-[11px] uppercase tracking-wide text-ocean-300 bg-white/5 border border-white/10 rounded px-1.5 py-0.5"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </Link>
-                ))}
+                {byCity.get(city)!.map((s) => card(s, null))}
               </div>
             </section>
           ))}

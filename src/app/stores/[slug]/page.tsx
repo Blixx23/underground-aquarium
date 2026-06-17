@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import ClaimStore from "../ClaimStore";
 import EditStore from "../EditStore";
 import StoreReviews from "../StoreReviews";
+import StorePosts from "../StorePosts";
 
 export const dynamic = "force-dynamic";
 
@@ -128,6 +129,26 @@ export default async function StoreDetailPage({ params }: Params) {
     response: respByReview.get(r.id) ?? null,
   }));
   const currentUserName = user ? nameById.get(user.id) ?? null : null;
+
+  // Shop updates
+  const { data: postRows } = await supabasePublic
+    .from("store_posts")
+    .select("id,title,body,created_at")
+    .eq("store_id", store.id)
+    .order("created_at", { ascending: false });
+  const initialPosts = (
+    (postRows as {
+      id: string;
+      title: string | null;
+      body: string;
+      created_at: string;
+    }[]) ?? []
+  ).map((p) => ({
+    id: p.id,
+    title: p.title,
+    body: p.body,
+    createdAt: p.created_at,
+  }));
 
   const place = [store.city, store.state].filter(Boolean).join(", ");
   const fullAddress = [store.address, place].filter(Boolean).join(", ");
@@ -249,6 +270,13 @@ export default async function StoreDetailPage({ params }: Params) {
         >
           <Navigation className="w-4 h-4" /> Get directions
         </Link>
+
+        <StorePosts
+          storeId={store.id}
+          initialPosts={initialPosts}
+          isOwner={isOwner}
+          currentUserId={user?.id ?? null}
+        />
 
         <StoreReviews
           storeId={store.id}
