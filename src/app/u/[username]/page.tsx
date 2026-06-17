@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Fish, Waves, MapPin, ExternalLink, User } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import { createClient } from "@/lib/supabase/server";
+import FollowButton from "@/components/FollowButton";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +60,34 @@ export default async function PublicProfilePage({ params }: Params) {
   if (!profileData) notFound();
   const profile = profileData as Profile;
 
+  // Who's viewing, follower/following counts, and whether they already follow
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isOwnProfile = !!user && user.id === profile.id;
+
+  const { count: followerCount } = await supabasePublic
+    .from("follows")
+    .select("*", { count: "exact", head: true })
+    .eq("following_id", profile.id);
+
+  const { count: followingCount } = await supabasePublic
+    .from("follows")
+    .select("*", { count: "exact", head: true })
+    .eq("follower_id", profile.id);
+
+  let isFollowing = false;
+  if (user && !isOwnProfile) {
+    const { data: followRow } = await supabase
+      .from("follows")
+      .select("follower_id")
+      .eq("follower_id", user.id)
+      .eq("following_id", profile.id)
+      .maybeSingle();
+    isFollowing = !!followRow;
+  }
+
   const { data: tanksData } = await supabasePublic
     .from("tanks")
     .select("id,name,gallons,items,images,updated_at")
@@ -85,6 +115,17 @@ export default async function PublicProfilePage({ params }: Params) {
             {profile.username && (
               <p className="text-ocean-400 text-sm">@{profile.username}</p>
             )}
+            <p className="text-ocean-400 text-sm mt-1">
+              <span className="text-ocean-200 font-medium">
+                {followerCount ?? 0}
+              </span>{" "}
+              {followerCount === 1 ? "follower" : "followers"}
+              {" · "}
+              <span className="text-ocean-200 font-medium">
+                {followingCount ?? 0}
+              </span>{" "}
+              following
+            </p>
             {profile.bio && (
               <p className="text-ocean-300 mt-3 max-w-2xl">{profile.bio}</p>
             )}
@@ -105,6 +146,14 @@ export default async function PublicProfilePage({ params }: Params) {
                 </Link>
               )}
             </div>
+            {!isOwnProfile && (
+              <div className="mt-4">
+                <FollowButton
+                  targetUserId={profile.id}
+                  initialFollowing={isFollowing}
+                />
+              </div>
+            )}
           </div>
         </div>
 
