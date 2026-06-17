@@ -115,16 +115,26 @@ export default async function PublicProfilePage({ params }: Params) {
             {profile.username && (
               <p className="text-ocean-400 text-sm">@{profile.username}</p>
             )}
-            <p className="text-ocean-400 text-sm mt-1">
-              <span className="text-ocean-200 font-medium">
-                {followerCount ?? 0}
-              </span>{" "}
-              {followerCount === 1 ? "follower" : "followers"}
-              {" · "}
-              <span className="text-ocean-200 font-medium">
-                {followingCount ?? 0}
-              </span>{" "}
-              following
+            <p className="text-ocean-400 text-sm mt-1 flex flex-wrap items-center gap-x-1.5">
+              <Link
+                href={`/u/${username}/followers`}
+                className="hover:text-white transition-colors"
+              >
+                <span className="text-ocean-200 font-medium">
+                  {followerCount ?? 0}
+                </span>{" "}
+                {followerCount === 1 ? "follower" : "followers"}
+              </Link>
+              <span>·</span>
+              <Link
+                href={`/u/${username}/following`}
+                className="hover:text-white transition-colors"
+              >
+                <span className="text-ocean-200 font-medium">
+                  {followingCount ?? 0}
+                </span>{" "}
+                following
+              </Link>
             </p>
             {profile.bio && (
               <p className="text-ocean-300 mt-3 max-w-2xl">{profile.bio}</p>
