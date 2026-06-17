@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Package, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PLATFORM_FEE_LABEL } from "@/lib/config";
+import MarkShippedButton from "./MarkShippedButton";
 
 type ShippingAddress = {
   name?: string | null;
@@ -23,13 +24,23 @@ type Sale = {
   platform_fee: number;
   status: string;
   created_at: string;
+  shipped_at: string | null;
+  released_at: string | null;
   shipping_address: ShippingAddress | null;
 };
 
 const statusStyles: Record<string, string> = {
-  paid: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  released: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
   shipped: "bg-ocean-500/15 text-ocean-200 border-ocean-500/30",
+  paid: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  pending: "bg-ocean-700/30 text-ocean-300 border-ocean-700/40",
+};
+
+const statusLabels: Record<string, string> = {
+  released: "Paid out",
+  shipped: "Shipped",
+  paid: "Ready to ship",
+  pending: "Pending",
 };
 
 export default async function SalesPage() {
@@ -53,18 +64,22 @@ export default async function SalesPage() {
     const { data } = await supabase
       .from("orders")
       .select(
-        "id, product_name, amount_total, platform_fee, status, created_at, shipping_address"
+        "id, product_name, amount_total, platform_fee, status, created_at, shipped_at, released_at, shipping_address"
       )
       .in("store_id", storeIds)
       .order("created_at", { ascending: false });
     sales = (data ?? []) as Sale[];
   }
 
-  const paid = sales.filter((s) => s.status === "paid");
-  const totalEarned = paid.reduce(
-    (sum, s) => sum + (s.amount_total - s.platform_fee),
-    0
-  );
+  const sellerCut = (s: Sale) => s.amount_total - s.platform_fee;
+
+  const releasedTotal = sales
+    .filter((s) => s.status === "released")
+    .reduce((sum, s) => sum + sellerCut(s), 0);
+
+  const heldTotal = sales
+    .filter((s) => s.status === "paid" || s.status === "shipped")
+    .reduce((sum, s) => sum + sellerCut(s), 0);
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
@@ -87,14 +102,21 @@ export default async function SalesPage() {
           </div>
         ) : (
           <>
-            <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
-              <p className="text-sm text-ocean-400">
-                {paid.length} paid {paid.length === 1 ? "sale" : "sales"}
-              </p>
-              <p className="text-2xl font-display text-emerald-300">
-                ${(totalEarned / 100).toFixed(2)}{" "}
-                <span className="text-sm font-sans text-ocean-400">earned</span>
-              </p>
+            <div className="mb-6 grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
+                <p className="text-2xl font-display text-emerald-300">
+                  ${(releasedTotal / 100).toFixed(2)}
+                </p>
+                <p className="text-sm text-ocean-400">paid out to you</p>
+              </div>
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
+                <p className="text-2xl font-display text-amber-300">
+                  ${(heldTotal / 100).toFixed(2)}
+                </p>
+                <p className="text-sm text-ocean-400">
+                  held — releases when buyers confirm or the window passes
+                </p>
+              </div>
             </div>
 
             <ul className="space-y-4">
@@ -113,19 +135,33 @@ export default async function SalesPage() {
                         {(sale.amount_total / 100).toFixed(2)}
                       </p>
                       <p className="text-xs text-emerald-300/80 mt-0.5">
-                        You earn $
-                        {((sale.amount_total - sale.platform_fee) / 100).toFixed(2)}{" "}
-                        after {PLATFORM_FEE_LABEL} fee
+                        You earn ${(sellerCut(sale) / 100).toFixed(2)} after{" "}
+                        {PLATFORM_FEE_LABEL} fee
                       </p>
                     </div>
-                    <span
-                      className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border capitalize ${
-                        statusStyles[sale.status] ??
-                        "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
-                      }`}
-                    >
-                      {sale.status}
-                    </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span
+                        className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border ${
+                          statusStyles[sale.status] ??
+                          "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
+                        }`}
+                      >
+                        {statusLabels[sale.status] ?? sale.status}
+                      </span>
+                      {sale.status === "paid" && (
+                        <MarkShippedButton orderId={sale.id} />
+                      )}
+                      {sale.status === "shipped" && sale.shipped_at && (
+                        <span className="text-[11px] text-ocean-400">
+                          Shipped {new Date(sale.shipped_at).toLocaleDateString()}
+                        </span>
+                      )}
+                      {sale.status === "released" && sale.released_at && (
+                        <span className="text-[11px] text-emerald-300/80">
+                          Paid out {new Date(sale.released_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {sale.shipping_address?.address && (

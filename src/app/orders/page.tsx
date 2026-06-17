@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Package, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import ConfirmReceivedButton from "./ConfirmButton";
 
 type Order = {
   id: string;
@@ -12,9 +13,17 @@ type Order = {
 };
 
 const statusStyles: Record<string, string> = {
-  paid: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  released: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  paid: "bg-ocean-500/15 text-ocean-200 border-ocean-500/30",
   shipped: "bg-ocean-500/15 text-ocean-200 border-ocean-500/30",
+  pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+};
+
+const statusLabels: Record<string, string> = {
+  released: "Completed",
+  paid: "Paid",
+  shipped: "Shipped",
+  pending: "Pending",
 };
 
 export default async function OrdersPage() {
@@ -55,28 +64,37 @@ export default async function OrdersPage() {
           </div>
         ) : (
           <ul className="space-y-4">
-            {orders.map((order) => (
-              <li
-                key={order.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4"
-              >
-                <div>
-                  <p className="text-white font-medium">{order.product_name ?? "Item"}</p>
-                  <p className="text-sm text-ocean-400">
-                    {new Date(order.created_at).toLocaleDateString()} · $
-                    {(order.amount_total / 100).toFixed(2)}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border capitalize ${
-                    statusStyles[order.status] ??
-                    "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
-                  }`}
+            {orders.map((order) => {
+              const canConfirm =
+                order.status === "paid" || order.status === "shipped";
+              return (
+                <li
+                  key={order.id}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4"
                 >
-                  {order.status}
-                </span>
-              </li>
-            ))}
+                  <div>
+                    <p className="text-white font-medium">
+                      {order.product_name ?? "Item"}
+                    </p>
+                    <p className="text-sm text-ocean-400">
+                      {new Date(order.created_at).toLocaleDateString()} · $
+                      {(order.amount_total / 100).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border ${
+                        statusStyles[order.status] ??
+                        "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
+                      }`}
+                    >
+                      {statusLabels[order.status] ?? order.status}
+                    </span>
+                    {canConfirm && <ConfirmReceivedButton orderId={order.id} />}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

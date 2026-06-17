@@ -63,6 +63,7 @@ export async function POST(request: Request) {
         store_id: store.id,
         amount_total: amountTotal,
         platform_fee: platformFee,
+        seller_stripe_account_id: store.stripe_account_id,
       })
       .select("id")
       .single();
@@ -85,8 +86,11 @@ export async function POST(request: Request) {
         },
       ],
       payment_intent_data: {
-        application_fee_amount: platformFee,
-        transfer_data: { destination: store.stripe_account_id },
+        // Hold-and-release: this charge lands in YOUR platform balance.
+        // No transfer happens now — the seller is paid later, after the
+        // buyer confirms receipt or the auto-release window passes.
+        // transfer_group ties this charge to its future payout.
+        transfer_group: order.id,
       },
       metadata: { order_id: order.id },
       success_url: `${origin}/checkout/success?order=${order.id}`,
