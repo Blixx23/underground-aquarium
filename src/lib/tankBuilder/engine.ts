@@ -60,6 +60,29 @@ const MESSY_GROUPS = new Set([
 ]);
 const LIGHT_GROUPS = new Set(["Shrimp", "Snails"]);
 
+// ---------------------------------------------------------------------------
+// TUNING KNOBS — turn these to make the whole tool warmer or stricter.
+//
+// Tank size vs. a species' recommended minimum (gallons / min_tank_gal):
+//   ratio >= 1.0                     -> no flag at all
+//   TANK_TIP_RATIO .. 1.0            -> gentle "note" (NOT counted as a problem)
+//   TANK_TIGHT_RATIO .. TANK_TIP     -> "caution" (amber, workable but tight)
+//   below TANK_TIGHT_RATIO           -> "conflict" (red, genuinely too small)
+//
+// Higher numbers = stricter. Lower = looser. Examples at defaults below:
+//   Bala Shark rec 150g in 100g  -> ratio 0.67 -> NOTE (friendly nudge)
+//   A 75g fish in a 40g          -> ratio 0.53 -> caution
+//   A 75g fish in a 20g          -> ratio 0.27 -> conflict
+const TANK_TIP_RATIO = 0.5;
+const TANK_TIGHT_RATIO = 0.4;
+
+// Stocking: % of a deliberately conservative ceiling before we flag it.
+//   above STOCK_OVER_PCT  -> "conflict" (overstocked)
+//   STOCK_NEAR_PCT..OVER  -> "caution" (near/heavily stocked)
+const STOCK_OVER_PCT = 130;
+const STOCK_NEAR_PCT = 90;
+// ---------------------------------------------------------------------------
+
 function wasteFactor(s: Species): number {
   const g = s.group_name ?? "";
   if (LIGHT_GROUPS.has(g)) return 0.3;
@@ -79,10 +102,10 @@ export function computeStocking(gallons: number, stock: StockItem[]): Stocking {
 
   let level: Stocking["level"] = "ok";
   let label = "Comfortably stocked";
-  if (pct > 100) {
+  if (pct > STOCK_OVER_PCT) {
     level = "over";
     label = "Overstocked";
-  } else if (pct >= 85) {
+  } else if (pct >= STOCK_NEAR_PCT) {
     level = "near";
     label = "Near capacity";
   }
@@ -102,7 +125,7 @@ export function computeEquipment(
   const heaterWattsLow = round5(gallons * 3);
   const heaterWattsHigh = round5(gallons * 5);
 
-  const filterHighX = stockingPct >= 85 || messy ? 8 : 6;
+  const filterHighX = stockingPct >= STOCK_NEAR_PCT || messy ? 8 : 6;
   const filterGphLow = Math.round(gallons * 4);
   const filterGphHigh = Math.round(gallons * filterHighX);
 
@@ -118,18 +141,34 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   const issues: Issue[] = [];
   const species = stock.map((s) => s.species);
 
-  // Tank too small for a given fish
+  // Tank size vs. the species' recommended minimum — graduated, not all-or-nothing.
   for (const { species: s } of stock) {
-    if (s.min_tank_gal != null && gallons > 0 && s.min_tank_gal > gallons) {
+    if (s.min_tank_gal == null || gallons <= 0) continue;
+    if (gallons >= s.min_tank_gal) continue; // at or above the rec: all good
+
+    const ratio = gallons / s.min_tank_gal;
+    if (ratio >= TANK_TIP_RATIO) {
+      issues.push({
+        level: "note",
+        title: `${s.common_name} would enjoy more room`,
+        detail: `${s.min_tank_gal}+ gallons is the usual recommendation for ${s.common_name}. Your ${gallons} can work — especially with strong filtration and regular maintenance — but they'll appreciate an upgrade as they grow.`,
+      });
+    } else if (ratio >= TANK_TIGHT_RATIO) {
+      issues.push({
+        level: "caution",
+        title: `${s.common_name} is tight in this tank`,
+        detail: `${s.common_name} is usually kept in ${s.min_tank_gal}+ gallons; ${gallons} is on the small side. Doable short-term or for a single specimen, but a bigger home should be the plan.`,
+      });
+    } else {
       issues.push({
         level: "conflict",
-        title: `${s.common_name} needs a bigger tank`,
-        detail: `It needs at least ${s.min_tank_gal} gallons to be kept well; your tank is ${gallons}.`,
+        title: `${s.common_name} needs a much bigger tank`,
+        detail: `${s.common_name} really needs around ${s.min_tank_gal} gallons; at ${gallons} it would be stunted or chronically stressed. Worth holding off until you can size up.`,
       });
     }
   }
 
-  // Mixed water types (freshwater vs brackish/marine)
+  // Mixed water types (freshwater vs brackish/marine) — a real dealbreaker
   const waterTypes = new Set(
     species.map((s) => s.water_type).filter((w): w is string => !!w)
   );
@@ -143,7 +182,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
     });
   }
 
-  // Temperature overlap
+  // Temperature overlap — also a real dealbreaker
   const withTemp = species.filter(
     (s) => s.temp_min_f != null && s.temp_max_f != null
   );
@@ -256,12 +295,12 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
     issues.push({
       level: "conflict",
       title: "Overstocked",
-      detail: `You're at about ${stocking.pct}% of a conservative stocking ceiling. Size up the tank or trim the list.`,
+      detail: `You're well past a conservative stocking ceiling (about ${stocking.pct}%). Size up the tank or trim the list.`,
     });
   } else if (stocking.level === "near") {
     issues.push({
       level: "caution",
-      title: "Near capacity",
+      title: "Heavily stocked",
       detail: `About ${stocking.pct}% of a conservative ceiling — workable with strong filtration and steady water changes, but there's little room to add more.`,
     });
   }
