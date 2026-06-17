@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Package, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PLATFORM_FEE_LABEL } from "@/lib/config";
+import { trackingUrl, carrierLabel } from "@/lib/shipping/carriers";
 import MarkShippedButton from "./MarkShippedButton";
 
 type ShippingAddress = {
@@ -27,6 +28,8 @@ type Sale = {
   shipped_at: string | null;
   released_at: string | null;
   shipping_address: ShippingAddress | null;
+  tracking: string | null;
+  tracking_carrier: string | null;
 };
 
 const statusStyles: Record<string, string> = {
@@ -64,7 +67,7 @@ export default async function SalesPage() {
     const { data } = await supabase
       .from("orders")
       .select(
-        "id, product_name, amount_total, platform_fee, status, created_at, shipped_at, released_at, shipping_address"
+        "id, product_name, amount_total, platform_fee, status, created_at, shipped_at, released_at, shipping_address, tracking, tracking_carrier"
       )
       .in("store_id", storeIds)
       .order("created_at", { ascending: false });
@@ -120,70 +123,96 @@ export default async function SalesPage() {
             </div>
 
             <ul className="space-y-4">
-              {sales.map((sale) => (
-                <li
-                  key={sale.id}
-                  className="rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-white font-medium">
-                        {sale.product_name ?? "Item"}
-                      </p>
-                      <p className="text-sm text-ocean-400">
-                        {new Date(sale.created_at).toLocaleDateString()} · $
-                        {(sale.amount_total / 100).toFixed(2)}
-                      </p>
-                      <p className="text-xs text-emerald-300/80 mt-0.5">
-                        You earn ${(sellerCut(sale) / 100).toFixed(2)} after{" "}
-                        {PLATFORM_FEE_LABEL} fee
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span
-                        className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border ${
-                          statusStyles[sale.status] ??
-                          "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
-                        }`}
-                      >
-                        {statusLabels[sale.status] ?? sale.status}
-                      </span>
-                      {sale.status === "paid" && (
-                        <MarkShippedButton orderId={sale.id} />
-                      )}
-                      {sale.status === "shipped" && sale.shipped_at && (
-                        <span className="text-[11px] text-ocean-400">
-                          Shipped {new Date(sale.shipped_at).toLocaleDateString()}
+              {sales.map((sale) => {
+                const url = trackingUrl(sale.tracking_carrier, sale.tracking);
+                return (
+                  <li
+                    key={sale.id}
+                    className="rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-white font-medium">
+                          {sale.product_name ?? "Item"}
+                        </p>
+                        <p className="text-sm text-ocean-400">
+                          {new Date(sale.created_at).toLocaleDateString()} · $
+                          {(sale.amount_total / 100).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-emerald-300/80 mt-0.5">
+                          You earn ${(sellerCut(sale) / 100).toFixed(2)} after{" "}
+                          {PLATFORM_FEE_LABEL} fee
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span
+                          className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border ${
+                            statusStyles[sale.status] ??
+                            "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
+                          }`}
+                        >
+                          {statusLabels[sale.status] ?? sale.status}
                         </span>
-                      )}
-                      {sale.status === "released" && sale.released_at && (
-                        <span className="text-[11px] text-emerald-300/80">
-                          Paid out {new Date(sale.released_at).toLocaleDateString()}
-                        </span>
-                      )}
+                        {sale.status === "paid" && (
+                          <MarkShippedButton orderId={sale.id} />
+                        )}
+                        {sale.status === "shipped" && sale.shipped_at && (
+                          <span className="text-[11px] text-ocean-400">
+                            Shipped {new Date(sale.shipped_at).toLocaleDateString()}
+                          </span>
+                        )}
+                        {sale.status === "released" && sale.released_at && (
+                          <span className="text-[11px] text-emerald-300/80">
+                            Paid out {new Date(sale.released_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {sale.shipping_address?.address && (
-                    <div className="mt-3 pt-3 border-t border-ocean-800/60 text-sm">
-                      <span className="text-ocean-500">Ship to: </span>
-                      <span className="text-ocean-200">
-                        {sale.shipping_address.name}
-                        {" — "}
-                        {[
-                          sale.shipping_address.address.line1,
-                          sale.shipping_address.address.line2,
-                          sale.shipping_address.address.city,
-                          sale.shipping_address.address.state,
-                          sale.shipping_address.address.postal_code,
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </span>
-                    </div>
-                  )}
-                </li>
-              ))}
+                    {(sale.shipping_address?.address || sale.tracking) && (
+                      <div className="mt-3 pt-3 border-t border-ocean-800/60 text-sm space-y-1">
+                        {sale.shipping_address?.address && (
+                          <div>
+                            <span className="text-ocean-500">Ship to: </span>
+                            <span className="text-ocean-200">
+                              {sale.shipping_address.name}
+                              {" — "}
+                              {[
+                                sale.shipping_address.address.line1,
+                                sale.shipping_address.address.line2,
+                                sale.shipping_address.address.city,
+                                sale.shipping_address.address.state,
+                                sale.shipping_address.address.postal_code,
+                              ]
+                                .filter(Boolean)
+                                .join(", ")}
+                            </span>
+                          </div>
+                        )}
+                        {sale.tracking && (
+                          <div>
+                            <span className="text-ocean-500">Tracking: </span>
+                            {url ? (
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-ocean-200 hover:text-ocean-100 underline"
+                              >
+                                {carrierLabel(sale.tracking_carrier)} · {sale.tracking}
+                              </a>
+                            ) : (
+                              <span className="text-ocean-200">
+                                {carrierLabel(sale.tracking_carrier)} · {sale.tracking}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </>
         )}

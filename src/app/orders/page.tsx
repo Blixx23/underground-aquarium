@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Package, ArrowLeft } from "lucide-react";
+import { Package, ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { trackingUrl, carrierLabel } from "@/lib/shipping/carriers";
 import ConfirmReceivedButton from "./ConfirmButton";
 
 type Order = {
@@ -10,6 +11,8 @@ type Order = {
   amount_total: number;
   status: string;
   created_at: string;
+  tracking: string | null;
+  tracking_carrier: string | null;
 };
 
 const statusStyles: Record<string, string> = {
@@ -37,7 +40,9 @@ export default async function OrdersPage() {
 
   const { data } = await supabase
     .from("orders")
-    .select("id, product_name, amount_total, status, created_at")
+    .select(
+      "id, product_name, amount_total, status, created_at, tracking, tracking_carrier"
+    )
     .eq("buyer_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -67,31 +72,55 @@ export default async function OrdersPage() {
             {orders.map((order) => {
               const canConfirm =
                 order.status === "paid" || order.status === "shipped";
+              const url = trackingUrl(order.tracking_carrier, order.tracking);
               return (
                 <li
                   key={order.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4"
+                  className="rounded-xl border border-ocean-800/60 bg-ocean-900/40 px-5 py-4"
                 >
-                  <div>
-                    <p className="text-white font-medium">
-                      {order.product_name ?? "Item"}
-                    </p>
-                    <p className="text-sm text-ocean-400">
-                      {new Date(order.created_at).toLocaleDateString()} · $
-                      {(order.amount_total / 100).toFixed(2)}
-                    </p>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-white font-medium">
+                        {order.product_name ?? "Item"}
+                      </p>
+                      <p className="text-sm text-ocean-400">
+                        {new Date(order.created_at).toLocaleDateString()} · $
+                        {(order.amount_total / 100).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span
+                        className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border ${
+                          statusStyles[order.status] ??
+                          "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
+                        }`}
+                      >
+                        {statusLabels[order.status] ?? order.status}
+                      </span>
+                      {canConfirm && <ConfirmReceivedButton orderId={order.id} />}
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span
-                      className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border ${
-                        statusStyles[order.status] ??
-                        "bg-ocean-700/30 text-ocean-300 border-ocean-700/40"
-                      }`}
-                    >
-                      {statusLabels[order.status] ?? order.status}
-                    </span>
-                    {canConfirm && <ConfirmReceivedButton orderId={order.id} />}
-                  </div>
+
+                  {order.tracking && (
+                    <div className="mt-3 pt-3 border-t border-ocean-800/60 text-sm">
+                      <span className="text-ocean-500">Tracking: </span>
+                      {url ? (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-ocean-200 hover:text-ocean-100 underline inline-flex items-center gap-1"
+                        >
+                          {carrierLabel(order.tracking_carrier)} · {order.tracking}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="text-ocean-200">
+                          {carrierLabel(order.tracking_carrier)} · {order.tracking}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </li>
               );
             })}

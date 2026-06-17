@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { CARRIERS } from "@/lib/shipping/carriers";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please sign in." }, { status: 401 });
     }
 
-    const { orderId, tracking } = await request.json();
+    const { orderId, tracking, carrier } = await request.json();
     if (!orderId) {
       return NextResponse.json({ error: "Missing order." }, { status: 400 });
     }
@@ -26,7 +27,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
     }
 
-    // Only the seller who owns the store for this order can mark it shipped.
     const { data: store } = await supabaseAdmin
       .from("stores")
       .select("owner_id")
@@ -43,13 +43,20 @@ export async function POST(request: Request) {
       );
     }
 
+    const cleanTracking =
+      typeof tracking === "string" && tracking.trim() ? tracking.trim() : null;
+    const validCarrier =
+      typeof carrier === "string" && CARRIERS.some((c) => c.value === carrier)
+        ? carrier
+        : null;
+
     await supabaseAdmin
       .from("orders")
       .update({
         status: "shipped",
         shipped_at: new Date().toISOString(),
-        tracking:
-          typeof tracking === "string" && tracking.trim() ? tracking.trim() : null,
+        tracking: cleanTracking,
+        tracking_carrier: cleanTracking ? validCarrier : null,
       })
       .eq("id", order.id);
 
