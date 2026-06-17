@@ -81,6 +81,12 @@ export default function StoreReviews({
         },
         ...prev,
       ]);
+      // Notify the store owner by email (fire and forget)
+      fetch("/api/stores/notify-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewId: row.id }),
+      }).catch(() => {});
       setRating(0);
       setBody("");
     } catch {
@@ -228,7 +234,6 @@ export default function StoreReviews({
                 </p>
               )}
 
-              {/* Owner response */}
               {respondingId === r.id ? (
                 <div className="mt-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3">
                   <textarea
