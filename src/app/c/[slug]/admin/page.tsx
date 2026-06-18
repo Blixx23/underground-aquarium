@@ -8,6 +8,7 @@ import MemberManager from "./MemberManager";
 import ClubPayoutButton from "./ClubPayoutButton";
 import ClubSettings from "./ClubSettings";
 import DeleteClubButton from "./DeleteClubButton";
+import ClubRequests from "./ClubRequests";
 
 export default async function ClubAdminPage({
   params,
@@ -88,6 +89,43 @@ export default async function ClubAdminPage({
   const enriched = memberList.map((m) => ({
     ...m,
     account_name: m.user_id ? nameById[m.user_id] ?? null : null,
+  }));
+  const pending = enriched.filter((m) => m.status === "pending");
+  const roster = enriched.filter((m) => m.status !== "pending");
+
+  // Pull the officer-only application details for pending applicants.
+  const dById: Record<
+    string,
+    {
+      phone: string | null;
+      experience: string | null;
+      interests: string | null;
+      note: string | null;
+    }
+  > = {};
+  if (pending.length > 0) {
+    const { data: details } = await supabase
+      .from("club_member_details")
+      .select("member_id, phone, experience, interests, note")
+      .in(
+        "member_id",
+        pending.map((m) => m.id)
+      );
+    for (const d of details ?? []) {
+      dById[d.member_id as string] = {
+        phone: d.phone ?? null,
+        experience: d.experience ?? null,
+        interests: d.interests ?? null,
+        note: d.note ?? null,
+      };
+    }
+  }
+  const pendingDetailed = pending.map((m) => ({
+    ...m,
+    phone: dById[m.id]?.phone ?? null,
+    experience: dById[m.id]?.experience ?? null,
+    interests: dById[m.id]?.interests ?? null,
+    note: dById[m.id]?.note ?? null,
   }));
 
   // Reflect the club's live Stripe status (same approach as the seller payouts
@@ -186,6 +224,8 @@ export default async function ClubAdminPage({
           </div>
         </div>
 
+        {pending.length > 0 && <ClubRequests requests={pendingDetailed} />}
+
         <h2 className="font-display text-xl text-white mb-1">Members</h2>
         <p className="text-ocean-400 mb-4 text-sm">
           Add members, set their role and status, or remove them. The owner row
@@ -195,7 +235,7 @@ export default async function ClubAdminPage({
         <MemberManager
           clubId={club.id}
           viewerRole={role as string}
-          initialMembers={enriched}
+          initialMembers={roster}
         />
 
         {role === "owner" && (

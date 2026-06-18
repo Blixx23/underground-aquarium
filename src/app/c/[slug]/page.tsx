@@ -7,11 +7,13 @@ import {
   Users,
   ArrowRight,
   Crown,
+  Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import PayDuesButton from "./PayDuesButton";
 import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
+import JoinClubForm from "./JoinClubForm";
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -32,31 +34,35 @@ export default async function ClubHomePage({
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled"
+      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public"
     )
     .eq("slug", slug)
     .maybeSingle();
   if (!club) notFound();
 
   let role: string | null = null;
+  let status: string | null = null;
   let paidThrough: string | null = null;
   if (user) {
     const { data: me } = await supabase
       .from("club_members")
-      .select("role, paid_through")
+      .select("role, status, paid_through")
       .eq("club_id", club.id)
       .eq("user_id", user.id)
       .maybeSingle();
     role = me?.role ?? null;
+    status = me?.status ?? null;
     paidThrough = me?.paid_through ?? null;
   }
-  const isMember = role !== null;
+  const isApplicant = status === "pending";
+  const isMember = role !== null && !isApplicant;
   const isOfficer = role === "owner" || role === "admin" || role === "officer";
 
   const { count } = await supabase
     .from("club_members")
     .select("id", { count: "exact", head: true })
-    .eq("club_id", club.id);
+    .eq("club_id", club.id)
+    .neq("status", "pending");
   const memberCount = count ?? 0;
 
   const canCollect = Boolean(club.stripe_account_id) && club.payouts_enabled;
@@ -114,7 +120,7 @@ export default async function ClubHomePage({
           {club.dues_amount_cents > 0 && (
             <span>· Dues {money(club.dues_amount_cents)}</span>
           )}
-          {role && (
+          {isMember && role && (
             <span className="inline-flex items-center gap-1.5 capitalize">
               · {role === "owner" && <Crown className="w-4 h-4 text-amber-300" />}
               You&apos;re {role === "owner" ? "the owner" : `a ${role}`}
@@ -180,12 +186,54 @@ export default async function ClubHomePage({
               </p>
             </div>
           </div>
+        ) : isApplicant ? (
+          <div className="rounded-2xl border border-amber-700/40 bg-amber-900/10 px-6 py-8 text-center">
+            <Clock className="w-8 h-8 text-amber-300/80 mx-auto mb-3" />
+            <p className="text-white font-medium mb-1">Request pending</p>
+            <p className="text-sm text-ocean-400 mb-4">
+              Your request to join {club.name} is waiting for an officer to
+              approve it. You&apos;ll get a notification when you&apos;re in.
+            </p>
+            <LeaveClubButton
+              clubId={club.id}
+              clubName={club.name}
+              label="Withdraw request"
+            />
+          </div>
+        ) : user ? (
+          club.is_public ? (
+            <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-8 text-center">
+              <Users className="w-8 h-8 text-ocean-500 mx-auto mb-3" />
+              <p className="text-ocean-300 mb-4">
+                Apply to join {club.name}
+                {club.dues_amount_cents > 0
+                  ? ` — dues are ${money(club.dues_amount_cents)} once approved.`
+                  : "."}
+              </p>
+              <JoinClubForm
+                clubId={club.id}
+                clubName={club.name}
+                defaultName={(user.user_metadata?.username as string) || ""}
+              />
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-8 text-center">
+              <Users className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
+              <p className="text-ocean-300">
+                {club.name} is invite-only — ask an officer for an invite.
+              </p>
+            </div>
+          )
         ) : (
           <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-8 text-center">
             <Users className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
-            <p className="text-ocean-300">
-              You&apos;re viewing {club.name}. Member sign-up is coming soon.
-            </p>
+            <p className="text-ocean-300 mb-4">You&apos;re viewing {club.name}.</p>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
+            >
+              Sign in to join
+            </Link>
           </div>
         )}
 

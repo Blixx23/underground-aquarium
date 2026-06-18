@@ -8,9 +8,11 @@ import { createClient } from "@/lib/supabase/client";
 export default function LeaveClubButton({
   clubId,
   clubName,
+  label = "Leave this club",
 }: {
   clubId: string;
   clubName: string;
+  label?: string;
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -48,7 +50,7 @@ export default function LeaveClubButton({
         ) : (
           <LogOut className="w-4 h-4" />
         )}
-        Leave this club
+        {label}
       </button>
     </div>
   );
