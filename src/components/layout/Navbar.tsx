@@ -176,13 +176,16 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Mobile Toggle */}
-        <button
-          className="md:hidden p-2 text-ocean-300 hover:text-white"
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        {/* Mobile: notifications + toggle */}
+        <div className="md:hidden flex items-center gap-1">
+          <NotificationBell variant="link" onNavigate={() => setOpen(false)} />
+          <button
+            className="p-2 text-ocean-300 hover:text-white"
+            onClick={() => setOpen(!open)}
+          >
+            {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -219,13 +222,6 @@ export default function Navbar() {
           <div className="mt-4 flex flex-col gap-3">
             {user ? (
               <>
-                <Link
-                  href="/notifications"
-                  onClick={() => setOpen(false)}
-                  className="text-center py-3 text-ocean-200"
-                >
-                  Notifications
-                </Link>
                 <Link
                   href="/profile"
                   onClick={() => setOpen(false)}
