@@ -90,10 +90,8 @@ export default async function ClubAdminPage({
     ...m,
     account_name: m.user_id ? nameById[m.user_id] ?? null : null,
   }));
-  const pending = enriched.filter((m) => m.status === "pending");
-  const roster = enriched.filter((m) => m.status !== "pending");
-
-  // Pull the officer-only application details for pending applicants.
+  // Pull the officer-only application details for ALL members — used both in
+  // the requests card and in the roster, so officers can reach approved members.
   const dById: Record<
     string,
     {
@@ -103,13 +101,13 @@ export default async function ClubAdminPage({
       note: string | null;
     }
   > = {};
-  if (pending.length > 0) {
+  if (enriched.length > 0) {
     const { data: details } = await supabase
       .from("club_member_details")
       .select("member_id, phone, experience, interests, note")
       .in(
         "member_id",
-        pending.map((m) => m.id)
+        enriched.map((m) => m.id)
       );
     for (const d of details ?? []) {
       dById[d.member_id as string] = {
@@ -120,13 +118,15 @@ export default async function ClubAdminPage({
       };
     }
   }
-  const pendingDetailed = pending.map((m) => ({
+  const withDetails = enriched.map((m) => ({
     ...m,
     phone: dById[m.id]?.phone ?? null,
     experience: dById[m.id]?.experience ?? null,
     interests: dById[m.id]?.interests ?? null,
     note: dById[m.id]?.note ?? null,
   }));
+  const pendingDetailed = withDetails.filter((m) => m.status === "pending");
+  const roster = withDetails.filter((m) => m.status !== "pending");
 
   // Reflect the club's live Stripe status (same approach as the seller payouts
   // page): if onboarding looks done, flip "Connected" without depending on a
@@ -224,7 +224,9 @@ export default async function ClubAdminPage({
           </div>
         </div>
 
-        {pending.length > 0 && <ClubRequests requests={pendingDetailed} />}
+        {pendingDetailed.length > 0 && (
+          <ClubRequests requests={pendingDetailed} />
+        )}
 
         <h2 className="font-display text-xl text-white mb-1">Members</h2>
         <p className="text-ocean-400 mb-4 text-sm">

@@ -17,6 +17,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/water-check",
     "/stores",
     "/blog",
+    "/clubs",
+    "/clubs/discover",
   ];
 
   const { data: terms } = await supabasePublic
@@ -31,6 +33,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from("fish_stores")
     .select("slug")
     .eq("status", "published");
+
+  const { data: clubs } = await supabasePublic
+    .from("clubs")
+    .select("slug")
+    .eq("is_public", true);
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
@@ -60,5 +67,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticEntries, ...termEntries, ...speciesEntries, ...storeEntries];
+  const clubEntries = (clubs ?? []).map((c) => ({
+    url: `${baseUrl}/c/${c.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
+  return [
+    ...staticEntries,
+    ...termEntries,
+    ...speciesEntries,
+    ...storeEntries,
+    ...clubEntries,
+  ];
 }

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Trash2, Crown, Loader2, Mail, Send, Copy, Check } from "lucide-react";
+import { UserPlus, Trash2, Crown, Loader2, Mail, Send, Copy, Check, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Member = {
@@ -16,6 +16,10 @@ type Member = {
   paid_through: string | null;
   joined_at: string;
   account_name?: string | null;
+  phone?: string | null;
+  experience?: string | null;
+  interests?: string | null;
+  note?: string | null;
 };
 
 const ROLES = ["member", "officer", "admin"];
@@ -291,6 +295,16 @@ export default function MemberManager({
                     </div>
                     {m.email && m.display_name && (
                       <div className="text-xs text-ocean-500">{m.email}</div>
+                    )}
+                    {m.phone && (
+                      <div className="text-xs text-ocean-400 flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" /> {m.phone}
+                      </div>
+                    )}
+                    {(m.experience || m.interests) && (
+                      <div className="text-[11px] text-ocean-600 mt-0.5">
+                        {[m.experience, m.interests].filter(Boolean).join(" · ")}
+                      </div>
                     )}
                     {!m.user_id && (
                       <div className="text-[11px] text-ocean-600">No account yet</div>
