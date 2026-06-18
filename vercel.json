@@ -1,1 +1,12 @@
-{"crons":[{"path":"/api/cron/release-payouts","schedule":"0 12 * * *"}]}
+{
+  "crons": [
+    {
+      "path": "/api/cron/release-payouts",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/dues-reminders",
+      "schedule": "0 14 * * *"
+    }
+  ]
+}

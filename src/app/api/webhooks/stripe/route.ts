@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { Resend } from "resend";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { PLATFORM_FEE_PERCENT } from "@/lib/config";
 
 type ShippingDetails = {
   name?: string | null;
@@ -45,28 +46,116 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  // A connected (seller) account changed — keep our payout-readiness flag in
-  // sync. Fires when a seller finishes onboarding (enabled = true) or if Stripe
-  // later restricts them (enabled = false).
+  // A connected account changed — keep our payout-readiness flag in sync, for
+  // BOTH sellers (stores) and clubs. Fires when onboarding finishes
+  // (enabled = true) or if Stripe later restricts the account (enabled = false).
   if (event.type === "account.updated") {
     const account = event.data.object as Stripe.Account;
     const enabled = Boolean(
       account.details_submitted && account.payouts_enabled
     );
-    const { error } = await supabaseAdmin
+
+    const { error: storeErr } = await supabaseAdmin
       .from("stores")
       .update({ payouts_enabled: enabled })
       .eq("stripe_account_id", account.id);
-    if (error) {
-      console.error("Failed to update payouts_enabled:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (storeErr) {
+      console.error("Failed to update store payouts_enabled:", storeErr.message);
     }
+
+    const { error: clubErr } = await supabaseAdmin
+      .from("clubs")
+      .update({ payouts_enabled: enabled })
+      .eq("stripe_account_id", account.id);
+    if (clubErr) {
+      console.error("Failed to update club payouts_enabled:", clubErr.message);
+    }
+
     console.log(`Account ${account.id} payouts_enabled -> ${enabled}`);
     return NextResponse.json({ received: true });
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+
+    // --- Club membership dues ---
+    if (session.metadata?.type === "club_dues") {
+      const clubId = session.metadata.clubId || null;
+      const userId = session.metadata.userId || null;
+      const memberId = session.metadata.memberId || null;
+      const coversMonths =
+        parseInt(session.metadata.coversMonths || "12", 10) || 12;
+
+      // Idempotency: if we already recorded this session, do nothing.
+      const { data: existingPayment } = await supabaseAdmin
+        .from("dues_payments")
+        .select("id")
+        .eq("stripe_session_id", session.id)
+        .maybeSingle();
+      if (existingPayment) {
+        return NextResponse.json({ received: true });
+      }
+
+      const amountTotal = session.amount_total ?? 0;
+      const feeAmount = Math.round(amountTotal * PLATFORM_FEE_PERCENT);
+      const paymentIntent =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id ?? null;
+
+      // New coverage extends from the later of today or any existing paid_through.
+      let baseDate = new Date();
+      if (memberId) {
+        const { data: memberRow } = await supabaseAdmin
+          .from("club_members")
+          .select("paid_through")
+          .eq("id", memberId)
+          .maybeSingle();
+        if (memberRow?.paid_through) {
+          const existing = new Date(memberRow.paid_through + "T00:00:00");
+          if (existing > baseDate) baseDate = existing;
+        }
+      }
+      const coversUntil = new Date(baseDate);
+      coversUntil.setMonth(coversUntil.getMonth() + coversMonths);
+      const coversUntilStr = coversUntil.toISOString().slice(0, 10);
+
+      const { error: dpErr } = await supabaseAdmin.from("dues_payments").insert({
+        club_id: clubId,
+        member_id: memberId,
+        user_id: userId,
+        amount_cents: amountTotal,
+        platform_fee_cents: feeAmount,
+        stripe_session_id: session.id,
+        stripe_payment_intent: paymentIntent,
+        covers_until: coversUntilStr,
+      });
+      if (dpErr) {
+        console.error("Failed to record dues payment:", dpErr.message);
+        return NextResponse.json({ error: dpErr.message }, { status: 500 });
+      }
+
+      // Advance the member's coverage and mark them active.
+      if (memberId) {
+        await supabaseAdmin
+          .from("club_members")
+          .update({ status: "active", paid_through: coversUntilStr })
+          .eq("id", memberId);
+      } else if (clubId && userId) {
+        await supabaseAdmin
+          .from("club_members")
+          .update({ status: "active", paid_through: coversUntilStr })
+          .eq("club_id", clubId)
+          .eq("user_id", userId);
+      }
+
+      console.log(
+        `Club dues recorded: club ${clubId}, member ${memberId}, paid through ${coversUntilStr}.`
+      );
+      return NextResponse.json({ received: true });
+    }
+
+    // --- Marketplace order ---
     const orderId = session.metadata?.order_id;
 
     const shipping =

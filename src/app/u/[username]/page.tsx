@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Fish, Waves, MapPin, ExternalLink, User } from "lucide-react";
+import { Fish, Waves, MapPin, ExternalLink, User, Users, Crown } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
-import { createClient } from "@/lib/supabase/server";
-import FollowButton from "@/components/FollowButton";
 
 export const dynamic = "force-dynamic";
 
@@ -28,14 +26,6 @@ type CommunityTank = {
   items: TankItem[] | null;
   images: string[] | null;
   updated_at: string;
-};
-
-type FavoriteStore = {
-  id: string;
-  slug: string;
-  name: string;
-  city: string | null;
-  state: string | null;
 };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -68,34 +58,6 @@ export default async function PublicProfilePage({ params }: Params) {
   if (!profileData) notFound();
   const profile = profileData as Profile;
 
-  // Who's viewing, follower/following counts, and whether they already follow
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const isOwnProfile = !!user && user.id === profile.id;
-
-  const { count: followerCount } = await supabasePublic
-    .from("follows")
-    .select("*", { count: "exact", head: true })
-    .eq("following_id", profile.id);
-
-  const { count: followingCount } = await supabasePublic
-    .from("follows")
-    .select("*", { count: "exact", head: true })
-    .eq("follower_id", profile.id);
-
-  let isFollowing = false;
-  if (user && !isOwnProfile) {
-    const { data: followRow } = await supabase
-      .from("follows")
-      .select("follower_id")
-      .eq("follower_id", user.id)
-      .eq("following_id", profile.id)
-      .maybeSingle();
-    isFollowing = !!followRow;
-  }
-
   const { data: tanksData } = await supabasePublic
     .from("tanks")
     .select("id,name,gallons,items,images,updated_at")
@@ -108,31 +70,17 @@ export default async function PublicProfilePage({ params }: Params) {
   const displayName = profile.full_name || profile.username || "Aquarist";
   const websiteUrl = profile.website ? normalizeUrl(profile.website) : null;
 
-  // Local stores this person has favorited (newest first, published only)
-  const { data: favRows } = await supabasePublic
-    .from("store_favorites")
-    .select("fish_store_id, created_at")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false });
-
-  const favStoreIds = ((favRows ?? []) as { fish_store_id: string }[]).map(
-    (r) => r.fish_store_id
+  const { data: clubsData } = await supabasePublic.rpc(
+    "public_clubs_for_user",
+    { p_user_id: profile.id }
   );
-
-  let favoriteStores: FavoriteStore[] = [];
-  if (favStoreIds.length > 0) {
-    const { data: storeRows } = await supabasePublic
-      .from("fish_stores")
-      .select("id, slug, name, city, state")
-      .in("id", favStoreIds)
-      .eq("status", "published");
-    const byId = new Map(
-      ((storeRows ?? []) as FavoriteStore[]).map((s) => [s.id, s])
-    );
-    favoriteStores = favStoreIds
-      .map((id) => byId.get(id))
-      .filter((s): s is FavoriteStore => !!s);
-  }
+  const clubs = (clubsData ?? []) as {
+    id: string;
+    slug: string;
+    name: string;
+    logo_url: string | null;
+    role: string;
+  }[];
 
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
@@ -149,27 +97,6 @@ export default async function PublicProfilePage({ params }: Params) {
             {profile.username && (
               <p className="text-ocean-400 text-sm">@{profile.username}</p>
             )}
-            <p className="text-ocean-400 text-sm mt-1 flex flex-wrap items-center gap-x-1.5">
-              <Link
-                href={`/u/${username}/followers`}
-                className="hover:text-white transition-colors"
-              >
-                <span className="text-ocean-200 font-medium">
-                  {followerCount ?? 0}
-                </span>{" "}
-                {followerCount === 1 ? "follower" : "followers"}
-              </Link>
-              <span>·</span>
-              <Link
-                href={`/u/${username}/following`}
-                className="hover:text-white transition-colors"
-              >
-                <span className="text-ocean-200 font-medium">
-                  {followingCount ?? 0}
-                </span>{" "}
-                following
-              </Link>
-            </p>
             {profile.bio && (
               <p className="text-ocean-300 mt-3 max-w-2xl">{profile.bio}</p>
             )}
@@ -190,16 +117,35 @@ export default async function PublicProfilePage({ params }: Params) {
                 </Link>
               )}
             </div>
-            {!isOwnProfile && (
-              <div className="mt-4">
-                <FollowButton
-                  targetUserId={profile.id}
-                  initialFollowing={isFollowing}
-                />
-              </div>
-            )}
           </div>
         </div>
+
+        {clubs.length > 0 && (
+          <div className="mb-10">
+            <h2 className="font-display text-2xl text-emerald-400 mb-4">Clubs</h2>
+            <div className="flex flex-wrap gap-3">
+              {clubs.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/c/${c.slug}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-4 py-2 text-sm text-ocean-100 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+                >
+                  {c.role === "owner" ? (
+                    <Crown className="w-4 h-4 text-amber-300" />
+                  ) : (
+                    <Users className="w-4 h-4 text-ocean-400" />
+                  )}
+                  <span>{c.name}</span>
+                  {(c.role === "officer" || c.role === "admin") && (
+                    <span className="text-[11px] text-ocean-500 capitalize">
+                      · {c.role}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Their posted tanks */}
         <h2 className="font-display text-2xl text-emerald-400 mb-4">
@@ -252,35 +198,6 @@ export default async function PublicProfilePage({ params }: Params) {
               );
             })}
           </div>
-        )}
-
-        {favoriteStores.length > 0 && (
-          <>
-            <h2 className="font-display text-2xl text-emerald-400 mb-4 mt-12">
-              Favorited stores
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {favoriteStores.map((s) => {
-                const place = [s.city, s.state].filter(Boolean).join(", ");
-                return (
-                  <Link
-                    key={s.id}
-                    href={`/stores/${s.slug}`}
-                    className="block rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
-                  >
-                    <p className="text-white text-sm font-medium truncate">
-                      {s.name}
-                    </p>
-                    {place && (
-                      <p className="text-ocean-400 text-xs mt-0.5 inline-flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> {place}
-                      </p>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </>
         )}
       </div>
     </main>

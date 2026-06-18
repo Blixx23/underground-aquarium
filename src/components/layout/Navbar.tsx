@@ -23,6 +23,7 @@ const nav = [
   },
   { label: "Events", href: "/events" },
   { label: "Community", href: "/community" },
+  { label: "Clubs", href: "/clubs" },
 ];
 
 export default function Navbar() {
