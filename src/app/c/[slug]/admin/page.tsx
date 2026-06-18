@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ShieldAlert, CreditCard, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { stripe } from "@/lib/stripe/server";
 import MemberManager from "./MemberManager";
 import ClubPayoutButton from "./ClubPayoutButton";
 import ClubSettings from "./ClubSettings";
@@ -88,9 +90,28 @@ export default async function ClubAdminPage({
     account_name: m.user_id ? nameById[m.user_id] ?? null : null,
   }));
 
+  // Reflect the club's live Stripe status (same approach as the seller payouts
+  // page): if onboarding looks done, flip "Connected" without depending on a
+  // connected-account webhook. Uses the same condition as the webhook.
+  let payoutsEnabled = Boolean(club.payouts_enabled);
+  if (club.stripe_account_id && !payoutsEnabled) {
+    try {
+      const account = await stripe.accounts.retrieve(club.stripe_account_id);
+      if (account.details_submitted && account.payouts_enabled) {
+        payoutsEnabled = true;
+        await supabaseAdmin
+          .from("clubs")
+          .update({ payouts_enabled: true })
+          .eq("id", club.id);
+      }
+    } catch (e) {
+      console.error("Club Stripe status check failed:", e);
+    }
+  }
+
   const payoutStatus: "none" | "incomplete" | "active" = !club.stripe_account_id
     ? "none"
-    : club.payouts_enabled
+    : payoutsEnabled
     ? "active"
     : "incomplete";
 
