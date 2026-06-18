@@ -43,7 +43,15 @@ export default async function ClubsPage() {
             <Plus className="w-4 h-4" /> Start a club
           </Link>
         </div>
-        <p className="text-ocean-400 mb-8 text-sm">Clubs you belong to.</p>
+        <p className="text-ocean-400 mb-8 text-sm">
+          Clubs you belong to.{" "}
+          <Link
+            href="/clubs/discover"
+            className="text-ocean-300 hover:text-white underline underline-offset-2"
+          >
+            Discover more clubs →
+          </Link>
+        </p>
 
         {!user ? (
           <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-12 text-center">
