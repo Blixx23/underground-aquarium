@@ -6,12 +6,12 @@ import CTA from "@/components/sections/CTA";
 
 export default function HomePage() {
   return (
-    <>
+    <div className="overflow-x-clip">
       <Hero />
       <Features />
       <HowItWorks />
       <LatestPosts />
       <CTA />
-    </>
+    </div>
   );
 }
