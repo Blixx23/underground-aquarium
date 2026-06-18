@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, Truck, CheckCircle2 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import SellerTabs from "../SellerTabs";
 
 export default function ShippingAddressPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -141,9 +142,7 @@ export default function ShippingAddressPage() {
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-2xl mx-auto">
-        <p className="text-xs font-mono tracking-widest text-ocean-500 uppercase mb-3">
-          Shipping
-        </p>
+        <SellerTabs />
         <h1 className="font-display text-4xl text-white mb-3">Ship-from address</h1>
         <p className="text-ocean-400 mb-10">
           This is where your packages ship from. Buyers never see it — it&apos;s used

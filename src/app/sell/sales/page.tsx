@@ -4,6 +4,7 @@ import { Package, ArrowLeft, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { trackingUrl, carrierLabel } from "@/lib/shipping/carriers";
 import BuyLabelButton from "./BuyLabelButton";
+import SellerTabs from "../SellerTabs";
 
 type ShippingAddress = {
   name?: string | null;
@@ -95,9 +96,7 @@ export default async function SalesPage() {
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-2xl mx-auto">
-        <p className="text-xs font-mono tracking-widest text-ocean-500 uppercase mb-3">
-          Your shop
-        </p>
+        <SellerTabs />
         <h1 className="font-display text-3xl text-white mb-8">Sales</h1>
 
         {sales.length === 0 ? (

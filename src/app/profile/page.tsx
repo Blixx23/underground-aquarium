@@ -5,6 +5,8 @@ import {
   Wallet,
   ShoppingBag,
   Receipt,
+  Truck,
+  BarChart3,
   Fish,
   Globe,
   Lock,
@@ -82,7 +84,9 @@ export default async function ProfilePage() {
     ...(hasShop
       ? [
           { href: "/sell/sales", label: "Sales", Icon: Receipt },
+          { href: "/sell/shipping", label: "Shipping", Icon: Truck },
           { href: "/sell/payouts", label: "Payouts", Icon: Wallet },
+          { href: "/sell/finances", label: "Finances", Icon: BarChart3 },
         ]
       : []),
   ];

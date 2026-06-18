@@ -96,12 +96,14 @@ export default function BuyLabelButton({ orderId }: { orderId: string }) {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-full bg-ocean-500/15 px-4 py-1.5 text-xs font-medium text-ocean-200 border border-ocean-500/30 hover:bg-ocean-500/25 transition-colors"
-      >
-        <Truck className="w-3.5 h-3.5" /> Buy shipping label
-      </button>
+      <div className="mt-3">
+        <button
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 rounded-full bg-ocean-500/15 px-4 py-1.5 text-xs font-medium text-ocean-200 border border-ocean-500/30 hover:bg-ocean-500/25 transition-colors"
+        >
+          <Truck className="w-3.5 h-3.5" /> Buy shipping label
+        </button>
+      </div>
     );
   }
 
