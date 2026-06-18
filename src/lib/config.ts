@@ -11,3 +11,8 @@ export const PLATFORM_FEE_LABEL = `${PLATFORM_FEE_PERCENT * 100}%`;
 // their payout, if the buyer hasn't already confirmed receipt.
 // Change this one number to lengthen or shorten the safety window.
 export const PAYOUT_AUTO_RELEASE_DAYS = 5;
+
+// Your flat markup on every shipping label, in cents.
+// This is how you make money on shipping: the seller pays the carrier's
+// label cost PLUS this fee, and the fee is yours. 150 = $1.50.
+export const SHIPPING_LABEL_FEE_CENTS = 150;

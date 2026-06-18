@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Package, ArrowLeft } from "lucide-react";
+import { Package, ArrowLeft, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { PLATFORM_FEE_LABEL } from "@/lib/config";
 import { trackingUrl, carrierLabel } from "@/lib/shipping/carriers";
-import MarkShippedButton from "./MarkShippedButton";
+import BuyLabelButton from "./BuyLabelButton";
 
 type ShippingAddress = {
   name?: string | null;
@@ -30,6 +29,9 @@ type Sale = {
   shipping_address: ShippingAddress | null;
   tracking: string | null;
   tracking_carrier: string | null;
+  shipping_label_cost: number | null;
+  shipping_label_fee: number | null;
+  shipping_label_url: string | null;
 };
 
 const statusStyles: Record<string, string> = {
@@ -67,14 +69,20 @@ export default async function SalesPage() {
     const { data } = await supabase
       .from("orders")
       .select(
-        "id, product_name, amount_total, platform_fee, status, created_at, shipped_at, released_at, shipping_address, tracking, tracking_carrier"
+        "id, product_name, amount_total, platform_fee, status, created_at, shipped_at, released_at, shipping_address, tracking, tracking_carrier, shipping_label_cost, shipping_label_fee, shipping_label_url"
       )
       .in("store_id", storeIds)
       .order("created_at", { ascending: false });
     sales = (data ?? []) as Sale[];
   }
 
-  const sellerCut = (s: Sale) => s.amount_total - s.platform_fee;
+  // What the seller actually keeps: total minus our commission, minus the
+  // carrier label cost and your flat label fee (both 0 until a label is bought).
+  const sellerCut = (s: Sale) =>
+    s.amount_total -
+    s.platform_fee -
+    (s.shipping_label_cost ?? 0) -
+    (s.shipping_label_fee ?? 0);
 
   const releasedTotal = sales
     .filter((s) => s.status === "released")
@@ -140,8 +148,7 @@ export default async function SalesPage() {
                           {(sale.amount_total / 100).toFixed(2)}
                         </p>
                         <p className="text-xs text-emerald-300/80 mt-0.5">
-                          You earn ${(sellerCut(sale) / 100).toFixed(2)} after{" "}
-                          {PLATFORM_FEE_LABEL} fee
+                          You keep ${(sellerCut(sale) / 100).toFixed(2)} after fees
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
@@ -153,9 +160,6 @@ export default async function SalesPage() {
                         >
                           {statusLabels[sale.status] ?? sale.status}
                         </span>
-                        {sale.status === "paid" && (
-                          <MarkShippedButton orderId={sale.id} />
-                        )}
                         {sale.status === "shipped" && sale.shipped_at && (
                           <span className="text-[11px] text-ocean-400">
                             Shipped {new Date(sale.shipped_at).toLocaleDateString()}
@@ -169,7 +173,11 @@ export default async function SalesPage() {
                       </div>
                     </div>
 
-                    {(sale.shipping_address?.address || sale.tracking) && (
+                    {sale.status === "paid" && <BuyLabelButton orderId={sale.id} />}
+
+                    {(sale.shipping_address?.address ||
+                      sale.tracking ||
+                      sale.shipping_label_url) && (
                       <div className="mt-3 pt-3 border-t border-ocean-800/60 text-sm space-y-1">
                         {sale.shipping_address?.address && (
                           <div>
@@ -206,6 +214,18 @@ export default async function SalesPage() {
                                 {carrierLabel(sale.tracking_carrier)} · {sale.tracking}
                               </span>
                             )}
+                          </div>
+                        )}
+                        {sale.shipping_label_url && (
+                          <div>
+                            <a
+                              href={sale.shipping_label_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-ocean-200 hover:text-ocean-100 underline"
+                            >
+                              <FileText className="w-3.5 h-3.5" /> Print shipping label
+                            </a>
                           </div>
                         )}
                       </div>

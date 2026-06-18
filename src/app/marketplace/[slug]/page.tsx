@@ -9,6 +9,7 @@ type Product = {
   slug: string;
   description: string | null;
   price: number | string;
+  shipping_price: number | string | null;
   stock: number | null;
   images: string[] | null;
   species_slug: string | null;
@@ -25,7 +26,7 @@ export default async function ProductPage({
   const { data } = await supabase
     .from("products")
     .select(
-      "id, name, slug, description, price, stock, images, species_slug"
+      "id, name, slug, description, price, shipping_price, stock, images, species_slug"
     )
     .eq("slug", slug)
     .eq("is_active", true)
@@ -89,8 +90,13 @@ export default async function ProductPage({
             <h1 className="font-display text-3xl md:text-4xl text-white leading-tight mb-3">
               {product.name}
             </h1>
-            <p className="font-display text-3xl text-ocean-300 mb-6">
+            <p className="font-display text-3xl text-ocean-300 mb-1">
               ${Number(product.price).toFixed(2)}
+            </p>
+            <p className="text-sm text-ocean-400 mb-6">
+              {Number(product.shipping_price ?? 0) > 0
+                ? `+ $${Number(product.shipping_price).toFixed(2)} shipping`
+                : "Free shipping"}
             </p>
 
             {typeof product.stock === "number" && (

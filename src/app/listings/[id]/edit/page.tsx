@@ -23,6 +23,7 @@ export default function EditListingPage() {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
+  const [shippingPrice, setShippingPrice] = useState("");
 
   const [existingImages, setExistingImages] = useState<string[] | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -61,7 +62,7 @@ export default function EditListingPage() {
 
       const { data: product } = await supabase
         .from("products")
-        .select("name, slug, price, stock, description, images")
+        .select("name, slug, price, stock, description, shipping_price, images")
         .eq("id", id)
         .in("store_id", storeIds)
         .maybeSingle();
@@ -79,6 +80,9 @@ export default function EditListingPage() {
       setPrice(product.price != null ? String(product.price) : "");
       setStock(product.stock != null ? String(product.stock) : "");
       setDescription(product.description ?? "");
+      setShippingPrice(
+        product.shipping_price != null ? String(product.shipping_price) : ""
+      );
       const imgs = (product.images as string[] | null) ?? null;
       setExistingImages(imgs);
       setImagePreview(imgs?.[0] ?? null);
@@ -172,6 +176,7 @@ export default function EditListingPage() {
           description: description.trim() || null,
           price: priceNum,
           stock: stock === "" ? null : parseInt(stock, 10),
+          shipping_price: Math.max(0, parseFloat(shippingPrice) || 0),
           images: images && images.length ? images : null,
         })
         .eq("id", id);
@@ -313,6 +318,22 @@ export default function EditListingPage() {
                 className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-ocean-300 mb-2">Shipping price (USD)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={shippingPrice}
+              onChange={(e) => setShippingPrice(e.target.value)}
+              placeholder="0.00"
+              className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
+            />
+            <p className="text-xs text-ocean-500 mt-2">
+              What the buyer pays for shipping, added to their total at checkout. Leave at 0 for free shipping.
+            </p>
           </div>
 
           <div>

@@ -6,8 +6,13 @@ type ReleaseResult =
   | { ok: false; reason: string };
 
 /**
- * Pays a seller for an order: transfers their share (total minus the platform
- * fee) from your platform balance to their connected account.
+ * Pays a seller for an order: transfers their share from your platform balance
+ * to their connected account.
+ *
+ * Seller's share = order total
+ *                  − platform commission
+ *                  − the carrier label cost (reimburses what you paid the carrier)
+ *                  − your flat label fee (your profit).
  *
  * Safe to call more than once for the same order — it skips orders that are
  * already released, and the Stripe transfer uses an idempotency key, so even
@@ -20,7 +25,7 @@ export async function releaseOrderPayout(orderId: string): Promise<ReleaseResult
   const { data: order, error } = await supabaseAdmin
     .from("orders")
     .select(
-      "id, status, amount_total, platform_fee, seller_stripe_account_id, stripe_payment_intent, transfer_id"
+      "id, status, amount_total, platform_fee, shipping_label_cost, shipping_label_fee, seller_stripe_account_id, stripe_payment_intent, transfer_id"
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -45,7 +50,13 @@ export async function releaseOrderPayout(orderId: string): Promise<ReleaseResult
     return { ok: false, reason: "No payment on this order." };
   }
 
-  const sellerAmount = order.amount_total - order.platform_fee;
+  // Seller keeps the total minus our commission, minus the shipping label cost
+  // and your flat label fee (both 0 if no label was bought through us).
+  const sellerAmount =
+    order.amount_total -
+    order.platform_fee -
+    (order.shipping_label_cost ?? 0) -
+    (order.shipping_label_fee ?? 0);
   if (sellerAmount <= 0) {
     return { ok: false, reason: "Nothing to pay out." };
   }

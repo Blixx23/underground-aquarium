@@ -26,6 +26,7 @@ export default function SellPage() {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
+  const [shippingPrice, setShippingPrice] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [converting, setConverting] = useState(false);
@@ -154,6 +155,7 @@ export default function SellPage() {
           description: description.trim() || null,
           price: priceNum,
           stock: stock === "" ? null : parseInt(stock, 10),
+          shipping_price: Math.max(0, parseFloat(shippingPrice) || 0),
           is_live_animal: false,
           is_active: true,
           images: imageUrls.length ? imageUrls : null,
@@ -283,6 +285,22 @@ export default function SellPage() {
                 className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-ocean-300 mb-2">Shipping price (USD)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={shippingPrice}
+              onChange={(e) => setShippingPrice(e.target.value)}
+              placeholder="0.00"
+              className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
+            />
+            <p className="text-xs text-ocean-500 mt-2">
+              What the buyer pays for shipping, added to their total at checkout. Leave at 0 for free shipping.
+            </p>
           </div>
 
           <div>

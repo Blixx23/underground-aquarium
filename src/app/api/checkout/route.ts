@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     const { data: product } = await supabase
       .from("products")
-      .select("id, name, price, store_id, is_active")
+      .select("id, name, price, shipping_price, store_id, is_active")
       .eq("id", productId)
       .maybeSingle();
     if (!product || product.is_active === false) {
@@ -50,9 +50,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const amountTotal = Math.round(Number(product.price) * 100);
-    const platformFee = Math.round(amountTotal * PLATFORM_FEE_PERCENT);
-    if (!amountTotal || amountTotal < 50) {
+    // Buyer pays item + shipping. The 5% platform fee is on the ITEM only —
+    // your shipping revenue comes from the flat label fee at ship time, so we
+    // don't take a cut of shipping here. The shipping amount flows through to
+    // the seller (it funds the label they'll buy).
+    const itemCents = Math.round(Number(product.price) * 100);
+    const shippingCents = Math.round(Number(product.shipping_price ?? 0) * 100);
+    const amountTotal = itemCents + shippingCents;
+    const platformFee = Math.round(itemCents * PLATFORM_FEE_PERCENT);
+    if (!itemCents || itemCents < 50) {
       return NextResponse.json({ error: "This item's price is too low to sell online." }, { status: 400 });
     }
 
@@ -71,22 +77,35 @@ export async function POST(request: Request) {
       .single();
     if (orderError) throw new Error(orderError.message);
 
+    // Show the item and (if any) shipping as separate lines at checkout.
+    const lineItems = [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: itemCents,
+          product_data: { name: product.name },
+        },
+      },
+    ];
+    if (shippingCents > 0) {
+      lineItems.push({
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: shippingCents,
+          product_data: { name: "Shipping" },
+        },
+      });
+    }
+
     const origin = request.headers.get("origin") ?? new URL(request.url).origin;
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       shipping_address_collection: {
         allowed_countries: ["US"],
       },
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "usd",
-            unit_amount: amountTotal,
-            product_data: { name: product.name },
-          },
-        },
-      ],
+      line_items: lineItems,
       payment_intent_data: {
         // Hold-and-release: this charge lands in YOUR platform balance.
         // No transfer happens now — the seller is paid later, after the
