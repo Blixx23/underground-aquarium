@@ -12,7 +12,7 @@ export default function Hero() {
           Dive Into the{" "}<span style={{color:"#7dc4f0"}}>Underground</span>
         </h1>
         <p style={{fontFamily:"Georgia,serif",fontSize:"1.2rem",color:"rgba(194,228,250,0.85)",maxWidth:"580px",margin:"0 auto 40px",lineHeight:1.75}}>
-          Buy, sell, and connect with aquarium enthusiasts. Live fish, rare plants, 3D-printed gear — everything the hobby needs, in one place.
+          Buy, sell, and connect with aquarium enthusiasts. Rare plants, equipment, and 3D-printed gear — everything the hobby needs, in one place.
         </p>
         <div style={{display:"flex",flexWrap:"wrap",gap:"16px",justifyContent:"center",marginBottom:"60px"}}>
           <Link href="/marketplace" style={{display:"inline-flex",alignItems:"center",gap:"10px",padding:"14px 28px",background:"#0e4a76",color:"#fff",borderRadius:"14px",fontSize:"1.05rem",fontWeight:600,textDecoration:"none",boxShadow:"0 0 30px rgba(14,74,118,0.6)"}}>

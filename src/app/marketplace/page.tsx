@@ -10,15 +10,15 @@ type Product = {
   price: number | string;
   stock: number | null;
   images: string[] | null;
-  is_live_animal: boolean | null;
 };
 
 export default async function MarketplacePage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, slug, description, price, stock, images, is_live_animal")
+    .select("id, name, slug, description, price, stock, images")
     .eq("is_active", true)
+    .not("is_live_animal", "is", true)
     .order("created_at", { ascending: false });
 
   const products = (data ?? []) as unknown as Product[];
@@ -34,7 +34,7 @@ export default async function MarketplacePage() {
             Browse the Reef
           </h1>
           <p className="text-ocean-400 max-w-2xl">
-            Live fish, rare plants, and gear from aquarium keepers everywhere.
+            Rare plants, equipment, and aquascaping gear from keepers everywhere.
           </p>
         </div>
 
@@ -73,11 +73,6 @@ export default async function MarketplacePage() {
                       />
                     ) : (
                       <Fish className="w-12 h-12 text-ocean-700" />
-                    )}
-                    {product.is_live_animal && (
-                      <span className="absolute top-3 left-3 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider rounded-full bg-brine-500/90 text-white">
-                        Live animal
-                      </span>
                     )}
                   </div>
 

@@ -1,10 +1,10 @@
-import { Fish, Leaf, Wrench, Printer, Calendar, BookOpen } from "lucide-react";
+import { Mountain, Leaf, Wrench, Printer, Calendar, BookOpen } from "lucide-react";
 
 const features = [
   {
-    icon: Fish,
-    title: "Live Fish & Invertebrates",
-    desc: "Connect with breeders selling healthy, quality fish — guppies, cichlids, shrimp, and rare species you won't find at big-box stores.",
+    icon: Mountain,
+    title: "Aquascaping & Hardscape",
+    desc: "Driftwood, dragon stone, seiryu rock, and substrate from keepers who aquascape — the building blocks of a stunning tank.",
     color: "ocean",
   },
   {

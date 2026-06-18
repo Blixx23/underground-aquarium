@@ -68,8 +68,13 @@ export default function TermsPage() {
               We are not a party to transactions between users, and we do not
               guarantee any listing, item, or sale. Sellers are solely
               responsible for their listings, for the legality of what they sell
-              (including any rules that apply to shipping live animals or
-              plants), and for fulfilling their orders.
+              (including any rules that apply to shipping plants), and for
+              fulfilling their orders.
+            </p>
+            <p>
+              Live animals may not be listed or sold on Underground Aquarium.
+              The marketplace is for aquatic plants, equipment, hardscape,
+              decor, and other dry goods only.
             </p>
             <p>
               Payments are processed by Stripe. We charge a service fee on

@@ -16,7 +16,7 @@ import {
 export const metadata = {
   title: "Vendor Guide",
   description:
-    "Everything you need to start selling fish, plants, and gear on UndergroundAquarium — from your first listing to your first payout.",
+    "Everything you need to start selling plants, equipment, and gear on UndergroundAquarium — from your first listing to your first payout.",
 };
 
 // --- Edit your content here ---------------------------------------------
@@ -30,7 +30,7 @@ const steps = [
   {
     icon: Camera,
     title: "List your products",
-    body: "Add clear photos, honest descriptions, and a fair price for your fish, plants, or gear.",
+    body: "Add clear photos, honest descriptions, and a fair price for your plants, equipment, or gear.",
   },
   {
     icon: DollarSign,
@@ -48,17 +48,17 @@ const listingTips = [
   {
     icon: Camera,
     title: "Photos do the selling",
-    body: "Use natural light and show the actual animal or plant — not a stock photo. A short clip of fish swimming builds huge trust.",
+    body: "Use natural light and show the actual item — not a stock photo. A short video from a few angles builds huge trust.",
   },
   {
     icon: CheckCircle2,
     title: "Be honest and specific",
-    body: "List size, age, sex (if known), and any quirks. Accurate listings mean happy buyers and far fewer disputes.",
+    body: "List dimensions, condition, materials, and any quirks. Accurate listings mean happy buyers and far fewer disputes.",
   },
   {
     icon: DollarSign,
     title: "Price it fairly",
-    body: "Factor in your time, livestock cost, and the 5% commission. Competitive, honest pricing wins repeat buyers.",
+    body: "Factor in your time, material cost, and the 5% commission. Competitive, honest pricing wins repeat buyers.",
   },
   {
     icon: MessageCircle,
@@ -68,11 +68,11 @@ const listingTips = [
 ];
 
 const shippingTips = [
-  "Ship live animals early in the week (Mon–Wed) so they're never stuck in a depot over the weekend.",
-  "Use insulated boxes with heat or cold packs to match the season and the species' needs.",
-  "Double-bag livestock in breathable fish bags with plenty of air, and cushion against movement.",
-  "Always use a tracked, expedited service and share the tracking number with your buyer.",
-  "State your live-arrival / DOA policy clearly in every listing so expectations are set up front.",
+  "Pack snugly so nothing shifts in transit — wrap fragile items like glass or printed decor in bubble wrap or foam.",
+  "For live plants, wrap the roots in a damp paper towel and seal them in a bag so they arrive hydrated.",
+  "Choose a sturdy box sized to the item, and fill empty space so the contents can't rattle around.",
+  "Always use a tracked service and share the tracking number with your buyer.",
+  "Ship promptly after a sale — fast dispatch is one of the biggest drivers of great reviews.",
 ];
 
 const faqs = [
@@ -86,7 +86,7 @@ const faqs = [
   },
   {
     q: "What can I sell?",
-    a: "Healthy livestock you've bred or raised, aquatic plants, equipment, and aquarium decor or 3D-printed gear. If it serves the hobby, it likely has a home here.",
+    a: "Aquatic plants, equipment, hardscape, substrate, foods, and aquarium decor or 3D-printed gear. We don't allow live animals — but if it's dry goods that serve the hobby, it likely has a home here.",
   },
   {
     q: "Who handles shipping?",
@@ -213,7 +213,7 @@ export default function VendorGuidePage() {
           </div>
         </section>
 
-        {/* Shipping live arrivals */}
+        {/* Packing & shipping */}
         <section className="mt-20">
           <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-8">
             <div className="flex items-center gap-3 mb-5">
@@ -221,13 +221,13 @@ export default function VendorGuidePage() {
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
               </div>
               <h2 className="font-display text-2xl sm:text-3xl text-white">
-                Shipping live arrivals
+                Packing &amp; shipping
               </h2>
             </div>
             <p className="text-ocean-200 mb-6 max-w-2xl">
-              Safely shipping fish and plants is what separates great sellers
-              from the rest. Treat every package like the animal's life depends
-              on it — because it does.
+              Careful packing is what separates great sellers from the rest. A
+              well-protected package that arrives in perfect condition earns
+              trust, repeat buyers, and glowing reviews.
             </p>
             <ul className="space-y-3">
               {shippingTips.map((tip) => (

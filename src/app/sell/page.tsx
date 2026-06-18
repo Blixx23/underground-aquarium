@@ -7,28 +7,6 @@ import { Fish, Loader2, ImagePlus } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
-const GROUP_ORDER = [
-  "Tetras & Characins",
-  "Rasboras & Small Cyprinids",
-  "Danios",
-  "Barbs",
-  "Livebearers",
-  "Gouramis & Bettas",
-  "Corydoras & Relatives",
-  "Other Catfish",
-  "Plecos (L-number Catfish)",
-  "Loaches",
-  "Cichlids - New World",
-  "Cichlids - African Rift Lake",
-  "Rainbowfish",
-  "Killifish",
-  "Oddballs & Specialty",
-  "Goldfish & Coldwater",
-  "Shrimp",
-  "Snails",
-  "Crayfish",
-];
-
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -36,12 +14,6 @@ function slugify(text: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
-
-type SpeciesOption = {
-  slug: string;
-  common_name: string;
-  group_name: string | null;
-};
 
 export default function SellPage() {
   const router = useRouter();
@@ -54,9 +26,6 @@ export default function SellPage() {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
-  const [isLiveAnimal, setIsLiveAnimal] = useState(false);
-  const [speciesSlug, setSpeciesSlug] = useState("");
-  const [speciesList, setSpeciesList] = useState<SpeciesOption[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [converting, setConverting] = useState(false);
@@ -70,28 +39,6 @@ export default function SellPage() {
       setCheckingAuth(false);
     });
   }, [supabase]);
-
-  useEffect(() => {
-    supabase
-      .from("species")
-      .select("slug, common_name, group_name")
-      .order("common_name")
-      .then(({ data }) => setSpeciesList(data ?? []));
-  }, [supabase]);
-
-  const groupedSpecies = useMemo(() => {
-    const map = new Map<string, { slug: string; common_name: string }[]>();
-    for (const sp of speciesList) {
-      const key = sp.group_name ?? "Other";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push({ slug: sp.slug, common_name: sp.common_name });
-    }
-    const orderedKeys = [
-      ...GROUP_ORDER.filter((g) => map.has(g)),
-      ...[...map.keys()].filter((g) => !GROUP_ORDER.includes(g)).sort(),
-    ];
-    return orderedKeys.map((g) => [g, map.get(g)!] as const);
-  }, [speciesList]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
@@ -207,10 +154,10 @@ export default function SellPage() {
           description: description.trim() || null,
           price: priceNum,
           stock: stock === "" ? null : parseInt(stock, 10),
-          is_live_animal: isLiveAnimal,
+          is_live_animal: false,
           is_active: true,
           images: imageUrls.length ? imageUrls : null,
-          species_slug: speciesSlug || null,
+          species_slug: null,
         })
         .select("slug")
         .single();
@@ -277,33 +224,9 @@ export default function SellPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Galaxy Koi Betta"
+              placeholder="Aquascaping Driftwood Piece"
               className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm text-ocean-300 mb-2">Species (optional)</label>
-            <select
-              value={speciesSlug}
-              onChange={(e) => setSpeciesSlug(e.target.value)}
-              className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white focus:outline-none focus:border-ocean-500 transition-colors"
-            >
-              <option value="">— Not applicable —</option>
-              {groupedSpecies.map(([group, items]) => (
-                <optgroup key={group} label={group}>
-                  {items.map((sp) => (
-                    <option key={sp.slug} value={sp.slug}>
-                      {sp.common_name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <p className="text-xs text-ocean-500 mt-2">
-              Link this listing to a species and it will appear on that species&apos;
-              page in the database.
-            </p>
           </div>
 
           <div>
@@ -372,16 +295,6 @@ export default function SellPage() {
               className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors resize-none"
             />
           </div>
-
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isLiveAnimal}
-              onChange={(e) => setIsLiveAnimal(e.target.checked)}
-              className="w-4 h-4 rounded border-ocean-700 bg-ocean-900 accent-brine-500"
-            />
-            <span className="text-sm text-ocean-300">This is a live animal</span>
-          </label>
 
           <button
             type="submit"

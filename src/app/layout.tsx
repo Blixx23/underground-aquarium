@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s | UndergroundAquarium",
   },
   description:
-    "Buy, sell, and connect with aquarium enthusiasts. Live fish, rare plants, 3D-printed gear, and a vibrant community — all in one place.",
+    "Buy, sell, and connect with aquarium enthusiasts. Rare plants, equipment, 3D-printed gear, and a vibrant community — all in one place.",
   keywords: ["aquarium", "fish", "marketplace", "freshwater", "plants", "aquatic", "hobbyist"],
   openGraph: {
     title: "UndergroundAquarium — The Hobbyist-First Aquarium Marketplace",

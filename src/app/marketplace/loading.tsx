@@ -12,7 +12,7 @@ export default function MarketplaceLoading() {
             Browse the Reef
           </h1>
           <p className="text-ocean-400 max-w-2xl">
-            Live fish, rare plants, and gear from aquarium keepers everywhere.
+            Rare plants, equipment, and aquascaping gear from keepers everywhere.
           </p>
         </div>
 

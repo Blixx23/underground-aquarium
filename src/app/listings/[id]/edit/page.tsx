@@ -23,7 +23,6 @@ export default function EditListingPage() {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
-  const [isLiveAnimal, setIsLiveAnimal] = useState(false);
 
   const [existingImages, setExistingImages] = useState<string[] | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -62,7 +61,7 @@ export default function EditListingPage() {
 
       const { data: product } = await supabase
         .from("products")
-        .select("name, slug, price, stock, description, is_live_animal, images")
+        .select("name, slug, price, stock, description, images")
         .eq("id", id)
         .in("store_id", storeIds)
         .maybeSingle();
@@ -80,7 +79,6 @@ export default function EditListingPage() {
       setPrice(product.price != null ? String(product.price) : "");
       setStock(product.stock != null ? String(product.stock) : "");
       setDescription(product.description ?? "");
-      setIsLiveAnimal(Boolean(product.is_live_animal));
       const imgs = (product.images as string[] | null) ?? null;
       setExistingImages(imgs);
       setImagePreview(imgs?.[0] ?? null);
@@ -174,7 +172,6 @@ export default function EditListingPage() {
           description: description.trim() || null,
           price: priceNum,
           stock: stock === "" ? null : parseInt(stock, 10),
-          is_live_animal: isLiveAnimal,
           images: images && images.length ? images : null,
         })
         .eq("id", id);
@@ -257,7 +254,7 @@ export default function EditListingPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Galaxy Koi Betta"
+              placeholder="Aquascaping Driftwood Piece"
               className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
             />
           </div>
@@ -328,16 +325,6 @@ export default function EditListingPage() {
               className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors resize-none"
             />
           </div>
-
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isLiveAnimal}
-              onChange={(e) => setIsLiveAnimal(e.target.checked)}
-              className="w-4 h-4 rounded border-ocean-700 bg-ocean-900 accent-brine-500"
-            />
-            <span className="text-sm text-ocean-300">This is a live animal</span>
-          </label>
 
           <div className="flex items-center gap-3">
             <button

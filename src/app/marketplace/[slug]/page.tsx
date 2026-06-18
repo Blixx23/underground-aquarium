@@ -11,7 +11,6 @@ type Product = {
   price: number | string;
   stock: number | null;
   images: string[] | null;
-  is_live_animal: boolean | null;
   species_slug: string | null;
 };
 
@@ -26,10 +25,11 @@ export default async function ProductPage({
   const { data } = await supabase
     .from("products")
     .select(
-      "id, name, slug, description, price, stock, images, is_live_animal, species_slug"
+      "id, name, slug, description, price, stock, images, species_slug"
     )
     .eq("slug", slug)
     .eq("is_active", true)
+    .not("is_live_animal", "is", true)
     .maybeSingle();
 
   const product = data as unknown as Product | null;
@@ -82,11 +82,6 @@ export default async function ProductPage({
               <img src={image} alt={product.name} className="w-full h-full object-cover" />
             ) : (
               <Fish className="w-20 h-20 text-ocean-700" />
-            )}
-            {product.is_live_animal && (
-              <span className="absolute top-4 left-4 px-3 py-1 text-[10px] font-mono uppercase tracking-wider rounded-full bg-brine-500/90 text-white">
-                Live animal
-              </span>
             )}
           </div>
 
