@@ -18,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/stores",
     "/blog",
     "/clubs",
+    "/clubs/start",
     "/clubs/discover",
   ];
 
@@ -34,10 +35,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .select("slug")
     .eq("status", "published");
 
+  // Only approved, public clubs — reads the same view the Discover page uses.
   const { data: clubs } = await supabasePublic
-    .from("clubs")
-    .select("slug")
-    .eq("is_public", true);
+    .from("public_club_directory")
+    .select("slug");
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
