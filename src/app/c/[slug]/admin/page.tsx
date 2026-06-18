@@ -1,9 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ShieldAlert, CreditCard } from "lucide-react";
+import { ArrowLeft, ShieldAlert, CreditCard, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import MemberManager from "./MemberManager";
 import ClubPayoutButton from "./ClubPayoutButton";
+import ClubSettings from "./ClubSettings";
+import DeleteClubButton from "./DeleteClubButton";
 
 export default async function ClubAdminPage({
   params,
@@ -19,7 +21,9 @@ export default async function ClubAdminPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, stripe_account_id, dues_amount_cents, payouts_enabled")
+    .select(
+      "id, name, slug, description, city, state, logo_url, is_public, stripe_account_id, dues_amount_cents, payouts_enabled"
+    )
     .eq("slug", slug)
     .maybeSingle();
   if (!club) notFound();
@@ -101,6 +105,26 @@ export default async function ClubAdminPage({
         </Link>
         <h1 className="font-display text-3xl text-white mb-6">Club admin</h1>
 
+        {(role === "owner" || role === "admin") && (
+          <div className="mb-8">
+            <h2 className="text-white font-medium mb-3 flex items-center gap-2">
+              <Settings className="w-5 h-5 text-ocean-300" /> Club settings
+            </h2>
+            <ClubSettings
+              club={{
+                id: club.id,
+                name: club.name,
+                description: club.description,
+                city: club.city,
+                state: club.state,
+                logo_url: club.logo_url,
+                is_public: club.is_public,
+                dues_amount_cents: club.dues_amount_cents,
+              }}
+            />
+          </div>
+        )}
+
         <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-8">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
@@ -152,6 +176,12 @@ export default async function ClubAdminPage({
           viewerRole={role as string}
           initialMembers={enriched}
         />
+
+        {role === "owner" && (
+          <div className="mt-10">
+            <DeleteClubButton clubId={club.id} clubName={club.name} />
+          </div>
+        )}
       </div>
     </main>
   );

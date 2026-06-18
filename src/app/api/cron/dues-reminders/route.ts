@@ -81,6 +81,7 @@ export async function GET(request: Request) {
       "id, club_id, user_id, email, status, paid_through, clubs(slug, name, dues_amount_cents, payouts_enabled)"
     )
     .not("paid_through", "is", null)
+    .neq("role", "owner")
     .in("status", ["active", "lapsed"]);
 
   if (error) {

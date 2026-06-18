@@ -6,6 +6,7 @@ import { Menu, X, Fish, ChevronDown, User as UserIcon, LogOut } from "lucide-rea
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import NotificationBell from "./NotificationBell";
 
 const nav = [
   { label: "Marketplace", href: "/marketplace" },
@@ -141,6 +142,7 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
+          <NotificationBell />
           {user ? (
             <>
               <Link
@@ -217,6 +219,13 @@ export default function Navbar() {
           <div className="mt-4 flex flex-col gap-3">
             {user ? (
               <>
+                <Link
+                  href="/notifications"
+                  onClick={() => setOpen(false)}
+                  className="text-center py-3 text-ocean-200"
+                >
+                  Notifications
+                </Link>
                 <Link
                   href="/profile"
                   onClick={() => setOpen(false)}

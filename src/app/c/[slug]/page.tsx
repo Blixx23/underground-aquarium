@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import PayDuesButton from "./PayDuesButton";
 import DuesSuccessBanner from "./DuesSuccessBanner";
+import LeaveClubButton from "./LeaveClubButton";
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -65,7 +66,11 @@ export default async function ClubHomePage({
     : null;
   const isPaidCurrent = paidThroughDate ? paidThroughDate >= today : false;
   const duesDue =
-    isMember && club.dues_amount_cents > 0 && canCollect && !isPaidCurrent;
+    isMember &&
+    role !== "owner" &&
+    club.dues_amount_cents > 0 &&
+    canCollect &&
+    !isPaidCurrent;
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
@@ -181,6 +186,12 @@ export default async function ClubHomePage({
             <p className="text-ocean-300">
               You&apos;re viewing {club.name}. Member sign-up is coming soon.
             </p>
+          </div>
+        )}
+
+        {isMember && role !== "owner" && (
+          <div className="mt-10 pt-6 border-t border-ocean-900/60">
+            <LeaveClubButton clubId={club.id} clubName={club.name} />
           </div>
         )}
       </div>

@@ -120,6 +120,19 @@ export async function POST(request: Request) {
       coversUntil.setMonth(coversUntil.getMonth() + coversMonths);
       const coversUntilStr = coversUntil.toISOString().slice(0, 10);
 
+      // Snapshot identity so the ledger survives club/member deletion.
+      let clubName: string | null = null;
+      if (clubId) {
+        const { data: clubRow } = await supabaseAdmin
+          .from("clubs")
+          .select("name")
+          .eq("id", clubId)
+          .maybeSingle();
+        clubName = clubRow?.name ?? null;
+      }
+      const payerName = session.customer_details?.name ?? null;
+      const payerEmail = session.customer_details?.email ?? null;
+
       const { error: dpErr } = await supabaseAdmin.from("dues_payments").insert({
         club_id: clubId,
         member_id: memberId,
@@ -129,6 +142,9 @@ export async function POST(request: Request) {
         stripe_session_id: session.id,
         stripe_payment_intent: paymentIntent,
         covers_until: coversUntilStr,
+        club_name: clubName,
+        payer_name: payerName,
+        payer_email: payerEmail,
       });
       if (dpErr) {
         console.error("Failed to record dues payment:", dpErr.message);
@@ -147,6 +163,38 @@ export async function POST(request: Request) {
           .update({ status: "active", paid_through: coversUntilStr })
           .eq("club_id", clubId)
           .eq("user_id", userId);
+      }
+
+      // Receipt email to the payer.
+      const resend = process.env.RESEND_API_KEY
+        ? new Resend(process.env.RESEND_API_KEY)
+        : null;
+      if (resend && payerEmail) {
+        const amountStr = (amountTotal / 100).toFixed(2);
+        const coversLabel = new Date(
+          coversUntilStr + "T00:00:00"
+        ).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        try {
+          await resend.emails.send({
+            from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
+            to: payerEmail,
+            subject: `Your ${clubName ?? "club"} dues receipt`,
+            html: `<p>Thanks${
+              payerName ? `, ${payerName}` : ""
+            }! Your payment to <strong>${
+              clubName ?? "your club"
+            }</strong> was received.</p>
+<p><strong>Amount:</strong> $${amountStr}<br>
+<strong>Membership active through:</strong> ${coversLabel}</p>
+<p>Keep this email as your receipt.</p>`,
+          });
+        } catch (e) {
+          console.error("Dues receipt email failed:", e);
+        }
       }
 
       console.log(
