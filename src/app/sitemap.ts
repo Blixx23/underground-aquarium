@@ -17,6 +17,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/water-check",
     "/stores",
     "/blog",
+    "/events",
+    "/community",
+    "/about",
     "/clubs",
     "/clubs/start",
     "/clubs/discover",
@@ -39,6 +42,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: clubs } = await supabasePublic
     .from("public_club_directory")
     .select("slug");
+
+  // Published events. Past events still have live, indexable pages, so we
+  // include everything published rather than only upcoming ones.
+  const { data: events } = await supabasePublic
+    .from("events")
+    .select("slug")
+    .eq("status", "published");
+
+  // Active marketplace listings. Mirror the product page's own filters
+  // (active, and not a live animal) so we never list a URL that would 404.
+  const { data: products } = await supabasePublic
+    .from("products")
+    .select("slug")
+    .eq("is_active", true)
+    .not("is_live_animal", "is", true);
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
@@ -75,11 +93,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  const eventEntries = (events ?? []).map((e) => ({
+    url: `${baseUrl}/events/${e.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
+  const productEntries = (products ?? []).map((p) => ({
+    url: `${baseUrl}/marketplace/${p.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
   return [
     ...staticEntries,
     ...termEntries,
     ...speciesEntries,
     ...storeEntries,
     ...clubEntries,
+    ...eventEntries,
+    ...productEntries,
   ];
 }
