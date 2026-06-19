@@ -1,6 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trophy, Send, ClipboardCheck, Fish, Leaf } from "lucide-react";
+import {
+  ArrowLeft,
+  Trophy,
+  Send,
+  ClipboardCheck,
+  ListChecks,
+  Fish,
+  Leaf,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 type Standing = {
@@ -170,6 +178,14 @@ export default async function AwardsHubPage({
                   {pendingCount}
                 </span>
               )}
+            </Link>
+          )}
+          {isOfficer && (
+            <Link
+              href={`/c/${slug}/awards/list`}
+              className="inline-flex items-center gap-2 rounded-full border border-ocean-700/60 px-5 py-2.5 text-sm font-medium text-ocean-200 hover:bg-ocean-800/60 transition-colors"
+            >
+              <ListChecks className="w-4 h-4" /> Point list
             </Link>
           )}
         </div>
