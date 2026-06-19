@@ -15,6 +15,12 @@ type QueueClub = {
   state: string | null;
   logo_url: string | null;
   dues_amount_cents: number | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  public_url: string | null;
+  meeting_info: string | null;
+  nonprofit_info: string | null;
   owner_name: string | null;
   owner_username: string | null;
   owner_email: string | null;
@@ -51,7 +57,7 @@ export default async function AdminClubsPage() {
   const { data: clubs } = await supabaseAdmin
     .from("clubs")
     .select(
-      "id, name, slug, description, city, state, logo_url, dues_amount_cents"
+      "id, name, slug, description, city, state, logo_url, dues_amount_cents, contact_name, contact_email, contact_phone, public_url, meeting_info, nonprofit_info"
     )
     .eq("is_public", true)
     .eq("approved", false)
@@ -108,6 +114,12 @@ export default async function AdminClubsPage() {
       state: c.state ?? null,
       logo_url: c.logo_url ?? null,
       dues_amount_cents: c.dues_amount_cents ?? null,
+      contact_name: c.contact_name ?? null,
+      contact_email: c.contact_email ?? null,
+      contact_phone: c.contact_phone ?? null,
+      public_url: c.public_url ?? null,
+      meeting_info: c.meeting_info ?? null,
+      nonprofit_info: c.nonprofit_info ?? null,
       owner_name: owner?.name ?? null,
       owner_username: owner?.user_id
         ? usernameById[owner.user_id] ?? null

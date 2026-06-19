@@ -14,6 +14,12 @@ type Club = {
   logo_url: string | null;
   is_public: boolean;
   approved: boolean;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  public_url: string | null;
+  meeting_info: string | null;
+  nonprofit_info: string | null;
   dues_amount_cents: number;
 };
 
@@ -30,6 +36,13 @@ export default function ClubSettings({ club }: { club: Club }) {
     club.dues_amount_cents ? (club.dues_amount_cents / 100).toFixed(2) : ""
   );
   const [logoUrl, setLogoUrl] = useState<string | null>(club.logo_url);
+
+  const [contactName, setContactName] = useState(club.contact_name ?? "");
+  const [contactEmail, setContactEmail] = useState(club.contact_email ?? "");
+  const [contactPhone, setContactPhone] = useState(club.contact_phone ?? "");
+  const [publicUrl, setPublicUrl] = useState(club.public_url ?? "");
+  const [meetingInfo, setMeetingInfo] = useState(club.meeting_info ?? "");
+  const [nonprofitInfo, setNonprofitInfo] = useState(club.nonprofit_info ?? "");
 
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -64,6 +77,21 @@ export default function ClubSettings({ club }: { club: Club }) {
       setError("Club name can't be empty.");
       return;
     }
+    // Verification details are required before a club can go public.
+    if (isPublic) {
+      const missing =
+        !contactName.trim() ||
+        !contactEmail.trim() ||
+        !contactPhone.trim() ||
+        !publicUrl.trim() ||
+        !meetingInfo.trim();
+      if (missing) {
+        setError(
+          "To list your club publicly, fill in the organizer name, email, phone, a public link, and meeting info below."
+        );
+        return;
+      }
+    }
     const duesCents = Math.max(0, Math.round((parseFloat(dues) || 0) * 100));
     setSaving(true);
     try {
@@ -77,6 +105,12 @@ export default function ClubSettings({ club }: { club: Club }) {
           is_public: isPublic,
           dues_amount_cents: duesCents,
           logo_url: logoUrl,
+          contact_name: contactName.trim() || null,
+          contact_email: contactEmail.trim() || null,
+          contact_phone: contactPhone.trim() || null,
+          public_url: publicUrl.trim() || null,
+          meeting_info: meetingInfo.trim() || null,
+          nonprofit_info: nonprofitInfo.trim() || null,
         })
         .eq("id", club.id);
       if (updErr) throw updErr;
@@ -91,6 +125,7 @@ export default function ClubSettings({ club }: { club: Club }) {
 
   const inputClass =
     "w-full rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500";
+  const labelClass = "block text-xs text-ocean-400 mb-1";
 
   return (
     <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 space-y-4">
@@ -131,7 +166,7 @@ export default function ClubSettings({ club }: { club: Club }) {
       </div>
 
       <div>
-        <label className="block text-xs text-ocean-400 mb-1">Club name</label>
+        <label className={labelClass}>Club name</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -140,7 +175,7 @@ export default function ClubSettings({ club }: { club: Club }) {
       </div>
 
       <div>
-        <label className="block text-xs text-ocean-400 mb-1">Description</label>
+        <label className={labelClass}>Description</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -151,7 +186,7 @@ export default function ClubSettings({ club }: { club: Club }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs text-ocean-400 mb-1">City</label>
+          <label className={labelClass}>City</label>
           <input
             value={city}
             onChange={(e) => setCity(e.target.value)}
@@ -159,7 +194,7 @@ export default function ClubSettings({ club }: { club: Club }) {
           />
         </div>
         <div>
-          <label className="block text-xs text-ocean-400 mb-1">State</label>
+          <label className={labelClass}>State</label>
           <input
             value={state}
             onChange={(e) => setState(e.target.value)}
@@ -169,9 +204,7 @@ export default function ClubSettings({ club }: { club: Club }) {
       </div>
 
       <div>
-        <label className="block text-xs text-ocean-400 mb-1">
-          Annual dues (USD)
-        </label>
+        <label className={labelClass}>Annual dues (USD)</label>
         <div className="flex items-center gap-1 rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 focus-within:border-ocean-500 max-w-[160px]">
           <span className="text-ocean-500">$</span>
           <input
@@ -188,6 +221,78 @@ export default function ClubSettings({ club }: { club: Club }) {
           Leave blank or 0 for a free club. Changing this affects new dues
           payments only.
         </p>
+      </div>
+
+      {/* Organizer & verification */}
+      <div className="space-y-4 rounded-xl border border-ocean-800/60 bg-ocean-950/30 p-4">
+        <div>
+          <p className="text-sm font-medium text-white">
+            Organizer &amp; verification
+          </p>
+          <p className="text-xs text-ocean-500 mt-0.5">
+            Required to list your club publicly — it helps us confirm real
+            clubs.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Organizer name</label>
+            <input
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              placeholder="Jane Smith"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Contact email</label>
+            <input
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="club@email.com"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Contact phone</label>
+            <input
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="(555) 123-4567"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>
+              Public link (website / Facebook / IG)
+            </label>
+            <input
+              value={publicUrl}
+              onChange={(e) => setPublicUrl(e.target.value)}
+              placeholder="https://..."
+              className={inputClass}
+            />
+          </div>
+        </div>
+        <div>
+          <label className={labelClass}>Meeting info (where &amp; when)</label>
+          <input
+            value={meetingInfo}
+            onChange={(e) => setMeetingInfo(e.target.value)}
+            placeholder="2nd Saturday monthly · Roseville Library (or online)"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Nonprofit status (optional)</label>
+          <input
+            value={nonprofitInfo}
+            onChange={(e) => setNonprofitInfo(e.target.value)}
+            placeholder="e.g. 501(c)(3), EIN 12-3456789 — or leave blank"
+            className={inputClass}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

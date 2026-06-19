@@ -14,6 +14,12 @@ type QueueClub = {
   state: string | null;
   logo_url: string | null;
   dues_amount_cents: number | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  public_url: string | null;
+  meeting_info: string | null;
+  nonprofit_info: string | null;
   owner_name: string | null;
   owner_username: string | null;
   owner_email: string | null;
@@ -121,6 +127,31 @@ export default function AdminClubsList({
                     {c.description}
                   </p>
                 )}
+                <div className="mt-3 space-y-1 text-xs text-ocean-400 border-t border-ocean-800/50 pt-3">
+                  {c.contact_name && <p>Organizer: {c.contact_name}</p>}
+                  {(c.contact_email || c.contact_phone) && (
+                    <p>
+                      {[c.contact_email, c.contact_phone]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {c.public_url && (
+                    <p className="truncate">
+                      Link:{" "}
+                      <a
+                        href={c.public_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-ocean-300 hover:text-ocean-100 underline underline-offset-2"
+                      >
+                        {c.public_url}
+                      </a>
+                    </p>
+                  )}
+                  {c.meeting_info && <p>Meets: {c.meeting_info}</p>}
+                  {c.nonprofit_info && <p>Nonprofit: {c.nonprofit_info}</p>}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3 mt-4">
