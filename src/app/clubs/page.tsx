@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, Crown, Plus, ArrowRight } from "lucide-react";
+import { Users, Crown, Plus, ArrowRight, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 type ClubRow = {
@@ -15,6 +15,17 @@ type ClubRow = {
   } | null;
 };
 
+type InviteRow = {
+  token: string;
+  role: string;
+  club_id: string;
+  club_slug: string;
+  club_name: string;
+  club_logo_url: string | null;
+  club_city: string | null;
+  club_state: string | null;
+};
+
 export default async function ClubsPage() {
   const supabase = await createClient();
   const {
@@ -22,6 +33,7 @@ export default async function ClubsPage() {
   } = await supabase.auth.getUser();
 
   let rows: ClubRow[] = [];
+  let invites: InviteRow[] = [];
   if (user) {
     const { data } = await supabase
       .from("club_members")
@@ -29,6 +41,9 @@ export default async function ClubsPage() {
       .eq("user_id", user.id)
       .order("joined_at", { ascending: true });
     rows = (data ?? []) as unknown as ClubRow[];
+
+    const { data: inv } = await supabase.rpc("my_pending_invites");
+    invites = (inv ?? []) as InviteRow[];
   }
 
   return (
@@ -52,6 +67,55 @@ export default async function ClubsPage() {
             Discover more clubs →
           </Link>
         </p>
+
+        {user && invites.length > 0 && (
+          <div className="mb-8">
+            <p className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+              <Mail className="w-4 h-4 text-amber-300" /> Club invitations
+            </p>
+            <div className="space-y-3">
+              {invites.map((inv) => (
+                <div
+                  key={inv.token}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-5 py-4"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {inv.club_logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={inv.club_logo_url}
+                        alt={inv.club_name}
+                        className="w-11 h-11 rounded-xl object-cover border border-ocean-800/60 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-xl bg-ocean-800/60 flex items-center justify-center shrink-0">
+                        <Users className="w-5 h-5 text-ocean-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-white font-medium truncate">
+                        {inv.club_name}
+                      </p>
+                      <p className="text-xs text-ocean-500 capitalize">
+                        {[inv.club_city, inv.club_state]
+                          .filter(Boolean)
+                          .join(", ")}
+                        {inv.club_city || inv.club_state ? " · " : ""}
+                        Invited as {inv.role}
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/join/${inv.token}`}
+                    className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-4 py-2 text-sm font-medium text-ocean-950 hover:bg-amber-300 transition-colors shrink-0"
+                  >
+                    Accept
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {!user ? (
           <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-12 text-center">
