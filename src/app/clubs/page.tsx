@@ -37,7 +37,7 @@ export default async function ClubsPage() {
         <div className="flex items-center justify-between gap-4 mb-2">
           <h1 className="font-display text-3xl text-white">Your clubs</h1>
           <Link
-            href="/clubs/new"
+            href="/clubs/start"
             className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-4 py-2 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
           >
             <Plus className="w-4 h-4" /> Start a club
@@ -57,7 +57,14 @@ export default async function ClubsPage() {
           <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-12 text-center">
             <Users className="w-10 h-10 text-ocean-600 mx-auto mb-4" />
             <p className="text-ocean-300 mb-6">
-              Sign in to see your clubs, or start one.
+              Sign in to see your clubs, or{" "}
+              <Link
+                href="/clubs/start"
+                className="text-ocean-300 hover:text-white underline underline-offset-2"
+              >
+                learn about running one
+              </Link>
+              .
             </p>
             <Link
               href="/login"
@@ -74,7 +81,7 @@ export default async function ClubsPage() {
               Start your own, or join one with an invite link.
             </p>
             <Link
-              href="/clubs/new"
+              href="/clubs/start"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ocean-700 text-white hover:bg-ocean-600 transition-colors"
             >
               <Plus className="w-4 h-4" /> Start a club

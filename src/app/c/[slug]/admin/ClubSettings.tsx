@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, Users, Check } from "lucide-react";
+import { Loader2, Upload, Users, Check, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Club = {
@@ -13,6 +13,7 @@ type Club = {
   state: string | null;
   logo_url: string | null;
   is_public: boolean;
+  approved: boolean;
   dues_amount_cents: number;
 };
 
@@ -189,15 +190,35 @@ export default function ClubSettings({ club }: { club: Club }) {
         </p>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-ocean-200 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={isPublic}
-          onChange={(e) => setIsPublic(e.target.checked)}
-          className="rounded border-ocean-700 bg-ocean-900"
-        />
-        Public club (shows on member profiles and discovery)
-      </label>
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm text-ocean-200 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isPublic}
+            onChange={(e) => setIsPublic(e.target.checked)}
+            className="rounded border-ocean-700 bg-ocean-900"
+          />
+          Public club (shows on member profiles and discovery)
+        </label>
+        {isPublic &&
+          (club.approved ? (
+            <p className="text-xs text-emerald-300 flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              Approved — your club is listed in the public directory.
+            </p>
+          ) : (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+              <p className="text-xs text-amber-200 flex items-start gap-1.5">
+                <Clock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  Pending review — your club won&apos;t appear in the public
+                  directory until an admin approves it. Members can still join
+                  with an invite link in the meantime.
+                </span>
+              </p>
+            </div>
+          ))}
+      </div>
 
       <div className="flex items-center gap-3 pt-1">
         <button
