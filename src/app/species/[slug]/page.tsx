@@ -6,6 +6,8 @@ import { supabasePublic } from "@/lib/supabase/public";
 
 export const revalidate = 3600;
 
+const SITE = "https://www.undergroundaquarium.com";
+
 type Params = { params: Promise<{ slug: string }> };
 
 function firstImage(images: unknown): string | null {
@@ -42,11 +44,29 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     ? `${s.common_name} (${s.scientific_name})`
     : s.common_name;
 
+  const description =
+    s.summary ??
+    `Care guide and profile for ${full} — water parameters, tank size, temperament, diet, and more at UndergroundAquarium.`;
+
+  const ogTitle = `${s.common_name} — Care Guide & Profile`;
+  const url = `/species/${slug}`;
+
   return {
     title: s.common_name,
-    description:
-      s.summary ?? `Care guide and profile for ${full} at UndergroundAquarium.`,
-    alternates: { canonical: `/species/${slug}` },
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: ogTitle,
+      description,
+      url,
+      type: "article",
+      siteName: "UndergroundAquarium",
+    },
+    twitter: {
+      card: "summary",
+      title: ogTitle,
+      description,
+    },
   };
 }
 
@@ -114,8 +134,57 @@ export default async function SpeciesDetailPage({ params }: Params) {
     .order("common_name")
     .limit(10);
 
+  const fullName = s.scientific_name
+    ? `${s.common_name} (${s.scientific_name})`
+    : s.common_name;
+
+  const schemaDescription =
+    s.summary ??
+    `Care guide and profile for ${fullName} — water parameters, tank size, temperament, diet, and more at UndergroundAquarium.`;
+
+  // Structured data for search engines (breadcrumbs + care-guide article)
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Species",
+          item: `${SITE}/species`,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: s.common_name,
+          item: `${SITE}/species/${s.slug}`,
+        },
+      ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: `${s.common_name} Care Guide`,
+      description: schemaDescription,
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": `${SITE}/species/${s.slug}`,
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "UndergroundAquarium",
+        url: SITE,
+      },
+    },
+  ];
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="max-w-2xl mx-auto">
         <nav className="flex items-center gap-1.5 text-sm text-ocean-400 mb-8">
           <Link href="/species" className="hover:text-white transition-colors">
