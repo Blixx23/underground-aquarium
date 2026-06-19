@@ -128,6 +128,26 @@ export default async function ClubAdminPage({
   const pendingDetailed = withDetails.filter((m) => m.status === "pending");
   const roster = withDetails.filter((m) => m.status !== "pending");
 
+  // Which roster members have paid online at least once. For them, the renewal
+  // date is system-managed and locked from manual editing. We match by member
+  // id OR by the same user in this club, in case a payment row lacks member_id.
+  const { data: paidRows } = await supabaseAdmin
+    .from("dues_payments")
+    .select("member_id, user_id")
+    .eq("club_id", club.id);
+  const paidMemberIds = new Set<string>();
+  const paidUserIds = new Set<string>();
+  for (const r of paidRows ?? []) {
+    if (r.member_id) paidMemberIds.add(r.member_id as string);
+    if (r.user_id) paidUserIds.add(r.user_id as string);
+  }
+  const rosterWithPaid = roster.map((m) => ({
+    ...m,
+    paid_online:
+      paidMemberIds.has(m.id) ||
+      (m.user_id ? paidUserIds.has(m.user_id) : false),
+  }));
+
   // Reflect the club's live Stripe status (same approach as the seller payouts
   // page): if onboarding looks done, flip "Connected" without depending on a
   // connected-account webhook. Uses the same condition as the webhook.
@@ -238,13 +258,14 @@ export default async function ClubAdminPage({
         <h2 className="font-display text-xl text-white mb-1">Members</h2>
         <p className="text-ocean-400 mb-4 text-sm">
           Add members, set their role and status, or remove them. The owner row
-          is locked.
+          is locked. You can set a renewal date for members who paid offline —
+          it locks once they pay online.
         </p>
 
         <MemberManager
           clubId={club.id}
           viewerRole={role as string}
-          initialMembers={roster}
+          initialMembers={rosterWithPaid}
         />
 
         {role === "owner" && (

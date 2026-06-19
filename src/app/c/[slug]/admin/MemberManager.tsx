@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Trash2, Crown, Loader2, Mail, Send, Copy, Check, Phone } from "lucide-react";
+import { UserPlus, Trash2, Crown, Loader2, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Member = {
@@ -16,10 +16,7 @@ type Member = {
   paid_through: string | null;
   joined_at: string;
   account_name?: string | null;
-  phone?: string | null;
-  experience?: string | null;
-  interests?: string | null;
-  note?: string | null;
+  paid_online?: boolean;
 };
 
 const ROLES = ["member", "officer", "admin"];
@@ -46,13 +43,15 @@ export default function MemberManager({
   const [role, setRole] = useState("member");
   const [tier, setTier] = useState("individual");
 
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("member");
-  const [inviting, setInviting] = useState(false);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [inviteEmailed, setInviteEmailed] = useState(false);
-  const [inviteErr, setInviteErr] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [renewalDraft, setRenewalDraft] = useState<Record<string, string>>(
+    Object.fromEntries(initialMembers.map((m) => [m.id, m.paid_through ?? ""]))
+  );
+
+  function fmtDate(d: string | null) {
+    if (!d) return "—";
+    const dt = new Date(d + "T00:00:00");
+    return Number.isNaN(dt.getTime()) ? "—" : dt.toLocaleDateString();
+  }
 
   async function addMember() {
     setError(null);
@@ -100,6 +99,26 @@ export default function MemberManager({
     }
   }
 
+  async function setRenewal(id: string) {
+    setError(null);
+    setBusyId(id);
+    try {
+      const date = renewalDraft[id] || null;
+      const { error: rpcErr } = await supabase.rpc("set_member_renewal", {
+        p_member: id,
+        p_date: date,
+      });
+      if (rpcErr) throw rpcErr;
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Couldn't set the renewal date."
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function removeMember(id: string, label: string) {
     if (!confirm(`Remove ${label} from the club?`)) return;
     setError(null);
@@ -118,51 +137,12 @@ export default function MemberManager({
     }
   }
 
-  async function sendInvite() {
-    setInviteErr(null);
-    setInviteLink(null);
-    if (!inviteEmail.trim()) {
-      setInviteErr("Enter an email to invite.");
-      return;
-    }
-    setInviting(true);
-    try {
-      const res = await fetch("/api/clubs/invite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          email: inviteEmail.trim(),
-          role: inviteRole,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Couldn't send invite.");
-      setInviteLink(data.link);
-      setInviteEmailed(Boolean(data.emailed));
-      setInviteEmail("");
-    } catch (err) {
-      setInviteErr(err instanceof Error ? err.message : "Couldn't send invite.");
-    } finally {
-      setInviting(false);
-    }
-  }
-
-  async function copyLink() {
-    if (!inviteLink) return;
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // clipboard not available; the link is still shown to copy manually
-    }
-  }
-
   const fieldClass =
     "rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-sm text-white focus:outline-none focus:border-ocean-500 capitalize";
   const inputClass =
     "w-full rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500";
+  const dateClass =
+    "rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-sm text-white focus:outline-none focus:border-ocean-500";
 
   return (
     <div>
@@ -217,57 +197,6 @@ export default function MemberManager({
         </p>
       </div>
 
-      {/* Invite by email */}
-      <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-4 mb-6">
-        <p className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-          <Mail className="w-4 h-4 text-ocean-300" /> Invite by email
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="member@email.com"
-            className="flex-1 min-w-[200px] rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500"
-          />
-          <select
-            value={inviteRole}
-            onChange={(e) => setInviteRole(e.target.value)}
-            className={fieldClass}
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-          <button
-            onClick={sendInvite}
-            disabled={inviting}
-            className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors disabled:opacity-60"
-          >
-            {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            Send invite
-          </button>
-        </div>
-        {inviteErr && <p className="text-xs text-coral-300 mt-2">{inviteErr}</p>}
-        {inviteLink && (
-          <div className="mt-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
-            <p className="text-xs text-emerald-200 mb-1">
-              {inviteEmailed ? "Invite emailed! " : "Invite created. "}
-              You can also share this link directly:
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="text-xs text-ocean-200 break-all flex-1">{inviteLink}</code>
-              <button
-                onClick={copyLink}
-                className="text-ocean-300 hover:text-ocean-100 shrink-0"
-                title="Copy link"
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Roster */}
       <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 overflow-x-auto">
         <table className="w-full text-sm">
@@ -276,6 +205,7 @@ export default function MemberManager({
               <th className="font-medium px-4 py-3">Member</th>
               <th className="font-medium px-4 py-3">Role</th>
               <th className="font-medium px-4 py-3">Status</th>
+              <th className="font-medium px-4 py-3">Renewal</th>
               <th className="font-medium px-4 py-3"></th>
             </tr>
           </thead>
@@ -295,16 +225,6 @@ export default function MemberManager({
                     </div>
                     {m.email && m.display_name && (
                       <div className="text-xs text-ocean-500">{m.email}</div>
-                    )}
-                    {m.phone && (
-                      <div className="text-xs text-ocean-400 flex items-center gap-1 mt-0.5">
-                        <Phone className="w-3 h-3" /> {m.phone}
-                      </div>
-                    )}
-                    {(m.experience || m.interests) && (
-                      <div className="text-[11px] text-ocean-600 mt-0.5">
-                        {[m.experience, m.interests].filter(Boolean).join(" · ")}
-                      </div>
                     )}
                     {!m.user_id && (
                       <div className="text-[11px] text-ocean-600">No account yet</div>
@@ -337,6 +257,41 @@ export default function MemberManager({
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    {isOwner ? (
+                      <span className="text-ocean-600">—</span>
+                    ) : m.paid_online ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-ocean-300 whitespace-nowrap"
+                        title="Set automatically by online dues payments"
+                      >
+                        {fmtDate(m.paid_through)}
+                        <Lock className="w-3 h-3 text-ocean-500" />
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="date"
+                          value={renewalDraft[m.id] ?? ""}
+                          disabled={busy}
+                          onChange={(e) =>
+                            setRenewalDraft((prev) => ({
+                              ...prev,
+                              [m.id]: e.target.value,
+                            }))
+                          }
+                          className={dateClass}
+                        />
+                        <button
+                          onClick={() => setRenewal(m.id)}
+                          disabled={busy}
+                          className="rounded-full bg-ocean-700 px-3 py-1 text-xs font-medium text-white hover:bg-ocean-600 transition-colors disabled:opacity-60"
+                        >
+                          Set
+                        </button>
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {!isOwner && (
