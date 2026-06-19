@@ -103,21 +103,55 @@ export async function POST(request: Request) {
           ? session.payment_intent
           : session.payment_intent?.id ?? null;
 
-      // New coverage extends from the later of today or any existing paid_through.
-      let baseDate = new Date();
+      // Anchor the renewal date: extend from the member's existing paid_through,
+      // never from the payment date, so the renewal anniversary never drifts.
+      // A late payer is simply "caught up" to the next anniversary with one
+      // payment — they don't gain extra time.
+      let existingPaidThrough: string | null = null;
       if (memberId) {
         const { data: memberRow } = await supabaseAdmin
           .from("club_members")
           .select("paid_through")
           .eq("id", memberId)
           .maybeSingle();
-        if (memberRow?.paid_through) {
-          const existing = new Date(memberRow.paid_through + "T00:00:00");
-          if (existing > baseDate) baseDate = existing;
+        existingPaidThrough = memberRow?.paid_through ?? null;
+      } else if (clubId && userId) {
+        const { data: memberRow } = await supabaseAdmin
+          .from("club_members")
+          .select("paid_through")
+          .eq("club_id", clubId)
+          .eq("user_id", userId)
+          .maybeSingle();
+        existingPaidThrough = memberRow?.paid_through ?? null;
+      }
+
+      const addMonths = (d: Date, months: number) => {
+        const out = new Date(d);
+        out.setMonth(out.getMonth() + months);
+        return out;
+      };
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let coversUntil: Date;
+      if (!existingPaidThrough) {
+        // First payment ever — set the anchor at today + one period.
+        coversUntil = addMonths(today, coversMonths);
+      } else {
+        const anchor = new Date(existingPaidThrough + "T00:00:00");
+        if (anchor >= today) {
+          // Active (early or on-time): extend one period from current expiry.
+          coversUntil = addMonths(anchor, coversMonths);
+        } else {
+          // Lapsed: roll the anchor forward to the next anniversary just past
+          // today. One payment catches them up; the date stays put, no bonus.
+          coversUntil = new Date(anchor);
+          while (coversUntil <= today) {
+            coversUntil = addMonths(coversUntil, coversMonths);
+          }
         }
       }
-      const coversUntil = new Date(baseDate);
-      coversUntil.setMonth(coversUntil.getMonth() + coversMonths);
       const coversUntilStr = coversUntil.toISOString().slice(0, 10);
 
       // Snapshot identity so the ledger survives club/member deletion.

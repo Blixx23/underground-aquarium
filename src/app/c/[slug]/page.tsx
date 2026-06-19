@@ -17,6 +17,21 @@ import JoinClubForm from "./JoinClubForm";
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
+type Standing = {
+  user_id: string;
+  display_name: string;
+  total_points: number;
+};
+
+function titleFor(points: number): string | null {
+  if (points >= 300) return "Grand Master Breeder";
+  if (points >= 150) return "Master Breeder";
+  if (points >= 75) return "Advanced Breeder";
+  if (points >= 25) return "Breeder";
+  if (points >= 1) return "Hobbyist Breeder";
+  return null;
+}
+
 export default async function ClubHomePage({
   params,
   searchParams,
@@ -64,6 +79,18 @@ export default async function ClubHomePage({
     .eq("club_id", club.id)
     .neq("status", "pending");
   const memberCount = count ?? 0;
+
+  let standings: Standing[] = [];
+  if (isMember) {
+    const { data: sData } = await supabase.rpc("club_award_standings", {
+      p_club_id: club.id,
+    });
+    standings = ((sData as Standing[] | null) ?? []).map((s) => ({
+      user_id: s.user_id,
+      display_name: s.display_name,
+      total_points: Number(s.total_points),
+    }));
+  }
 
   const canCollect = Boolean(club.stripe_account_id) && club.payouts_enabled;
   const today = new Date();
@@ -170,22 +197,90 @@ export default async function ClubHomePage({
         )}
 
         {isMember ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-5 opacity-60">
-              <Trophy className="w-6 h-6 text-emerald-300 mb-3" />
-              <p className="text-white font-medium">BAP / HAP</p>
-              <p className="text-sm text-ocean-400">
-                Breeder &amp; plant awards — coming soon.
-              </p>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link
+                href={`/c/${slug}/awards`}
+                className="rounded-2xl border border-ocean-700/60 bg-ocean-800/40 px-6 py-5 hover:bg-ocean-800/60 transition-colors"
+              >
+                <Trophy className="w-6 h-6 text-amber-300 mb-3" />
+                <p className="text-white font-medium">BAP / HAP</p>
+                <p className="text-sm text-ocean-400">
+                  Breeder &amp; plant awards — submit entries and climb the
+                  leaderboard.
+                </p>
+              </Link>
+              <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-5 opacity-60">
+                <Gavel className="w-6 h-6 text-ocean-200 mb-3" />
+                <p className="text-white font-medium">Auctions</p>
+                <p className="text-sm text-ocean-400">
+                  Member auctions — coming soon.
+                </p>
+              </div>
             </div>
-            <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-5 opacity-60">
-              <Gavel className="w-6 h-6 text-ocean-200 mb-3" />
-              <p className="text-white font-medium">Auctions</p>
-              <p className="text-sm text-ocean-400">
-                Member auctions — coming soon.
-              </p>
+
+            <div className="mt-4 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display text-lg text-white flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-amber-300" /> Standings
+                </h2>
+                <Link
+                  href={`/c/${slug}/awards`}
+                  className="inline-flex items-center gap-1 text-sm text-ocean-300 hover:text-white transition-colors"
+                >
+                  Full awards <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              {standings.length === 0 ? (
+                <p className="text-sm text-ocean-400">
+                  No approved entries yet — submit one to get on the board.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {standings.slice(0, 5).map((s, i) => {
+                    const isMe = s.user_id === user?.id;
+                    const title = titleFor(s.total_points);
+                    return (
+                      <div
+                        key={s.user_id}
+                        className={`flex items-center gap-3 rounded-lg px-2 py-1.5 ${
+                          isMe ? "bg-ocean-800/40" : ""
+                        }`}
+                      >
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                            i === 0
+                              ? "bg-amber-400/20 text-amber-300"
+                              : "bg-ocean-800/60 text-ocean-300"
+                          }`}
+                        >
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-white text-sm">
+                            {s.display_name}
+                            {isMe && (
+                              <span className="text-ocean-500"> (you)</span>
+                            )}
+                          </p>
+                          {title && (
+                            <p className="text-xs text-amber-300/80">{title}</p>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-sm font-semibold text-white">
+                          {s.total_points}
+                          <span className="text-xs font-normal text-ocean-500">
+                            {" "}
+                            pts
+                          </span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
+          </>
         ) : isApplicant ? (
           <div className="rounded-2xl border border-amber-700/40 bg-amber-900/10 px-6 py-8 text-center">
             <Clock className="w-8 h-8 text-amber-300/80 mx-auto mb-3" />
