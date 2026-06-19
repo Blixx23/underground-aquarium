@@ -20,8 +20,19 @@ export const metadata: Metadata = {
     url: "https://www.undergroundaquarium.com",
     siteName: "UndergroundAquarium",
     type: "website",
+    images: [
+      {
+        url: "/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "UndergroundAquarium — The Hobbyist-First Aquarium Marketplace",
+      },
+    ],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og-default.png"],
+  },
   robots: { index: true, follow: true },
 };
 
