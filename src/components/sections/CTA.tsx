@@ -35,7 +35,7 @@ export default function CTA() {
         </h2>
 
         <p className="text-ocean-300/80 text-xl max-w-2xl mx-auto leading-relaxed mb-12">
-          Thousands of fishkeepers are already here. Browse the marketplace, share your setups, learn from experts, and find your fish tribe.
+          This is where the hobby&apos;s getting organized. Browse the marketplace, share your setups, learn from fellow keepers, and find your fish tribe.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -56,7 +56,7 @@ export default function CTA() {
 
         {/* Trust note */}
         <p className="mt-10 text-xs font-mono text-ocean-600 tracking-wider">
-          Free to join · No credit card required · Open a shop whenever you're ready
+          Free to join · No credit card required · Open a shop whenever you&apos;re ready
         </p>
       </div>
     </section>
