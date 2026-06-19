@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   MapPin,
   ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
@@ -47,7 +48,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, full_name, bio, location, website")
+    .select("username, full_name, bio, location, website, is_admin")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -76,6 +77,7 @@ export default async function ProfilePage() {
   const tanks = (tanksData ?? []) as SavedTank[];
 
   const displayName = profile?.full_name || profile?.username || "Your profile";
+  const isAdmin = Boolean(profile?.is_admin);
 
   const actions = [
     { href: "/tank-builder", label: "Tank Builder", Icon: Fish },
@@ -88,6 +90,9 @@ export default async function ProfilePage() {
           { href: "/sell/payouts", label: "Payouts", Icon: Wallet },
           { href: "/sell/finances", label: "Finances", Icon: BarChart3 },
         ]
+      : []),
+    ...(isAdmin
+      ? [{ href: "/admin", label: "Admin", Icon: ShieldCheck }]
       : []),
   ];
 
