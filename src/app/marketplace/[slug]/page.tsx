@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Fish, ArrowLeft, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -14,6 +15,65 @@ type Product = {
   images: string[] | null;
   species_slug: string | null;
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("products")
+    .select("name, description, images, price")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .not("is_live_animal", "is", true)
+    .maybeSingle();
+
+  if (!data) return { title: "Listing not found" };
+
+  const p = data as {
+    name: string;
+    description: string | null;
+    images: string[] | null;
+    price: number | string;
+  };
+
+  const priceStr = `$${Number(p.price).toFixed(2)}`;
+  const raw = (p.description ?? "").replace(/\s+/g, " ").trim();
+  const description = raw
+    ? raw.length > 200
+      ? `${raw.slice(0, 197)}…`
+      : raw
+    : `${p.name} — ${priceStr} on the UndergroundAquarium marketplace.`;
+
+  // Use the seller's own first photo as the share image; fall back to the
+  // site default card only if a listing has no image.
+  const image = p.images?.[0] ?? "/og-default.png";
+  const url = `/marketplace/${slug}`;
+
+  return {
+    title: p.name,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: p.name,
+      description,
+      url,
+      type: "website",
+      siteName: "UndergroundAquarium",
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: p.name,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function ProductPage({
   params,
