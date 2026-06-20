@@ -10,11 +10,12 @@ import {
   Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { titleForPoints, type AwardTitle } from "@/lib/awards/titles";
 import PayDuesButton from "./PayDuesButton";
 import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
 import JoinClubForm from "./JoinClubForm";
+import ClubEventsPreview from "./ClubEventsPreview";
+import { type ClubEvent } from "./ClubEvents";
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -24,6 +25,14 @@ type Standing = {
   total_points: number;
 };
 
+function titleFor(points: number): string | null {
+  if (points >= 300) return "Grand Master Breeder";
+  if (points >= 150) return "Master Breeder";
+  if (points >= 75) return "Advanced Breeder";
+  if (points >= 25) return "Breeder";
+  if (points >= 1) return "Hobbyist Breeder";
+  return null;
+}
 
 export default async function ClubHomePage({
   params,
@@ -42,13 +51,11 @@ export default async function ClubHomePage({
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public, award_titles"
+      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public"
     )
     .eq("slug", slug)
     .maybeSingle();
   if (!club) notFound();
-
-  const ladder = (club.award_titles as AwardTitle[] | null) ?? [];
 
   let role: string | null = null;
   let status: string | null = null;
@@ -99,6 +106,18 @@ export default async function ClubHomePage({
     club.dues_amount_cents > 0 &&
     canCollect &&
     !isPaidCurrent;
+
+  const eventCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+  const { data: clubEventsData } = await supabase
+    .from("events")
+    .select(
+      "id, slug, title, description, starts_at, venue_name, city, state, show_in_directory, event_type, cover_image"
+    )
+    .eq("host_club_id", club.id)
+    .eq("status", "published")
+    .gte("starts_at", eventCutoff)
+    .order("starts_at", { ascending: true });
+  const clubEvents = (clubEventsData ?? []) as ClubEvent[];
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
@@ -191,6 +210,12 @@ export default async function ClubHomePage({
           </Link>
         )}
 
+        <ClubEventsPreview
+          clubSlug={slug}
+          isOfficer={isOfficer}
+          events={clubEvents}
+        />
+
         {isMember ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -234,7 +259,7 @@ export default async function ClubHomePage({
                 <div className="space-y-2">
                   {standings.slice(0, 5).map((s, i) => {
                     const isMe = s.user_id === user?.id;
-                    const title = titleForPoints(s.total_points, ladder);
+                    const title = titleFor(s.total_points);
                     return (
                       <div
                         key={s.user_id}
