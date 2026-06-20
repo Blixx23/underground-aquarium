@@ -8,6 +8,7 @@ import {
   Leaf,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { titleForPoints, type AwardTitle } from "@/lib/awards/titles";
 
 type Standing = {
   user_id: string;
@@ -28,15 +29,6 @@ type OwnSub = {
   created_at: string;
 };
 
-function titleFor(points: number): string | null {
-  if (points >= 300) return "Grand Master Breeder";
-  if (points >= 150) return "Master Breeder";
-  if (points >= 75) return "Advanced Breeder";
-  if (points >= 25) return "Breeder";
-  if (points >= 1) return "Hobbyist Breeder";
-  return null;
-}
-
 const statusStyles: Record<string, string> = {
   approved: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
   pending: "border-amber-500/30 bg-amber-500/10 text-amber-300",
@@ -56,10 +48,12 @@ export default async function AwardsHubPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, award_titles")
     .eq("slug", slug)
     .maybeSingle();
   if (!club) notFound();
+
+  const ladder = (club.award_titles as AwardTitle[] | null) ?? [];
 
   let role: string | null = null;
   let status: string | null = null;
@@ -166,7 +160,7 @@ export default async function AwardsHubPage({
           <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 overflow-hidden mb-10">
             {standings.map((s, i) => {
               const isMe = s.user_id === user!.id;
-              const title = titleFor(s.total_points);
+              const title = titleForPoints(s.total_points, ladder);
               return (
                 <div
                   key={s.user_id}

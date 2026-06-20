@@ -10,6 +10,7 @@ import {
   Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { titleForPoints, type AwardTitle } from "@/lib/awards/titles";
 import PayDuesButton from "./PayDuesButton";
 import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
@@ -23,14 +24,6 @@ type Standing = {
   total_points: number;
 };
 
-function titleFor(points: number): string | null {
-  if (points >= 300) return "Grand Master Breeder";
-  if (points >= 150) return "Master Breeder";
-  if (points >= 75) return "Advanced Breeder";
-  if (points >= 25) return "Breeder";
-  if (points >= 1) return "Hobbyist Breeder";
-  return null;
-}
 
 export default async function ClubHomePage({
   params,
@@ -49,11 +42,13 @@ export default async function ClubHomePage({
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public"
+      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public, award_titles"
     )
     .eq("slug", slug)
     .maybeSingle();
   if (!club) notFound();
+
+  const ladder = (club.award_titles as AwardTitle[] | null) ?? [];
 
   let role: string | null = null;
   let status: string | null = null;
@@ -239,7 +234,7 @@ export default async function ClubHomePage({
                 <div className="space-y-2">
                   {standings.slice(0, 5).map((s, i) => {
                     const isMe = s.user_id === user?.id;
-                    const title = titleFor(s.total_points);
+                    const title = titleForPoints(s.total_points, ladder);
                     return (
                       <div
                         key={s.user_id}
