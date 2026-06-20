@@ -20,15 +20,17 @@ type Member = {
 };
 
 const ROLES = ["member", "officer", "admin"];
-const STATUSES = ["active", "lapsed", "pending"];
+const STATUSES = ["active", "prospect", "lapsed", "pending"];
 const TIERS = ["individual", "family", "lifetime"];
 
 export default function MemberManager({
   clubId,
+  clubHasDues,
   initialMembers,
 }: {
   clubId: string;
   viewerRole: string;
+  clubHasDues: boolean;
   initialMembers: Member[];
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -67,7 +69,7 @@ export default function MemberManager({
         email: email.trim() || null,
         role,
         tier,
-        status: "active",
+        status: clubHasDues ? "prospect" : "active",
       });
       if (insErr) throw insErr;
       setName("");
@@ -195,6 +197,14 @@ export default function MemberManager({
           You can add members who don&apos;t have an account yet — they&apos;ll link
           up automatically when they sign up with the same email.
         </p>
+        {clubHasDues && (
+          <p className="text-xs text-ocean-600 mt-1">
+            New members start as a{" "}
+            <span className="text-ocean-400">prospect</span> and aren&apos;t
+            counted until dues are paid — online, or by setting a renewal date
+            below.
+          </p>
+        )}
       </div>
 
       {/* Roster */}

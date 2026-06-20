@@ -77,7 +77,7 @@ export default async function ClubHomePage({
     .from("club_members")
     .select("id", { count: "exact", head: true })
     .eq("club_id", club.id)
-    .neq("status", "pending");
+    .eq("status", "active");
   const memberCount = count ?? 0;
 
   let standings: Standing[] = [];
