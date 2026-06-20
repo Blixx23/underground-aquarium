@@ -35,6 +35,7 @@ export default function SubmissionForm({
   const [eventDate, setEventDate] = useState("");
   const [notes, setNotes] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [sharePublic, setSharePublic] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export default function SubmissionForm({
     setEventDate("");
     setNotes("");
     setFiles([]);
+    setSharePublic(false);
   }
 
   async function submit() {
@@ -130,6 +132,7 @@ export default function SubmissionForm({
           event_date: eventDate || null,
           notes: notes.trim() || null,
           photos: photoUrls,
+          share_public: sharePublic,
           status: "pending",
         });
       if (insErr) throw insErr;
@@ -327,6 +330,24 @@ export default function SubmissionForm({
           <ImagePlus className="h-4 w-4" /> Add photo
         </button>
       )}
+
+      {/* Public guide opt-in */}
+      <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-lg border border-ocean-800/60 bg-ocean-900/40 p-3">
+        <input
+          type="checkbox"
+          checked={sharePublic}
+          onChange={(e) => setSharePublic(e.target.checked)}
+          className="mt-0.5 h-4 w-4 accent-ocean-500"
+        />
+        <span className="text-sm text-ocean-300">
+          Share my write-up and photos as a public breeding guide once it&apos;s
+          approved.{" "}
+          <span className="text-ocean-500">
+            It&apos;ll be credited to your profile and help other hobbyists.
+            Leave unchecked to keep it private to the club.
+          </span>
+        </span>
+      </label>
 
       {/* Submit */}
       <button
