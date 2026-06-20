@@ -1,6 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ShieldAlert, CreditCard, Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  ShieldAlert,
+  CreditCard,
+  Settings,
+  Trophy,
+  ClipboardCheck,
+  ListChecks,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe/server";
@@ -173,6 +181,12 @@ export default async function ClubAdminPage({
     ? "active"
     : "incomplete";
 
+  const { count: pendingAwards } = await supabase
+    .from("club_award_submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+    .eq("status", "pending");
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-4xl mx-auto">
@@ -251,6 +265,35 @@ export default async function ClubAdminPage({
           </div>
         </div>
 
+        {/* Awards management */}
+        <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-8">
+          <h2 className="text-white font-medium mb-1 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-300" /> Awards (BAP / HAP)
+          </h2>
+          <p className="text-sm text-ocean-400 mb-4">
+            Review members&apos; submissions and manage the species point list.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/c/${slug}/awards/review`}
+              className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
+            >
+              <ClipboardCheck className="w-4 h-4" /> Review submissions
+              {pendingAwards && pendingAwards > 0 ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-ocean-950">
+                  {pendingAwards}
+                </span>
+              ) : null}
+            </Link>
+            <Link
+              href={`/c/${slug}/awards/list`}
+              className="inline-flex items-center gap-2 rounded-full border border-ocean-700/60 px-4 py-1.5 text-sm font-medium text-ocean-200 hover:bg-ocean-800/60 transition-colors"
+            >
+              <ListChecks className="w-4 h-4" /> Point list
+            </Link>
+          </div>
+        </div>
+
         {pendingDetailed.length > 0 && (
           <ClubRequests requests={pendingDetailed} />
         )}
@@ -265,7 +308,6 @@ export default async function ClubAdminPage({
         <MemberManager
           clubId={club.id}
           viewerRole={role as string}
-          clubHasDues={(club.dues_amount_cents ?? 0) > 0}
           initialMembers={rosterWithPaid}
         />
 

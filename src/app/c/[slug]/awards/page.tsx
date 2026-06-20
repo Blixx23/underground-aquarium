@@ -4,8 +4,6 @@ import {
   ArrowLeft,
   Trophy,
   Send,
-  ClipboardCheck,
-  ListChecks,
   Fish,
   Leaf,
 } from "lucide-react";
@@ -76,7 +74,6 @@ export default async function AwardsHubPage({
     status = me?.status ?? null;
   }
   const isActiveMember = role !== null && status === "active";
-  const isOfficer = role === "owner" || role === "admin" || role === "officer";
 
   const header = (
     <>
@@ -140,16 +137,6 @@ export default async function AwardsHubPage({
     .order("created_at", { ascending: false });
   const own: OwnSub[] = ownData ?? [];
 
-  let pendingCount = 0;
-  if (isOfficer) {
-    const { count } = await supabase
-      .from("club_award_submissions")
-      .select("id", { count: "exact", head: true })
-      .eq("club_id", club.id)
-      .eq("status", "pending");
-    pendingCount = count ?? 0;
-  }
-
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-3xl mx-auto">
@@ -167,27 +154,6 @@ export default async function AwardsHubPage({
           >
             <Send className="w-4 h-4" /> Submit an entry
           </Link>
-          {isOfficer && (
-            <Link
-              href={`/c/${slug}/awards/review`}
-              className="inline-flex items-center gap-2 rounded-full border border-ocean-700/60 px-5 py-2.5 text-sm font-medium text-ocean-200 hover:bg-ocean-800/60 transition-colors"
-            >
-              <ClipboardCheck className="w-4 h-4" /> Review
-              {pendingCount > 0 && (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-ocean-950">
-                  {pendingCount}
-                </span>
-              )}
-            </Link>
-          )}
-          {isOfficer && (
-            <Link
-              href={`/c/${slug}/awards/list`}
-              className="inline-flex items-center gap-2 rounded-full border border-ocean-700/60 px-5 py-2.5 text-sm font-medium text-ocean-200 hover:bg-ocean-800/60 transition-colors"
-            >
-              <ListChecks className="w-4 h-4" /> Point list
-            </Link>
-          )}
         </div>
 
         {/* Leaderboard */}
