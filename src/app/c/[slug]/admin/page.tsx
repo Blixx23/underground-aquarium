@@ -308,6 +308,7 @@ export default async function ClubAdminPage({
         <MemberManager
           clubId={club.id}
           viewerRole={role as string}
+          clubHasDues={(club.dues_amount_cents ?? 0) > 0}
           initialMembers={rosterWithPaid}
         />
 
