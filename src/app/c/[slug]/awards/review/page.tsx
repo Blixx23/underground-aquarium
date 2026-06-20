@@ -10,6 +10,7 @@ type ReviewItem = {
   species_name: string;
   event_date: string | null;
   notes: string | null;
+  photos: string[];
   created_at: string;
   submitter_name: string;
   suggested_points: number;
@@ -65,7 +66,7 @@ export default async function AwardsReviewPage({
 
   const { data: subs } = await supabase
     .from("club_award_submissions")
-    .select("id, program, species_id, species_name, event_date, notes, created_at, user_id")
+    .select("id, program, species_id, species_name, event_date, notes, photos, created_at, user_id")
     .eq("club_id", club.id)
     .eq("status", "pending")
     .order("created_at", { ascending: true });
@@ -113,6 +114,7 @@ export default async function AwardsReviewPage({
     species_name: r.species_name,
     event_date: r.event_date,
     notes: r.notes,
+    photos: r.photos ?? [],
     created_at: r.created_at,
     submitter_name: nameMap.get(r.user_id) ?? "Member",
     suggested_points: r.species_id ? pointMap.get(r.species_id) ?? 0 : 0,

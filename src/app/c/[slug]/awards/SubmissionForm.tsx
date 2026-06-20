@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Fish, Leaf, Send, Loader2, Check } from "lucide-react";
+import { Fish, Leaf, Send, Loader2, Check, ImagePlus, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type AwardSpecies = {
@@ -34,6 +34,7 @@ export default function SubmissionForm({
   const [customName, setCustomName] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +54,21 @@ export default function SubmissionForm({
 
   const selected = species.find((s) => s.id === speciesId) || null;
 
+  const MAX_PHOTOS = 4;
+  const previews = useMemo(
+    () => files.map((f) => URL.createObjectURL(f)),
+    [files]
+  );
+
+  function addFiles(picked: FileList | null) {
+    if (!picked) return;
+    setFiles((prev) => [...prev, ...Array.from(picked)].slice(0, MAX_PHOTOS));
+  }
+
+  function removeFile(idx: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
   function switchProgram(p: "bap" | "hap") {
     setProgram(p);
     setSpeciesId("");
@@ -64,6 +80,7 @@ export default function SubmissionForm({
     setCustomName("");
     setEventDate("");
     setNotes("");
+    setFiles([]);
   }
 
   async function submit() {
@@ -83,6 +100,23 @@ export default function SubmissionForm({
 
     setSaving(true);
     try {
+      // Upload any photos to the shared product-images bucket first.
+      const photoUrls: string[] = [];
+      for (const file of files.slice(0, MAX_PHOTOS)) {
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `awards/${userId}/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("product-images")
+          .upload(path, file);
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(path);
+        photoUrls.push(pub.publicUrl);
+      }
+
       const { error: insErr } = await supabase
         .from("club_award_submissions")
         .insert({
@@ -93,6 +127,7 @@ export default function SubmissionForm({
           species_name: name,
           event_date: eventDate || null,
           notes: notes.trim() || null,
+          photos: photoUrls,
           status: "pending",
         });
       if (insErr) throw insErr;
@@ -232,6 +267,54 @@ export default function SubmissionForm({
         placeholder="Tank setup, water params, conditioning, what triggered the spawn…"
         className={`${inputClass} resize-y`}
       />
+
+      {/* Photos */}
+      <label className="mb-1 mt-4 block text-sm font-medium text-white">
+        Photos{" "}
+        <span className="font-normal text-ocean-500">
+          (optional, up to {MAX_PHOTOS})
+        </span>
+      </label>
+      {files.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {files.map((f, i) => (
+            <div
+              key={i}
+              className="relative h-20 w-20 overflow-hidden rounded-lg border border-ocean-800/60 bg-ocean-900/60"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previews[i]}
+                alt={f.name}
+                className="h-full w-full object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => removeFile(i)}
+                className="absolute right-0.5 top-0.5 rounded-full bg-ocean-950/80 p-0.5 text-ocean-200 hover:text-white"
+                aria-label="Remove photo"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {files.length < MAX_PHOTOS && (
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-ocean-800/60 bg-ocean-900/60 px-3 py-2 text-sm text-ocean-200 transition-colors hover:bg-ocean-800/60">
+          <ImagePlus className="h-4 w-4" /> Add photo
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      )}
 
       {/* Submit */}
       <button

@@ -11,6 +11,7 @@ type ReviewItem = {
   species_name: string;
   event_date: string | null;
   notes: string | null;
+  photos: string[];
   created_at: string;
   submitter_name: string;
   suggested_points: number;
@@ -127,6 +128,27 @@ export default function ReviewQueue({ items: initialItems }: { items: ReviewItem
               <p className="mt-3 whitespace-pre-wrap rounded-lg border border-ocean-800/40 bg-ocean-900/40 px-3 py-2 text-sm text-ocean-300">
                 {it.notes}
               </p>
+            )}
+
+            {it.photos.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {it.photos.map((url, i) => (
+                  <a
+                    key={i}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block h-24 w-24 overflow-hidden rounded-lg border border-ocean-800/60"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={`${it.species_name} photo ${i + 1}`}
+                      className="h-full w-full object-cover transition-transform hover:scale-105"
+                    />
+                  </a>
+                ))}
+              </div>
             )}
 
             {rejectingId === it.id ? (
