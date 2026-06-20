@@ -33,7 +33,8 @@ export default function SellPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [converting, setConverting] = useState(false);
 
-  const [submitting, setSubmitting] = useState(false);
+  const [busy, setBusy] = useState<null | "publish" | "draft">(null);
+  const [draftSaved, setDraftSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,31 +79,48 @@ export default function SellPage() {
     setImagePreview(URL.createObjectURL(file));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function resetForm() {
+    setName("");
+    setCategory("");
+    setPrice("");
+    setStock("");
+    setDescription("");
+    setShippingPrice("");
+    setImageFile(null);
+    setImagePreview(null);
+  }
+
+  async function save(asDraft: boolean) {
     setError(null);
+    setDraftSaved(false);
 
     if (!name.trim()) {
       setError("Please give your listing a name.");
       return;
     }
-    if (!category) {
-      setError("Please choose a category.");
-      return;
-    }
-    const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum < 0) {
-      setError("Please enter a valid price.");
-      return;
+
+    // Drafts can be incomplete; published listings can't.
+    let priceNum = parseFloat(price);
+    if (asDraft) {
+      if (isNaN(priceNum) || priceNum < 0) priceNum = 0;
+    } else {
+      if (!category) {
+        setError("Please choose a category.");
+        return;
+      }
+      if (isNaN(priceNum) || priceNum < 0) {
+        setError("Please enter a valid price.");
+        return;
+      }
     }
 
-    setSubmitting(true);
+    setBusy(asDraft ? "draft" : "publish");
     try {
       const { data: userData } = await supabase.auth.getUser();
       const currentUser = userData.user;
       if (!currentUser) {
         setError("You need to be signed in to create a listing.");
-        setSubmitting(false);
+        setBusy(null);
         return;
       }
 
@@ -158,13 +176,14 @@ export default function SellPage() {
           store_id: storeId,
           name: name.trim(),
           slug: productSlug,
-          category,
+          category: category || "other",
           description: description.trim() || null,
           price: priceNum,
           stock: stock === "" ? null : parseInt(stock, 10),
           shipping_price: Math.max(0, parseFloat(shippingPrice) || 0),
           is_live_animal: false,
-          is_active: true,
+          is_active: !asDraft,
+          is_draft: asDraft,
           images: imageUrls.length ? imageUrls : null,
           species_slug: null,
         })
@@ -172,12 +191,19 @@ export default function SellPage() {
         .single();
       if (productError) throw productError;
 
-      router.push(`/marketplace/${newProduct.slug}`);
+      if (asDraft) {
+        setBusy(null);
+        setDraftSaved(true);
+        resetForm();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.push(`/marketplace/${newProduct.slug}`);
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went wrong creating your listing."
       );
-      setSubmitting(false);
+      setBusy(null);
     }
   }
 
@@ -220,13 +246,25 @@ export default function SellPage() {
           Fill in the details below and add a photo to make it shine.
         </p>
 
+        {draftSaved && (
+          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4 text-emerald-300 mb-6">
+            Draft saved. You&apos;ll find it in your Seller Hub under Listings &rarr; Drafts.
+          </div>
+        )}
+
         {error && (
           <div className="rounded-xl border border-coral-500/40 bg-coral-500/10 px-5 py-4 text-coral-300 mb-6">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save(false);
+          }}
+          className="space-y-6"
+        >
           <div>
             <label className="block text-sm text-ocean-300 mb-2">Name</label>
             <input
@@ -342,14 +380,28 @@ export default function SellPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting || converting}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ocean-700 text-white font-medium hover:bg-ocean-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {submitting ? "Creating…" : "Create listing"}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={busy !== null || converting}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ocean-700 text-white font-medium hover:bg-ocean-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {busy === "publish" && <Loader2 className="w-4 h-4 animate-spin" />}
+              {busy === "publish" ? "Publishing…" : "Publish listing"}
+            </button>
+            <button
+              type="button"
+              onClick={() => save(true)}
+              disabled={busy !== null || converting}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-ocean-700/60 bg-ocean-900/40 text-ocean-200 font-medium hover:text-white hover:border-ocean-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {busy === "draft" && <Loader2 className="w-4 h-4 animate-spin" />}
+              {busy === "draft" ? "Saving…" : "Save as draft"}
+            </button>
+          </div>
+          <p className="text-xs text-ocean-500">
+            Drafts stay private until you publish them. Only a name is required to save one.
+          </p>
         </form>
       </div>
     </main>
