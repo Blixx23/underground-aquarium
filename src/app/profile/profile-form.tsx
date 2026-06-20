@@ -71,7 +71,8 @@
            Username
            <input value={username} onChange={(e) => setUsername(e.target.value)} className={fieldClass} />
            <span className="text-xs text-ocean-600">
-             Letters, numbers, and underscores only — no spaces or symbols.
+             Letters, numbers, and underscores only — no spaces or symbols. You
+             can change your username once every 30 days.
            </span>
          </label>
          <label className={labelClass}>
