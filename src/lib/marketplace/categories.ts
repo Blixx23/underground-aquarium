@@ -5,7 +5,6 @@
 export type Category = { key: string; label: string };
 
 export const CATEGORIES: Category[] = [
-  { key: "livestock", label: "Livestock" },
   { key: "plants", label: "Aquatic Plants" },
   { key: "equipment", label: "Equipment" },
   { key: "tanks", label: "Tanks & Stands" },
