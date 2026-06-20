@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Fish, Waves, MapPin, ExternalLink, User, Users, Crown } from "lucide-react";
+import { Fish, Waves, MapPin, ExternalLink, User } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
-import { collectSlugs, tankInhabitants } from "@/lib/tanks/inhabitants";
+import ClubsAndAwards, { type ClubAward } from "@/components/profile/ClubsAndAwards";
+import ProfileShop, { type ShopItem } from "@/components/profile/ProfileShop";
 
 export const dynamic = "force-dynamic";
 
@@ -68,31 +69,37 @@ export default async function PublicProfilePage({ params }: Params) {
     .limit(60);
 
   const tanks = (tanksData ?? []) as CommunityTank[];
-
-  const tankSlugs = collectSlugs(tanks);
-  const speciesNames = new Map<string, string>();
-  if (tankSlugs.length) {
-    const { data: sp } = await supabasePublic
-      .from("species")
-      .select("slug, common_name")
-      .in("slug", tankSlugs);
-    for (const row of sp ?? [])
-      speciesNames.set(row.slug as string, row.common_name as string);
-  }
   const displayName = profile.full_name || profile.username || "Aquarist";
   const websiteUrl = profile.website ? normalizeUrl(profile.website) : null;
 
-  const { data: clubsData } = await supabasePublic.rpc(
-    "public_clubs_for_user",
-    { p_user_id: profile.id }
-  );
-  const clubs = (clubsData ?? []) as {
-    id: string;
-    slug: string;
-    name: string;
-    logo_url: string | null;
-    role: string;
-  }[];
+  const { data: clubsData } = await supabasePublic.rpc("user_clubs_awards", {
+    p_user_id: profile.id,
+    p_public_only: true,
+  });
+  const clubs = (clubsData ?? []) as ClubAward[];
+
+  const { data: storeRows } = await supabasePublic
+    .from("stores")
+    .select("id, slug")
+    .eq("owner_id", profile.id);
+  const storeIds = (storeRows ?? []).map((r) => (r as { id: string }).id);
+  const storeSlug =
+    (storeRows ?? [])[0]
+      ? ((storeRows ?? [])[0] as { slug: string }).slug
+      : null;
+
+  let shopItems: ShopItem[] = [];
+  if (storeIds.length > 0) {
+    const { data: prod } = await supabasePublic
+      .from("products")
+      .select("id, name, slug, price, images, category, stock")
+      .in("store_id", storeIds)
+      .eq("is_active", true)
+      .not("is_draft", "is", true)
+      .order("created_at", { ascending: false })
+      .limit(48);
+    shopItems = (prod ?? []) as unknown as ShopItem[];
+  }
 
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
@@ -132,35 +139,10 @@ export default async function PublicProfilePage({ params }: Params) {
           </div>
         </div>
 
-        {clubs.length > 0 && (
-          <div className="mb-10">
-            <h2 className="font-display text-2xl text-emerald-400 mb-4">Clubs</h2>
-            <div className="flex flex-wrap gap-3">
-              {clubs.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/c/${c.slug}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-4 py-2 text-sm text-ocean-100 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
-                >
-                  {c.role === "owner" ? (
-                    <Crown className="w-4 h-4 text-amber-300" />
-                  ) : (
-                    <Users className="w-4 h-4 text-ocean-400" />
-                  )}
-                  <span>{c.name}</span>
-                  {(c.role === "officer" || c.role === "admin") && (
-                    <span className="text-[11px] text-ocean-500 capitalize">
-                      · {c.role}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        <ClubsAndAwards rows={clubs} heading="Clubs & awards" />
 
         {/* Their posted tanks */}
-        <h2 className="font-display text-2xl text-emerald-400 mb-4">
+        <h2 className="mt-12 font-display text-2xl text-emerald-400 mb-4">
           Posted tanks
         </h2>
         {tanks.length === 0 ? (
@@ -177,7 +159,6 @@ export default async function PublicProfilePage({ params }: Params) {
               const images = Array.isArray(t.images) ? t.images : [];
               const cover = images[0];
               const species = items.length;
-              const { labels, more } = tankInhabitants(t.items, speciesNames);
               return (
                 <Link
                   key={t.id}
@@ -206,29 +187,13 @@ export default async function PublicProfilePage({ params }: Params) {
                       {t.gallons ? `${t.gallons} gal · ` : ""}
                       {species} species
                     </p>
-                    {labels.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {labels.map((l, i) => (
-                          <span
-                            key={i}
-                            className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-ocean-300"
-                          >
-                            {l}
-                          </span>
-                        ))}
-                        {more > 0 && (
-                          <span className="px-1.5 py-0.5 text-[11px] text-ocean-500">
-                            +{more} more
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </Link>
               );
             })}
           </div>
         )}
+        <ProfileShop items={shopItems} storeSlug={storeSlug} />
       </div>
     </main>
   );

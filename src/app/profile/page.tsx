@@ -2,11 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Plus,
-  Wallet,
   ShoppingBag,
-  Receipt,
-  Truck,
-  BarChart3,
+  Store,
   Fish,
   Globe,
   Lock,
@@ -16,18 +13,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { collectSlugs, tankInhabitants } from "@/lib/tanks/inhabitants";
 import ProfileForm from "./profile-form";
-import ListingsGrid from "./listings-grid";
-
-type Listing = {
-  id: string;
-  name: string;
-  slug: string;
-  price: number | string;
-  images: string[] | null;
-  is_active: boolean | null;
-};
+import ClubsAndAwards, { type ClubAward } from "@/components/profile/ClubsAndAwards";
 
 type SavedTank = {
   id: string;
@@ -60,16 +47,6 @@ export default async function ProfilePage() {
   const storeIds = (stores ?? []).map((s) => (s as { id: string }).id);
   const hasShop = storeIds.length > 0;
 
-  let listings: Listing[] = [];
-  if (storeIds.length > 0) {
-    const { data: products } = await supabase
-      .from("products")
-      .select("id, name, slug, price, images, is_active")
-      .in("store_id", storeIds)
-      .order("created_at", { ascending: false });
-    listings = (products ?? []) as unknown as Listing[];
-  }
-
   const { data: tanksData } = await supabase
     .from("tanks")
     .select("id, name, gallons, items, updated_at, is_public")
@@ -77,32 +54,20 @@ export default async function ProfilePage() {
     .order("updated_at", { ascending: false });
   const tanks = (tanksData ?? []) as SavedTank[];
 
-  const tankSlugs = collectSlugs(tanks);
-  const speciesNames = new Map<string, string>();
-  if (tankSlugs.length) {
-    const { data: sp } = await supabase
-      .from("species")
-      .select("slug, common_name")
-      .in("slug", tankSlugs);
-    for (const row of sp ?? [])
-      speciesNames.set(row.slug as string, row.common_name as string);
-  }
+  const { data: clubAwards } = await supabase.rpc("user_clubs_awards", {
+    p_user_id: user.id,
+  });
+  const clubs = (clubAwards ?? []) as ClubAward[];
 
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const isAdmin = Boolean(profile?.is_admin);
 
   const actions = [
     { href: "/tank-builder", label: "Tank Builder", Icon: Fish },
-    { href: "/sell", label: "New listing", Icon: Plus },
     { href: "/orders", label: "My orders", Icon: ShoppingBag },
-    ...(hasShop
-      ? [
-          { href: "/sell/sales", label: "Sales", Icon: Receipt },
-          { href: "/sell/shipping", label: "Shipping", Icon: Truck },
-          { href: "/sell/payouts", label: "Payouts", Icon: Wallet },
-          { href: "/sell/finances", label: "Finances", Icon: BarChart3 },
-        ]
-      : []),
+    hasShop
+      ? { href: "/sell/listings", label: "Seller Hub", Icon: Store }
+      : { href: "/sell", label: "Start selling", Icon: Plus },
     ...(isAdmin
       ? [{ href: "/admin", label: "Admin", Icon: ShieldCheck }]
       : []),
@@ -152,7 +117,7 @@ export default async function ProfilePage() {
           <p className="mb-3 font-mono text-xs uppercase tracking-widest text-ocean-500">
             Quick actions
           </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {actions.map((a) => (
               <Link
                 key={a.href}
@@ -185,7 +150,6 @@ export default async function ProfilePage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {tanks.map((t) => {
                 const count = Array.isArray(t.items) ? t.items.length : 0;
-                const { labels, more } = tankInhabitants(t.items, speciesNames);
                 return (
                   <Link
                     key={t.id}
@@ -210,23 +174,6 @@ export default async function ProfilePage() {
                       {t.gallons ? `${t.gallons} gal · ` : ""}
                       {count} species
                     </p>
-                    {labels.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {labels.map((l, i) => (
-                          <span
-                            key={i}
-                            className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-ocean-300"
-                          >
-                            {l}
-                          </span>
-                        ))}
-                        {more > 0 && (
-                          <span className="px-1.5 py-0.5 text-[11px] text-ocean-500">
-                            +{more} more
-                          </span>
-                        )}
-                      </div>
-                    )}
                     <p className="mt-2 text-xs text-ocean-500">
                       Updated {new Date(t.updated_at).toLocaleDateString()}
                     </p>
@@ -237,13 +184,7 @@ export default async function ProfilePage() {
           )}
         </section>
 
-        {/* Your listings */}
-        <section className="mt-10">
-          <h2 className="mb-4 font-display text-2xl text-white">
-            Your listings
-          </h2>
-          <ListingsGrid listings={listings} />
-        </section>
+        <ClubsAndAwards rows={clubs} emptyText="You’re not in any clubs yet." />
 
         {/* Edit profile */}
         <section className="mt-10">
