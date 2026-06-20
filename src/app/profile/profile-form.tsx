@@ -27,11 +27,18 @@
      async function handleSave(e: FormEvent) {
        e.preventDefault()
        setStatus(null)
+
+       const cleanUsername = username.trim()
+       if (!/^[A-Za-z0-9_]+$/.test(cleanUsername)) {
+         setStatus('Error: Username can only contain letters, numbers, and underscores — no spaces or other symbols.')
+         return
+       }
+
        setSaving(true)
 
        const { error } = await supabase.from('profiles').upsert({
          id: userId,
-         username,
+         username: cleanUsername,
          full_name: fullName,
          bio,
          location,
@@ -58,6 +65,9 @@
          <label className={labelClass}>
            Username
            <input value={username} onChange={(e) => setUsername(e.target.value)} className={fieldClass} />
+           <span className="text-xs text-ocean-600">
+             Letters, numbers, and underscores only — no spaces or symbols.
+           </span>
          </label>
          <label className={labelClass}>
            Full name

@@ -20,13 +20,22 @@ export default function RegisterPage() {
   async function handleRegister(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const cleanUsername = username.trim();
+    if (!/^[A-Za-z0-9_]+$/.test(cleanUsername)) {
+      setError(
+        "Username can only contain letters, numbers, and underscores — no spaces or other symbols."
+      );
+      return;
+    }
+
     setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { username },
+        data: { username: cleanUsername },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -100,6 +109,9 @@ export default function RegisterPage() {
                   autoComplete="username"
                   className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white outline-none focus:border-ocean-500"
                 />
+                <span className="text-xs text-ocean-600">
+                  Letters, numbers, and underscores only — no spaces or symbols.
+                </span>
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-ocean-400">
