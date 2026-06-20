@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Receipt, Truck, Wallet, BarChart3 } from "lucide-react";
+import { Package, Receipt, Truck, Wallet, BarChart3 } from "lucide-react";
 
 const tabs = [
+  { href: "/sell/listings", label: "Listings", Icon: Package },
   { href: "/sell/sales", label: "Sales", Icon: Receipt },
   { href: "/sell/shipping", label: "Shipping", Icon: Truck },
   { href: "/sell/payouts", label: "Payouts", Icon: Wallet },
