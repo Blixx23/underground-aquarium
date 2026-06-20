@@ -37,15 +37,21 @@ export default function MarketplaceBrowser({
   const [sort, setSort] = useState<SortKey>("newest");
   const [query, setQuery] = useState("");
 
+  // Hide sold-out listings (stock === 0) entirely; null & positive stay.
+  const available = useMemo(
+    () => products.filter((p) => p.stock !== 0),
+    [products]
+  );
+
   // How many listings sit in each category
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const p of products) {
+    for (const p of available) {
       const k = p.category ?? "other";
       m[k] = (m[k] ?? 0) + 1;
     }
     return m;
-  }, [products]);
+  }, [available]);
 
   // Only show pills for categories that actually have listings
   const pills = useMemo(
@@ -55,7 +61,7 @@ export default function MarketplaceBrowser({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = products.filter((p) => {
+    const list = available.filter((p) => {
       const k = p.category ?? "other";
       if (active !== "all" && k !== active) return false;
       if (q) {
@@ -71,7 +77,7 @@ export default function MarketplaceBrowser({
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     });
-  }, [products, active, sort, query]);
+  }, [available, active, sort, query]);
 
   return (
     <div>
@@ -120,7 +126,7 @@ export default function MarketplaceBrowser({
         >
           All
           <span className={active === "all" ? "text-ocean-100" : "text-ocean-500"}>
-            {products.length}
+            {available.length}
           </span>
         </button>
         {pills.map((c) => (
@@ -161,7 +167,6 @@ export default function MarketplaceBrowser({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((product) => {
             const image = product.images?.[0];
-            const soldOut = product.stock === 0;
             const isNew =
               Date.now() - new Date(product.created_at).getTime() < WEEK_MS;
             const ship = Number(product.shipping_price);
@@ -186,16 +191,10 @@ export default function MarketplaceBrowser({
                   <span className="absolute left-3 top-3 text-[11px] font-medium uppercase tracking-wide text-ocean-100 bg-ocean-950/70 backdrop-blur-sm border border-white/10 rounded-full px-2.5 py-1">
                     {categoryLabel(product.category)}
                   </span>
-                  {soldOut ? (
-                    <span className="absolute right-3 top-3 text-[11px] font-semibold uppercase tracking-wide text-coral-300 bg-coral-500/15 border border-coral-500/30 rounded-full px-2.5 py-1">
-                      Sold out
+                  {isNew && (
+                    <span className="absolute right-3 top-3 text-[11px] font-semibold uppercase tracking-wide text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-2.5 py-1">
+                      New
                     </span>
-                  ) : (
-                    isNew && (
-                      <span className="absolute right-3 top-3 text-[11px] font-semibold uppercase tracking-wide text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-2.5 py-1">
-                        New
-                      </span>
-                    )
                   )}
                 </div>
 
@@ -217,9 +216,11 @@ export default function MarketplaceBrowser({
                     <span>
                       {ship > 0 ? `+$${ship.toFixed(2)} shipping` : "Free shipping"}
                     </span>
-                    {typeof product.stock === "number" && !soldOut && (
-                      <span>{product.stock} in stock</span>
-                    )}
+                    <span>
+                      {typeof product.stock === "number"
+                        ? `${product.stock} in stock`
+                        : "In stock"}
+                    </span>
                   </div>
                 </div>
               </Link>
