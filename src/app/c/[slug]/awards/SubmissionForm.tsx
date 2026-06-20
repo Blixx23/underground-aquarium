@@ -63,7 +63,8 @@ export default function SubmissionForm({
 
   function addFiles(picked: FileList | null) {
     if (!picked) return;
-    setFiles((prev) => [...prev, ...Array.from(picked)].slice(0, MAX_PHOTOS));
+    const incoming = Array.from(picked);
+    setFiles((prev) => [...prev, ...incoming].slice(0, MAX_PHOTOS));
   }
 
   function removeFile(idx: number) {
