@@ -26,6 +26,7 @@ type EventRow = {
   timezone: string | null;
   host_kind: string;
   host_store_id: string | null;
+  host_club_id: string | null;
   lat: number | null;
   lng: number | null;
 };
@@ -36,9 +37,10 @@ export default async function EventsPage() {
   const { data } = await supabasePublic
     .from("events")
     .select(
-      "id, slug, title, description, cover_image, starts_at, is_online, venue_name, city, state, timezone, host_kind, host_store_id, lat, lng"
+      "id, slug, title, description, cover_image, starts_at, is_online, venue_name, city, state, timezone, host_kind, host_store_id, host_club_id, lat, lng"
     )
     .eq("status", "published")
+    .eq("show_in_directory", true)
     .gte("starts_at", cutoff)
     .order("starts_at", { ascending: true });
 
@@ -61,6 +63,21 @@ export default async function EventsPage() {
     );
   }
 
+  // Resolve club host names
+  const clubIds = [
+    ...new Set(events.filter((e) => e.host_club_id).map((e) => e.host_club_id!)),
+  ];
+  let clubNameById = new Map<string, string>();
+  if (clubIds.length > 0) {
+    const { data: cc } = await supabasePublic
+      .from("clubs")
+      .select("id, name")
+      .in("id", clubIds);
+    clubNameById = new Map(
+      ((cc as { id: string; name: string }[]) ?? []).map((c) => [c.id, c.name])
+    );
+  }
+
   const cards: EventCard[] = events.map((ev) => ({
     id: ev.id,
     slug: ev.slug,
@@ -77,6 +94,8 @@ export default async function EventsPage() {
     hostLabel:
       ev.host_kind === "store" && ev.host_store_id
         ? storeNameById.get(ev.host_store_id) || "Local shop"
+        : ev.host_kind === "club" && ev.host_club_id
+        ? clubNameById.get(ev.host_club_id) || "Aquarium club"
         : "Community event",
     lat: ev.lat,
     lng: ev.lng,

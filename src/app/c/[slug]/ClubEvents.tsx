@@ -25,6 +25,8 @@ export type ClubEvent = {
   venue_name: string | null;
   city: string | null;
   state: string | null;
+  is_online: boolean | null;
+  online_url: string | null;
   show_in_directory: boolean | null;
   event_type: string | null;
   cover_image: string | null;
@@ -84,6 +86,8 @@ export default function ClubEvents({
   const [kind, setKind] = useState<"meeting" | "event">("meeting");
   const [title, setTitle] = useState("");
   const [startsAt, setStartsAt] = useState("");
+  const [isOnline, setIsOnline] = useState(false);
+  const [onlineUrl, setOnlineUrl] = useState("");
   const [venue, setVenue] = useState("");
   const [city, setCity] = useState("");
   const [stateVal, setStateVal] = useState("");
@@ -96,6 +100,8 @@ export default function ClubEvents({
     setKind("meeting");
     setTitle("");
     setStartsAt("");
+    setIsOnline(false);
+    setOnlineUrl("");
     setVenue("");
     setCity("");
     setStateVal("");
@@ -110,6 +116,8 @@ export default function ClubEvents({
     setKind(e.event_type === "event" ? "event" : "meeting");
     setTitle(e.title);
     setStartsAt(toLocalInput(e.starts_at));
+    setIsOnline(!!e.is_online);
+    setOnlineUrl(e.online_url ?? "");
     setVenue(e.venue_name ?? "");
     setCity(e.city ?? "");
     setStateVal(e.state ?? "");
@@ -138,9 +146,11 @@ export default function ClubEvents({
       title: title.trim(),
       description: description.trim() || null,
       starts_at: new Date(startsAt).toISOString(),
-      venue_name: venue.trim() || null,
-      city: city.trim() || null,
-      state: stateVal.trim() || null,
+      is_online: isOnline,
+      online_url: isOnline ? onlineUrl.trim() || null : null,
+      venue_name: isOnline ? null : venue.trim() || null,
+      city: isOnline ? null : city.trim() || null,
+      state: isOnline ? null : stateVal.trim() || null,
       show_in_directory: listPublic,
       event_type: kind,
       cover_image: kind === "event" ? coverImage : null,
@@ -159,11 +169,10 @@ export default function ClubEvents({
             host_kind: "club",
             host_club_id: clubId,
             status: "published",
-            is_online: false,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           })
           .select(
-            "id, slug, title, description, starts_at, venue_name, city, state, show_in_directory, event_type, cover_image"
+            "id, slug, title, description, starts_at, venue_name, city, state, is_online, online_url, show_in_directory, event_type, cover_image"
           )
           .single();
         if (e) throw e;
@@ -280,26 +289,49 @@ export default function ClubEvents({
                 className={inputClass}
               />
             </div>
-            <input
-              value={venue}
-              onChange={(e) => setVenue(e.target.value)}
-              placeholder="Location / venue (e.g. Roseville Library, Room B)"
-              className={inputClass}
-            />
-            <div className="grid grid-cols-2 gap-3">
+
+            <label className="flex items-center gap-2 text-sm text-ocean-200">
               <input
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="City"
+                type="checkbox"
+                checked={isOnline}
+                onChange={(e) => setIsOnline(e.target.checked)}
+                className="h-4 w-4 rounded border-ocean-700 bg-ocean-900 accent-ocean-500"
+              />
+              This is an online event
+            </label>
+
+            {isOnline ? (
+              <input
+                value={onlineUrl}
+                onChange={(e) => setOnlineUrl(e.target.value)}
+                placeholder="Event link (e.g. Zoom or Meet URL) — optional"
                 className={inputClass}
               />
-              <input
-                value={stateVal}
-                onChange={(e) => setStateVal(e.target.value)}
-                placeholder="State"
-                className={inputClass}
-              />
-            </div>
+            ) : (
+              <>
+                <input
+                  value={venue}
+                  onChange={(e) => setVenue(e.target.value)}
+                  placeholder="Location / venue (e.g. Roseville Library, Room B)"
+                  className={inputClass}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="City"
+                    className={inputClass}
+                  />
+                  <input
+                    value={stateVal}
+                    onChange={(e) => setStateVal(e.target.value)}
+                    placeholder="State"
+                    className={inputClass}
+                  />
+                </div>
+              </>
+            )}
+
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -356,12 +388,14 @@ export default function ClubEvents({
       ) : (
         <div className="space-y-3">
           {events.map((e) => {
-            const place = [
-              e.venue_name,
-              [e.city, e.state].filter(Boolean).join(", "),
-            ]
-              .filter(Boolean)
-              .join(" · ");
+            const place = e.is_online
+              ? "Online"
+              : [
+                  e.venue_name,
+                  [e.city, e.state].filter(Boolean).join(", "),
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
             const confirming = confirmingId === e.id;
             const cover = e.event_type === "event" ? e.cover_image : null;
             return (
@@ -392,7 +426,12 @@ export default function ClubEvents({
                     </Link>
                     {place && (
                       <p className="mt-1 flex items-center gap-1.5 text-xs text-ocean-400">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" /> {place}
+                        {e.is_online ? (
+                          <Globe className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        )}{" "}
+                        {place}
                       </p>
                     )}
                     {isOfficer && (

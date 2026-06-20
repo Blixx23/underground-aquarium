@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
+  Pencil,
   Calendar,
   MapPin,
   Globe,
@@ -97,6 +98,7 @@ export default async function EventDetailPage({ params }: Params) {
   let hostHref: string | null = null;
   let backHref = "/events";
   let backLabel = "All events";
+  let editClubHref: string | null = null;
   let canEdit = !!user && ev.created_by === user.id;
 
   if (ev.host_kind === "store" && ev.host_store_id) {
@@ -121,6 +123,7 @@ export default async function EventDetailPage({ params }: Params) {
       hostHref = `/c/${club.slug}`;
       backHref = `/c/${club.slug}/events`;
       backLabel = "Club events";
+      editClubHref = `/c/${club.slug}/events`;
       if (user) {
         const { data: me } = await supabase
           .from("club_members")
@@ -190,26 +193,36 @@ export default async function EventDetailPage({ params }: Params) {
           </div>
         )}
 
-        {canEdit && (
-          <EditEvent
-            event={{
-              id: ev.id as string,
-              title: ev.title as string,
-              description: (ev.description as string | null) ?? null,
-              starts_at: ev.starts_at as string,
-              ends_at: (ev.ends_at as string | null) ?? null,
-              is_online: ev.is_online as boolean,
-              online_url: (ev.online_url as string | null) ?? null,
-              venue_name: (ev.venue_name as string | null) ?? null,
-              address: (ev.address as string | null) ?? null,
-              city: (ev.city as string | null) ?? null,
-              state: (ev.state as string | null) ?? null,
-              postal_code: (ev.postal_code as string | null) ?? null,
-              capacity: (ev.capacity as number | null) ?? null,
-              cover_image: (ev.cover_image as string | null) ?? null,
-            }}
-          />
-        )}
+        {canEdit &&
+          (editClubHref ? (
+            <div className="mb-6">
+              <Link
+                href={editClubHref}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 text-ocean-200 px-4 py-2.5 text-sm font-medium hover:text-white hover:border-white/20 transition-colors"
+              >
+                <Pencil className="w-4 h-4" /> Edit event
+              </Link>
+            </div>
+          ) : (
+            <EditEvent
+              event={{
+                id: ev.id as string,
+                title: ev.title as string,
+                description: (ev.description as string | null) ?? null,
+                starts_at: ev.starts_at as string,
+                ends_at: (ev.ends_at as string | null) ?? null,
+                is_online: ev.is_online as boolean,
+                online_url: (ev.online_url as string | null) ?? null,
+                venue_name: (ev.venue_name as string | null) ?? null,
+                address: (ev.address as string | null) ?? null,
+                city: (ev.city as string | null) ?? null,
+                state: (ev.state as string | null) ?? null,
+                postal_code: (ev.postal_code as string | null) ?? null,
+                capacity: (ev.capacity as number | null) ?? null,
+                cover_image: (ev.cover_image as string | null) ?? null,
+              }}
+            />
+          ))}
 
         {ev.cover_image && (
           // eslint-disable-next-line @next/next/no-img-element

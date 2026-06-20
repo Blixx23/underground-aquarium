@@ -43,7 +43,7 @@ export default async function ClubEventsPage({ params }: Params) {
   const { data: upcomingData } = await supabase
     .from("events")
     .select(
-      "id, slug, title, description, starts_at, venue_name, city, state, show_in_directory, event_type, cover_image"
+      "id, slug, title, description, starts_at, venue_name, city, state, is_online, online_url, show_in_directory, event_type, cover_image"
     )
     .eq("host_club_id", club.id)
     .eq("status", "published")

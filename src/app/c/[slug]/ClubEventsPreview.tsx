@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   CalendarDays,
   MapPin,
+  Globe,
   Plus,
   ArrowRight,
   CalendarClock,
@@ -57,12 +58,14 @@ export default function ClubEventsPreview({
       ) : (
         <div className="space-y-2">
           {shown.map((e) => {
-            const place = [
-              e.venue_name,
-              [e.city, e.state].filter(Boolean).join(", "),
-            ]
-              .filter(Boolean)
-              .join(" · ");
+            const place = e.is_online
+              ? "Online"
+              : [
+                  e.venue_name,
+                  [e.city, e.state].filter(Boolean).join(", "),
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
             const cover = e.event_type === "event" ? e.cover_image : null;
             return (
               <Link
@@ -96,7 +99,11 @@ export default function ClubEventsPreview({
                   <p className="truncate font-medium text-white">{e.title}</p>
                   {place && (
                     <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ocean-400">
-                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      {e.is_online ? (
+                        <Globe className="h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      )}
                       <span className="truncate">{place}</span>
                     </p>
                   )}
