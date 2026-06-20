@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Fish, Loader2, ImagePlus } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { CATEGORIES } from "@/lib/marketplace/categories";
 
 function slugify(text: string) {
   return text
@@ -23,6 +24,7 @@ export default function SellPage() {
   const [user, setUser] = useState<User | null>(null);
 
   const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
@@ -82,6 +84,10 @@ export default function SellPage() {
 
     if (!name.trim()) {
       setError("Please give your listing a name.");
+      return;
+    }
+    if (!category) {
+      setError("Please choose a category.");
       return;
     }
     const priceNum = parseFloat(price);
@@ -152,6 +158,7 @@ export default function SellPage() {
           store_id: storeId,
           name: name.trim(),
           slug: productSlug,
+          category,
           description: description.trim() || null,
           price: priceNum,
           stock: stock === "" ? null : parseInt(stock, 10),
@@ -229,6 +236,27 @@ export default function SellPage() {
               placeholder="Aquascaping Driftwood Piece"
               className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm text-ocean-300 mb-2">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-4 py-3 text-white focus:outline-none focus:border-ocean-500 transition-colors"
+            >
+              <option value="" disabled>
+                Select a category…
+              </option>
+              {CATEGORIES.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-ocean-500 mt-2">
+              Pick the closest fit. Use &ldquo;Other&rdquo; if nothing matches.
+            </p>
           </div>
 
           <div>
