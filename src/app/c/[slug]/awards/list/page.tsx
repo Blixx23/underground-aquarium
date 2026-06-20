@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowLeft, ListChecks } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import PointListEditor from "./PointListEditor";
+import TitleLadderEditor from "./TitleLadderEditor";
+import type { AwardTitle } from "@/lib/awards/titles";
 
 type Species = {
   id: string;
@@ -27,10 +29,12 @@ export default async function PointListPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, award_titles")
     .eq("slug", slug)
     .maybeSingle();
   if (!club) notFound();
+
+  const ladder = (club.award_titles as AwardTitle[] | null) ?? [];
 
   let role: string | null = null;
   if (user) {
@@ -94,6 +98,10 @@ export default async function PointListPage({
         </p>
 
         <PointListEditor clubId={club.id} initialSpecies={species} />
+
+        <div className="mt-10">
+          <TitleLadderEditor clubId={club.id} initialTitles={ladder} />
+        </div>
       </div>
     </main>
   );
