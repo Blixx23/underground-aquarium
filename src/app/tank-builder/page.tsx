@@ -16,7 +16,7 @@ export default async function TankBuilderPage() {
     .select(
       "slug, common_name, scientific_name, group_name, water_type, temp_min_f, temp_max_f, ph_min, ph_max, gh_min, gh_max, max_size_in, min_tank_gal, temperament, social, min_group_size, swim_level, diet, fin_nipper, suitability"
     )
-    .eq("entry_type", "species")
+    .in("entry_type", ["species", "variety", "form"])
     .order("common_name");
 
   return <TankBuilder species={species ?? []} />;
