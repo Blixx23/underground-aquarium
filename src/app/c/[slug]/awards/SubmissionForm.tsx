@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fish, Leaf, Send, Loader2, Check, ImagePlus, X } from "lucide-react";
@@ -55,6 +55,7 @@ export default function SubmissionForm({
   const selected = species.find((s) => s.id === speciesId) || null;
 
   const MAX_PHOTOS = 4;
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const previews = useMemo(
     () => files.map((f) => URL.createObjectURL(f)),
     [files]
@@ -275,6 +276,21 @@ export default function SubmissionForm({
           (optional, up to {MAX_PHOTOS})
         </span>
       </label>
+
+      {/* One permanent, hidden input triggered via ref, so it never loses
+          its wiring when thumbnails appear or disappear. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          addFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
+
       {files.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
           {files.map((f, i) => (
@@ -300,20 +316,15 @@ export default function SubmissionForm({
           ))}
         </div>
       )}
+
       {files.length < MAX_PHOTOS && (
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-ocean-800/60 bg-ocean-900/60 px-3 py-2 text-sm text-ocean-200 transition-colors hover:bg-ocean-800/60">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-ocean-800/60 bg-ocean-900/60 px-3 py-2 text-sm text-ocean-200 transition-colors hover:bg-ocean-800/60"
+        >
           <ImagePlus className="h-4 w-4" /> Add photo
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              addFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
-        </label>
+        </button>
       )}
 
       {/* Submit */}
