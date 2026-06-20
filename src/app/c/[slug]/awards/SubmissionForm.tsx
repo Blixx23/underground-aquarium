@@ -100,19 +100,19 @@ export default function SubmissionForm({
 
     setSaving(true);
     try {
-      // Upload any photos to the shared product-images bucket first.
+      // Upload any photos to the dedicated award-photos bucket first.
       const photoUrls: string[] = [];
       for (const file of files.slice(0, MAX_PHOTOS)) {
         const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-        const path = `awards/${userId}/${Date.now()}-${Math.random()
+        const path = `${userId}/${Date.now()}-${Math.random()
           .toString(36)
           .slice(2, 8)}.${ext}`;
         const { error: upErr } = await supabase.storage
-          .from("product-images")
+          .from("award-photos")
           .upload(path, file);
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage
-          .from("product-images")
+          .from("award-photos")
           .getPublicUrl(path);
         photoUrls.push(pub.publicUrl);
       }
