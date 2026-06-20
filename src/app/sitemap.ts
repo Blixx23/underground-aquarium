@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/clubs",
     "/clubs/start",
     "/clubs/discover",
+    "/breeding",
   ];
 
   const { data: terms } = await supabasePublic
@@ -57,6 +58,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .select("slug")
     .eq("is_active", true)
     .not("is_live_animal", "is", true);
+
+  // Public breeding guides — one page per species that has approved, shared reports.
+  const { data: guides } = await supabasePublic
+    .from("public_breeding_guides")
+    .select("species_slug");
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
@@ -107,6 +113,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  const guideSlugs = Array.from(
+    new Set((guides ?? []).map((g) => g.species_slug as string))
+  );
+  const breedingEntries = guideSlugs.map((slug) => ({
+    url: `${baseUrl}/breeding/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
   return [
     ...staticEntries,
     ...termEntries,
@@ -115,5 +131,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...clubEntries,
     ...eventEntries,
     ...productEntries,
+    ...breedingEntries,
   ];
 }

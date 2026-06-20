@@ -46,6 +46,11 @@
          updated_at: new Date().toISOString(),
        })
 
+       // Keep the auth metadata (what the navbar reads) in sync with the profile.
+       if (!error) {
+         await supabase.auth.updateUser({ data: { username: cleanUsername } })
+       }
+
        setSaving(false)
        setStatus(error ? `Error: ${error.message}` : 'Saved!')
      }
