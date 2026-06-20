@@ -95,6 +95,8 @@ export default async function EventDetailPage({ params }: Params) {
   // Host + edit permission
   let hostLabel = "Community event";
   let hostHref: string | null = null;
+  let backHref = "/events";
+  let backLabel = "All events";
   let canEdit = !!user && ev.created_by === user.id;
 
   if (ev.host_kind === "store" && ev.host_store_id) {
@@ -107,6 +109,32 @@ export default async function EventDetailPage({ params }: Params) {
       hostLabel = store.name as string;
       hostHref = `/stores/${store.slug}`;
       if (user && store.claimed_by === user.id) canEdit = true;
+    }
+  } else if (ev.host_kind === "club" && ev.host_club_id) {
+    const { data: club } = await supabase
+      .from("clubs")
+      .select("name, slug")
+      .eq("id", ev.host_club_id)
+      .maybeSingle();
+    if (club) {
+      hostLabel = club.name as string;
+      hostHref = `/c/${club.slug}`;
+      backHref = `/c/${club.slug}/events`;
+      backLabel = "Club events";
+      if (user) {
+        const { data: me } = await supabase
+          .from("club_members")
+          .select("role, status")
+          .eq("club_id", ev.host_club_id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (
+          me?.status === "active" &&
+          (me.role === "owner" || me.role === "admin" || me.role === "officer")
+        ) {
+          canEdit = true;
+        }
+      }
     }
   } else {
     const { data: prof } = await supabase
@@ -149,10 +177,10 @@ export default async function EventDetailPage({ params }: Params) {
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <Link
-            href="/events"
+            href={backHref}
             className="inline-flex items-center gap-2 text-ocean-300 hover:text-white transition-colors text-sm"
           >
-            <ArrowLeft className="w-4 h-4" /> All events
+            <ArrowLeft className="w-4 h-4" /> {backLabel}
           </Link>
         </div>
 

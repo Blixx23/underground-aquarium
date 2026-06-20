@@ -6,7 +6,17 @@ import {
   ArrowRight,
   CalendarClock,
 } from "lucide-react";
-import { type ClubEvent, formatWhen } from "./ClubEvents";
+import type { ClubEvent } from "./ClubEvents";
+
+function formatWhen(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 export default function ClubEventsPreview({
   clubSlug,
