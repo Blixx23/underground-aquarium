@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import MarketplaceBrowser from "@/components/marketplace/MarketplaceBrowser";
 
 type Product = {
   id: string;
@@ -10,13 +10,18 @@ type Product = {
   price: number | string;
   stock: number | null;
   images: string[] | null;
+  category: string | null;
+  created_at: string;
+  shipping_price: number | string | null;
 };
 
 export default async function MarketplacePage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, slug, description, price, stock, images")
+    .select(
+      "id, name, slug, description, price, stock, images, category, created_at, shipping_price"
+    )
     .eq("is_active", true)
     .not("is_live_animal", "is", true)
     .order("created_at", { ascending: false });
@@ -54,50 +59,8 @@ export default async function MarketplacePage() {
           </div>
         )}
 
-        {products.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => {
-              const image = product.images?.[0];
-              return (
-                <Link
-                  key={product.id}
-                  href={`/marketplace/${product.slug}`}
-                  className="group block rounded-2xl overflow-hidden bg-ocean-900/60 border border-ocean-800/60 hover:border-ocean-600/70 transition-colors duration-300"
-                >
-                  <div className="relative aspect-[4/3] bg-gradient-to-br from-ocean-800 to-ocean-950 flex items-center justify-center overflow-hidden">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Fish className="w-12 h-12 text-ocean-700" />
-                    )}
-                  </div>
-
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <h2 className="font-display text-lg text-white leading-snug">
-                        {product.name}
-                      </h2>
-                      <span className="shrink-0 font-display text-lg text-ocean-300">
-                        ${Number(product.price).toFixed(2)}
-                      </span>
-                    </div>
-                    {product.description && (
-                      <p className="text-sm text-ocean-400 line-clamp-2 mb-4">
-                        {product.description}
-                      </p>
-                    )}
-                    {typeof product.stock === "number" && (
-                      <p className="text-xs text-ocean-500">{product.stock} in stock</p>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+        {!error && products.length > 0 && (
+          <MarketplaceBrowser products={products} />
         )}
       </div>
     </main>
