@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Fish, Waves, MapPin, ExternalLink, User, Users, Crown } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import { collectSlugs, tankInhabitants } from "@/lib/tanks/inhabitants";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,17 @@ export default async function PublicProfilePage({ params }: Params) {
     .limit(60);
 
   const tanks = (tanksData ?? []) as CommunityTank[];
+
+  const tankSlugs = collectSlugs(tanks);
+  const speciesNames = new Map<string, string>();
+  if (tankSlugs.length) {
+    const { data: sp } = await supabasePublic
+      .from("species")
+      .select("slug, common_name")
+      .in("slug", tankSlugs);
+    for (const row of sp ?? [])
+      speciesNames.set(row.slug as string, row.common_name as string);
+  }
   const displayName = profile.full_name || profile.username || "Aquarist";
   const websiteUrl = profile.website ? normalizeUrl(profile.website) : null;
 
@@ -165,6 +177,7 @@ export default async function PublicProfilePage({ params }: Params) {
               const images = Array.isArray(t.images) ? t.images : [];
               const cover = images[0];
               const species = items.length;
+              const { labels, more } = tankInhabitants(t.items, speciesNames);
               return (
                 <Link
                   key={t.id}
@@ -193,6 +206,23 @@ export default async function PublicProfilePage({ params }: Params) {
                       {t.gallons ? `${t.gallons} gal · ` : ""}
                       {species} species
                     </p>
+                    {labels.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {labels.map((l, i) => (
+                          <span
+                            key={i}
+                            className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-ocean-300"
+                          >
+                            {l}
+                          </span>
+                        ))}
+                        {more > 0 && (
+                          <span className="px-1.5 py-0.5 text-[11px] text-ocean-500">
+                            +{more} more
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </Link>
               );

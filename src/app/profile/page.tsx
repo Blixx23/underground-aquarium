@@ -16,6 +16,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { collectSlugs, tankInhabitants } from "@/lib/tanks/inhabitants";
 import ProfileForm from "./profile-form";
 import ListingsGrid from "./listings-grid";
 
@@ -75,6 +76,17 @@ export default async function ProfilePage() {
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
   const tanks = (tanksData ?? []) as SavedTank[];
+
+  const tankSlugs = collectSlugs(tanks);
+  const speciesNames = new Map<string, string>();
+  if (tankSlugs.length) {
+    const { data: sp } = await supabase
+      .from("species")
+      .select("slug, common_name")
+      .in("slug", tankSlugs);
+    for (const row of sp ?? [])
+      speciesNames.set(row.slug as string, row.common_name as string);
+  }
 
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const isAdmin = Boolean(profile?.is_admin);
@@ -173,6 +185,7 @@ export default async function ProfilePage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {tanks.map((t) => {
                 const count = Array.isArray(t.items) ? t.items.length : 0;
+                const { labels, more } = tankInhabitants(t.items, speciesNames);
                 return (
                   <Link
                     key={t.id}
@@ -197,6 +210,23 @@ export default async function ProfilePage() {
                       {t.gallons ? `${t.gallons} gal · ` : ""}
                       {count} species
                     </p>
+                    {labels.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {labels.map((l, i) => (
+                          <span
+                            key={i}
+                            className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-ocean-300"
+                          >
+                            {l}
+                          </span>
+                        ))}
+                        {more > 0 && (
+                          <span className="px-1.5 py-0.5 text-[11px] text-ocean-500">
+                            +{more} more
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <p className="mt-2 text-xs text-ocean-500">
                       Updated {new Date(t.updated_at).toLocaleDateString()}
                     </p>
