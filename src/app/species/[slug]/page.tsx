@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Waves, Heart } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 
 export const revalidate = 3600;
@@ -10,20 +10,14 @@ const SITE = "https://www.undergroundaquarium.com";
 
 type Params = { params: Promise<{ slug: string }> };
 
-function firstImage(images: unknown): string | null {
-  let arr: unknown = images;
-  if (typeof images === "string") {
-    try {
-      arr = JSON.parse(images);
-    } catch {
-      return null;
-    }
-  }
-  if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === "string") {
-    return arr[0];
-  }
-  return null;
-}
+type SpeciesTank = {
+  id: string;
+  name: string | null;
+  gallons: number | null;
+  images: unknown;
+  username: string | null;
+  like_count: number;
+};
 
 export async function generateStaticParams() {
   const { data } = await supabasePublic.from("species").select("slug");
@@ -99,16 +93,6 @@ export default async function SpeciesDetailPage({ params }: Params) {
     unit: string
   ): string | null => (a != null && b != null ? `${a}–${b}${unit}` : null);
 
-  // Live marketplace listings tagged to this species
-  const { data: listings } = await supabasePublic
-    .from("products")
-    .select("name, slug, price, images, stock")
-    .eq("species_slug", s.slug)
-    .eq("is_active", true)
-    .gt("stock", 0)
-    .order("created_at", { ascending: false })
-    .limit(12);
-
   let parent: { slug: string; common_name: string } | null = null;
   if (s.parent_slug) {
     const { data } = await supabasePublic
@@ -133,6 +117,11 @@ export default async function SpeciesDetailPage({ params }: Params) {
     .is("parent_slug", null)
     .order("common_name")
     .limit(10);
+
+  const { data: speciesTanks } = await supabasePublic.rpc(
+    "public_tanks_for_species",
+    { p_slug: s.slug }
+  );
 
   const fullName = s.scientific_name
     ? `${s.common_name} (${s.scientific_name})`
@@ -273,38 +262,49 @@ export default async function SpeciesDetailPage({ params }: Params) {
           <Stat label="Origin" value={s.origin} />
         </dl>
 
-        {listings && listings.length > 0 && (
+        {speciesTanks && speciesTanks.length > 0 && (
           <div className="border-t border-white/10 pt-8 mb-8">
             <h2 className="text-sm font-medium uppercase tracking-wide text-ocean-400 mb-4">
-              Available now ({listings.length})
+              Tanks with this fish ({speciesTanks.length})
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {listings.map((p) => {
-                const img = firstImage(p.images);
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {speciesTanks.map((t: SpeciesTank) => {
+                const imgs = Array.isArray(t.images) ? t.images : [];
+                const cover = typeof imgs[0] === "string" ? imgs[0] : null;
                 return (
                   <Link
-                    key={p.slug}
-                    href={`/marketplace/${p.slug}`}
-                    className="block rounded-xl bg-white/5 border border-white/10 overflow-hidden hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+                    key={t.id}
+                    href={`/tanks/${t.id}`}
+                    className="group block w-44 shrink-0 rounded-xl bg-white/5 border border-white/10 overflow-hidden hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
                   >
-                    {img ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={img}
-                        alt={p.name}
-                        loading="lazy"
-                        className="w-full h-28 object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-28 bg-white/5" />
-                    )}
+                    <div className="aspect-[4/3] bg-ocean-950/60 overflow-hidden">
+                      {cover ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={cover}
+                          alt={t.name ?? "Tank"}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-ocean-700">
+                          <Waves className="w-7 h-7" />
+                        </div>
+                      )}
+                    </div>
                     <div className="p-3">
-                      <p className="text-white text-sm font-medium leading-snug">
-                        {p.name}
+                      <p className="text-white text-sm font-medium leading-snug truncate">
+                        {t.name ?? "Untitled tank"}
                       </p>
-                      <p className="text-emerald-300 text-sm mt-1">
-                        ${Number(p.price).toFixed(2)}
+                      <p className="text-ocean-400 text-xs mt-1 truncate">
+                        {t.gallons ? `${t.gallons} gal` : "Tank"}
+                        {t.username ? ` · @${t.username}` : ""}
                       </p>
+                      {Number(t.like_count) > 0 && (
+                        <p className="mt-1 inline-flex items-center gap-1 text-xs text-coral-300">
+                          <Heart className="w-3 h-3 fill-current" /> {t.like_count}
+                        </p>
+                      )}
                     </div>
                   </Link>
                 );
