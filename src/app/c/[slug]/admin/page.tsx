@@ -3,11 +3,9 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ShieldAlert,
-  CreditCard,
-  Settings,
-  Trophy,
   ClipboardCheck,
   ListChecks,
+  Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -17,6 +15,7 @@ import ClubPayoutButton from "./ClubPayoutButton";
 import ClubSettings from "./ClubSettings";
 import DeleteClubButton from "./DeleteClubButton";
 import ClubRequests from "./ClubRequests";
+import AdminSections, { type AdminSection } from "./AdminSections";
 
 export default async function ClubAdminPage({
   params,
@@ -187,6 +186,153 @@ export default async function ClubAdminPage({
     .eq("club_id", club.id)
     .eq("status", "pending");
 
+  const canManageClub = role === "owner" || role === "admin";
+  const duesLabel =
+    club.dues_amount_cents > 0
+      ? `$${(club.dues_amount_cents / 100).toFixed(2)} to join`
+      : "Free to join";
+
+  // Build the collapsible tiles. Members live above this, always open.
+  const sections: AdminSection[] = [];
+
+  if (canManageClub) {
+    sections.push({
+      key: "settings",
+      title: "Club settings",
+      subtitle: "Name, logo, visibility, and contact info",
+      badge:
+        club.is_public && !club.approved
+          ? { text: "In review", tone: "amber" }
+          : undefined,
+      slot: (
+        <ClubSettings
+          club={{
+            id: club.id,
+            name: club.name,
+            description: club.description,
+            city: club.city,
+            state: club.state,
+            logo_url: club.logo_url,
+            is_public: club.is_public,
+            approved: club.approved,
+            contact_name: club.contact_name,
+            contact_email: club.contact_email,
+            contact_phone: club.contact_phone,
+            public_url: club.public_url,
+            meeting_info: club.meeting_info,
+            nonprofit_info: club.nonprofit_info,
+            dues_amount_cents: club.dues_amount_cents,
+          }}
+        />
+      ),
+    });
+  }
+
+  if (pendingDetailed.length > 0) {
+    sections.push({
+      key: "requests",
+      title: "Member requests",
+      subtitle: "Applications awaiting your approval",
+      badge: { text: String(pendingDetailed.length), tone: "amber" },
+      slot: <ClubRequests requests={pendingDetailed} />,
+    });
+  }
+
+  sections.push({
+    key: "dues",
+    title: "Dues & payouts",
+    subtitle: duesLabel,
+    badge:
+      payoutStatus === "active"
+        ? { text: "Connected", tone: "emerald" }
+        : payoutStatus === "incomplete"
+        ? { text: "Finish setup", tone: "amber" }
+        : { text: "Not set up", tone: "ocean" },
+    slot: (
+      <div>
+        <p className="text-sm text-ocean-400">
+          {club.dues_amount_cents > 0
+            ? `Members pay $${(club.dues_amount_cents / 100).toFixed(2)} to join.`
+            : "Dues are free for this club."}
+        </p>
+        {payoutStatus === "active" && (
+          <p className="text-sm text-emerald-300 mt-2">
+            Connected — your club can collect dues.
+          </p>
+        )}
+        {payoutStatus === "incomplete" && (
+          <p className="text-sm text-amber-300 mt-2">
+            Setup started but not finished — pick up where you left off.
+          </p>
+        )}
+        {payoutStatus === "none" && (
+          <p className="text-sm text-ocean-400 mt-2">
+            Connect a bank account to start collecting dues.
+          </p>
+        )}
+        <div className="mt-4">
+          <ClubPayoutButton
+            clubId={club.id}
+            label={
+              payoutStatus === "active"
+                ? "Update payout details"
+                : payoutStatus === "incomplete"
+                ? "Finish setup"
+                : "Set up dues collection"
+            }
+          />
+        </div>
+      </div>
+    ),
+  });
+
+  sections.push({
+    key: "awards",
+    title: "Awards (BAP / HAP)",
+    subtitle: "Submissions and species point list",
+    accent: "amber",
+    badge:
+      pendingAwards && pendingAwards > 0
+        ? { text: String(pendingAwards), tone: "amber" }
+        : undefined,
+    slot: (
+      <div>
+        <p className="text-sm text-ocean-400 mb-4">
+          Review members&apos; submissions and manage the species point list.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/c/${slug}/awards/review`}
+            className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
+          >
+            <ClipboardCheck className="w-4 h-4" /> Review submissions
+            {pendingAwards && pendingAwards > 0 ? (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-ocean-950">
+                {pendingAwards}
+              </span>
+            ) : null}
+          </Link>
+          <Link
+            href={`/c/${slug}/awards/list`}
+            className="inline-flex items-center gap-2 rounded-full border border-ocean-700/60 px-4 py-1.5 text-sm font-medium text-ocean-200 hover:bg-ocean-800/60 transition-colors"
+          >
+            <ListChecks className="w-4 h-4" /> Point list
+          </Link>
+        </div>
+      </div>
+    ),
+  });
+
+  if (role === "owner") {
+    sections.push({
+      key: "danger",
+      title: "Delete club",
+      subtitle: "Permanently remove this club",
+      accent: "coral",
+      slot: <DeleteClubButton clubId={club.id} clubName={club.name} />,
+    });
+  }
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-4xl mx-auto">
@@ -198,125 +344,28 @@ export default async function ClubAdminPage({
         </Link>
         <h1 className="font-display text-3xl text-white mb-6">Club admin</h1>
 
-        {(role === "owner" || role === "admin") && (
-          <div className="mb-8">
-            <h2 className="text-white font-medium mb-3 flex items-center gap-2">
-              <Settings className="w-5 h-5 text-ocean-300" /> Club settings
-            </h2>
-            <ClubSettings
-              club={{
-                id: club.id,
-                name: club.name,
-                description: club.description,
-                city: club.city,
-                state: club.state,
-                logo_url: club.logo_url,
-                is_public: club.is_public,
-                approved: club.approved,
-                contact_name: club.contact_name,
-                contact_email: club.contact_email,
-                contact_phone: club.contact_phone,
-                public_url: club.public_url,
-                meeting_info: club.meeting_info,
-                nonprofit_info: club.nonprofit_info,
-                dues_amount_cents: club.dues_amount_cents,
-              }}
-            />
-          </div>
-        )}
-
-        <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-8">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h2 className="text-white font-medium mb-1 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-ocean-300" /> Dues &amp; payouts
-              </h2>
-              <p className="text-sm text-ocean-400">
-                {club.dues_amount_cents > 0
-                  ? `Members pay $${(club.dues_amount_cents / 100).toFixed(2)} to join.`
-                  : "Dues are free for this club."}
-              </p>
-              {payoutStatus === "active" && (
-                <p className="text-sm text-emerald-300 mt-2">
-                  Connected — your club can collect dues.
-                </p>
-              )}
-              {payoutStatus === "incomplete" && (
-                <p className="text-sm text-amber-300 mt-2">
-                  Setup started but not finished — pick up where you left off.
-                </p>
-              )}
-              {payoutStatus === "none" && (
-                <p className="text-sm text-ocean-400 mt-2">
-                  Connect a bank account to start collecting dues.
-                </p>
-              )}
-            </div>
-            <ClubPayoutButton
-              clubId={club.id}
-              label={
-                payoutStatus === "active"
-                  ? "Update payout details"
-                  : payoutStatus === "incomplete"
-                  ? "Finish setup"
-                  : "Set up dues collection"
-              }
-            />
-          </div>
-        </div>
-
-        {/* Awards management */}
-        <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-8">
+        {/* Members — first and open */}
+        <section className="mb-10">
           <h2 className="text-white font-medium mb-1 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-300" /> Awards (BAP / HAP)
+            <Users className="w-5 h-5 text-ocean-300" /> Members
           </h2>
-          <p className="text-sm text-ocean-400 mb-4">
-            Review members&apos; submissions and manage the species point list.
+          <p className="text-ocean-400 mb-4 text-sm">
+            Add members, set their role and status, or remove them. Search by
+            name, username, email, or phone. The owner row is locked. You can
+            set a renewal date for members who paid offline — it locks once they
+            pay online.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href={`/c/${slug}/awards/review`}
-              className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
-            >
-              <ClipboardCheck className="w-4 h-4" /> Review submissions
-              {pendingAwards && pendingAwards > 0 ? (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-ocean-950">
-                  {pendingAwards}
-                </span>
-              ) : null}
-            </Link>
-            <Link
-              href={`/c/${slug}/awards/list`}
-              className="inline-flex items-center gap-2 rounded-full border border-ocean-700/60 px-4 py-1.5 text-sm font-medium text-ocean-200 hover:bg-ocean-800/60 transition-colors"
-            >
-              <ListChecks className="w-4 h-4" /> Point list
-            </Link>
-          </div>
-        </div>
+          <MemberManager
+            clubId={club.id}
+            viewerRole={role as string}
+            clubHasDues={(club.dues_amount_cents ?? 0) > 0}
+            initialMembers={rosterWithPaid}
+          />
+        </section>
 
-        {pendingDetailed.length > 0 && (
-          <ClubRequests requests={pendingDetailed} />
-        )}
-
-        <h2 className="font-display text-xl text-white mb-1">Members</h2>
-        <p className="text-ocean-400 mb-4 text-sm">
-          Add members, set their role and status, or remove them. The owner row
-          is locked. You can set a renewal date for members who paid offline —
-          it locks once they pay online.
-        </p>
-
-        <MemberManager
-          clubId={club.id}
-          viewerRole={role as string}
-          clubHasDues={(club.dues_amount_cents ?? 0) > 0}
-          initialMembers={rosterWithPaid}
-        />
-
-        {role === "owner" && (
-          <div className="mt-10">
-            <DeleteClubButton clubId={club.id} clubName={club.name} />
-          </div>
-        )}
+        {/* Everything else — tiles that open when selected */}
+        <h2 className="text-white font-medium mb-3">Manage</h2>
+        <AdminSections sections={sections} />
       </div>
     </main>
   );
