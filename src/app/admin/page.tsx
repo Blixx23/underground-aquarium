@@ -1,6 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, ClipboardCheck, ArrowRight, GraduationCap } from "lucide-react";
+import {
+  ShieldCheck,
+  ClipboardCheck,
+  ArrowRight,
+  GraduationCap,
+  Fish,
+  Flag,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -43,6 +50,20 @@ export default async function AdminHubPage() {
     .eq("is_published", false);
   const draftCourses = draftCourseCount ?? 0;
 
+  // Species suggestions from the community still waiting on a decision.
+  const { count: speciesCount } = await supabaseAdmin
+    .from("species_suggestions")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  const pendingSpecies = speciesCount ?? 0;
+
+  // User reports that haven't been actioned yet.
+  const { count: reportCount } = await supabaseAdmin
+    .from("reports")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "open");
+  const openReports = reportCount ?? 0;
+
   // Each tool reports its own count of items awaiting a response, so the hub
   // doubles as a quick status board. Add future tools here and they pick up
   // the same pending indicator automatically.
@@ -60,6 +81,20 @@ export default async function AdminHubPage() {
       description: "Create and edit courses, lessons, and quizzes",
       Icon: GraduationCap,
       pending: draftCourses,
+    },
+    {
+      href: "/admin/species",
+      label: "Species suggestions",
+      description: "Review fish and animals the community has suggested",
+      Icon: Fish,
+      pending: pendingSpecies,
+    },
+    {
+      href: "/admin/reports",
+      label: "Reports",
+      description: "Review content and users flagged by members",
+      Icon: Flag,
+      pending: openReports,
     },
   ];
 
