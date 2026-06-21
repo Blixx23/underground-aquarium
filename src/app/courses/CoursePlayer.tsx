@@ -11,6 +11,7 @@ import {
   Loader2,
   Award,
   PartyPopper,
+  AlertCircle,
 } from "lucide-react";
 
 type Question = {
@@ -109,6 +110,8 @@ export default function CoursePlayer({
   const isDone = completed.has(section.id);
   const unlocked = active === 0 || completed.has(sections[active - 1].id);
   const allAnswered = section.questions.every((q) => answers[q.id] != null);
+  const lastSection = active === total - 1;
+  const submitLabel = lastSection ? "Finish & get certified" : "Complete section";
   const certHref = `/courses/${courseSlug}/certificate`;
 
   const stepStates = useMemo(
@@ -127,6 +130,18 @@ export default function CoursePlayer({
     setAnswers({});
     setWrong(new Set());
     setError(null);
+  }
+
+  function pick(qId: string, oi: number) {
+    setAnswers((prev) => ({ ...prev, [qId]: oi }));
+    setError(null);
+    if (wrong.has(qId)) {
+      setWrong((prev) => {
+        const n = new Set(prev);
+        n.delete(qId);
+        return n;
+      });
+    }
   }
 
   async function submitSection() {
@@ -284,7 +299,7 @@ export default function CoursePlayer({
                 <p className="flex items-center gap-2 text-emerald-200 font-medium">
                   <Check className="w-5 h-5" /> Section complete
                 </p>
-                {courseDone && active === total - 1 ? (
+                {courseDone && lastSection ? (
                   <div className="mt-4">
                     <p className="flex items-center gap-2 text-white font-display text-xl">
                       <PartyPopper className="w-5 h-5 text-emerald-300" /> You did it!
@@ -300,7 +315,7 @@ export default function CoursePlayer({
                       <Award className="w-4 h-4" /> View your certificate
                     </Link>
                   </div>
-                ) : active < total - 1 ? (
+                ) : !lastSection ? (
                   <button
                     onClick={() => goTo(active + 1)}
                     className="mt-4 inline-flex items-center gap-2 rounded-full bg-ocean-600 hover:bg-ocean-500 text-white px-5 py-2.5 text-sm font-medium transition-colors"
@@ -326,41 +341,38 @@ export default function CoursePlayer({
                 <p className="text-xs font-mono uppercase tracking-[0.2em] text-ocean-400 mb-4">
                   Quick check
                 </p>
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {section.questions.map((q, qi) => {
                     const isWrong = wrong.has(q.id);
                     return (
-                      <div key={q.id}>
-                        <p
-                          className={
-                            "font-medium mb-3 " +
-                            (isWrong ? "text-coral-200" : "text-white")
-                          }
-                        >
+                      <div
+                        key={q.id}
+                        className={
+                          isWrong
+                            ? "rounded-xl border border-coral-500/40 bg-coral-500/5 p-4"
+                            : ""
+                        }
+                      >
+                        <p className="font-medium text-white">
                           {qi + 1}. {q.prompt}
                         </p>
-                        <div className="space-y-2">
+                        {isWrong && (
+                          <p className="flex items-center gap-1.5 text-xs text-coral-200 mt-1.5">
+                            <AlertCircle className="w-3.5 h-3.5" /> Not quite — pick
+                            another answer
+                          </p>
+                        )}
+                        <div className="space-y-2 mt-3">
                           {q.options.map((opt, oi) => {
                             const selected = answers[q.id] === oi;
                             return (
                               <button
                                 key={oi}
-                                onClick={() => {
-                                  setAnswers((prev) => ({ ...prev, [q.id]: oi }));
-                                  if (isWrong) {
-                                    setWrong((prev) => {
-                                      const n = new Set(prev);
-                                      n.delete(q.id);
-                                      return n;
-                                    });
-                                  }
-                                }}
+                                onClick={() => pick(q.id, oi)}
                                 className={
                                   "w-full text-left rounded-xl border px-4 py-2.5 text-sm transition-colors " +
                                   (selected
                                     ? "border-ocean-400 bg-ocean-800/60 text-white"
-                                    : isWrong
-                                    ? "border-coral-500/40 bg-coral-500/5 text-ocean-200 hover:border-ocean-600"
                                     : "border-ocean-800/60 bg-ocean-900/40 text-ocean-200 hover:border-ocean-600")
                                 }
                               >
@@ -389,13 +401,16 @@ export default function CoursePlayer({
                 </div>
 
                 {wrong.size > 0 && (
-                  <p className="text-sm text-coral-200 mt-5">
-                    Not quite — review the highlighted questions and try again.
-                  </p>
+                  <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-coral-500/40 bg-coral-500/10 px-4 py-3 text-sm text-coral-100">
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>
+                      Some answers aren&apos;t right yet. Fix the highlighted{" "}
+                      {wrong.size === 1 ? "question" : "questions"} above, then press{" "}
+                      <span className="font-medium">{submitLabel}</span> again.
+                    </span>
+                  </div>
                 )}
-                {error && (
-                  <p className="text-sm text-coral-200 mt-5">{error}</p>
-                )}
+                {error && <p className="text-sm text-coral-200 mt-5">{error}</p>}
 
                 <button
                   onClick={submitSection}
@@ -407,7 +422,7 @@ export default function CoursePlayer({
                   ) : (
                     <Check className="w-4 h-4" />
                   )}
-                  {active === total - 1 ? "Finish & get certified" : "Complete section"}
+                  {submitLabel}
                 </button>
                 {!allAnswered && (
                   <p className="text-xs text-ocean-500 mt-2">
