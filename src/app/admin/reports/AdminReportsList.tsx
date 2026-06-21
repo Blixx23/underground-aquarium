@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, X, Loader2, Flag, ExternalLink } from "lucide-react";
+import {
+  Check,
+  X,
+  Loader2,
+  Flag,
+  ExternalLink,
+  EyeOff,
+  Ban,
+} from "lucide-react";
 
 type QueueReport = {
   id: string;
@@ -16,6 +24,8 @@ type QueueReport = {
   reporter_username: string | null;
   reporter_name: string | null;
 };
+
+type Action = "remove" | "resolve" | "dismiss";
 
 function whenLabel(iso: string | null): string {
   if (!iso) return "";
@@ -34,12 +44,7 @@ function TargetLink({ url, label }: { url: string; label: string }) {
     "inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 break-words";
   if (isExternal) {
     return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className={className}
-      >
+      <a href={url} target="_blank" rel="noreferrer" className={className}>
         {label}
         <ExternalLink className="w-3.5 h-3.5 shrink-0" />
       </a>
@@ -63,8 +68,8 @@ export default function AdminReportsList({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function act(id: string, action: "resolve" | "dismiss") {
-    if (action === "dismiss" && !confirm("Dismiss this report?")) return;
+  async function act(id: string, action: Action, confirmMsg?: string) {
+    if (confirmMsg && !confirm(confirmMsg)) return;
     setError(null);
     setBusyId(id);
     try {
@@ -106,6 +111,26 @@ export default function AdminReportsList({
         const when = whenLabel(r.created_at);
         const busy = busyId === r.id;
         const heading = r.target_label || r.target_url || "Reported content";
+
+        // The primary action depends on what was reported. Other target types
+        // have no automatic take-down yet, so they only get resolve/dismiss.
+        const primary =
+          r.target_type === "listing"
+            ? {
+                label: "Take down listing",
+                Icon: EyeOff,
+                confirm:
+                  "Take down this listing? It will be hidden from the marketplace and the seller will be notified.",
+              }
+            : r.target_type === "profile"
+            ? {
+                label: "Suspend account",
+                Icon: Ban,
+                confirm:
+                  "Suspend this account? Their profile and listings will be hidden and they will be notified.",
+              }
+            : null;
+
         return (
           <div
             key={r.id}
@@ -147,25 +172,41 @@ export default function AdminReportsList({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3 mt-4">
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              {primary && (
+                <button
+                  onClick={() => act(r.id, "remove", primary.confirm)}
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded-full border border-coral-500/50 bg-coral-500/10 px-4 py-1.5 text-sm font-medium text-coral-300 hover:bg-coral-500/20 transition-colors disabled:opacity-60"
+                >
+                  {busy ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <primary.Icon className="w-4 h-4" />
+                  )}
+                  {primary.label}
+                </button>
+              )}
+              <button
+                onClick={() =>
+                  act(
+                    r.id,
+                    "dismiss",
+                    "Dismiss this report? No action will be taken."
+                  )
+                }
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-full border border-ocean-700/60 px-4 py-1.5 text-sm text-ocean-300 hover:text-white hover:border-ocean-500 transition-colors disabled:opacity-60"
+              >
+                <X className="w-4 h-4" /> Dismiss
+              </button>
               <button
                 onClick={() => act(r.id, "resolve")}
                 disabled={busy}
-                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-sm font-medium text-white transition-colors disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 text-sm text-ocean-500 hover:text-ocean-300 transition-colors disabled:opacity-50"
+                title="Close this report without an automatic action — for things you've already handled."
               >
-                {busy ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Check className="w-4 h-4" />
-                )}
-                Resolve
-              </button>
-              <button
-                onClick={() => act(r.id, "dismiss")}
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded-full border border-ocean-700/60 px-4 py-1.5 text-sm text-ocean-300 hover:text-white hover:border-coral-500/50 transition-colors disabled:opacity-60"
-              >
-                <X className="w-4 h-4" /> Dismiss
+                <Check className="w-4 h-4" /> Mark resolved
               </button>
             </div>
           </div>
