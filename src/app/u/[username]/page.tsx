@@ -53,11 +53,15 @@ export default async function PublicProfilePage({ params }: Params) {
 
   const { data: profileData } = await supabasePublic
     .from("profiles")
-    .select("id, username, full_name, bio, location, website")
+    .select("id, username, full_name, bio, location, website, deleted_at")
     .eq("username", username)
     .maybeSingle();
 
-  if (!profileData) notFound();
+  if (
+    !profileData ||
+    (profileData as { deleted_at?: string | null }).deleted_at
+  )
+    notFound();
   const profile = profileData as Profile;
 
   const { data: tanksData } = await supabasePublic

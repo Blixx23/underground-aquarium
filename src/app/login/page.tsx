@@ -19,12 +19,27 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
       setLoading(false)
       return
+    }
+
+    // If this account is scheduled for deletion, route to the pending page.
+    const uid = signInData.user?.id
+    if (uid) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('deleted_at')
+        .eq('id', uid)
+        .maybeSingle()
+      if (profile?.deleted_at) {
+        router.refresh()
+        router.push('/account/deletion-pending')
+        return
+      }
     }
 
     router.refresh()

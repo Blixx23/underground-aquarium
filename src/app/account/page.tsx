@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Download, ShieldCheck, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import DeleteAccountSection from "./DeleteAccountSection";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,8 @@ export default async function AccountPage() {
             </div>
           </div>
         </section>
+
+        <DeleteAccountSection />
       </div>
     </main>
   );
