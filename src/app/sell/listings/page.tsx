@@ -25,9 +25,28 @@ export default async function SellerListingsPage() {
 
   const { data: stores } = await supabase
     .from("stores")
-    .select("id")
+    .select(
+      "id, payouts_enabled, ship_street1, ship_city, ship_state, ship_zip"
+    )
     .eq("owner_id", user.id);
   const storeIds = (stores ?? []).map((s) => (s as { id: string }).id);
+
+  const firstStore = (stores ?? [])[0] as
+    | {
+        payouts_enabled: boolean | null;
+        ship_street1: string | null;
+        ship_city: string | null;
+        ship_state: string | null;
+        ship_zip: string | null;
+      }
+    | undefined;
+  const canPublish = !!(
+    firstStore?.payouts_enabled &&
+    firstStore.ship_street1 &&
+    firstStore.ship_city &&
+    firstStore.ship_state &&
+    firstStore.ship_zip
+  );
 
   let listings: Listing[] = [];
   if (storeIds.length > 0) {
@@ -49,7 +68,7 @@ export default async function SellerListingsPage() {
         </p>
         <h1 className="font-display text-4xl text-white mb-8">Your listings</h1>
         <SellerTabs />
-        <ListingsManager listings={listings} />
+        <ListingsManager listings={listings} canPublish={canPublish} />
       </div>
     </main>
   );

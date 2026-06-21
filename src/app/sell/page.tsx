@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Fish, Loader2, ImagePlus } from "lucide-react";
+import { Fish, Loader2, ImagePlus, ArrowRight, Lock } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { CATEGORIES } from "@/lib/marketplace/categories";
@@ -35,13 +35,34 @@ export default function SellPage() {
 
   const [busy, setBusy] = useState<null | "publish" | "draft">(null);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [canPublish, setCanPublish] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const u = data.user;
+      setUser(u);
+      if (u) {
+        const { data: store } = await supabase
+          .from("stores")
+          .select(
+            "payouts_enabled, ship_street1, ship_city, ship_state, ship_zip"
+          )
+          .eq("owner_id", u.id)
+          .limit(1)
+          .maybeSingle();
+        const ready = !!(
+          store?.payouts_enabled &&
+          store.ship_street1 &&
+          store.ship_city &&
+          store.ship_state &&
+          store.ship_zip
+        );
+        setCanPublish(ready);
+      }
       setCheckingAuth(false);
-    });
+    })();
   }, [supabase]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -96,6 +117,13 @@ export default function SellPage() {
 
     if (!name.trim()) {
       setError("Please give your listing a name.");
+      return;
+    }
+
+    if (!asDraft && !canPublish) {
+      setError(
+        "Connect payouts and add your ship-from address before publishing. You can save this as a draft for now."
+      );
       return;
     }
 
@@ -380,13 +408,36 @@ export default function SellPage() {
             />
           </div>
 
+          {!canPublish && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4">
+              <p className="text-sm text-amber-200">
+                <span className="font-medium text-amber-100">
+                  You can save drafts now — publishing is locked.
+                </span>{" "}
+                Connect payouts and add your ship-from address to put listings
+                up for sale.
+              </p>
+              <Link
+                href="/sell/setup"
+                className="mt-2 inline-flex items-center gap-1 text-sm text-amber-300 hover:text-amber-200"
+              >
+                Finish setup <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="submit"
-              disabled={busy !== null || converting}
+              disabled={busy !== null || converting || !canPublish}
+              title={!canPublish ? "Finish seller setup to publish" : undefined}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ocean-700 text-white font-medium hover:bg-ocean-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {busy === "publish" && <Loader2 className="w-4 h-4 animate-spin" />}
+              {busy === "publish" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : !canPublish ? (
+                <Lock className="w-4 h-4" />
+              ) : null}
               {busy === "publish" ? "Publishing…" : "Publish listing"}
             </button>
             <button

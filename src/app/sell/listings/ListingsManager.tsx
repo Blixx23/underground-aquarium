@@ -12,6 +12,8 @@ import {
   Send,
   Trash2,
   Loader2,
+  AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { categoryLabel } from "@/lib/marketplace/categories";
@@ -68,8 +70,10 @@ const SORTS: { key: SortKey; label: string }[] = [
 
 export default function ListingsManager({
   listings,
+  canPublish,
 }: {
   listings: Listing[];
+  canPublish: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
 
@@ -108,6 +112,12 @@ export default function ListingsManager({
 
   async function setActive(id: string, active: boolean) {
     setError(null);
+    if (active && !canPublish) {
+      setError(
+        "Connect payouts and add your ship-from address before relisting."
+      );
+      return;
+    }
     setBusyId(id);
     const { error: e } = await supabase
       .from("products")
@@ -126,6 +136,12 @@ export default function ListingsManager({
 
   async function publishDraft(id: string) {
     setError(null);
+    if (!canPublish) {
+      setError(
+        "Connect payouts and add your ship-from address before publishing."
+      );
+      return;
+    }
     setBusyId(id);
     const { error: e } = await supabase
       .from("products")
@@ -190,6 +206,28 @@ export default function ListingsManager({
       {error && (
         <div className="mb-4 rounded-xl border border-coral-500/40 bg-coral-500/10 px-5 py-3 text-coral-300 text-sm">
           {error}
+        </div>
+      )}
+
+      {!canPublish && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-300" />
+          <div className="text-sm text-amber-200">
+            <p>
+              <span className="font-medium text-amber-100">
+                Publishing is locked.
+              </span>{" "}
+              Connect payouts and add your ship-from address to put drafts and
+              hidden listings up for sale. Drafts are safe to keep building in
+              the meantime.
+            </p>
+            <Link
+              href="/sell/setup"
+              className="mt-2 inline-flex items-center gap-1 text-amber-300 hover:text-amber-200"
+            >
+              Finish setup <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       )}
 
@@ -264,6 +302,7 @@ export default function ListingsManager({
             const image = p.images?.[0];
             const busy = busyId === p.id;
             const confirming = confirmingId === p.id;
+            const isUnhide = p.is_active === false;
             return (
               <div
                 key={p.id}
@@ -327,20 +366,28 @@ export default function ListingsManager({
                     {status === "draft" ? (
                       <button
                         onClick={() => publishDraft(p.id)}
-                        disabled={busy}
-                        title="Publish"
-                        className="grid place-items-center w-8 h-8 rounded-lg bg-ocean-950/80 text-emerald-300 border border-ocean-700/60 hover:bg-emerald-500/15 hover:border-emerald-500/40 transition-colors disabled:opacity-50"
+                        disabled={busy || !canPublish}
+                        title={
+                          canPublish ? "Publish" : "Finish seller setup to publish"
+                        }
+                        className="grid place-items-center w-8 h-8 rounded-lg bg-ocean-950/80 text-emerald-300 border border-ocean-700/60 hover:bg-emerald-500/15 hover:border-emerald-500/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Send className="w-4 h-4" />
                       </button>
                     ) : (
                       <button
-                        onClick={() => setActive(p.id, p.is_active === false)}
-                        disabled={busy}
-                        title={p.is_active === false ? "Unhide" : "Hide"}
-                        className="grid place-items-center w-8 h-8 rounded-lg bg-ocean-950/80 text-ocean-200 border border-ocean-700/60 hover:bg-ocean-800 hover:text-white hover:border-ocean-600 transition-colors disabled:opacity-50"
+                        onClick={() => setActive(p.id, isUnhide)}
+                        disabled={busy || (isUnhide && !canPublish)}
+                        title={
+                          isUnhide
+                            ? canPublish
+                              ? "Unhide"
+                              : "Finish seller setup to relist"
+                            : "Hide"
+                        }
+                        className="grid place-items-center w-8 h-8 rounded-lg bg-ocean-950/80 text-ocean-200 border border-ocean-700/60 hover:bg-ocean-800 hover:text-white hover:border-ocean-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {p.is_active === false ? (
+                        {isUnhide ? (
                           <Eye className="w-4 h-4" />
                         ) : (
                           <EyeOff className="w-4 h-4" />
