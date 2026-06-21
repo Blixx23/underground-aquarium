@@ -369,7 +369,7 @@ export default function CoursePlayer({
                   Sign in to take the quizzes and earn your certificate.
                 </p>
                 <Link
-                  href={`/login?redirect=/courses/${courseSlug}`}
+                  href={`/login?redirect=/courses/${courseSlug}/learn`}
                   className="inline-flex items-center gap-2 rounded-full bg-ocean-600 hover:bg-ocean-500 text-white px-5 py-2.5 text-sm font-medium transition-colors"
                 >
                   Sign in to continue
