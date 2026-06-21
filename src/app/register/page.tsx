@@ -6,6 +6,9 @@ import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+// Bump this when the Terms / Privacy Policy meaningfully change.
+const TERMS_VERSION = "2026-06-20";
+
 export default function RegisterPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -16,6 +19,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
   async function handleRegister(e: FormEvent) {
     e.preventDefault();
@@ -29,13 +33,24 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!accepted) {
+      setError(
+        "Please confirm you are 18 or older and agree to the Terms and Privacy Policy."
+      );
+      return;
+    }
+
     setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { username: cleanUsername },
+        data: {
+          username: cleanUsername,
+          terms_accepted_at: new Date().toISOString(),
+          terms_version: TERMS_VERSION,
+        },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -139,12 +154,40 @@ export default function RegisterPage() {
                 />
               </label>
 
+              <label className="flex items-start gap-2 text-sm text-ocean-300">
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-white/5 accent-ocean-500"
+                />
+                <span>
+                  I confirm I am 18 or older and agree to the{" "}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="text-white hover:underline"
+                  >
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="text-white hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+
               {error && <p className="text-sm text-red-400">{error}</p>}
 
               <button
                 type="submit"
-                disabled={loading}
-                className="mt-2 rounded-lg bg-ocean-500 px-4 py-2 font-medium text-white transition hover:bg-ocean-400 disabled:opacity-50"
+                disabled={loading || !accepted}
+                className="mt-2 rounded-lg bg-ocean-500 px-4 py-2 font-medium text-white transition hover:bg-ocean-400 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Creating account…" : "Register"}
               </button>
