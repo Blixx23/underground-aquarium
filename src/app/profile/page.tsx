@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
-import ClubsAndAwards, { type ClubAward } from "@/components/profile/ClubsAndAwards";
 
 type SavedTank = {
   id: string;
@@ -54,11 +53,6 @@ export default async function ProfilePage() {
     .order("updated_at", { ascending: false });
   const tanks = (tanksData ?? []) as SavedTank[];
 
-  const { data: clubAwards } = await supabase.rpc("user_clubs_awards", {
-    p_user_id: user.id,
-  });
-  const clubs = (clubAwards ?? []) as ClubAward[];
-
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const isAdmin = Boolean(profile?.is_admin);
 
@@ -67,7 +61,7 @@ export default async function ProfilePage() {
     { href: "/orders", label: "My orders", Icon: ShoppingBag },
     hasShop
       ? { href: "/sell/listings", label: "Seller Hub", Icon: Store }
-      : { href: "/sell", label: "Start selling", Icon: Plus },
+      : { href: "/sell/setup", label: "Start selling", Icon: Plus },
     ...(isAdmin
       ? [{ href: "/admin", label: "Admin", Icon: ShieldCheck }]
       : []),
@@ -183,8 +177,6 @@ export default async function ProfilePage() {
             </div>
           )}
         </section>
-
-        <ClubsAndAwards rows={clubs} emptyText="You’re not in any clubs yet." />
 
         {/* Edit profile */}
         <section className="mt-10">
