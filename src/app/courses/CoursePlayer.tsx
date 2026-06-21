@@ -12,6 +12,7 @@ import {
   Award,
   PartyPopper,
   AlertCircle,
+  BookOpen,
 } from "lucide-react";
 
 type Question = {
@@ -80,12 +81,14 @@ function renderLesson(content: string) {
 
 export default function CoursePlayer({
   courseSlug,
+  badgeTitle,
   sections,
   initialCompleted,
   signedIn,
   courseAlreadyDone,
 }: {
   courseSlug: string;
+  badgeTitle: string;
   sections: Section[];
   initialCompleted: string[];
   signedIn: boolean;
@@ -103,6 +106,7 @@ export default function CoursePlayer({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [courseDone, setCourseDone] = useState(courseAlreadyDone);
+  const [summary, setSummary] = useState(courseAlreadyDone);
 
   const total = sections.length;
   const doneCount = completed.size;
@@ -126,6 +130,7 @@ export default function CoursePlayer({
 
   function goTo(i: number) {
     if (stepStates[i] === "locked") return;
+    setSummary(false);
     setActive(i);
     setAnswers({});
     setWrong(new Set());
@@ -193,7 +198,7 @@ export default function CoursePlayer({
         <ol className="space-y-1">
           {sections.map((s, i) => {
             const state = stepStates[i];
-            const activeRow = i === active;
+            const activeRow = !summary && i === active;
             return (
               <li key={s.id}>
                 <button
@@ -230,7 +235,7 @@ export default function CoursePlayer({
           })}
         </ol>
 
-        {courseDone && (
+        {courseDone && !lastSection && !summary && (
           <Link
             href={certHref}
             className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 text-sm font-medium transition-colors"
@@ -242,7 +247,40 @@ export default function CoursePlayer({
 
       {/* Active section */}
       <section>
-        {!unlocked ? (
+        {summary ? (
+          <div className="card-deep rounded-2xl p-8 sm:p-12 text-center">
+            <div className="relative mx-auto mb-5 h-16 w-16">
+              <div className="absolute inset-0 rounded-full bg-emerald-500/15 animate-glow-pulse" />
+              <div className="relative z-10 flex h-full w-full items-center justify-center">
+                <BadgeCheck className="h-8 w-8 text-emerald-300" />
+              </div>
+            </div>
+            <p className="text-xs font-mono uppercase tracking-[0.2em] text-emerald-300/80 mb-2">
+              Course complete
+            </p>
+            <h2 className="font-display text-3xl text-white mb-3">
+              You&apos;re a {badgeTitle}
+            </h2>
+            <p className="text-ocean-300 max-w-md mx-auto mb-8">
+              You&apos;ve finished every section and passed all the quizzes. Your
+              badge is on your profile, and your certificate is ready.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href={certHref}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 text-sm font-medium transition-colors"
+              >
+                <Award className="w-4 h-4" /> View certificate
+              </Link>
+              <button
+                onClick={() => goTo(0)}
+                className="inline-flex items-center gap-2 rounded-full border border-ocean-700 text-ocean-200 hover:text-white hover:border-ocean-500 px-6 py-2.5 text-sm transition-colors"
+              >
+                <BookOpen className="w-4 h-4" /> Review lessons
+              </button>
+            </div>
+          </div>
+        ) : !unlocked ? (
           <div className="card-deep rounded-2xl p-10 text-center">
             <Lock className="w-7 h-7 text-ocean-500 mx-auto mb-3" />
             <p className="text-ocean-300">

@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
+import Certifications, {
+  type Certification,
+} from "@/components/profile/Certifications";
 
 type SavedTank = {
   id: string;
@@ -53,6 +56,32 @@ export default async function ProfilePage() {
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
   const tanks = (tanksData ?? []) as SavedTank[];
+
+  const { data: certData } = await supabase
+    .from("course_completions")
+    .select("completed_at, courses(slug, title, badge_title, is_published)")
+    .eq("user_id", user.id)
+    .order("completed_at", { ascending: false });
+  const certs: Certification[] = (
+    (certData ?? []) as Array<{
+      completed_at: string;
+      courses:
+        | { slug: string; title: string; badge_title: string; is_published: boolean }
+        | { slug: string; title: string; badge_title: string; is_published: boolean }[]
+        | null;
+    }>
+  )
+    .map((r) => {
+      const c = Array.isArray(r.courses) ? r.courses[0] : r.courses;
+      if (!c || !c.is_published) return null;
+      return {
+        slug: c.slug,
+        title: c.title,
+        badge_title: c.badge_title,
+        completed_at: r.completed_at,
+      };
+    })
+    .filter((x): x is Certification => x !== null);
 
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const isAdmin = Boolean(profile?.is_admin);
@@ -126,6 +155,13 @@ export default async function ProfilePage() {
             ))}
           </div>
         </div>
+
+        {/* Certifications */}
+        <Certifications
+          rows={certs}
+          heading="Awards & Certifications"
+          emptyText="You haven't earned any certifications yet."
+        />
 
         {/* Your tanks */}
         <section className="mt-10">

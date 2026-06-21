@@ -156,6 +156,7 @@ export default async function CoursePage({
         ) : (
           <CoursePlayer
             courseSlug={course.slug}
+            badgeTitle={course.badge_title}
             sections={sections}
             initialCompleted={completed}
             signedIn={!!user}

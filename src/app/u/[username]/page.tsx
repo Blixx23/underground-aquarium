@@ -5,6 +5,9 @@ import { Fish, Waves, MapPin, ExternalLink, User } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import ClubsAndAwards, { type ClubAward } from "@/components/profile/ClubsAndAwards";
 import ProfileShop, { type ShopItem } from "@/components/profile/ProfileShop";
+import Certifications, {
+  type Certification,
+} from "@/components/profile/Certifications";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +85,32 @@ export default async function PublicProfilePage({ params }: Params) {
   });
   const clubs = (clubsData ?? []) as ClubAward[];
 
+  const { data: certData } = await supabasePublic
+    .from("course_completions")
+    .select("completed_at, courses(slug, title, badge_title, is_published)")
+    .eq("user_id", profile.id)
+    .order("completed_at", { ascending: false });
+  const certs: Certification[] = (
+    (certData ?? []) as Array<{
+      completed_at: string;
+      courses:
+        | { slug: string; title: string; badge_title: string; is_published: boolean }
+        | { slug: string; title: string; badge_title: string; is_published: boolean }[]
+        | null;
+    }>
+  )
+    .map((r) => {
+      const c = Array.isArray(r.courses) ? r.courses[0] : r.courses;
+      if (!c || !c.is_published) return null;
+      return {
+        slug: c.slug,
+        title: c.title,
+        badge_title: c.badge_title,
+        completed_at: r.completed_at,
+      };
+    })
+    .filter((x): x is Certification => x !== null);
+
   const { data: storeRows } = await supabasePublic
     .from("stores")
     .select("id, slug")
@@ -144,7 +173,9 @@ export default async function PublicProfilePage({ params }: Params) {
           </div>
         </div>
 
-        <ClubsAndAwards rows={clubs} heading="Clubs & awards" />
+        <ClubsAndAwards rows={clubs} heading="Clubs" />
+
+        <Certifications rows={certs} heading="Awards & Certifications" />
 
         {/* Their posted tanks */}
         <h2 className="mt-12 font-display text-2xl text-emerald-400 mb-4">
