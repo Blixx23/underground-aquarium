@@ -22,6 +22,7 @@ const nav = [
       { label: "Vendor Guide", href: "/vendor-guide" },
     ],
   },
+  { label: "Courses", href: "/courses" },
   { label: "Events", href: "/events" },
   { label: "Community", href: "/community" },
   { label: "Clubs", href: "/clubs" },
