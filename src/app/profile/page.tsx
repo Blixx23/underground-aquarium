@@ -11,6 +11,7 @@ import {
   MapPin,
   ExternalLink,
   ShieldCheck,
+  Settings,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
@@ -62,6 +63,7 @@ export default async function ProfilePage() {
     hasShop
       ? { href: "/sell/listings", label: "Seller Hub", Icon: Store }
       : { href: "/sell/setup", label: "Start selling", Icon: Plus },
+    { href: "/account", label: "Account & data", Icon: Settings },
     ...(isAdmin
       ? [{ href: "/admin", label: "Admin", Icon: ShieldCheck }]
       : []),
