@@ -230,6 +230,12 @@ export default function CourseEditor({
     }
   }
 
+  function setSectionQuestionCount(id: string, count: number) {
+    setSections((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, questionCount: count } : s))
+    );
+  }
+
   const input =
     "w-full rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500";
   const label = "block text-xs font-mono uppercase tracking-wider text-ocean-500 mb-1.5";
@@ -538,6 +544,9 @@ export default function CourseEditor({
                     <SectionQuestions
                       sectionId={s.id}
                       initialQuestions={s.questions ?? []}
+                      onCountChange={(count) =>
+                        setSectionQuestionCount(s.id, count)
+                      }
                     />
                   </div>
                   </>

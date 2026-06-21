@@ -30,9 +30,11 @@ async function post(payload: Record<string, unknown>) {
 export default function SectionQuestions({
   sectionId,
   initialQuestions,
+  onCountChange,
 }: {
   sectionId: string;
   initialQuestions: EditorQuestion[];
+  onCountChange?: (count: number) => void;
 }) {
   const [questions, setQuestions] = useState<EditorQuestion[]>(
     [...initialQuestions].sort((a, b) => a.sort_order - b.sort_order)
@@ -65,6 +67,7 @@ export default function SectionQuestions({
       if (data?.question) {
         const q = data.question as EditorQuestion;
         setQuestions((prev) => [...prev, q]);
+        onCountChange?.(questions.length + 1);
         openEditor(q);
       }
     } catch (e) {
@@ -123,6 +126,7 @@ export default function SectionQuestions({
     try {
       await post({ action: "delete", id: q.id });
       setQuestions((prev) => prev.filter((x) => x.id !== q.id));
+      onCountChange?.(questions.length - 1);
       if (openId === q.id) setOpenId(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't delete.");
