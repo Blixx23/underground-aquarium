@@ -95,9 +95,8 @@ export default async function AdminSpeciesPage() {
         </h1>
         <p className="text-ocean-400 mb-8">
           Fish and animals the community has suggested for the database. Mark
-          one <span className="text-ocean-200">Added</span> once you&apos;ve
-          created its entry, or <span className="text-ocean-200">Dismiss</span>{" "}
-          it.{" "}
+          each one as added once you&apos;ve created its entry, or dismiss the
+          rest.{" "}
           <Link
             href="/species"
             target="_blank"
