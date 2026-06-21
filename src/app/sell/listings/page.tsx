@@ -56,8 +56,26 @@ export default async function SellerListingsPage() {
         "id, name, slug, price, images, is_active, is_draft, stock, category, created_at"
       )
       .in("store_id", storeIds)
+      .is("archived_at", null)
       .order("created_at", { ascending: false });
     listings = (products ?? []) as unknown as Listing[];
+  }
+
+  // Which of these products have at least one order? Those get archived
+  // (not hard-deleted) so order history keeps its link to the product.
+  let soldProductIds: string[] = [];
+  if (storeIds.length > 0) {
+    const { data: orderRows } = await supabase
+      .from("orders")
+      .select("product_id")
+      .in("store_id", storeIds);
+    soldProductIds = Array.from(
+      new Set(
+        (orderRows ?? [])
+          .map((o) => (o as { product_id: string | null }).product_id)
+          .filter((x): x is string => !!x)
+      )
+    );
   }
 
   return (
@@ -68,7 +86,11 @@ export default async function SellerListingsPage() {
         </p>
         <h1 className="font-display text-4xl text-white mb-8">Your listings</h1>
         <SellerTabs />
-        <ListingsManager listings={listings} canPublish={canPublish} />
+        <ListingsManager
+          listings={listings}
+          canPublish={canPublish}
+          soldProductIds={soldProductIds}
+        />
       </div>
     </main>
   );

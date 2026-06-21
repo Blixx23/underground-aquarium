@@ -71,11 +71,14 @@ const SORTS: { key: SortKey; label: string }[] = [
 export default function ListingsManager({
   listings,
   canPublish,
+  soldProductIds,
 }: {
   listings: Listing[];
   canPublish: boolean;
+  soldProductIds: string[];
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const soldSet = useMemo(() => new Set(soldProductIds), [soldProductIds]);
 
   const [items, setItems] = useState<Listing[]>(listings);
   const [tab, setTab] = useState<Tab>("all");
@@ -163,13 +166,33 @@ export default function ListingsManager({
   async function remove(id: string) {
     setError(null);
     setBusyId(id);
-    const { error: e } = await supabase.from("products").delete().eq("id", id);
-    if (e) {
-      setError("Couldn't delete that listing. Please try again.");
-      setBusyId(null);
-      setConfirmingId(null);
-      return;
+
+    if (soldSet.has(id)) {
+      // Has sales — archive instead of deleting so the order history
+      // keeps its link to this product. Hidden from buyers immediately.
+      const { error: e } = await supabase
+        .from("products")
+        .update({ archived_at: new Date().toISOString(), is_active: false })
+        .eq("id", id);
+      if (e) {
+        setError("Couldn't archive that listing. Please try again.");
+        setBusyId(null);
+        setConfirmingId(null);
+        return;
+      }
+    } else {
+      const { error: e } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", id);
+      if (e) {
+        setError("Couldn't delete that listing. Please try again.");
+        setBusyId(null);
+        setConfirmingId(null);
+        return;
+      }
     }
+
     setItems((prev) => prev.filter((p) => p.id !== id));
     setBusyId(null);
     setConfirmingId(null);
@@ -340,15 +363,24 @@ export default function ListingsManager({
                 {confirming ? (
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs text-ocean-400 hidden sm:inline">
-                      Delete?
+                      {soldSet.has(p.id) ? "Archive?" : "Delete?"}
                     </span>
                     <button
                       onClick={() => remove(p.id)}
                       disabled={busy}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-coral-500/90 text-white text-xs hover:bg-coral-500 transition-colors disabled:opacity-60"
+                      title={
+                        soldSet.has(p.id)
+                          ? "This item has sales — it'll be hidden from buyers but kept on file so your order records stay intact."
+                          : "Delete this listing permanently."
+                      }
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs transition-colors disabled:opacity-60 ${
+                        soldSet.has(p.id)
+                          ? "bg-amber-500/90 hover:bg-amber-500"
+                          : "bg-coral-500/90 hover:bg-coral-500"
+                      }`}
                     >
                       {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      Delete
+                      {soldSet.has(p.id) ? "Archive" : "Delete"}
                     </button>
                     <button
                       onClick={() => setConfirmingId(null)}
