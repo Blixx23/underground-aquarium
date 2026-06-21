@@ -13,6 +13,7 @@ import {
   PartyPopper,
   AlertCircle,
   BookOpen,
+  BadgeCheck,
 } from "lucide-react";
 
 type Question = {
