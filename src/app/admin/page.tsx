@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, ClipboardCheck, ArrowRight } from "lucide-react";
+import { ShieldCheck, ClipboardCheck, ArrowRight, GraduationCap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -36,6 +36,13 @@ export default async function AdminHubPage() {
     .eq("approved", false);
   const pendingClubs = clubCount ?? 0;
 
+  // Draft (unpublished) courses still need finishing/publishing.
+  const { count: draftCourseCount } = await supabaseAdmin
+    .from("courses")
+    .select("id", { count: "exact", head: true })
+    .eq("is_published", false);
+  const draftCourses = draftCourseCount ?? 0;
+
   // Each tool reports its own count of items awaiting a response, so the hub
   // doubles as a quick status board. Add future tools here and they pick up
   // the same pending indicator automatically.
@@ -46,6 +53,13 @@ export default async function AdminHubPage() {
       description: "Approve or reject clubs awaiting review",
       Icon: ClipboardCheck,
       pending: pendingClubs,
+    },
+    {
+      href: "/admin/courses",
+      label: "Courses",
+      description: "Create and edit courses, lessons, and quizzes",
+      Icon: GraduationCap,
+      pending: draftCourses,
     },
   ];
 
