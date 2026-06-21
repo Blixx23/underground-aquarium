@@ -69,6 +69,7 @@ export default async function ShopPage({ params }: Params) {
     )
     .eq("store_id", store.id)
     .eq("is_active", true)
+    .is("archived_at", null)
     .not("is_draft", "is", true)
     .not("is_live_animal", "is", true)
     .order("created_at", { ascending: false });

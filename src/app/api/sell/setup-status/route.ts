@@ -23,7 +23,8 @@ export async function GET() {
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("store_id", store.id)
-    .eq("is_draft", false);
+    .eq("is_draft", false)
+    .is("archived_at", null);
 
   const payoutsDone = !!store.payouts_enabled;
   const listingDone = (count ?? 0) > 0;

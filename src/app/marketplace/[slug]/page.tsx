@@ -29,6 +29,7 @@ export async function generateMetadata({
     .select("name, description, images, price")
     .eq("slug", slug)
     .eq("is_active", true)
+    .is("archived_at", null)
     .not("is_live_animal", "is", true)
     .maybeSingle();
 
@@ -90,6 +91,7 @@ export default async function ProductPage({
     )
     .eq("slug", slug)
     .eq("is_active", true)
+    .is("archived_at", null)
     .not("is_live_animal", "is", true)
     .maybeSingle();
 

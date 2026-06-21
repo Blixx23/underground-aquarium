@@ -95,6 +95,7 @@ export default async function PublicProfilePage({ params }: Params) {
       .select("id, name, slug, price, images, category, stock")
       .in("store_id", storeIds)
       .eq("is_active", true)
+      .is("archived_at", null)
       .not("is_draft", "is", true)
       .order("created_at", { ascending: false })
       .limit(48);

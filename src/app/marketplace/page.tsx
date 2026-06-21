@@ -23,6 +23,7 @@ export default async function MarketplacePage() {
       "id, name, slug, description, price, stock, images, category, created_at, shipping_price"
     )
     .eq("is_active", true)
+    .is("archived_at", null)
     .not("is_live_animal", "is", true)
     .order("created_at", { ascending: false });
 
