@@ -8,6 +8,7 @@ import ProfileShop, { type ShopItem } from "@/components/profile/ProfileShop";
 import Certifications, {
   type Certification,
 } from "@/components/profile/Certifications";
+import ReportButton from "@/components/ReportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -230,6 +231,15 @@ export default async function PublicProfilePage({ params }: Params) {
           </div>
         )}
         <ProfileShop items={shopItems} storeSlug={storeSlug} />
+
+        <div className="mt-12 pt-6 border-t border-ocean-800/40">
+          <ReportButton
+            targetType="profile"
+            targetId={profile.id}
+            targetLabel={displayName}
+            targetUrl={`/u/${profile.username ?? username}`}
+          />
+        </div>
       </div>
     </main>
   );

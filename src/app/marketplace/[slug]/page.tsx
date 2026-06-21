@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Fish, ArrowLeft, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import BuyButton from "./buy-button";
+import ReportButton from "@/components/ReportButton";
 
 type Product = {
   id: string;
@@ -189,6 +190,14 @@ export default async function ProductPage({
             )}
 
             <BuyButton productId={product.id} stock={product.stock} />
+
+            <ReportButton
+              targetType="listing"
+              targetId={product.id}
+              targetLabel={product.name}
+              targetUrl={`/marketplace/${product.slug}`}
+              className="mt-6"
+            />
           </div>
         </div>
       </div>
