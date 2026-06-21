@@ -16,6 +16,7 @@ import {
   ExternalLink,
   ListChecks,
 } from "lucide-react";
+import SectionQuestions from "./SectionQuestions";
 
 export type EditorCourse = {
   id: string;
@@ -30,6 +31,14 @@ export type EditorCourse = {
   sort_order: number;
 };
 
+export type EditorQuestion = {
+  id: string;
+  prompt: string;
+  options: string[];
+  correct_index: number;
+  sort_order: number;
+};
+
 export type EditorSection = {
   id: string;
   title: string;
@@ -38,6 +47,7 @@ export type EditorSection = {
   video_url: string | null;
   sort_order: number;
   questionCount?: number;
+  questions?: EditorQuestion[];
 };
 
 type Draft = {
@@ -449,6 +459,7 @@ export default function CourseEditor({
 
                 {/* Editor */}
                 {open && (
+                  <>
                   <div className="border-t border-ocean-800/60 p-4 sm:p-5 space-y-4">
                     <div>
                       <label className={label}>Lesson title</label>
@@ -523,6 +534,13 @@ export default function CourseEditor({
                       </button>
                     </div>
                   </div>
+                  <div className="border-t border-ocean-800/60 p-4 sm:p-5">
+                    <SectionQuestions
+                      sectionId={s.id}
+                      initialQuestions={s.questions ?? []}
+                    />
+                  </div>
+                  </>
                 )}
               </div>
             );

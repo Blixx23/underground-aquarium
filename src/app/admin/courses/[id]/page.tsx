@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import CourseEditor, {
   type EditorCourse,
   type EditorSection,
+  type EditorQuestion,
 } from "../CourseEditor";
 
 export const dynamic = "force-dynamic";
@@ -46,19 +47,27 @@ export default async function AdminCourseEditPage({
   const secs = (sectionRows ?? []) as EditorSection[];
 
   const sectionIds = secs.map((s) => s.id);
-  const qCounts: Record<string, number> = {};
+  const qBySection: Record<string, EditorQuestion[]> = {};
   if (sectionIds.length) {
     const { data: qs } = await supabaseAdmin
       .from("course_questions")
-      .select("id, section_id")
-      .in("section_id", sectionIds);
+      .select("id, section_id, prompt, options, correct_index, sort_order")
+      .in("section_id", sectionIds)
+      .order("sort_order", { ascending: true });
     for (const q of qs ?? []) {
-      qCounts[q.section_id] = (qCounts[q.section_id] ?? 0) + 1;
+      (qBySection[q.section_id] ||= []).push({
+        id: q.id,
+        prompt: q.prompt,
+        options: (q.options ?? []) as string[],
+        correct_index: q.correct_index,
+        sort_order: q.sort_order,
+      });
     }
   }
   const sections = secs.map((s) => ({
     ...s,
-    questionCount: qCounts[s.id] ?? 0,
+    questionCount: qBySection[s.id]?.length ?? 0,
+    questions: qBySection[s.id] ?? [],
   }));
 
   return (
