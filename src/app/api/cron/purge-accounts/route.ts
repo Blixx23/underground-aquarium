@@ -9,7 +9,11 @@ export const dynamic = "force-dynamic";
 
 type StepLog = { step: string; ok: boolean; detail?: string };
 
-async function run(log: StepLog[], step: string, fn: () => Promise<{ error: unknown } | void>) {
+async function run(
+  log: StepLog[],
+  step: string,
+  fn: () => PromiseLike<{ error: unknown } | void>
+) {
   try {
     const res = await fn();
     const err = res && "error" in res ? res.error : null;
