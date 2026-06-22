@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, X, Fish, ChevronDown, User as UserIcon, LogOut } from "lucide-react";
@@ -38,6 +38,26 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function openDropdown(label: string) {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setDropdown(label);
+  }
+
+  function scheduleClose() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setDropdown(null), 150);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   // --- Auth state ---
   const [supabase] = useState(() => createClient());
@@ -114,24 +134,27 @@ export default function Navbar() {
               <div
                 key={item.label}
                 className="relative"
-                onMouseEnter={() => setDropdown(item.label)}
-                onMouseLeave={() => setDropdown(null)}
+                onMouseEnter={() => openDropdown(item.label)}
+                onMouseLeave={scheduleClose}
               >
                 <button className="flex items-center gap-1 px-4 py-2 text-sm tracking-wide text-ocean-300 hover:text-white transition-colors font-body">
                   {item.label}
                   <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                 </button>
                 {dropdown === item.label && (
-                  <div className="absolute top-full left-0 mt-1 py-2 w-48 bg-ocean-900/95 backdrop-blur-xl border border-ocean-700/50 rounded-xl shadow-2xl shadow-ocean-950/80">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className="block px-4 py-2.5 text-sm text-ocean-300 hover:text-white hover:bg-ocean-800/60 transition-all"
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
+                  <div className="absolute top-full left-0 pt-2 w-48">
+                    <div className="py-2 bg-ocean-900/95 backdrop-blur-xl border border-ocean-700/50 rounded-xl shadow-2xl shadow-ocean-950/80">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setDropdown(null)}
+                          className="block px-4 py-2.5 text-sm text-ocean-300 hover:text-white hover:bg-ocean-800/60 transition-all"
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
