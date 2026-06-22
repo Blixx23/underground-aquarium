@@ -83,6 +83,9 @@ export function emailLayout(opts: {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<style>:root{color-scheme:light;supported-color-schemes:light}</style>
 <title>${opts.title}</title>
 </head>
 <body style="margin:0;padding:0;background:${C.page};">
@@ -152,10 +155,10 @@ function bubbleHero(big: string, label: string): string {
 
 function statRow(left: string, right: string): string {
   return `
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;">
     <tr>
-      <td style="padding:11px 0;border-top:1px solid ${C.hair};font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${C.muted};">${left}</td>
-      <td align="right" style="padding:11px 0;border-top:1px solid ${C.hair};font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:${C.ink};">${right}</td>
+      <td width="45%" style="width:45%;padding:11px 8px 11px 0;border-top:1px solid ${C.hair};font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${C.muted};text-align:left;vertical-align:top;">${left}</td>
+      <td width="55%" style="width:55%;padding:11px 0 11px 8px;border-top:1px solid ${C.hair};font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:${C.ink};text-align:right;vertical-align:top;">${right}</td>
     </tr>
   </table>`;
 }
