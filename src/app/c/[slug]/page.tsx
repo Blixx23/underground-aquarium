@@ -8,12 +8,16 @@ import {
   ArrowRight,
   Crown,
   Clock,
+  CalendarClock,
+  MapPin,
+  Globe,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import PayDuesButton from "./PayDuesButton";
 import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
 import JoinClubForm from "./JoinClubForm";
+import MemberSelfEdit from "./MemberSelfEdit";
 import ClubEventsPreview from "./ClubEventsPreview";
 import { type ClubEvent } from "./ClubEvents";
 
@@ -51,7 +55,7 @@ export default async function ClubHomePage({
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public"
+      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public, contact_name, contact_email, contact_phone, public_url"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -60,16 +64,20 @@ export default async function ClubHomePage({
   let role: string | null = null;
   let status: string | null = null;
   let paidThrough: string | null = null;
+  let myName: string | null = null;
+  let myEmail: string | null = null;
   if (user) {
     const { data: me } = await supabase
       .from("club_members")
-      .select("role, status, paid_through")
+      .select("role, status, paid_through, display_name, email")
       .eq("club_id", club.id)
       .eq("user_id", user.id)
       .maybeSingle();
     role = me?.role ?? null;
     status = me?.status ?? null;
     paidThrough = me?.paid_through ?? null;
+    myName = me?.display_name ?? null;
+    myEmail = me?.email ?? null;
   }
   const isApplicant = status === "pending";
   const isMember = role !== null && !isApplicant;
@@ -108,16 +116,47 @@ export default async function ClubHomePage({
     !isPaidCurrent;
 
   const eventCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-  const { data: clubEventsData } = await supabase
+  let eventsQuery = supabase
     .from("events")
     .select(
       "id, slug, title, description, starts_at, venue_name, city, state, is_online, online_url, show_in_directory, event_type, cover_image"
     )
     .eq("host_club_id", club.id)
     .eq("status", "published")
-    .gte("starts_at", eventCutoff)
-    .order("starts_at", { ascending: true });
+    .gte("starts_at", eventCutoff);
+  // The public and non-members only see events the club chose to make public.
+  // Members and officers see everything, including club-only meetings.
+  if (!isMember) {
+    eventsQuery = eventsQuery.or(
+      "show_in_directory.is.null,show_in_directory.eq.true"
+    );
+  }
+  const { data: clubEventsData } = await eventsQuery.order("starts_at", {
+    ascending: true,
+  });
   const clubEvents = (clubEventsData ?? []) as ClubEvent[];
+
+  // The soonest upcoming meeting visible to this viewer.
+  const nextMeeting =
+    clubEvents.find((e) => e.event_type === "meeting") ?? null;
+  const nextMeetingPlace = nextMeeting
+    ? nextMeeting.is_online
+      ? "Online"
+      : [
+          nextMeeting.venue_name,
+          [nextMeeting.city, nextMeeting.state].filter(Boolean).join(", "),
+        ]
+          .filter(Boolean)
+          .join(" · ")
+    : "";
+  const formatMeetingWhen = (iso: string) =>
+    new Date(iso).toLocaleString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
@@ -174,6 +213,33 @@ export default async function ClubHomePage({
           )}
         </div>
 
+        {nextMeeting && (
+          <Link
+            href={`/events/${nextMeeting.slug}`}
+            className="group block rounded-2xl border border-ocean-700/60 bg-ocean-800/40 px-6 py-5 mb-6 hover:bg-ocean-800/60 transition-colors"
+          >
+            <span className="flex items-center gap-2 text-xs uppercase tracking-widest text-ocean-500 mb-1.5">
+              <CalendarClock className="w-4 h-4" /> Next meeting
+            </span>
+            <p className="text-sm font-medium text-emerald-300">
+              {formatMeetingWhen(nextMeeting.starts_at)}
+            </p>
+            <p className="mt-0.5 text-lg font-medium text-white group-hover:text-emerald-300 transition-colors">
+              {nextMeeting.title}
+            </p>
+            {nextMeetingPlace && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-ocean-400">
+                {nextMeeting.is_online ? (
+                  <Globe className="w-4 h-4 shrink-0" />
+                ) : (
+                  <MapPin className="w-4 h-4 shrink-0" />
+                )}
+                {nextMeetingPlace}
+              </p>
+            )}
+          </Link>
+        )}
+
         {duesDue && (
           <div className="rounded-2xl border border-emerald-700/40 bg-emerald-900/10 px-6 py-5 mb-6">
             <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -215,6 +281,57 @@ export default async function ClubHomePage({
           isOfficer={isOfficer}
           events={clubEvents}
         />
+
+        {(club.contact_name ||
+          club.contact_email ||
+          club.contact_phone ||
+          club.public_url) && (
+          <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-6">
+            <h2 className="font-display text-lg text-white mb-3">Contact</h2>
+            <dl className="space-y-2 text-sm">
+              {club.contact_name && (
+                <div className="flex gap-3">
+                  <dt className="text-ocean-500 w-20 shrink-0">Organizer</dt>
+                  <dd className="text-ocean-200">{club.contact_name}</dd>
+                </div>
+              )}
+              {club.contact_email && (
+                <div className="flex gap-3">
+                  <dt className="text-ocean-500 w-20 shrink-0">Email</dt>
+                  <dd>
+                    <a
+                      href={`mailto:${club.contact_email}`}
+                      className="text-ocean-300 hover:text-white transition-colors break-all"
+                    >
+                      {club.contact_email}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {club.contact_phone && (
+                <div className="flex gap-3">
+                  <dt className="text-ocean-500 w-20 shrink-0">Phone</dt>
+                  <dd className="text-ocean-200">{club.contact_phone}</dd>
+                </div>
+              )}
+              {club.public_url && (
+                <div className="flex gap-3">
+                  <dt className="text-ocean-500 w-20 shrink-0">Website</dt>
+                  <dd>
+                    <a
+                      href={club.public_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-ocean-300 hover:text-white transition-colors break-all"
+                    >
+                      {club.public_url}
+                    </a>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        )}
 
         {isMember ? (
           <>
@@ -300,6 +417,12 @@ export default async function ClubHomePage({
                 </div>
               )}
             </div>
+
+            <MemberSelfEdit
+              clubId={club.id}
+              initialName={myName}
+              initialEmail={myEmail}
+            />
           </>
         ) : isApplicant ? (
           <div className="rounded-2xl border border-amber-700/40 bg-amber-900/10 px-6 py-8 text-center">
