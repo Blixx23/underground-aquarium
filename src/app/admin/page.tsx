@@ -7,7 +7,7 @@ import {
   GraduationCap,
   Fish,
   Flag,
-  MessageSquarePlus,
+  Droplets,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -18,7 +18,7 @@ type AdminTool = {
   label: string;
   description: string;
   Icon: LucideIcon;
-  pending: number;
+  pending?: number;
 };
 
 export default async function AdminHubPage() {
@@ -65,13 +65,6 @@ export default async function AdminHubPage() {
     .eq("status", "open");
   const openReports = reportCount ?? 0;
 
-  // Tester feedback and bug reports still needing attention.
-  const { count: feedbackCount } = await supabaseAdmin
-    .from("feedback")
-    .select("id", { count: "exact", head: true })
-    .in("status", ["new", "in_progress"]);
-  const openFeedback = feedbackCount ?? 0;
-
   // Each tool reports its own count of items awaiting a response, so the hub
   // doubles as a quick status board. Add future tools here and they pick up
   // the same pending indicator automatically.
@@ -105,15 +98,14 @@ export default async function AdminHubPage() {
       pending: openReports,
     },
     {
-      href: "/admin/feedback",
-      label: "Feedback & bugs",
-      description: "Review bug reports and ideas from testers",
-      Icon: MessageSquarePlus,
-      pending: openFeedback,
+      href: "/admin/bubbles",
+      label: "Bubbles",
+      description: "Award or deduct member bubbles",
+      Icon: Droplets,
     },
   ];
 
-  const totalPending = tools.reduce((sum, t) => sum + t.pending, 0);
+  const totalPending = tools.reduce((sum, t) => sum + (t.pending ?? 0), 0);
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
@@ -148,7 +140,7 @@ export default async function AdminHubPage() {
                 </span>
               </span>
               <span className="flex items-center gap-3">
-                {t.pending > 0 ? (
+                {t.pending === undefined ? null : t.pending > 0 ? (
                   <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-300">
                     {t.pending} pending
                   </span>
