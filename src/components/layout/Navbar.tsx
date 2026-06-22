@@ -25,6 +25,7 @@ const nav = [
   { label: "Courses", href: "/courses" },
   { label: "Events", href: "/events" },
   { label: "Community", href: "/community" },
+  { label: "Forums", href: "/forums" },
   { label: "Clubs", href: "/clubs" },
 ];
 

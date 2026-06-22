@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-type Action = "remove" | "resolve" | "dismiss";
+type Action = "remove" | "resolve" | "dismiss" | "hide_post" | "hide_thread";
+
+const VALID: Action[] = [
+  "remove",
+  "resolve",
+  "dismiss",
+  "hide_post",
+  "hide_thread",
+];
 
 // Notifications are best-effort: a failed insert should never roll back or
 // block the moderation action itself. Required columns are user_id/type/title.
@@ -37,10 +45,7 @@ export async function POST(req: Request) {
 
   const { id } = parsed;
   const action = parsed.action as Action | undefined;
-  if (
-    !id ||
-    (action !== "remove" && action !== "resolve" && action !== "dismiss")
-  ) {
+  if (!id || !action || !VALID.includes(action)) {
     return NextResponse.json(
       { error: "Missing report or action." },
       { status: 400 }
@@ -154,6 +159,62 @@ export async function POST(req: Request) {
       reportedBody = "Your account has been suspended by a moderator.";
       reportedLink = "/account";
     }
+  } else if (action === "hide_post" || action === "hide_thread") {
+    // Both come from a forum_post report. target_id is the post id.
+    if (targetType === "forum_post" && targetId) {
+      const { data: post } = await supabaseAdmin
+        .from("forum_posts")
+        .select("id, thread_id, author_id, is_op")
+        .eq("id", targetId)
+        .maybeSingle();
+      if (post) {
+        const threadId = (post.thread_id as string | null) ?? null;
+
+        if (action === "hide_post") {
+          await supabaseAdmin
+            .from("forum_posts")
+            .update({ hidden_at: now })
+            .eq("id", targetId);
+          actionTaken = true;
+          reportedUserId = (post.author_id as string | null) ?? null;
+
+          // Keep the thread's reply count honest after hiding a comment.
+          if (threadId) {
+            const { count } = await supabaseAdmin
+              .from("forum_posts")
+              .select("id", { count: "exact", head: true })
+              .eq("thread_id", threadId)
+              .eq("is_op", false)
+              .is("hidden_at", null);
+            await supabaseAdmin
+              .from("forum_threads")
+              .update({ reply_count: count ?? 0 })
+              .eq("id", threadId);
+          }
+
+          reportedTitle = "Post hidden";
+          reportedBody = "A post of yours was hidden by a moderator.";
+          reportedLink = targetUrl;
+        } else if (threadId) {
+          // hide_thread — hide the whole discussion.
+          await supabaseAdmin
+            .from("forum_threads")
+            .update({ hidden_at: now })
+            .eq("id", threadId);
+          actionTaken = true;
+
+          const { data: thread } = await supabaseAdmin
+            .from("forum_threads")
+            .select("author_id")
+            .eq("id", threadId)
+            .maybeSingle();
+          reportedUserId = (thread?.author_id as string | null) ?? null;
+          reportedTitle = "Thread hidden";
+          reportedBody = "A thread of yours was hidden by a moderator.";
+          reportedLink = "/forums";
+        }
+      }
+    }
   }
 
   const newStatus = action === "dismiss" ? "dismissed" : "resolved";
@@ -175,7 +236,7 @@ export async function POST(req: Request) {
         `We reviewed your report about ${targetLabel}. No action was needed.`,
         targetUrl
       );
-    } else if (action === "remove" && actionTaken) {
+    } else if (actionTaken) {
       await notify(
         reporterId,
         "report",

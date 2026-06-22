@@ -6,6 +6,7 @@ import { supabasePublic } from "@/lib/supabase/public";
 import Markdown from "@/components/forum/Markdown";
 import VoteControl from "@/components/forum/VoteControl";
 import ReplyBox from "@/components/forum/ReplyBox";
+import ReportButton from "@/components/ReportButton";
 
 export const revalidate = 60;
 
@@ -98,6 +99,7 @@ export default async function ThreadPage({ params }: Params) {
   if (!data) notFound();
   const { cat, thread: t } = data;
   const locked = Boolean(t.is_locked);
+  const threadPath = `/forums/${category}/${thread}`;
 
   const { data: postsData } = await supabasePublic
     .from("forum_posts")
@@ -175,6 +177,14 @@ export default async function ThreadPage({ params }: Params) {
             <Markdown>{c.body ?? ""}</Markdown>
           </div>
           {!locked && <ReplyBox threadId={t.id as string} parentId={c.id} compact />}
+          <div className="mt-1">
+            <ReportButton
+              targetType="forum_post"
+              targetId={c.id}
+              targetLabel={t.title as string}
+              targetUrl={threadPath}
+            />
+          </div>
           {kids.length > 0 && (
             <div className="mt-3 space-y-3 border-l border-ocean-800/40 pl-3">
               {kids.map((k) => renderComment(k))}
@@ -235,6 +245,16 @@ export default async function ThreadPage({ params }: Params) {
               · {timeAgo(op?.created_at ?? null)}
             </p>
             <Markdown>{op?.body ?? ""}</Markdown>
+            {op && (
+              <div className="mt-3">
+                <ReportButton
+                  targetType="forum_post"
+                  targetId={op.id}
+                  targetLabel={t.title as string}
+                  targetUrl={threadPath}
+                />
+              </div>
+            )}
           </div>
         </article>
 

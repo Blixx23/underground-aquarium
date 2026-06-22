@@ -25,7 +25,14 @@ type QueueReport = {
   reporter_name: string | null;
 };
 
-type Action = "remove" | "resolve" | "dismiss";
+type Action = "remove" | "resolve" | "dismiss" | "hide_post" | "hide_thread";
+
+type PrimaryAction = {
+  action: Action;
+  label: string;
+  Icon: typeof EyeOff;
+  confirm: string;
+};
 
 function whenLabel(iso: string | null): string {
   if (!iso) return "";
@@ -112,24 +119,48 @@ export default function AdminReportsList({
         const busy = busyId === r.id;
         const heading = r.target_label || r.target_url || "Reported content";
 
-        // The primary action depends on what was reported. Other target types
-        // have no automatic take-down yet, so they only get resolve/dismiss.
-        const primary =
+        // The take-down options depend on what was reported. Forum posts get
+        // two choices; listings/profiles get one; everything else only
+        // resolve/dismiss.
+        const primaryActions: PrimaryAction[] =
           r.target_type === "listing"
-            ? {
-                label: "Take down listing",
-                Icon: EyeOff,
-                confirm:
-                  "Take down this listing? It will be hidden from the marketplace and the seller will be notified.",
-              }
+            ? [
+                {
+                  action: "remove",
+                  label: "Take down listing",
+                  Icon: EyeOff,
+                  confirm:
+                    "Take down this listing? It will be hidden from the marketplace and the seller will be notified.",
+                },
+              ]
             : r.target_type === "profile"
-            ? {
-                label: "Suspend account",
-                Icon: Ban,
-                confirm:
-                  "Suspend this account? Their profile and listings will be hidden and they will be notified.",
-              }
-            : null;
+            ? [
+                {
+                  action: "remove",
+                  label: "Suspend account",
+                  Icon: Ban,
+                  confirm:
+                    "Suspend this account? Their profile and listings will be hidden and they will be notified.",
+                },
+              ]
+            : r.target_type === "forum_post"
+            ? [
+                {
+                  action: "hide_post",
+                  label: "Hide post",
+                  Icon: EyeOff,
+                  confirm:
+                    "Hide just this post/comment? It will be removed from the thread and the author will be notified.",
+                },
+                {
+                  action: "hide_thread",
+                  label: "Hide thread",
+                  Icon: EyeOff,
+                  confirm:
+                    "Hide the entire thread? The whole discussion will be removed and the author will be notified.",
+                },
+              ]
+            : [];
 
         return (
           <div
@@ -173,20 +204,21 @@ export default function AdminReportsList({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3 mt-4">
-              {primary && (
+              {primaryActions.map((p) => (
                 <button
-                  onClick={() => act(r.id, "remove", primary.confirm)}
+                  key={p.action}
+                  onClick={() => act(r.id, p.action, p.confirm)}
                   disabled={busy}
                   className="inline-flex items-center gap-2 rounded-full border border-coral-500/50 bg-coral-500/10 px-4 py-1.5 text-sm font-medium text-coral-300 hover:bg-coral-500/20 transition-colors disabled:opacity-60"
                 >
                   {busy ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <primary.Icon className="w-4 h-4" />
+                    <p.Icon className="w-4 h-4" />
                   )}
-                  {primary.label}
+                  {p.label}
                 </button>
-              )}
+              ))}
               <button
                 onClick={() =>
                   act(
