@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Fish,
   Flag,
+  MessageSquarePlus,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -64,6 +65,13 @@ export default async function AdminHubPage() {
     .eq("status", "open");
   const openReports = reportCount ?? 0;
 
+  // Tester feedback and bug reports still needing attention.
+  const { count: feedbackCount } = await supabaseAdmin
+    .from("feedback")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["new", "in_progress"]);
+  const openFeedback = feedbackCount ?? 0;
+
   // Each tool reports its own count of items awaiting a response, so the hub
   // doubles as a quick status board. Add future tools here and they pick up
   // the same pending indicator automatically.
@@ -95,6 +103,13 @@ export default async function AdminHubPage() {
       description: "Review content and users flagged by members",
       Icon: Flag,
       pending: openReports,
+    },
+    {
+      href: "/admin/feedback",
+      label: "Feedback & bugs",
+      description: "Review bug reports and ideas from testers",
+      Icon: MessageSquarePlus,
+      pending: openFeedback,
     },
   ];
 

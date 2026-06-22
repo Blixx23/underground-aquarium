@@ -46,31 +46,37 @@ export default function NotificationBell({
     let active = true;
 
     async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!active) return;
-      if (!user) {
-        setSignedIn(false);
-        setItems([]);
-        setCount(0);
-        return;
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!active) return;
+        if (!user) {
+          setSignedIn(false);
+          setItems([]);
+          setCount(0);
+          return;
+        }
+        setSignedIn(true);
+        const [{ data: recent }, { count: c }] = await Promise.all([
+          supabase
+            .from("notifications")
+            .select("id, title, body, link, read, created_at")
+            .order("created_at", { ascending: false })
+            .limit(8),
+          supabase
+            .from("notifications")
+            .select("id", { count: "exact", head: true })
+            .eq("read", false),
+        ]);
+        if (!active) return;
+        setItems(recent ?? []);
+        setCount(c ?? 0);
+      } catch {
+        // Transient network/auth hiccup (e.g. a dropped fetch during a dev
+        // reload or a brief connection blip). Skip this cycle quietly and
+        // retry on the next focus/interval instead of surfacing an error.
       }
-      setSignedIn(true);
-      const [{ data: recent }, { count: c }] = await Promise.all([
-        supabase
-          .from("notifications")
-          .select("id, title, body, link, read, created_at")
-          .order("created_at", { ascending: false })
-          .limit(8),
-        supabase
-          .from("notifications")
-          .select("id", { count: "exact", head: true })
-          .eq("read", false),
-      ]);
-      if (!active) return;
-      setItems(recent ?? []);
-      setCount(c ?? 0);
     }
 
     load();
