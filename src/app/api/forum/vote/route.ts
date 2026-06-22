@@ -87,8 +87,16 @@ export async function POST(req: Request) {
       .eq("id", authorId as string)
       .maybeSingle();
     const afterBalance = (a2?.bubble_balance as number) ?? 0;
-    if (bubbleTier(afterBalance).min > bubbleTier(beforeBalance).min) {
-      const tier = bubbleTier(afterBalance);
+    const afterTier = bubbleTier(afterBalance);
+    if (afterTier.rank > bubbleTier(beforeBalance).rank) {
+      // Atomically claim the new tier so simultaneous or repeated votes can't
+      // each fire the same alert — only the first to raise the tier notifies.
+      const { data: claimed } = await supabaseAdmin.rpc("claim_bubble_tier", {
+        p_user_id: authorId,
+        p_rank: afterTier.rank,
+      });
+      if (!claimed) return NextResponse.json({ ok: true, score, value });
+      const tier = afterTier;
       const uname = (a2?.username as string | null) ?? null;
       try {
         await supabaseAdmin.from("notifications").insert({

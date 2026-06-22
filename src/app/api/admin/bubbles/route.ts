@@ -82,7 +82,16 @@ export async function POST(req: Request) {
 
   const beforeTier = bubbleTier(beforeBalance);
   const afterTier = bubbleTier(afterBalance);
-  const leveledUp = afterTier.min > beforeTier.min;
+  // Atomically claim the new tier so rapid or duplicate awards can't double-fire
+  // the tier-up alert. Only the caller that actually raises the tier announces.
+  let leveledUp = false;
+  if (afterTier.rank > beforeTier.rank) {
+    const { data: claimed } = await supabaseAdmin.rpc("claim_bubble_tier", {
+      p_user_id: target.id,
+      p_rank: afterTier.rank,
+    });
+    leveledUp = Boolean(claimed);
+  }
 
   // In-app notification for the award itself.
   try {
