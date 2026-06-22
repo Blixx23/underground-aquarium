@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Droplet } from "lucide-react";
 import BubbleIcon from "@/components/bubbles/BubbleIcon";
+import { createClient } from "@/lib/supabase/client";
 
 type Vote = -1 | 0 | 1;
 
@@ -19,12 +20,40 @@ export default function VoteControl({
   orientation?: "vertical" | "horizontal";
   size?: "sm" | "md";
 }) {
+  const [supabase] = useState(() => createClient());
   const [score, setScore] = useState(initialScore);
   const [vote, setVote] = useState<Vote>(initialVote);
   const [busy, setBusy] = useState(false);
+  const touched = useRef(false);
+
+  // These pages are cached for SEO, so the server can't bake in per-user state.
+  // On mount we read the viewer's own vote (RLS scopes forum_votes to them) so
+  // the control reflects a prior up/down. We never clobber an in-progress vote.
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("forum_votes")
+      .select("value")
+      .eq("post_id", postId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (
+          active &&
+          !touched.current &&
+          data &&
+          (data.value === 1 || data.value === -1)
+        ) {
+          setVote(data.value as Vote);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [postId, supabase]);
 
   async function cast(dir: 1 | -1) {
     if (busy) return;
+    touched.current = true;
     const next: Vote = vote === dir ? 0 : dir;
     const prevVote = vote;
     const prevScore = score;
