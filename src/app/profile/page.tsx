@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
+import BubbleBadge from "@/components/bubbles/BubbleBadge";
 import Certifications, {
   type Certification,
 } from "@/components/profile/Certifications";
@@ -39,7 +40,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, full_name, bio, location, website, is_admin")
+    .select("username, full_name, bio, location, website, is_admin, bubble_balance, bubble_tier_seen")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -123,6 +124,9 @@ export default async function ProfilePage() {
                   {profile.location}
                 </p>
               )}
+              <div className="mt-2.5">
+                <BubbleBadge balance={profile?.bubble_balance ?? 0} peakRank={profile?.bubble_tier_seen ?? 0} />
+              </div>
             </div>
             {profile?.username && (
               <Link

@@ -23,6 +23,7 @@ type Profile = {
   location: string | null;
   website: string | null;
   bubble_balance: number;
+  bubble_tier_seen: number | null;
 };
 
 type TankItem = { slug: string; qty: number };
@@ -59,7 +60,7 @@ export default async function PublicProfilePage({ params }: Params) {
 
   const { data: profileData } = await supabasePublic
     .from("profiles")
-    .select("id, username, full_name, bio, location, website, deleted_at, suspended_at, bubble_balance")
+    .select("id, username, full_name, bio, location, website, deleted_at, suspended_at, bubble_balance, bubble_tier_seen")
     .eq("username", username)
     .maybeSingle();
 
@@ -158,7 +159,7 @@ export default async function PublicProfilePage({ params }: Params) {
               <p className="text-ocean-300 mt-3 max-w-2xl">{profile.bio}</p>
             )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-ocean-400">
-              <BubbleBadge balance={profile.bubble_balance ?? 0} />
+              <BubbleBadge balance={profile.bubble_balance ?? 0} peakRank={profile.bubble_tier_seen ?? 0} />
               {profile.location && (
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="w-4 h-4" /> {profile.location}
