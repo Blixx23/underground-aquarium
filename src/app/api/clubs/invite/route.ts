@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { emailLayout } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -50,11 +51,13 @@ export async function POST(request: Request) {
           from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
           to: email.trim(),
           subject: `You're invited to join ${clubName}`,
-          html: `
-            <p>You've been invited to join <strong>${clubName}</strong> on Underground Aquarium.</p>
-            <p><a href="${link}">Click here to join the club</a></p>
-            <p style="color:#64748b;font-size:13px">Or paste this link into your browser:<br>${link}</p>
-          `,
+          html: emailLayout({
+            preheader: `You're invited to join ${clubName} on Underground Aquarium`,
+            title: "You're invited",
+            intro: `You've been invited to join <strong>${clubName}</strong> on Underground Aquarium.`,
+            cta: { label: "Join the club", url: link },
+            footerNote: `Or paste this link into your browser:<br><a href="${link}" style="color:#0e6e8c;text-decoration:none;word-break:break-all;">${link}</a>`,
+          }),
         });
         emailed = true;
       } catch (e) {

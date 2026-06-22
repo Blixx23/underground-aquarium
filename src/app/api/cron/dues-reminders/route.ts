@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { emailLayout, emailStats } from "@/lib/email";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.undergroundaquarium.com";
@@ -37,27 +38,52 @@ function buildEmail(
   dateLabel: string,
   link: string
 ): { subject: string; html: string } {
-  const cta = `<p><a href="${link}">Renew your membership</a></p>`;
+  const cta = { label: "Renew your membership", url: link };
+  const club = `<strong>${clubName}</strong>`;
   switch (kind) {
     case "10d":
       return {
         subject: `Your ${clubName} dues renew in 10 days`,
-        html: `<p>Heads up — your <strong>${clubName}</strong> membership ($${amount}) renews on <strong>${dateLabel}</strong>, about 10 days from now.</p>${cta}`,
+        html: emailLayout({
+          preheader: `Your ${clubName} membership renews on ${dateLabel}`,
+          title: "Membership renewal coming up",
+          intro: `Heads up — your ${club} membership renews in about 10 days.`,
+          bodyHtml: emailStats([["Amount", `$${amount}`], ["Renews on", dateLabel]]),
+          cta,
+        }),
       };
     case "3d":
       return {
         subject: `Your ${clubName} dues renew in 3 days`,
-        html: `<p>Your <strong>${clubName}</strong> membership ($${amount}) renews on <strong>${dateLabel}</strong> — just 3 days away.</p>${cta}`,
+        html: emailLayout({
+          preheader: `Your ${clubName} membership renews on ${dateLabel}`,
+          title: "Renewal in 3 days",
+          intro: `Your ${club} membership renews in just 3 days.`,
+          bodyHtml: emailStats([["Amount", `$${amount}`], ["Renews on", dateLabel]]),
+          cta,
+        }),
       };
     case "0d":
       return {
         subject: `Your ${clubName} dues are due today`,
-        html: `<p>Your <strong>${clubName}</strong> membership ($${amount}) is due today (${dateLabel}). Renew now to stay active.</p>${cta}`,
+        html: emailLayout({
+          preheader: `Your ${clubName} dues are due today`,
+          title: "Your dues are due today",
+          intro: `Your ${club} membership is due today. Renew now to stay active.`,
+          bodyHtml: emailStats([["Amount", `$${amount}`], ["Due", dateLabel]]),
+          cta,
+        }),
       };
     case "past3d":
       return {
         subject: `Your ${clubName} membership has lapsed`,
-        html: `<p>Your <strong>${clubName}</strong> membership lapsed on ${dateLabel}. Renew anytime ($${amount}) to get back to active standing.</p>${cta}`,
+        html: emailLayout({
+          preheader: `Your ${clubName} membership has lapsed`,
+          title: "Your membership has lapsed",
+          intro: `Your ${club} membership lapsed. Renew anytime to return to active standing.`,
+          bodyHtml: emailStats([["Amount", `$${amount}`], ["Lapsed on", dateLabel]]),
+          cta,
+        }),
       };
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { Resend } from "resend";
+import { emailLayout, emailStats, emailCallout } from "@/lib/email";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { PLATFORM_FEE_PERCENT } from "@/lib/config";
@@ -217,14 +218,18 @@ export async function POST(request: Request) {
             from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
             to: payerEmail,
             subject: `Your ${clubName ?? "club"} dues receipt`,
-            html: `<p>Thanks${
-              payerName ? `, ${payerName}` : ""
-            }! Your payment to <strong>${
-              clubName ?? "your club"
-            }</strong> was received.</p>
-<p><strong>Amount:</strong> $${amountStr}<br>
-<strong>Membership active through:</strong> ${coversLabel}</p>
-<p>Keep this email as your receipt.</p>`,
+            html: emailLayout({
+              preheader: `Your ${clubName ?? "club"} dues receipt`,
+              title: "Dues receipt",
+              intro: `Thanks${payerName ? `, ${payerName}` : ""} — your payment to <strong>${
+                clubName ?? "your club"
+              }</strong> was received.`,
+              bodyHtml: emailStats([
+                ["Amount", `$${amountStr}`],
+                ["Membership active through", coversLabel],
+              ]),
+              footerNote: "Keep this email as your receipt.",
+            }),
           });
         } catch (e) {
           console.error("Dues receipt email failed:", e);
@@ -317,12 +322,20 @@ export async function POST(request: Request) {
                 from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
                 to: sellerEmail,
                 subject: `You sold ${productName}`,
-                html: `
-                  <h2>You made a sale</h2>
-                  <p><strong>${productName}</strong> — $${amount}</p>
-                  <p><strong>Ship to:</strong><br>${formatAddress(shipping)}</p>
-                  <p>Log in to your shop to see the full order.</p>
-                `,
+                html: emailLayout({
+                  preheader: `You sold ${productName} for $${amount}`,
+                  title: "You made a sale",
+                  intro: `<strong>${productName}</strong> sold for $${amount}.`,
+                  bodyHtml:
+                    emailStats([
+                      ["Item", productName],
+                      ["Amount", `$${amount}`],
+                    ]) + emailCallout("Ship to", formatAddress(shipping)),
+                  cta: {
+                    label: "View your sales",
+                    url: "https://www.undergroundaquarium.com/sell/sales",
+                  },
+                }),
               });
               console.log(`Sale email sent to seller ${sellerEmail}.`);
             }
@@ -340,12 +353,20 @@ export async function POST(request: Request) {
             from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
             to: buyerEmail,
             subject: "Your Underground Aquarium order",
-            html: `
-              <h2>Thanks for your order</h2>
-              <p><strong>${productName}</strong> — $${amount}</p>
-              <p>The seller has been notified and will ship your order soon.</p>
-              <p>You can view your orders any time from your account.</p>
-            `,
+            html: emailLayout({
+              preheader: `Your order for ${productName} is confirmed`,
+              title: "Thanks for your order",
+              intro:
+                "Your order is confirmed. The seller has been notified and will ship it soon.",
+              bodyHtml: emailStats([
+                ["Item", productName],
+                ["Total", `$${amount}`],
+              ]),
+              cta: {
+                label: "View your orders",
+                url: "https://www.undergroundaquarium.com/orders",
+              },
+            }),
           });
           console.log(`Receipt email sent to buyer ${buyerEmail}.`);
         }
