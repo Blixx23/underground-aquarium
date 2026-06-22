@@ -215,6 +215,121 @@ export default function ClubEvents({
     router.refresh();
   }
 
+  // Group the (already date-sorted) events under a simple month heading.
+  const groups: { label: string; items: ClubEvent[] }[] = [];
+  for (const e of events) {
+    const label = new Date(e.starts_at).toLocaleString(undefined, {
+      month: "long",
+      year: "numeric",
+    });
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) {
+      last.items.push(e);
+    } else {
+      groups.push({ label, items: [e] });
+    }
+  }
+
+  function eventCard(e: ClubEvent) {
+    const place = e.is_online
+      ? "Online"
+      : [e.venue_name, [e.city, e.state].filter(Boolean).join(", ")]
+          .filter(Boolean)
+          .join(" · ");
+    const confirming = confirmingId === e.id;
+    const cover = e.event_type === "event" ? e.cover_image : null;
+    return (
+      <div
+        key={e.id}
+        className="overflow-hidden rounded-2xl border border-ocean-800/60 bg-ocean-900/40"
+      >
+        {cover && (
+          <Link href={`/events/${e.slug}`} className="block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={cover}
+              alt={e.title}
+              className="h-40 w-full object-cover"
+            />
+          </Link>
+        )}
+        <div className="flex items-start gap-3 p-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-emerald-300">
+              {formatWhen(e.starts_at)}
+            </p>
+            <Link
+              href={`/events/${e.slug}`}
+              className="mt-0.5 block font-medium text-white transition-colors hover:text-emerald-300"
+            >
+              {e.title}
+            </Link>
+            {place && (
+              <p className="mt-1 flex items-center gap-1.5 text-xs text-ocean-400">
+                {e.is_online ? (
+                  <Globe className="h-3.5 w-3.5 shrink-0" />
+                ) : (
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                )}{" "}
+                {place}
+              </p>
+            )}
+            {isOfficer && (
+              <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-ocean-500">
+                {e.show_in_directory !== false ? (
+                  <>
+                    <Globe className="h-3 w-3" /> On Events tab
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-3 w-3" /> Club only
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+
+          {isOfficer &&
+            (confirming ? (
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  onClick={() => remove(e.id)}
+                  disabled={busy}
+                  className="rounded-lg bg-coral-500/90 px-3 py-1.5 text-xs text-white transition-colors hover:bg-coral-500 disabled:opacity-60"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => setConfirmingId(null)}
+                  disabled={busy}
+                  className="rounded-lg bg-ocean-800 px-3 py-1.5 text-xs text-ocean-200 transition-colors hover:bg-ocean-700 disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  onClick={() => openEdit(e)}
+                  title="Edit"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-ocean-700/60 bg-ocean-950/80 text-ocean-200 transition-colors hover:border-ocean-600 hover:text-white"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setConfirmingId(e.id)}
+                  title="Delete"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-ocean-700/60 bg-ocean-950/80 text-ocean-200 transition-colors hover:border-coral-500/50 hover:text-coral-200"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {isOfficer && mode === null && (
@@ -386,109 +501,17 @@ export default function ClubEvents({
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {events.map((e) => {
-            const place = e.is_online
-              ? "Online"
-              : [
-                  e.venue_name,
-                  [e.city, e.state].filter(Boolean).join(", "),
-                ]
-                  .filter(Boolean)
-                  .join(" · ");
-            const confirming = confirmingId === e.id;
-            const cover = e.event_type === "event" ? e.cover_image : null;
-            return (
-              <div
-                key={e.id}
-                className="overflow-hidden rounded-2xl border border-ocean-800/60 bg-ocean-900/40"
-              >
-                {cover && (
-                  <Link href={`/events/${e.slug}`} className="block">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={cover}
-                      alt={e.title}
-                      className="h-40 w-full object-cover"
-                    />
-                  </Link>
-                )}
-                <div className="flex items-start gap-3 p-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-emerald-300">
-                      {formatWhen(e.starts_at)}
-                    </p>
-                    <Link
-                      href={`/events/${e.slug}`}
-                      className="mt-0.5 block font-medium text-white transition-colors hover:text-emerald-300"
-                    >
-                      {e.title}
-                    </Link>
-                    {place && (
-                      <p className="mt-1 flex items-center gap-1.5 text-xs text-ocean-400">
-                        {e.is_online ? (
-                          <Globe className="h-3.5 w-3.5 shrink-0" />
-                        ) : (
-                          <MapPin className="h-3.5 w-3.5 shrink-0" />
-                        )}{" "}
-                        {place}
-                      </p>
-                    )}
-                    {isOfficer && (
-                      <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-ocean-500">
-                        {e.show_in_directory !== false ? (
-                          <>
-                            <Globe className="h-3 w-3" /> On Events tab
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="h-3 w-3" /> Club only
-                          </>
-                        )}
-                      </p>
-                    )}
-                  </div>
-
-                  {isOfficer &&
-                    (confirming ? (
-                      <div className="flex shrink-0 items-center gap-2">
-                        <button
-                          onClick={() => remove(e.id)}
-                          disabled={busy}
-                          className="rounded-lg bg-coral-500/90 px-3 py-1.5 text-xs text-white transition-colors hover:bg-coral-500 disabled:opacity-60"
-                        >
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => setConfirmingId(null)}
-                          disabled={busy}
-                          className="rounded-lg bg-ocean-800 px-3 py-1.5 text-xs text-ocean-200 transition-colors hover:bg-ocean-700 disabled:opacity-60"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <button
-                          onClick={() => openEdit(e)}
-                          title="Edit"
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-ocean-700/60 bg-ocean-950/80 text-ocean-200 transition-colors hover:border-ocean-600 hover:text-white"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setConfirmingId(e.id)}
-                          title="Delete"
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-ocean-700/60 bg-ocean-950/80 text-ocean-200 transition-colors hover:border-coral-500/50 hover:text-coral-200"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                </div>
+        <div className="space-y-6">
+          {groups.map((group) => (
+            <div key={group.label}>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-widest text-ocean-500">
+                {group.label}
+              </h3>
+              <div className="space-y-3">
+                {group.items.map((e) => eventCard(e))}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </div>
