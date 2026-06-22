@@ -9,6 +9,7 @@ import Certifications, {
   type Certification,
 } from "@/components/profile/Certifications";
 import ReportButton from "@/components/ReportButton";
+import BubbleBadge from "@/components/bubbles/BubbleBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ type Profile = {
   bio: string | null;
   location: string | null;
   website: string | null;
+  bubble_balance: number;
 };
 
 type TankItem = { slug: string; qty: number };
@@ -57,13 +59,14 @@ export default async function PublicProfilePage({ params }: Params) {
 
   const { data: profileData } = await supabasePublic
     .from("profiles")
-    .select("id, username, full_name, bio, location, website, deleted_at")
+    .select("id, username, full_name, bio, location, website, deleted_at, suspended_at, bubble_balance")
     .eq("username", username)
     .maybeSingle();
 
   if (
     !profileData ||
-    (profileData as { deleted_at?: string | null }).deleted_at
+    (profileData as { deleted_at?: string | null }).deleted_at ||
+    (profileData as { suspended_at?: string | null }).suspended_at
   )
     notFound();
   const profile = profileData as Profile;
@@ -155,6 +158,7 @@ export default async function PublicProfilePage({ params }: Params) {
               <p className="text-ocean-300 mt-3 max-w-2xl">{profile.bio}</p>
             )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-ocean-400">
+              <BubbleBadge balance={profile.bubble_balance ?? 0} />
               {profile.location && (
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="w-4 h-4" /> {profile.location}

@@ -185,6 +185,11 @@ export default function NotificationBell({
                     >
                       {n.title}
                     </span>
+                    {n.body && (
+                      <span className="block text-xs text-ocean-400 mt-0.5 line-clamp-2">
+                        {n.body}
+                      </span>
+                    )}
                     <span className="block text-xs text-ocean-600 mt-0.5">
                       {timeAgo(n.created_at)}
                     </span>

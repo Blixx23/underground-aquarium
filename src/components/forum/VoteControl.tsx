@@ -2,36 +2,9 @@
 
 import { useState } from "react";
 import { Droplet } from "lucide-react";
+import BubbleIcon from "@/components/bubbles/BubbleIcon";
 
 type Vote = -1 | 0 | 1;
-
-function Bubble({
-  className,
-  filled,
-}: {
-  className?: string;
-  filled?: boolean;
-}) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <circle
-        cx="12"
-        cy="12"
-        r="8"
-        fill={filled ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      <circle
-        cx="9"
-        cy="9"
-        r="2.2"
-        fill={filled ? "#ffffff" : "currentColor"}
-        opacity={filled ? 0.9 : 0.8}
-      />
-    </svg>
-  );
-}
 
 export default function VoteControl({
   postId,
@@ -108,7 +81,7 @@ export default function VoteControl({
         title="Float up"
         className={`rounded-full p-0.5 transition-all hover:scale-110 ${up}`}
       >
-        <Bubble className={icon} filled={vote === 1} />
+        <BubbleIcon className={icon} active={vote === 1} />
       </button>
       <span className={`text-xs font-semibold tabular-nums ${scoreColor}`}>
         {score}

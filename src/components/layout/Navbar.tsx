@@ -22,11 +22,16 @@ const nav = [
       { label: "Vendor Guide", href: "/vendor-guide" },
     ],
   },
+  {
+    label: "Community",
+    children: [
+      { label: "Community Hub", href: "/community" },
+      { label: "Forums", href: "/forums" },
+      { label: "Clubs", href: "/clubs" },
+      { label: "Events", href: "/events" },
+    ],
+  },
   { label: "Courses", href: "/courses" },
-  { label: "Events", href: "/events" },
-  { label: "Community", href: "/community" },
-  { label: "Forums", href: "/forums" },
-  { label: "Clubs", href: "/clubs" },
 ];
 
 export default function Navbar() {

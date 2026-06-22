@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { bubbleTier } from "@/lib/bubbles";
+import { sendEmail, tierUpEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   let body: { post_id?: string; value?: number };
@@ -23,8 +26,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sign in to vote." }, { status: 401 });
   }
 
-  // value 0 clears the vote; otherwise upsert it. RLS keeps users to their own
-  // rows; the score trigger updates the cached score.
+  // Look up the post's author so we can detect a tier-up afterwards.
+  const { data: post } = await supabase
+    .from("forum_posts")
+    .select("id, author_id")
+    .eq("id", postId)
+    .maybeSingle();
+  if (!post) {
+    return NextResponse.json({ error: "Post not found." }, { status: 404 });
+  }
+  const authorId = (post.author_id as string | null) ?? null;
+
+  // Author's balance before the vote (skip the lookup for self-votes).
+  let beforeBalance = 0;
+  const checkTier = Boolean(authorId) && authorId !== user.id;
+  if (checkTier) {
+    const { data: a } = await supabaseAdmin
+      .from("profiles")
+      .select("bubble_balance")
+      .eq("id", authorId as string)
+      .maybeSingle();
+    beforeBalance = (a?.bubble_balance as number) ?? 0;
+  }
+
+  // Apply the vote. value 0 clears it; otherwise upsert. RLS keeps users to
+  // their own rows; the score trigger updates the cached score and balance.
   if (value === 0) {
     const { error } = await supabase
       .from("forum_votes")
@@ -46,11 +72,53 @@ export async function POST(req: Request) {
     }
   }
 
-  const { data: post } = await supabase
+  const { data: postAfter } = await supabase
     .from("forum_posts")
     .select("score")
     .eq("id", postId)
     .maybeSingle();
+  const score = postAfter?.score ?? 0;
 
-  return NextResponse.json({ ok: true, score: post?.score ?? 0, value });
+  // Tier-up? Notify + email the author (never on a self-vote).
+  if (checkTier) {
+    const { data: a2 } = await supabaseAdmin
+      .from("profiles")
+      .select("bubble_balance, username")
+      .eq("id", authorId as string)
+      .maybeSingle();
+    const afterBalance = (a2?.bubble_balance as number) ?? 0;
+    if (bubbleTier(afterBalance).min > bubbleTier(beforeBalance).min) {
+      const tier = bubbleTier(afterBalance);
+      const uname = (a2?.username as string | null) ?? null;
+      try {
+        await supabaseAdmin.from("notifications").insert({
+          user_id: authorId,
+          type: "bubbles",
+          title: `New tier: ${tier.name}`,
+          body: `Your bubbles carried you into ${tier.name}. Keep it up!`,
+          link: uname ? `/u/${uname}` : null,
+        });
+      } catch {
+        // ignore
+      }
+      try {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(
+          authorId as string
+        );
+        const to = authUser?.user?.email ?? null;
+        if (to) {
+          const t = tierUpEmail({
+            tierName: tier.name,
+            balance: afterBalance,
+            username: uname,
+          });
+          await sendEmail({ to, subject: t.subject, html: t.html });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return NextResponse.json({ ok: true, score, value });
 }
