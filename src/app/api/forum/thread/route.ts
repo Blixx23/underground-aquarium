@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { awardBubbles } from "@/lib/awardBubbles";
+import { checkPostMilestones } from "@/lib/bubbleMilestones";
 
 function slugify(s: string): string {
   return s
@@ -90,6 +92,10 @@ export async function POST(req: Request) {
     await supabase.from("forum_threads").delete().eq("id", thread.id);
     return NextResponse.json({ error: postErr.message }, { status: 500 });
   }
+
+  await awardBubbles(user.id, "first_thread");
+  await awardBubbles(user.id, "first_post");
+  await checkPostMilestones(user.id);
 
   return NextResponse.json({ ok: true, category: cat.slug, slug });
 }

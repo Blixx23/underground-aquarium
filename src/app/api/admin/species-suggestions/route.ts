@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { awardBubbles } from "@/lib/awardBubbles";
 
 export async function POST(req: Request) {
   let body: { id?: string; action?: string };
@@ -48,6 +49,19 @@ export async function POST(req: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Reward the suggester when their species is accepted (deduped per suggestion).
+  if (action === "add") {
+    const { data: sugg } = await supabaseAdmin
+      .from("species_suggestions")
+      .select("suggester_id")
+      .eq("id", id)
+      .maybeSingle();
+    const suggesterId = (sugg?.suggester_id as string | null) ?? null;
+    if (suggesterId) {
+      await awardBubbles(suggesterId, "species_approved", `species_sugg_${id}`);
+    }
   }
 
   return NextResponse.json({ ok: true });

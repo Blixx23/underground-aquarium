@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/purge-accounts",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/bubble-milestones",
+      "schedule": "0 8 * * *"
     }
   ]
 }

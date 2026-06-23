@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { awardBubbles } from "@/lib/awardBubbles";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -98,6 +99,9 @@ export async function POST(req: Request) {
         .select("certificate_code")
         .maybeSingle();
       certificateCode = inserted?.certificate_code ?? null;
+      // First time completing this course — reward it (also serves as the
+      // "first certification" earn, since certifications are course completions).
+      await awardBubbles(user.id, "course_completed", `course_${courseId}`);
     }
   }
 

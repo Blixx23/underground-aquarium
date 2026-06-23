@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { Resend } from "resend";
 import { emailLayout, emailStats, emailCallout } from "@/lib/email";
+import { awardBubbles } from "@/lib/awardBubbles";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { PLATFORM_FEE_PERCENT } from "@/lib/config";
@@ -266,7 +267,7 @@ export async function POST(request: Request) {
           shipping_address: shipping,
         })
         .eq("id", orderId)
-        .select("product_id, product_name, amount_total, store_id")
+        .select("product_id, product_name, amount_total, store_id, buyer_id")
         .single();
 
       if (error) {
@@ -293,6 +294,42 @@ export async function POST(request: Request) {
             `Product ${updatedOrder.product_id} stock: ${product.stock} -> ${newStock}`
           );
         }
+      }
+
+      // Bubble rewards — buyer + seller. Idempotent (deduped per source).
+      try {
+        const buyerId = (updatedOrder as { buyer_id?: string | null }).buyer_id;
+        if (buyerId) await awardBubbles(buyerId, "first_purchase");
+
+        if (updatedOrder?.store_id) {
+          const { data: store } = await supabaseAdmin
+            .from("stores")
+            .select("owner_id")
+            .eq("id", updatedOrder.store_id)
+            .maybeSingle();
+          const sellerId = (store?.owner_id as string | null) ?? null;
+          if (sellerId) {
+            await awardBubbles(sellerId, "first_sale");
+            const { data: sellerStores } = await supabaseAdmin
+              .from("stores")
+              .select("id")
+              .eq("owner_id", sellerId);
+            const storeIds = (sellerStores ?? []).map(
+              (r) => (r as { id: string }).id
+            );
+            const { count } = await supabaseAdmin
+              .from("orders")
+              .select("id", { count: "exact", head: true })
+              .in("store_id", storeIds)
+              .eq("status", "paid");
+            const n = count ?? 0;
+            if (n >= 5) await awardBubbles(sellerId, "sales_5");
+            if (n >= 25) await awardBubbles(sellerId, "sales_25");
+            if (n >= 100) await awardBubbles(sellerId, "sales_100");
+          }
+        }
+      } catch (e) {
+        console.error("Bubble award (order) failed:", e);
       }
 
       const amount = (updatedOrder.amount_total / 100).toFixed(2);

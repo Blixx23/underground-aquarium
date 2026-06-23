@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { bubbleTier } from "@/lib/bubbles";
 import { sendEmail, tierUpEmail } from "@/lib/email";
+import { checkUpvoteMilestones } from "@/lib/bubbleMilestones";
 
 export async function POST(req: Request) {
   let body: { post_id?: string; value?: number };
@@ -78,6 +79,11 @@ export async function POST(req: Request) {
     .eq("id", postId)
     .maybeSingle();
   const score = postAfter?.score ?? 0;
+
+  // Upvote-received milestones for the author (only when an upvote is cast).
+  if (value === 1 && checkTier) {
+    await checkUpvoteMilestones(authorId as string);
+  }
 
   // Tier-up? Notify + email the author (never on a self-vote).
   if (checkTier) {

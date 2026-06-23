@@ -219,6 +219,13 @@ export default function SellPage() {
         .single();
       if (productError) throw productError;
 
+      // Onboarding grant — server verifies ownership; idempotent.
+      fetch("/api/bubbles/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "first_listing" }),
+      }).catch(() => {});
+
       if (asDraft) {
         setBusy(null);
         setDraftSaved(true);

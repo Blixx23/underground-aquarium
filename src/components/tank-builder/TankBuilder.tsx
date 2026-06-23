@@ -466,6 +466,26 @@ export default function TankBuilder({ species }: { species: Species[] }) {
         if (data) setCurrentTankId((data as SavedTank).id);
       }
       setSaveMsg("Saved.");
+      // Onboarding bubble grants — server verifies; idempotent, fire-and-forget.
+      fetch("/api/bubbles/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "first_tank" }),
+      }).catch(() => {});
+      if (stock.length > 0) {
+        fetch("/api/bubbles/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: "first_species" }),
+        }).catch(() => {});
+      }
+      if (isPublic) {
+        fetch("/api/bubbles/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: "tank_shared" }),
+        }).catch(() => {});
+      }
       await refreshTanks();
     } catch {
       setSaveMsg("Couldn't save — please try again.");
@@ -514,6 +534,16 @@ export default function TankBuilder({ species }: { species: Species[] }) {
       });
       if (error) throw error;
       setReadingMsg("Reading saved.");
+      fetch("/api/bubbles/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "first_water_test" }),
+      }).catch(() => {});
+      fetch("/api/bubbles/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "water_log_streak_week" }),
+      }).catch(() => {});
       setNote("");
       await refreshReadings(currentTankId);
     } catch {

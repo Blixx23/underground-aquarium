@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { awardBubbles } from "@/lib/awardBubbles";
+import { checkPostMilestones } from "@/lib/bubbleMilestones";
 
 export async function POST(req: Request) {
   let body: { thread_id?: string; parent_id?: string | null; body?: string };
@@ -90,6 +92,9 @@ export async function POST(req: Request) {
       // ignore
     }
   }
+
+  await awardBubbles(user.id, "first_post");
+  await checkPostMilestones(user.id);
 
   return NextResponse.json({ ok: true });
 }

@@ -3,7 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Bubbles from "@/components/Bubbles";
-import FeedbackWidget from "@/components/FeedbackWidget";
+import DailyHeartbeat from "@/components/DailyHeartbeat";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
@@ -54,10 +54,10 @@ export default function RootLayout({
       </head>
       <body>
         <Bubbles />
+        <DailyHeartbeat />
         <Navbar />
         <main>{children}</main>
         <Footer />
-        <FeedbackWidget />
         <Analytics />
       </body>
     </html>
