@@ -40,6 +40,7 @@ export default function NotificationBell({
   const [count, setCount] = useState(0);
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const [popKey, setPopKey] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,6 +93,7 @@ export default function NotificationBell({
                 prev.some((x) => x.id === n.id) ? prev : [n, ...prev].slice(0, 8)
               );
               if (!n.read) setCount((c) => c + 1);
+              setPopKey((k) => k + 1);
             }
           )
           .subscribe();
@@ -133,6 +135,55 @@ export default function NotificationBell({
     if (n.link) router.push(n.link);
   }
 
+  const popKeyframes = (
+    <style>{`
+      @keyframes uaqBellPop { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }
+      @keyframes uaqBubbleRise {
+        0% { transform: translateY(0) scale(0.4); opacity: 0; }
+        25% { opacity: 0.95; }
+        70% { transform: translateY(-13px) scale(1); opacity: 0.9; }
+        100% { transform: translateY(-19px) scale(1.35); opacity: 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @keyframes uaqBellPop { 0%, 100% { transform: none; } }
+        @keyframes uaqBubbleRise { 0%, 100% { opacity: 0; } }
+      }
+    `}</style>
+  );
+
+  function renderPop() {
+    if (popKey <= 0) return null;
+    return (
+      <span key={popKey} aria-hidden className="pointer-events-none absolute inset-0">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: `${9 + i * 7}px`,
+              bottom: "7px",
+              width: `${6 - i}px`,
+              height: `${6 - i}px`,
+              background: "radial-gradient(circle at 30% 30%, #ffffff, #7dd3fc)",
+              boxShadow: "0 0 5px rgba(125, 211, 252, 0.9)",
+              animation: `uaqBubbleRise 0.7s ease-out ${i * 0.08}s both`,
+            }}
+          />
+        ))}
+      </span>
+    );
+  }
+
+  const bellIcon = (
+    <span
+      key={popKey}
+      className="inline-block"
+      style={popKey > 0 ? { animation: "uaqBellPop 0.45s ease" } : undefined}
+    >
+      <Bell className="w-5 h-5" />
+    </span>
+  );
+
   if (!signedIn) return null;
 
   // Mobile / compact: a tappable bell that jumps to the full notifications page.
@@ -144,7 +195,9 @@ export default function NotificationBell({
         aria-label="Notifications"
         className="relative p-2 text-ocean-300 hover:text-white transition-colors"
       >
-        <Bell className="w-5 h-5" />
+        {popKeyframes}
+        {bellIcon}
+        {renderPop()}
         {count > 0 && (
           <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[11px] font-medium flex items-center justify-center">
             {count > 9 ? "9+" : count}
@@ -161,7 +214,9 @@ export default function NotificationBell({
         className="relative p-2 text-ocean-300 hover:text-white transition-colors"
         aria-label="Notifications"
       >
-        <Bell className="w-5 h-5" />
+        {popKeyframes}
+        {bellIcon}
+        {renderPop()}
         {count > 0 && (
           <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[11px] font-medium flex items-center justify-center">
             {count > 9 ? "9+" : count}
