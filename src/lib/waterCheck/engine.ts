@@ -32,8 +32,12 @@ const NITRATE_WATCH = 40; // ppm; OK..here = plan a change soon
 const NITRATE_HIGH = 80; // ppm; WATCH..here = warning, above = danger
 const PH_LOW = 6.0;
 const PH_HIGH = 8.4;
+const PH_SOFT_EDGE = 6.5; // below = acidic side of normal
+const PH_HARD_EDGE = 7.8; // above = alkaline side of normal
 const TEMP_LOW = 66; // °F
 const TEMP_HIGH = 86; // °F
+const TEMP_COOL = 72; // below = cool side of comfortable
+const TEMP_WARM = 82; // above = warm side of comfortable
 const KH_LOW = 3; // dKH; below = weak buffering
 // -----------------------------------------------------------------
 
@@ -181,16 +185,40 @@ export function checkWater(
   if (has(reading.ph)) {
     const p = reading.ph;
     if (p >= PH_LOW && p <= PH_HIGH) {
-      findings.push({
-        parameter: "pH",
-        level: "ok",
-        value: String(p),
-        title: "pH is in a normal freshwater range",
-        whatsHappening:
-          "This pH is fine for a broad range of community fish. What matters more than the exact number is that it stays steady and suits the species you keep.",
-        howToFix:
-          "Nothing needed — and avoid chasing a 'perfect' number with chemicals, since a stable pH beats a textbook one.",
-      });
+      if (p < PH_SOFT_EDGE) {
+        findings.push({
+          parameter: "pH",
+          level: "note",
+          value: String(p),
+          title: "pH is on the soft, acidic side",
+          whatsHappening:
+            "This sits at the acidic end of the normal range — ideal for soft-water fish like tetras, rasboras, and most South American species, but a bit low for hard-water fish like livebearers and African cichlids. What matters most is that it stays steady.",
+          howToFix:
+            "Nothing urgent. If your fish prefer harder water, raise it slowly with a little crushed coral, and check your KH — weak buffering is the usual cause of a drifting low pH.",
+        });
+      } else if (p > PH_HARD_EDGE) {
+        findings.push({
+          parameter: "pH",
+          level: "note",
+          value: String(p),
+          title: "pH is on the hard, alkaline side",
+          whatsHappening:
+            "This sits at the alkaline end of the normal range — great for livebearers, goldfish, and African cichlids, but a bit high for soft-water fish like tetras and many catfish.",
+          howToFix:
+            "Nothing urgent. If your fish prefer softer water, driftwood or peat lower it gently over time — avoid sudden chemical swings.",
+        });
+      } else {
+        findings.push({
+          parameter: "pH",
+          level: "ok",
+          value: String(p),
+          title: "pH is in a comfortable range",
+          whatsHappening:
+            "This is a middle-of-the-road pH that suits a broad range of community fish. What matters more than the exact number is that it stays steady.",
+          howToFix:
+            "Nothing needed — and avoid chasing a 'perfect' number with chemicals, since a stable pH beats a textbook one.",
+        });
+      }
     } else if (p < PH_LOW) {
       findings.push({
         parameter: "pH",
@@ -241,8 +269,39 @@ export function checkWater(
         howToFix:
           "Cool it gradually — a fan across the surface, a partial cooler-water change, or lifting the lid. Bring it down slowly; sudden swings are worse than the heat itself.",
       });
+    } else if (t < TEMP_COOL) {
+      findings.push({
+        parameter: "Temperature",
+        level: "note",
+        value: fmt(t, "°F"),
+        title: "Water is on the cool side",
+        whatsHappening:
+          "Comfortable for coldwater fish like goldfish, and the cooler end for many tropicals. Most tropical community fish are happiest a few degrees warmer.",
+        howToFix:
+          "If you keep tropicals, nudge a heater up toward 76–78°F a degree at a time. Coldwater setups are fine as-is.",
+      });
+    } else if (t > TEMP_WARM) {
+      findings.push({
+        parameter: "Temperature",
+        level: "note",
+        value: fmt(t, "°F"),
+        title: "Water is on the warm side",
+        whatsHappening:
+          "Fine for many fish but toward the warm end — warm water holds less oxygen, so keep an eye out for fish hanging near the surface.",
+        howToFix:
+          "No action needed unless fish look stressed. To cool it, do so gradually — a fan across the surface helps more than ice.",
+      });
+    } else {
+      findings.push({
+        parameter: "Temperature",
+        level: "ok",
+        value: fmt(t, "°F"),
+        title: "Temperature is in a comfortable range",
+        whatsHappening:
+          "A solid middle-of-the-road temperature for most tropical community fish.",
+        howToFix: "Nothing to do — just keep it steady.",
+      });
     }
-    // Comfortable band: no universal flag; fish-fit (below) handles specifics.
   }
 
   // KH — buffering / pH stability
