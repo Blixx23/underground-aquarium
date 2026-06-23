@@ -44,38 +44,57 @@ export default function NotificationBell({
 
   useEffect(() => {
     let active = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     async function load() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!active) return;
-        if (!user) {
-          setSignedIn(false);
-          setItems([]);
-          setCount(0);
-          return;
-        }
-        setSignedIn(true);
-        const [{ data: recent }, { count: c }] = await Promise.all([
-          supabase
-            .from("notifications")
-            .select("id, title, body, link, read, created_at")
-            .order("created_at", { ascending: false })
-            .limit(8),
-          supabase
-            .from("notifications")
-            .select("id", { count: "exact", head: true })
-            .eq("read", false),
-        ]);
-        if (!active) return;
-        setItems(recent ?? []);
-        setCount(c ?? 0);
-      } catch {
-        // Transient network/auth hiccup (e.g. a dropped fetch during a dev
-        // reload or a brief connection blip). Skip this cycle quietly and
-        // retry on the next focus/interval instead of surfacing an error.
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!active) return;
+      if (!user) {
+        setSignedIn(false);
+        setItems([]);
+        setCount(0);
+        return;
+      }
+      setSignedIn(true);
+      const [{ data: recent }, { count: c }] = await Promise.all([
+        supabase
+          .from("notifications")
+          .select("id, title, body, link, read, created_at")
+          .order("created_at", { ascending: false })
+          .limit(8),
+        supabase
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("read", false),
+      ]);
+      if (!active) return;
+      setItems(recent ?? []);
+      setCount(c ?? 0);
+
+      // Live updates: a new notification for this user appears instantly,
+      // no reload or polling wait. Set up once.
+      if (!channel) {
+        channel = supabase
+          .channel(`notifications:${user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "notifications",
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              const n = payload.new as Notification;
+              setItems((prev) =>
+                prev.some((x) => x.id === n.id) ? prev : [n, ...prev].slice(0, 8)
+              );
+              if (!n.read) setCount((c) => c + 1);
+            }
+          )
+          .subscribe();
       }
     }
 
@@ -87,6 +106,7 @@ export default function NotificationBell({
       active = false;
       window.removeEventListener("focus", onFocus);
       clearInterval(id);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [supabase]);
 
@@ -185,11 +205,6 @@ export default function NotificationBell({
                     >
                       {n.title}
                     </span>
-                    {n.body && (
-                      <span className="block text-xs text-ocean-400 mt-0.5 line-clamp-2">
-                        {n.body}
-                      </span>
-                    )}
                     <span className="block text-xs text-ocean-600 mt-0.5">
                       {timeAgo(n.created_at)}
                     </span>
