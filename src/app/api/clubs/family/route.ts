@@ -21,6 +21,42 @@ async function getMainMember(
   return me as { id: string };
 }
 
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const clubId = searchParams.get("clubId");
+    if (!clubId) {
+      return NextResponse.json({ error: "Missing club." }, { status: 400 });
+    }
+
+    const me = await getMainMember(supabase, clubId, user.id);
+    if (!me) {
+      return NextResponse.json({ members: [] });
+    }
+
+    const { data: members } = await supabaseAdmin
+      .from("club_members")
+      .select("id, display_name, email, user_id, status")
+      .eq("club_id", clubId)
+      .eq("family_primary_id", me.id)
+      .order("joined_at", { ascending: true });
+
+    return NextResponse.json({ members: members ?? [] });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Family list error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();

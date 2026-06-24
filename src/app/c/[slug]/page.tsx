@@ -18,6 +18,7 @@ import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
 import JoinClubForm from "./JoinClubForm";
 import MemberSelfEdit from "./MemberSelfEdit";
+import FamilyManager from "./FamilyManager";
 import ClubEventsPreview from "./ClubEventsPreview";
 import { type ClubEvent } from "./ClubEvents";
 
@@ -55,7 +56,7 @@ export default async function ClubHomePage({
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public, contact_name, contact_email, contact_phone, public_url"
+      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public, contact_name, contact_email, contact_phone, public_url, family_max"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -66,10 +67,14 @@ export default async function ClubHomePage({
   let paidThrough: string | null = null;
   let myName: string | null = null;
   let myEmail: string | null = null;
+  let myTier: string | null = null;
+  let myFamilyPrimaryId: string | null = null;
   if (user) {
     const { data: me } = await supabase
       .from("club_members")
-      .select("role, status, paid_through, display_name, email")
+      .select(
+        "role, status, paid_through, display_name, email, tier, family_primary_id"
+      )
       .eq("club_id", club.id)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -78,10 +83,13 @@ export default async function ClubHomePage({
     paidThrough = me?.paid_through ?? null;
     myName = me?.display_name ?? null;
     myEmail = me?.email ?? null;
+    myTier = me?.tier ?? null;
+    myFamilyPrimaryId = me?.family_primary_id ?? null;
   }
   const isApplicant = status === "pending";
   const isMember = role !== null && !isApplicant;
   const isOfficer = role === "owner" || role === "admin" || role === "officer";
+  const isFamilyMain = myTier === "family" && !myFamilyPrimaryId;
 
   const { count } = await supabase
     .from("club_members")
@@ -490,6 +498,13 @@ export default async function ClubHomePage({
               initialName={myName}
               initialEmail={myEmail}
             />
+
+            {isFamilyMain && (
+              <FamilyManager
+                clubId={club.id}
+                familyMax={club.family_max ?? 5}
+              />
+            )}
           </>
         ) : isApplicant ? (
           <div className="rounded-2xl border border-amber-700/40 bg-amber-900/10 px-6 py-8 text-center">
