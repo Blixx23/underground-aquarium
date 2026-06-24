@@ -353,10 +353,10 @@ export default async function ClubAdminPage({
             <Users className="w-5 h-5 text-ocean-300" /> Members
           </h2>
           <p className="text-ocean-400 mb-4 text-sm">
-            Add members, set their role and status, or remove them. Search by
-            name, username, email, or phone. The owner row is locked. You can
-            set a renewal date for members who paid offline — it locks once they
-            pay online.
+            Add members, set their plan, role, and status, or remove them.
+            Search by name, username, email, or phone. The owner row is locked.
+            Dues are paid online — each member&apos;s row shows whether they&apos;re
+            paid, owe, or are covered.
           </p>
           <MemberManager
             clubId={club.id}

@@ -57,9 +57,6 @@ export default function MemberManager({
   const [role, setRole] = useState("member");
   const [tier, setTier] = useState("individual");
 
-  const [renewalDraft, setRenewalDraft] = useState<Record<string, string>>(
-    Object.fromEntries(initialMembers.map((m) => [m.id, m.paid_through ?? ""]))
-  );
   const [titleDraft, setTitleDraft] = useState<Record<string, string>>(
     Object.fromEntries(initialMembers.map((m) => [m.id, m.officer_title ?? ""]))
   );
@@ -220,37 +217,6 @@ export default function MemberManager({
     }
   }
 
-  async function setRenewal(id: string) {
-    setError(null);
-    const date = renewalDraft[id] || null;
-    if (!date) {
-      setError("Pick a renewal date first.");
-      return;
-    }
-    if (
-      !confirm(
-        `Set the renewal date to ${fmtDate(date)}?\n\nThis is permanent — once set, a manual renewal date can't be changed.`
-      )
-    ) {
-      return;
-    }
-    setBusyId(id);
-    try {
-      const { error: rpcErr } = await supabase.rpc("set_member_renewal", {
-        p_member: id,
-        p_date: date,
-      });
-      if (rpcErr) throw rpcErr;
-      router.refresh();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Couldn't set the renewal date."
-      );
-    } finally {
-      setBusyId(null);
-    }
-  }
-
   async function removeMember(id: string, label: string) {
     if (!confirm(`Remove ${label} from the club?`)) return;
     setError(null);
@@ -297,8 +263,6 @@ export default function MemberManager({
     "rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-sm text-white focus:outline-none focus:border-ocean-500 capitalize";
   const inputClass =
     "w-full rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500";
-  const dateClass =
-    "rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-sm text-white focus:outline-none focus:border-ocean-500";
 
   return (
     <div>
@@ -510,53 +474,17 @@ export default function MemberManager({
                               {dues.label}
                             </span>
                           )}
-                          {m.family_primary_id ||
-                          !clubHasDues ||
-                          (m.tier === "lifetime" &&
-                            dues?.label === "Lifetime") ? null : m.paid_online ? (
-                            <span
-                              className="flex items-center gap-1 text-ocean-300 whitespace-nowrap"
-                              title="Set automatically by online dues payments"
-                            >
-                              {fmtDate(m.paid_through)}
-                              <Lock className="w-3 h-3 text-ocean-500" />
-                            </span>
-                          ) : m.paid_through ? (
-                            <span
-                              className="flex items-center gap-1 text-ocean-300 whitespace-nowrap"
-                              title="A manually set renewal date is permanent"
-                            >
-                              {fmtDate(m.paid_through)}
-                              <Lock className="w-3 h-3 text-ocean-500" />
-                            </span>
-                          ) : (
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  type="date"
-                                  value={renewalDraft[m.id] ?? ""}
-                                  disabled={busy}
-                                  onChange={(e) =>
-                                    setRenewalDraft((prev) => ({
-                                      ...prev,
-                                      [m.id]: e.target.value,
-                                    }))
-                                  }
-                                  className={dateClass}
-                                />
-                                <button
-                                  onClick={() => setRenewal(m.id)}
-                                  disabled={busy}
-                                  className="rounded-full bg-ocean-700 px-3 py-1 text-xs font-medium text-white hover:bg-ocean-600 transition-colors disabled:opacity-60"
-                                >
-                                  Set
-                                </button>
-                              </div>
-                              <p className="text-[10px] text-ocean-600 mt-1">
-                                Can&apos;t be changed once set.
-                              </p>
-                            </div>
-                          )}
+                          {!m.family_primary_id &&
+                            clubHasDues &&
+                            m.paid_through && (
+                              <span
+                                className="flex items-center gap-1 text-ocean-300 whitespace-nowrap"
+                                title="Paid through this date"
+                              >
+                                {fmtDate(m.paid_through)}
+                                <Lock className="w-3 h-3 text-ocean-500" />
+                              </span>
+                            )}
                         </div>
                       )}
                     </td>
