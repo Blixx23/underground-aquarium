@@ -172,7 +172,11 @@ export default function MemberManager({
     }
   }
 
-  async function updateField(id: string, field: "role" | "status", value: string) {
+  async function updateField(
+    id: string,
+    field: "role" | "status" | "tier",
+    value: string
+  ) {
     setError(null);
     setBusyId(id);
     try {
@@ -247,6 +251,27 @@ export default function MemberManager({
     }
   }
 
+  const todayUTC = (() => {
+    const n = new Date();
+    return Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate());
+  })();
+
+  function duesBadgeFor(m: Member): { label: string; cls: string } | null {
+    if (m.role === "owner") return null;
+    const good = "text-emerald-300 border-emerald-500/30 bg-emerald-500/10";
+    const warn = "text-amber-300 border-amber-500/30 bg-amber-500/10";
+    const muted = "text-ocean-400 border-ocean-700/50 bg-ocean-800/40";
+    if (!clubHasDues) return { label: "No dues", cls: muted };
+    if (m.family_primary_id) return { label: "Covered", cls: good };
+    if (m.tier === "lifetime") return { label: "Lifetime", cls: good };
+    const pt = m.paid_through
+      ? Date.parse(`${m.paid_through}T00:00:00Z`)
+      : null;
+    if (pt !== null && !Number.isNaN(pt) && pt >= todayUTC)
+      return { label: "Paid", cls: good };
+    return { label: "Owes", cls: warn };
+  }
+
   const fieldClass =
     "rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-sm text-white focus:outline-none focus:border-ocean-500 capitalize";
   const inputClass =
@@ -293,6 +318,7 @@ export default function MemberManager({
             <tr className="text-left text-ocean-500 border-b border-ocean-800/60">
               <th className="font-medium px-4 py-3">Member</th>
               <th className="font-medium px-4 py-3">Role</th>
+              <th className="font-medium px-4 py-3">Plan</th>
               <th className="font-medium px-4 py-3">Status</th>
               <th className="font-medium px-4 py-3">Renewal</th>
               <th className="font-medium px-4 py-3"></th>
@@ -302,7 +328,7 @@ export default function MemberManager({
             {filtered.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-10 text-center text-ocean-400"
                 >
                   {searching
@@ -320,6 +346,7 @@ export default function MemberManager({
                   ? nameById[m.family_primary_id as string] ?? "their family"
                   : null;
                 const childCount = childCountById[m.id] ?? 0;
+                const dues = duesBadgeFor(m);
                 const busy = busyId === m.id;
                 return (
                   <tr
@@ -406,6 +433,35 @@ export default function MemberManager({
                       </div>
                     </td>
                     <td className="px-4 py-3">
+                      {isOwner ? (
+                        <span className="text-ocean-400 capitalize">
+                          {m.tier}
+                        </span>
+                      ) : m.family_primary_id ? (
+                        <span
+                          className="text-ocean-500 capitalize"
+                          title="Managed by the main member"
+                        >
+                          family
+                        </span>
+                      ) : (
+                        <select
+                          value={m.tier}
+                          disabled={busy}
+                          onChange={(e) =>
+                            updateField(m.id, "tier", e.target.value)
+                          }
+                          className={fieldClass}
+                        >
+                          {TIERS.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
                       <select
                         value={m.status}
                         disabled={busy || isOwner}
@@ -424,35 +480,48 @@ export default function MemberManager({
                     <td className="px-4 py-3">
                       {isOwner ? (
                         <span className="text-ocean-600">—</span>
-                      ) : m.paid_online ? (
-                        <span
-                          className="inline-flex items-center gap-1 text-ocean-300 whitespace-nowrap"
-                          title="Set automatically by online dues payments"
-                        >
-                          {fmtDate(m.paid_through)}
-                          <Lock className="w-3 h-3 text-ocean-500" />
-                        </span>
                       ) : (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="date"
-                            value={renewalDraft[m.id] ?? ""}
-                            disabled={busy}
-                            onChange={(e) =>
-                              setRenewalDraft((prev) => ({
-                                ...prev,
-                                [m.id]: e.target.value,
-                              }))
-                            }
-                            className={dateClass}
-                          />
-                          <button
-                            onClick={() => setRenewal(m.id)}
-                            disabled={busy}
-                            className="rounded-full bg-ocean-700 px-3 py-1 text-xs font-medium text-white hover:bg-ocean-600 transition-colors disabled:opacity-60"
-                          >
-                            Set
-                          </button>
+                        <div className="space-y-1.5">
+                          {dues && (
+                            <span
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide ${dues.cls}`}
+                            >
+                              {dues.label}
+                            </span>
+                          )}
+                          {m.family_primary_id ||
+                          m.tier === "lifetime" ||
+                          !clubHasDues ? null : m.paid_online ? (
+                            <span
+                              className="flex items-center gap-1 text-ocean-300 whitespace-nowrap"
+                              title="Set automatically by online dues payments"
+                            >
+                              {fmtDate(m.paid_through)}
+                              <Lock className="w-3 h-3 text-ocean-500" />
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="date"
+                                value={renewalDraft[m.id] ?? ""}
+                                disabled={busy}
+                                onChange={(e) =>
+                                  setRenewalDraft((prev) => ({
+                                    ...prev,
+                                    [m.id]: e.target.value,
+                                  }))
+                                }
+                                className={dateClass}
+                              />
+                              <button
+                                onClick={() => setRenewal(m.id)}
+                                disabled={busy}
+                                className="rounded-full bg-ocean-700 px-3 py-1 text-xs font-medium text-white hover:bg-ocean-600 transition-colors disabled:opacity-60"
+                              >
+                                Set
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </td>
