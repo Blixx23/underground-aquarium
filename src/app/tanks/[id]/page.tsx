@@ -5,7 +5,7 @@ import { Pencil, Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
 import ReportButton from "@/components/tanks/ReportButton";
-import TankLikes from "@/components/tanks/TankLikes";
+import TankVoteControl from "@/components/tanks/TankVoteControl";
 import TankComments from "@/components/tanks/TankComments";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +21,7 @@ type Tank = {
   images: string[] | null;
   is_public: boolean;
   updated_at: string;
+  score: number | null;
 };
 
 type SpeciesRow = {
@@ -52,7 +53,7 @@ export default async function TankPage({ params }: Params) {
 
   const { data: tank, error } = await supabase
     .from("tanks")
-    .select("id,user_id,name,gallons,items,images,is_public,updated_at")
+    .select("id,user_id,name,gallons,items,images,is_public,updated_at,score")
     .eq("id", id)
     .maybeSingle();
 
@@ -73,23 +74,6 @@ export default async function TankPage({ params }: Params) {
     bySlug = new Map(
       ((speciesRows as SpeciesRow[]) ?? []).map((s) => [s.slug, s])
     );
-  }
-
-  // Likes
-  const { count: likeCountRaw } = await supabase
-    .from("tank_likes")
-    .select("*", { count: "exact", head: true })
-    .eq("tank_id", id);
-  const likeCount = likeCountRaw ?? 0;
-  let liked = false;
-  if (user) {
-    const { data: myLike } = await supabase
-      .from("tank_likes")
-      .select("tank_id")
-      .eq("tank_id", id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    liked = !!myLike;
   }
 
   // Comments
@@ -183,20 +167,22 @@ export default async function TankPage({ params }: Params) {
               ))}
             </div>
             <div className="mb-10">
-              <TankLikes
+              <TankVoteControl
                 tankId={t.id}
-                initialCount={likeCount}
-                initialLiked={liked}
+                initialScore={t.score ?? 0}
+                orientation="horizontal"
+                size="md"
               />
             </div>
           </>
         ) : (
           <div className="mb-10">
-            <TankLikes
-              tankId={t.id}
-              initialCount={likeCount}
-              initialLiked={liked}
-            />
+            <TankVoteControl
+                tankId={t.id}
+                initialScore={t.score ?? 0}
+                orientation="horizontal"
+                size="md"
+              />
           </div>
         )}
 
