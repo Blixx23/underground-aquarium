@@ -108,7 +108,9 @@ export async function GET(request: Request) {
     )
     .not("paid_through", "is", null)
     .neq("role", "owner")
-    .in("status", ["active", "lapsed"]);
+    .in("status", ["active", "lapsed"])
+    // Family members are covered by their main member — never remind them.
+    .is("family_primary_id", null);
 
   if (error) {
     console.error("dues-reminders query failed:", error.message);
