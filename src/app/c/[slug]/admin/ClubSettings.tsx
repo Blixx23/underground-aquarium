@@ -23,6 +23,7 @@ type Club = {
   dues_amount_cents: number;
   family_dues_amount_cents: number | null;
   family_max: number;
+  lifetime_dues_amount_cents: number | null;
 };
 
 export default function ClubSettings({ club }: { club: Club }) {
@@ -43,6 +44,11 @@ export default function ClubSettings({ club }: { club: Club }) {
       : ""
   );
   const [familyMax, setFamilyMax] = useState(String(club.family_max ?? 5));
+  const [lifetimeDues, setLifetimeDues] = useState(
+    club.lifetime_dues_amount_cents
+      ? (club.lifetime_dues_amount_cents / 100).toFixed(2)
+      : ""
+  );
   const [logoUrl, setLogoUrl] = useState<string | null>(club.logo_url);
 
   const [contactName, setContactName] = useState(club.contact_name ?? "");
@@ -106,6 +112,10 @@ export default function ClubSettings({ club }: { club: Club }) {
       Math.round((parseFloat(familyDues) || 0) * 100)
     );
     const familyMaxNum = Math.max(1, Math.round(parseInt(familyMax, 10) || 5));
+    const lifetimeCents = Math.max(
+      0,
+      Math.round((parseFloat(lifetimeDues) || 0) * 100)
+    );
     setSaving(true);
     try {
       const { error: updErr } = await supabase
@@ -119,6 +129,7 @@ export default function ClubSettings({ club }: { club: Club }) {
           dues_amount_cents: duesCents,
           family_dues_amount_cents: familyCents || null,
           family_max: familyMaxNum,
+          lifetime_dues_amount_cents: lifetimeCents || null,
           logo_url: logoUrl,
           contact_name: contactName.trim() || null,
           contact_email: contactEmail.trim() || null,
@@ -280,6 +291,26 @@ export default function ClubSettings({ club }: { club: Club }) {
         <p className="text-[11px] text-ocean-600 mt-1">
           Leave the rate blank to not offer family memberships.
         </p>
+      </div>
+
+      <div>
+        <label className={labelClass}>Lifetime membership (one-time)</label>
+        <p className="text-[11px] text-ocean-600 mb-2">
+          A single one-time price — lifetime members never owe dues again. Leave
+          blank to not offer it.
+        </p>
+        <div className="flex items-center gap-1 rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 focus-within:border-ocean-500 max-w-[160px]">
+          <span className="text-ocean-500">$</span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={lifetimeDues}
+            onChange={(e) => setLifetimeDues(e.target.value)}
+            placeholder="0.00"
+            className="w-full bg-transparent text-sm text-white placeholder-ocean-600 focus:outline-none"
+          />
+        </div>
       </div>
 
       {/* Organizer & verification */}

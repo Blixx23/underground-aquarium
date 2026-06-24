@@ -32,7 +32,7 @@ export default async function ClubAdminPage({
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, slug, description, city, state, logo_url, is_public, approved, contact_name, contact_email, contact_phone, public_url, meeting_info, nonprofit_info, stripe_account_id, dues_amount_cents, family_dues_amount_cents, family_max, payouts_enabled"
+      "id, name, slug, description, city, state, logo_url, is_public, approved, contact_name, contact_email, contact_phone, public_url, meeting_info, nonprofit_info, stripe_account_id, dues_amount_cents, family_dues_amount_cents, family_max, lifetime_dues_amount_cents, payouts_enabled"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -224,6 +224,7 @@ export default async function ClubAdminPage({
             dues_amount_cents: club.dues_amount_cents,
             family_dues_amount_cents: club.family_dues_amount_cents,
             family_max: club.family_max,
+            lifetime_dues_amount_cents: club.lifetime_dues_amount_cents,
           }}
         />
       ),
