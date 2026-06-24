@@ -40,63 +40,112 @@ export default function NotificationBell({
   const [count, setCount] = useState(0);
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
-  const [popKey, setPopKey] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<AudioContext | null>(null);
+
+  // Browsers block audio until the user interacts with the page, so we create
+  // the audio context on the first click/keypress and reuse it after that.
+  useEffect(() => {
+    function init() {
+      if (audioRef.current) return;
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (!Ctx) return;
+      audioRef.current = new Ctx();
+      audioRef.current.resume?.();
+      window.removeEventListener("pointerdown", init);
+      window.removeEventListener("keydown", init);
+    }
+    window.addEventListener("pointerdown", init);
+    window.addEventListener("keydown", init);
+    return () => {
+      window.removeEventListener("pointerdown", init);
+      window.removeEventListener("keydown", init);
+    };
+  }, []);
+
+  // A soft, quick water "bloop": a sine tone that drops in pitch and fades fast.
+  function playBloop() {
+    const ctx = audioRef.current;
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(330, now + 0.12);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.24);
+  }
 
   useEffect(() => {
     let active = true;
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!active) return;
-      if (!user) {
-        setSignedIn(false);
-        setItems([]);
-        setCount(0);
-        return;
-      }
-      setSignedIn(true);
-      const [{ data: recent }, { count: c }] = await Promise.all([
-        supabase
-          .from("notifications")
-          .select("id, title, body, link, read, created_at")
-          .order("created_at", { ascending: false })
-          .limit(8),
-        supabase
-          .from("notifications")
-          .select("id", { count: "exact", head: true })
-          .eq("read", false),
-      ]);
-      if (!active) return;
-      setItems(recent ?? []);
-      setCount(c ?? 0);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!active) return;
+        if (!user) {
+          setSignedIn(false);
+          setItems([]);
+          setCount(0);
+          return;
+        }
+        setSignedIn(true);
+        const [{ data: recent }, { count: c }] = await Promise.all([
+          supabase
+            .from("notifications")
+            .select("id, title, body, link, read, created_at")
+            .order("created_at", { ascending: false })
+            .limit(8),
+          supabase
+            .from("notifications")
+            .select("id", { count: "exact", head: true })
+            .eq("read", false),
+        ]);
+        if (!active) return;
+        setItems(recent ?? []);
+        setCount(c ?? 0);
 
-      // Live updates: a new notification for this user appears instantly,
-      // no reload or polling wait. Set up once.
-      if (!channel) {
-        channel = supabase
-          .channel(`notifications:${user.id}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "notifications",
-              filter: `user_id=eq.${user.id}`,
-            },
-            (payload) => {
-              const n = payload.new as Notification;
-              setItems((prev) =>
-                prev.some((x) => x.id === n.id) ? prev : [n, ...prev].slice(0, 8)
-              );
-              if (!n.read) setCount((c) => c + 1);
-              setPopKey((k) => k + 1);
-            }
-          )
-          .subscribe();
+        // Live updates: a new notification for this user appears instantly,
+        // with a soft sound. Set up once.
+        if (!channel) {
+          channel = supabase
+            .channel(`notifications:${user.id}`)
+            .on(
+              "postgres_changes",
+              {
+                event: "INSERT",
+                schema: "public",
+                table: "notifications",
+                filter: `user_id=eq.${user.id}`,
+              },
+              (payload) => {
+                const n = payload.new as Notification;
+                setItems((prev) =>
+                  prev.some((x) => x.id === n.id)
+                    ? prev
+                    : [n, ...prev].slice(0, 8)
+                );
+                if (!n.read) setCount((c) => c + 1);
+                playBloop();
+              }
+            )
+            .subscribe();
+        }
+      } catch {
+        // Transient network/auth hiccup (e.g. a dropped fetch during a dev
+        // reload or a brief connection blip). Skip this cycle quietly and
+        // retry on the next focus/interval instead of surfacing an error.
       }
     }
 
@@ -135,55 +184,6 @@ export default function NotificationBell({
     if (n.link) router.push(n.link);
   }
 
-  const popKeyframes = (
-    <style>{`
-      @keyframes uaqBellPop { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }
-      @keyframes uaqBubbleRise {
-        0% { transform: translateY(0) scale(0.4); opacity: 0; }
-        25% { opacity: 0.95; }
-        70% { transform: translateY(-13px) scale(1); opacity: 0.9; }
-        100% { transform: translateY(-19px) scale(1.35); opacity: 0; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        @keyframes uaqBellPop { 0%, 100% { transform: none; } }
-        @keyframes uaqBubbleRise { 0%, 100% { opacity: 0; } }
-      }
-    `}</style>
-  );
-
-  function renderPop() {
-    if (popKey <= 0) return null;
-    return (
-      <span key={popKey} aria-hidden className="pointer-events-none absolute inset-0">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              left: `${9 + i * 7}px`,
-              bottom: "7px",
-              width: `${6 - i}px`,
-              height: `${6 - i}px`,
-              background: "radial-gradient(circle at 30% 30%, #ffffff, #7dd3fc)",
-              boxShadow: "0 0 5px rgba(125, 211, 252, 0.9)",
-              animation: `uaqBubbleRise 0.7s ease-out ${i * 0.08}s both`,
-            }}
-          />
-        ))}
-      </span>
-    );
-  }
-
-  const bellIcon = (
-    <span
-      key={popKey}
-      className="inline-block"
-      style={popKey > 0 ? { animation: "uaqBellPop 0.45s ease" } : undefined}
-    >
-      <Bell className="w-5 h-5" />
-    </span>
-  );
-
   if (!signedIn) return null;
 
   // Mobile / compact: a tappable bell that jumps to the full notifications page.
@@ -195,9 +195,7 @@ export default function NotificationBell({
         aria-label="Notifications"
         className="relative p-2 text-ocean-300 hover:text-white transition-colors"
       >
-        {popKeyframes}
-        {bellIcon}
-        {renderPop()}
+        <Bell className="w-5 h-5" />
         {count > 0 && (
           <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[11px] font-medium flex items-center justify-center">
             {count > 9 ? "9+" : count}
@@ -214,9 +212,7 @@ export default function NotificationBell({
         className="relative p-2 text-ocean-300 hover:text-white transition-colors"
         aria-label="Notifications"
       >
-        {popKeyframes}
-        {bellIcon}
-        {renderPop()}
+        <Bell className="w-5 h-5" />
         {count > 0 && (
           <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[11px] font-medium flex items-center justify-center">
             {count > 9 ? "9+" : count}
@@ -260,6 +256,11 @@ export default function NotificationBell({
                     >
                       {n.title}
                     </span>
+                    {n.body && (
+                      <span className="block text-xs text-ocean-400 mt-0.5 line-clamp-2">
+                        {n.body}
+                      </span>
+                    )}
                     <span className="block text-xs text-ocean-600 mt-0.5">
                       {timeAgo(n.created_at)}
                     </span>
