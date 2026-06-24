@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const { data: club } = await supabase
       .from("clubs")
       .select(
-        "id, slug, name, dues_amount_cents, stripe_account_id, payouts_enabled"
+        "id, slug, name, dues_amount_cents, family_dues_amount_cents, stripe_account_id, payouts_enabled"
       )
       .eq("id", clubId)
       .maybeSingle();
@@ -41,12 +41,28 @@ export async function POST(request: Request) {
     // The member's row, so the webhook can advance the right person.
     const { data: me } = await supabase
       .from("club_members")
-      .select("id")
+      .select("id, tier, family_primary_id")
       .eq("club_id", clubId)
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const amount = club.dues_amount_cents;
+    // Family members are covered by the main member's payment — they don't pay.
+    if (me?.family_primary_id) {
+      return NextResponse.json(
+        { error: "Your dues are covered by your family membership." },
+        { status: 400 }
+      );
+    }
+
+    // Family-tier (main) members pay the club's family rate when one is set;
+    // everyone else pays the standard dues.
+    const isFamily =
+      me?.tier === "family" &&
+      !!club.family_dues_amount_cents &&
+      club.family_dues_amount_cents > 0;
+    const amount = isFamily
+      ? (club.family_dues_amount_cents as number)
+      : club.dues_amount_cents;
     const fee = Math.round(amount * PLATFORM_FEE_PERCENT);
     const origin = request.headers.get("origin") ?? new URL(request.url).origin;
 
@@ -58,7 +74,11 @@ export async function POST(request: Request) {
           price_data: {
             currency: "usd",
             unit_amount: amount,
-            product_data: { name: `${club.name} — membership dues` },
+            product_data: {
+            name: isFamily
+              ? `${club.name} — family membership dues`
+              : `${club.name} — membership dues`,
+          },
           },
         },
       ],

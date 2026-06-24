@@ -21,6 +21,8 @@ type Club = {
   meeting_info: string | null;
   nonprofit_info: string | null;
   dues_amount_cents: number;
+  family_dues_amount_cents: number | null;
+  family_max: number;
 };
 
 export default function ClubSettings({ club }: { club: Club }) {
@@ -35,6 +37,12 @@ export default function ClubSettings({ club }: { club: Club }) {
   const [dues, setDues] = useState(
     club.dues_amount_cents ? (club.dues_amount_cents / 100).toFixed(2) : ""
   );
+  const [familyDues, setFamilyDues] = useState(
+    club.family_dues_amount_cents
+      ? (club.family_dues_amount_cents / 100).toFixed(2)
+      : ""
+  );
+  const [familyMax, setFamilyMax] = useState(String(club.family_max ?? 5));
   const [logoUrl, setLogoUrl] = useState<string | null>(club.logo_url);
 
   const [contactName, setContactName] = useState(club.contact_name ?? "");
@@ -93,6 +101,11 @@ export default function ClubSettings({ club }: { club: Club }) {
       }
     }
     const duesCents = Math.max(0, Math.round((parseFloat(dues) || 0) * 100));
+    const familyCents = Math.max(
+      0,
+      Math.round((parseFloat(familyDues) || 0) * 100)
+    );
+    const familyMaxNum = Math.max(1, Math.round(parseInt(familyMax, 10) || 5));
     setSaving(true);
     try {
       const { error: updErr } = await supabase
@@ -104,6 +117,8 @@ export default function ClubSettings({ club }: { club: Club }) {
           state: state.trim() || null,
           is_public: isPublic,
           dues_amount_cents: duesCents,
+          family_dues_amount_cents: familyCents || null,
+          family_max: familyMaxNum,
           logo_url: logoUrl,
           contact_name: contactName.trim() || null,
           contact_email: contactEmail.trim() || null,
@@ -220,6 +235,50 @@ export default function ClubSettings({ club }: { club: Club }) {
         <p className="text-[11px] text-ocean-600 mt-1">
           Leave blank or 0 for a free club. Changing this affects new dues
           payments only.
+        </p>
+      </div>
+
+      <div>
+        <label className={labelClass}>Family membership</label>
+        <p className="text-[11px] text-ocean-600 mb-2">
+          Offer a single rate that covers a whole household. The main member pays
+          this; family members they add don&apos;t pay dues.
+        </p>
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <span className="block text-[11px] text-ocean-500 mb-1">
+              Family rate (USD)
+            </span>
+            <div className="flex items-center gap-1 rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 focus-within:border-ocean-500 max-w-[160px]">
+              <span className="text-ocean-500">$</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={familyDues}
+                onChange={(e) => setFamilyDues(e.target.value)}
+                placeholder="0.00"
+                className="w-full bg-transparent text-sm text-white placeholder-ocean-600 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <span className="block text-[11px] text-ocean-500 mb-1">
+              Max family members
+            </span>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={familyMax}
+              onChange={(e) => setFamilyMax(e.target.value)}
+              placeholder="5"
+              className="w-24 rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500"
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-ocean-600 mt-1">
+          Leave the rate blank to not offer family memberships.
         </p>
       </div>
 
