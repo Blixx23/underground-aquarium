@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Trash2, Crown, Loader2, Lock, Search } from "lucide-react";
+import {
+  UserPlus,
+  Trash2,
+  Crown,
+  Loader2,
+  Lock,
+  Search,
+  Pencil,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Member = {
@@ -53,6 +61,12 @@ export default function MemberManager({
   const [renewalDraft, setRenewalDraft] = useState<Record<string, string>>(
     Object.fromEntries(initialMembers.map((m) => [m.id, m.paid_through ?? ""]))
   );
+  const [renewalEditing, setRenewalEditing] = useState<Set<string>>(new Set());
+
+  function startEditRenewal(id: string, current: string | null) {
+    setRenewalDraft((prev) => ({ ...prev, [id]: current ?? "" }));
+    setRenewalEditing((prev) => new Set(prev).add(id));
+  }
   const [titleDraft, setTitleDraft] = useState<Record<string, string>>(
     Object.fromEntries(initialMembers.map((m) => [m.id, m.officer_title ?? ""]))
   );
@@ -223,6 +237,11 @@ export default function MemberManager({
         p_date: date,
       });
       if (rpcErr) throw rpcErr;
+      setRenewalEditing((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       router.refresh();
     } catch (err) {
       setError(
@@ -499,6 +518,21 @@ export default function MemberManager({
                               {fmtDate(m.paid_through)}
                               <Lock className="w-3 h-3 text-ocean-500" />
                             </span>
+                          ) : m.paid_through && !renewalEditing.has(m.id) ? (
+                            <span className="flex items-center gap-1.5 text-ocean-300 whitespace-nowrap">
+                              {fmtDate(m.paid_through)}
+                              <Lock className="w-3 h-3 text-ocean-500" />
+                              <button
+                                onClick={() =>
+                                  startEditRenewal(m.id, m.paid_through)
+                                }
+                                disabled={busy}
+                                className="text-ocean-500 hover:text-ocean-200 transition-colors disabled:opacity-50"
+                                title="Edit renewal date"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            </span>
                           ) : (
                             <div className="flex items-center gap-1.5">
                               <input
@@ -607,9 +641,9 @@ export default function MemberManager({
         {clubHasDues && (
           <p className="text-xs text-ocean-600 mt-1">
             New members start as a{" "}
-            <span className="text-ocean-400">prospect</span> and aren&apos;t
-            counted until dues are paid — online, or by setting a renewal date
-            above.
+            <span className="text-ocean-400">prospect</span>{" "}
+            and aren&apos;t counted until dues are paid — online, or by setting a
+            renewal date above.
           </p>
         )}
       </div>
