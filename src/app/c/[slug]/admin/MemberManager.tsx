@@ -282,12 +282,15 @@ export default function MemberManager({
     const muted = "text-ocean-400 border-ocean-700/50 bg-ocean-800/40";
     if (!clubHasDues) return { label: "No dues", cls: muted };
     if (m.family_primary_id) return { label: "Covered", cls: good };
-    if (m.tier === "lifetime") return { label: "Lifetime", cls: good };
     const pt = m.paid_through
       ? Date.parse(`${m.paid_through}T00:00:00Z`)
       : null;
-    if (pt !== null && !Number.isNaN(pt) && pt >= todayUTC)
-      return { label: "Paid", cls: good };
+    const isPaid = pt !== null && !Number.isNaN(pt) && pt >= todayUTC;
+    if (m.tier === "lifetime")
+      return isPaid
+        ? { label: "Lifetime", cls: good }
+        : { label: "Owes", cls: warn };
+    if (isPaid) return { label: "Paid", cls: good };
     return { label: "Owes", cls: warn };
   }
 
@@ -509,8 +512,9 @@ export default function MemberManager({
                             </span>
                           )}
                           {m.family_primary_id ||
-                          m.tier === "lifetime" ||
-                          !clubHasDues ? null : m.paid_online ? (
+                          !clubHasDues ||
+                          (m.tier === "lifetime" &&
+                            dues?.label === "Lifetime") ? null : m.paid_online ? (
                             <span
                               className="flex items-center gap-1 text-ocean-300 whitespace-nowrap"
                               title="Set automatically by online dues payments"

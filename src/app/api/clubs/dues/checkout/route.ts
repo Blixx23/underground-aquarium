@@ -21,14 +21,18 @@ export async function POST(request: Request) {
     const { data: club } = await supabase
       .from("clubs")
       .select(
-        "id, slug, name, dues_amount_cents, family_dues_amount_cents, stripe_account_id, payouts_enabled"
+        "id, slug, name, dues_amount_cents, family_dues_amount_cents, lifetime_dues_amount_cents, stripe_account_id, payouts_enabled"
       )
       .eq("id", clubId)
       .maybeSingle();
     if (!club) {
       return NextResponse.json({ error: "Club not found." }, { status: 404 });
     }
-    if (!club.dues_amount_cents || club.dues_amount_cents <= 0) {
+    const hasAnyDues =
+      (club.dues_amount_cents ?? 0) > 0 ||
+      (club.family_dues_amount_cents ?? 0) > 0 ||
+      (club.lifetime_dues_amount_cents ?? 0) > 0;
+    if (!hasAnyDues) {
       return NextResponse.json({ error: "This club has no dues." }, { status: 400 });
     }
     if (!club.stripe_account_id || !club.payouts_enabled) {
@@ -54,15 +58,42 @@ export async function POST(request: Request) {
       );
     }
 
-    // Family-tier (main) members pay the club's family rate when one is set;
-    // everyone else pays the standard dues.
+    // Charge the right amount for the member's plan.
+    //  - lifetime: a one-time payment that covers ~100 years (effectively forever)
+    //  - family (main member): the club's family rate
+    //  - everyone else: the standard dues
+    const isLifetime = me?.tier === "lifetime";
     const isFamily =
       me?.tier === "family" &&
-      !!club.family_dues_amount_cents &&
-      club.family_dues_amount_cents > 0;
-    const amount = isFamily
-      ? (club.family_dues_amount_cents as number)
-      : club.dues_amount_cents;
+      !me?.family_primary_id &&
+      (club.family_dues_amount_cents ?? 0) > 0;
+
+    let amount: number;
+    let coversMonths = "12";
+    let productLabel = "membership dues";
+    if (isLifetime) {
+      if ((club.lifetime_dues_amount_cents ?? 0) <= 0) {
+        return NextResponse.json(
+          { error: "This club hasn't set a lifetime membership rate yet." },
+          { status: 400 }
+        );
+      }
+      amount = club.lifetime_dues_amount_cents as number;
+      coversMonths = "1200"; // ~100 years
+      productLabel = "lifetime membership";
+    } else if (isFamily) {
+      amount = club.family_dues_amount_cents as number;
+      productLabel = "family membership dues";
+    } else {
+      amount = club.dues_amount_cents;
+    }
+
+    if (!amount || amount <= 0) {
+      return NextResponse.json(
+        { error: "This club has no dues for your membership type." },
+        { status: 400 }
+      );
+    }
     const fee = Math.round(amount * PLATFORM_FEE_PERCENT);
     const origin = request.headers.get("origin") ?? new URL(request.url).origin;
 
@@ -75,9 +106,7 @@ export async function POST(request: Request) {
             currency: "usd",
             unit_amount: amount,
             product_data: {
-            name: isFamily
-              ? `${club.name} — family membership dues`
-              : `${club.name} — membership dues`,
+            name: `${club.name} — ${productLabel}`,
           },
           },
         },
@@ -92,7 +121,7 @@ export async function POST(request: Request) {
         clubId: club.id,
         userId: user.id,
         memberId: me?.id ?? "",
-        coversMonths: "12",
+        coversMonths,
       },
       success_url: `${origin}/c/${club.slug}?dues=success`,
       cancel_url: `${origin}/c/${club.slug}?dues=cancel`,
