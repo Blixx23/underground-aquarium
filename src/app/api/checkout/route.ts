@@ -78,12 +78,22 @@ export async function POST(request: Request) {
     if (orderError) throw new Error(orderError.message);
 
     // Show the item and (if any) shipping as separate lines at checkout.
-    const lineItems = [
+    // tax_behavior "exclusive" = sales tax is added on top (US norm).
+    const lineItems: Array<{
+      quantity: number;
+      price_data: {
+        currency: string;
+        unit_amount: number;
+        tax_behavior: "exclusive";
+        product_data: { name: string };
+      };
+    }> = [
       {
         quantity: 1,
         price_data: {
           currency: "usd",
           unit_amount: itemCents,
+          tax_behavior: "exclusive",
           product_data: { name: product.name },
         },
       },
@@ -94,6 +104,7 @@ export async function POST(request: Request) {
         price_data: {
           currency: "usd",
           unit_amount: shippingCents,
+          tax_behavior: "exclusive",
           product_data: { name: "Shipping" },
         },
       });
@@ -106,6 +117,10 @@ export async function POST(request: Request) {
         allowed_countries: ["US"],
       },
       line_items: lineItems,
+      // Stripe Tax calculates sales tax on YOUR CA registration. Because the
+      // charge lands in the platform balance (hold-and-release), the collected
+      // tax stays here for you to remit — it is not routed to the seller.
+      automatic_tax: { enabled: true },
       payment_intent_data: {
         // Hold-and-release: this charge lands in YOUR platform balance.
         // No transfer happens now — the seller is paid later, after the
