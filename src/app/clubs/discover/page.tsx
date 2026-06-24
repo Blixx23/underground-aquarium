@@ -1,14 +1,17 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { supabasePublic } from "@/lib/supabase/public";
 import ClubsDiscover from "./ClubsDiscover";
+
+// Public directory — cache it so traffic doesn't hit the DB per visit.
+// New approved clubs appear within this window.
+export const revalidate = 300;
 
 export const metadata = {
   title: "Discover clubs — Underground Aquarium",
 };
 
 export default async function DiscoverClubsPage() {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const { data } = await supabasePublic
     .from("public_club_directory")
     .select(
       "id, slug, name, logo_url, city, state, dues_amount_cents, lat, lng, member_count"
