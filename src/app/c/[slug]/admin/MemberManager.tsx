@@ -231,7 +231,6 @@ export default function MemberManager({
 
       {/* Roster */}
       <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 overflow-x-auto mb-8">
-        <table className="w-full text-sm">
           <datalist id="officer-titles">
             <option value="President" />
             <option value="Vice President" />
@@ -240,6 +239,7 @@ export default function MemberManager({
             <option value="Events Coordinator" />
             <option value="Membership Chair" />
           </datalist>
+        <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ocean-500 border-b border-ocean-800/60">
               <th className="font-medium px-4 py-3">Member</th>
@@ -296,40 +296,42 @@ export default function MemberManager({
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {isOwner ? (
-                        <span className="text-ocean-400 capitalize">owner</span>
-                      ) : (
-                        <select
-                          value={m.role}
-                          disabled={busy}
-                          onChange={(e) =>
-                            updateField(m.id, "role", e.target.value)
-                          }
-                          className={fieldClass}
-                        >
-                          {ROLES.map((r) => (
-                            <option key={r} value={r}>
-                              {r}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      {m.role !== "member" && (
-                        <input
-                          list="officer-titles"
-                          value={titleDraft[m.id] ?? ""}
-                          disabled={busy}
-                          placeholder="Title (e.g. President)"
-                          onChange={(e) =>
-                            setTitleDraft((prev) => ({
-                              ...prev,
-                              [m.id]: e.target.value,
-                            }))
-                          }
-                          onBlur={() => updateTitle(m.id)}
-                          className="mt-1.5 w-36 rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-xs text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500"
-                        />
-                      )}
+                      <div className="flex flex-col items-start gap-1.5">
+                        {isOwner ? (
+                          <span className="text-ocean-400 capitalize">owner</span>
+                        ) : (
+                          <select
+                            value={m.role}
+                            disabled={busy}
+                            onChange={(e) =>
+                              updateField(m.id, "role", e.target.value)
+                            }
+                            className={fieldClass}
+                          >
+                            {ROLES.map((r) => (
+                              <option key={r} value={r}>
+                                {r}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        {m.role !== "member" && (
+                          <input
+                            list="officer-titles"
+                            value={titleDraft[m.id] ?? ""}
+                            disabled={busy}
+                            placeholder="Title (e.g. President)"
+                            onChange={(e) =>
+                              setTitleDraft((prev) => ({
+                                ...prev,
+                                [m.id]: e.target.value,
+                              }))
+                            }
+                            onBlur={() => updateTitle(m.id)}
+                            className="w-36 rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-xs text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500"
+                          />
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <select
