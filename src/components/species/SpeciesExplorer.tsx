@@ -53,6 +53,63 @@ function suitabilityStyle(s: string | null) {
   return "";
 }
 
+// Bounded Levenshtein edit distance (early-rejects on large length gaps).
+function editDistance(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (Math.abs(m - n) > 4) return 99;
+  const dp: number[] = [];
+  for (let j = 0; j <= n; j++) dp[j] = j;
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0];
+    dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const tmp = dp[j];
+      dp[j] = Math.min(
+        dp[j] + 1,
+        dp[j - 1] + 1,
+        prev + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+      prev = tmp;
+    }
+  }
+  return dp[n];
+}
+
+// How many typos we tolerate, scaled by word length (short = strict).
+function allowedFor(len: number): number {
+  if (len <= 3) return 0;
+  if (len <= 5) return 1;
+  if (len <= 8) return 2;
+  return 3;
+}
+
+// Every query word must fuzzily match some word in the species' name fields.
+function fuzzyMatch(qWords: string[], words: string[]): boolean {
+  for (const qw of qWords) {
+    const allowed = allowedFor(qw.length);
+    if (allowed === 0) return false; // too short to fuzzy-match safely
+    let ok = false;
+    for (const w of words) {
+      if (w.includes(qw)) {
+        ok = true;
+        break;
+      }
+      if (editDistance(qw, w) <= allowed) {
+        ok = true;
+        break;
+      }
+      // Match against the head of a longer word: "corydorus" vs "corydoras".
+      if (w.length > qw.length && editDistance(qw, w.slice(0, qw.length)) <= allowed) {
+        ok = true;
+        break;
+      }
+    }
+    if (!ok) return false;
+  }
+  return true;
+}
+
 export default function SpeciesExplorer({ species }: { species: Species[] }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string>("All");
@@ -67,12 +124,18 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
     return [...ordered, ...extras];
   }, [species]);
 
-  const filtered = useMemo(() => {
+  const result = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return species.filter((s) => {
+    const qWords = q.split(/\s+/).filter(Boolean);
+    const list: Species[] = [];
+    let exactCount = 0;
+    for (const s of species) {
       const matchesGroup = group === "All" || s.group_name === group;
-      if (!matchesGroup) return false;
-      if (q === "") return true;
+      if (!matchesGroup) continue;
+      if (q === "") {
+        list.push(s);
+        continue;
+      }
       const haystack = [
         s.common_name,
         s.scientific_name ?? "",
@@ -82,9 +145,22 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
       ]
         .join(" ")
         .toLowerCase();
-      return haystack.includes(q);
-    });
+      // Exact substring match — instant, ranked first.
+      if (haystack.includes(q)) {
+        list.push(s);
+        exactCount++;
+        continue;
+      }
+      // Typo-tolerant fallback against the individual name words.
+      const words = haystack.split(/[^a-z0-9]+/i).filter(Boolean);
+      if (fuzzyMatch(qWords, words)) list.push(s);
+    }
+    return { list, exactCount, hasQuery: q !== "" };
   }, [species, query, group]);
+
+  const filtered = result.list;
+  const onlyFuzzy =
+    result.hasQuery && result.exactCount === 0 && filtered.length > 0;
 
   const grouped = useMemo(() => {
     const map = new Map<string, Species[]>();
@@ -204,6 +280,13 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
             ? `${species.length} species`
             : `${filtered.length} of ${species.length} species`}
         </p>
+
+        {onlyFuzzy && (
+          <p className="text-amber-300/80 text-sm mb-6 -mt-3">
+            No exact match for &ldquo;{query.trim()}&rdquo; — showing closest
+            results.
+          </p>
+        )}
 
         {/* Results */}
         {filtered.length === 0 ? (
