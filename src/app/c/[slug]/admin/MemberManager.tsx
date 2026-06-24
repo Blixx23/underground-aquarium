@@ -9,7 +9,6 @@ import {
   Loader2,
   Lock,
   Search,
-  Pencil,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -61,12 +60,6 @@ export default function MemberManager({
   const [renewalDraft, setRenewalDraft] = useState<Record<string, string>>(
     Object.fromEntries(initialMembers.map((m) => [m.id, m.paid_through ?? ""]))
   );
-  const [renewalEditing, setRenewalEditing] = useState<Set<string>>(new Set());
-
-  function startEditRenewal(id: string, current: string | null) {
-    setRenewalDraft((prev) => ({ ...prev, [id]: current ?? "" }));
-    setRenewalEditing((prev) => new Set(prev).add(id));
-  }
   const [titleDraft, setTitleDraft] = useState<Record<string, string>>(
     Object.fromEntries(initialMembers.map((m) => [m.id, m.officer_title ?? ""]))
   );
@@ -229,19 +222,25 @@ export default function MemberManager({
 
   async function setRenewal(id: string) {
     setError(null);
+    const date = renewalDraft[id] || null;
+    if (!date) {
+      setError("Pick a renewal date first.");
+      return;
+    }
+    if (
+      !confirm(
+        `Set the renewal date to ${fmtDate(date)}?\n\nThis is permanent — once set, a manual renewal date can't be changed.`
+      )
+    ) {
+      return;
+    }
     setBusyId(id);
     try {
-      const date = renewalDraft[id] || null;
       const { error: rpcErr } = await supabase.rpc("set_member_renewal", {
         p_member: id,
         p_date: date,
       });
       if (rpcErr) throw rpcErr;
-      setRenewalEditing((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
       router.refresh();
     } catch (err) {
       setError(
@@ -522,42 +521,40 @@ export default function MemberManager({
                               {fmtDate(m.paid_through)}
                               <Lock className="w-3 h-3 text-ocean-500" />
                             </span>
-                          ) : m.paid_through && !renewalEditing.has(m.id) ? (
-                            <span className="flex items-center gap-1.5 text-ocean-300 whitespace-nowrap">
+                          ) : m.paid_through ? (
+                            <span
+                              className="flex items-center gap-1 text-ocean-300 whitespace-nowrap"
+                              title="A manually set renewal date is permanent"
+                            >
                               {fmtDate(m.paid_through)}
                               <Lock className="w-3 h-3 text-ocean-500" />
-                              <button
-                                onClick={() =>
-                                  startEditRenewal(m.id, m.paid_through)
-                                }
-                                disabled={busy}
-                                className="text-ocean-500 hover:text-ocean-200 transition-colors disabled:opacity-50"
-                                title="Edit renewal date"
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
                             </span>
                           ) : (
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="date"
-                                value={renewalDraft[m.id] ?? ""}
-                                disabled={busy}
-                                onChange={(e) =>
-                                  setRenewalDraft((prev) => ({
-                                    ...prev,
-                                    [m.id]: e.target.value,
-                                  }))
-                                }
-                                className={dateClass}
-                              />
-                              <button
-                                onClick={() => setRenewal(m.id)}
-                                disabled={busy}
-                                className="rounded-full bg-ocean-700 px-3 py-1 text-xs font-medium text-white hover:bg-ocean-600 transition-colors disabled:opacity-60"
-                              >
-                                Set
-                              </button>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="date"
+                                  value={renewalDraft[m.id] ?? ""}
+                                  disabled={busy}
+                                  onChange={(e) =>
+                                    setRenewalDraft((prev) => ({
+                                      ...prev,
+                                      [m.id]: e.target.value,
+                                    }))
+                                  }
+                                  className={dateClass}
+                                />
+                                <button
+                                  onClick={() => setRenewal(m.id)}
+                                  disabled={busy}
+                                  className="rounded-full bg-ocean-700 px-3 py-1 text-xs font-medium text-white hover:bg-ocean-600 transition-colors disabled:opacity-60"
+                                >
+                                  Set
+                                </button>
+                              </div>
+                              <p className="text-[10px] text-ocean-600 mt-1">
+                                Can&apos;t be changed once set.
+                              </p>
                             </div>
                           )}
                         </div>
