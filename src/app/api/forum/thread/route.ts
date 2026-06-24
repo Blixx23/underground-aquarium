@@ -17,7 +17,12 @@ function slugify(s: string): string {
 }
 
 export async function POST(req: Request) {
-  let payload: { category?: string; title?: string; body?: string };
+  let payload: {
+    category?: string;
+    title?: string;
+    body?: string;
+    images?: unknown;
+  };
   try {
     payload = await req.json();
   } catch {
@@ -34,12 +39,24 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  if (!text) {
-    return NextResponse.json({ error: "The post body is empty." }, { status: 400 });
+  const imagesRaw = Array.isArray(payload.images) ? payload.images : [];
+  if (!text && imagesRaw.length === 0) {
+    return NextResponse.json(
+      { error: "Add some text or a photo." },
+      { status: 400 }
+    );
   }
   if (title.length > 160) {
     return NextResponse.json({ error: "Title is too long." }, { status: 400 });
   }
+
+  // Only accept real, public URLs from our own forum-images bucket, capped at 4.
+  const bucketPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/forum-images/`;
+  const images = Array.isArray(payload.images)
+    ? (payload.images as unknown[])
+        .filter((u): u is string => typeof u === "string" && u.startsWith(bucketPrefix))
+        .slice(0, 4)
+    : [];
 
   const supabase = await createClient();
   const {
@@ -69,6 +86,7 @@ export async function POST(req: Request) {
       author_id: user.id,
       slug,
       title,
+      images,
       is_seeded: false,
     })
     .select("id")
@@ -83,7 +101,7 @@ export async function POST(req: Request) {
   const { error: postErr } = await supabase.from("forum_posts").insert({
     thread_id: thread.id,
     author_id: user.id,
-    body: text.slice(0, 20000),
+    body: text.slice(0, 20000) || "",
     is_op: true,
     parent_id: null,
   });
