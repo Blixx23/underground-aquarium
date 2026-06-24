@@ -5,17 +5,36 @@ import { useRouter } from "next/navigation";
 import { UserPlus, Loader2, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const TIERS = ["individual", "family", "lifetime"];
 const LEVELS = ["beginner", "intermediate", "advanced"];
+
+const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
 export default function JoinClubForm({
   clubId,
   defaultName = "",
+  dues = 0,
+  familyDues = null,
+  lifetimeDues = null,
 }: {
   clubId: string;
   clubName?: string;
   defaultName?: string;
+  dues?: number;
+  familyDues?: number | null;
+  lifetimeDues?: number | null;
 }) {
+  const tierOptions = [
+    {
+      value: "individual",
+      label: dues > 0 ? `Individual — ${money(dues)}/yr` : "Individual",
+    },
+    ...(familyDues && familyDues > 0
+      ? [{ value: "family", label: `Family — ${money(familyDues)}/yr` }]
+      : []),
+    ...(lifetimeDues && lifetimeDues > 0
+      ? [{ value: "lifetime", label: `Lifetime — ${money(lifetimeDues)} once` }]
+      : []),
+  ];
   const [supabase] = useState(() => createClient());
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -102,11 +121,11 @@ export default function JoinClubForm({
           <select
             value={tier}
             onChange={(e) => setTier(e.target.value)}
-            className={`${inputClass} capitalize`}
+            className={inputClass}
           >
-            {TIERS.map((t) => (
-              <option key={t} value={t}>
-                {t}
+            {tierOptions.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
               </option>
             ))}
           </select>

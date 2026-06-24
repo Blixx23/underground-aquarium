@@ -56,7 +56,7 @@ export default async function ClubHomePage({
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public, contact_name, contact_email, contact_phone, public_url, family_max"
+      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public, contact_name, contact_email, contact_phone, public_url, family_max, family_dues_amount_cents, lifetime_dues_amount_cents"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -152,12 +152,34 @@ export default async function ClubHomePage({
     ? new Date(paidThrough + "T00:00:00")
     : null;
   const isPaidCurrent = paidThroughDate ? paidThroughDate >= today : false;
+
+  // What this member pays depends on their plan.
+  const isLifetimeViewer = myTier === "lifetime";
+  const myDuesCents = isLifetimeViewer
+    ? club.lifetime_dues_amount_cents ?? 0
+    : isFamilyMain
+    ? club.family_dues_amount_cents ?? club.dues_amount_cents
+    : club.dues_amount_cents;
+
   const duesDue =
     isMember &&
     role !== "owner" &&
-    club.dues_amount_cents > 0 &&
+    !myFamilyPrimaryId && // family members are covered by their main member
     canCollect &&
+    myDuesCents > 0 &&
     !isPaidCurrent;
+
+  const payHeading = isLifetimeViewer ? "Lifetime membership" : "Membership dues";
+  const payDesc = isLifetimeViewer
+    ? `Pay ${money(myDuesCents)} once — lifetime membership, no renewals.`
+    : `Pay ${money(myDuesCents)} to ${
+        paidThrough ? "renew your membership" : "activate your membership"
+      }.`;
+  const payLabel = isLifetimeViewer
+    ? `Pay ${money(myDuesCents)} lifetime`
+    : isFamilyMain
+    ? `Pay ${money(myDuesCents)} family dues`
+    : `Pay ${money(myDuesCents)} dues`;
 
   const eventCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
   let eventsQuery = supabase
@@ -288,16 +310,10 @@ export default async function ClubHomePage({
           <div className="rounded-2xl border border-emerald-700/40 bg-emerald-900/10 px-6 py-5 mb-6">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <p className="text-white font-medium">Membership dues</p>
-                <p className="text-sm text-ocean-400">
-                  Pay {money(club.dues_amount_cents)} to{" "}
-                  {paidThrough ? "renew your membership" : "activate your membership"}.
-                </p>
+                <p className="text-white font-medium">{payHeading}</p>
+                <p className="text-sm text-ocean-400">{payDesc}</p>
               </div>
-              <PayDuesButton
-                clubId={club.id}
-                label={`Pay ${money(club.dues_amount_cents)} dues`}
-              />
+              <PayDuesButton clubId={club.id} label={payLabel} />
             </div>
           </div>
         )}
@@ -534,6 +550,9 @@ export default async function ClubHomePage({
                 clubId={club.id}
                 clubName={club.name}
                 defaultName={(user.user_metadata?.username as string) || ""}
+                dues={club.dues_amount_cents}
+                familyDues={club.family_dues_amount_cents}
+                lifetimeDues={club.lifetime_dues_amount_cents}
               />
             </div>
           ) : (
