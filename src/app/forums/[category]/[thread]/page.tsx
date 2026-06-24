@@ -5,6 +5,7 @@ import { ChevronRight, Lock } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import Markdown from "@/components/forum/Markdown";
 import VoteControl from "@/components/forum/VoteControl";
+import ForumSearchBar from "@/components/forum/ForumSearchBar";
 import ReplyBox from "@/components/forum/ReplyBox";
 import ReportButton from "@/components/ReportButton";
 
@@ -230,6 +231,10 @@ export default async function ThreadPage({ params }: Params) {
             {cat.name}
           </Link>
         </nav>
+
+        <div className="mb-6">
+          <ForumSearchBar />
+        </div>
 
         <h1 className="font-display text-3xl text-white mb-5">{t.title}</h1>
 

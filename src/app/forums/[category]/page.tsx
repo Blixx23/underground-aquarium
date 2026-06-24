@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, MessageSquare, Pin, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import VoteControl from "@/components/forum/VoteControl";
+import ForumSearchBar from "@/components/forum/ForumSearchBar";
 
 export const revalidate = 60;
 
@@ -164,6 +165,10 @@ export default async function CategoryPage({ params, searchParams }: Params) {
           >
             <PenLine className="w-4 h-4" /> New post
           </Link>
+        </div>
+
+        <div className="mb-4">
+          <ForumSearchBar />
         </div>
 
         <div className="flex items-center gap-1 rounded-xl bg-ocean-900/60 border border-ocean-800/60 p-1 w-fit mb-4">
