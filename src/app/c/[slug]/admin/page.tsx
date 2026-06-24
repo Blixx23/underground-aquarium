@@ -72,7 +72,7 @@ export default async function ClubAdminPage({
   const { data: members } = await supabase
     .from("club_members")
     .select(
-      "id, user_id, role, status, tier, officer_title, display_name, email, paid_through, joined_at"
+      "id, user_id, role, status, tier, officer_title, family_primary_id, display_name, email, paid_through, joined_at"
     )
     .eq("club_id", club.id)
     .order("joined_at", { ascending: true });

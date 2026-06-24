@@ -12,6 +12,7 @@ type Member = {
   status: string;
   tier: string;
   officer_title?: string | null;
+  family_primary_id?: string | null;
   display_name: string | null;
   email: string | null;
   phone?: string | null;
@@ -81,6 +82,54 @@ export default function MemberManager({
       return false;
     });
   }, [initialMembers, query]);
+
+  // Resolve a primary member's display label even if they're filtered out.
+  const nameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const m of initialMembers) {
+      map[m.id] = m.display_name || m.account_name || m.email || "Member";
+    }
+    return map;
+  }, [initialMembers]);
+
+  // How many family members each main member covers.
+  const childCountById = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const m of initialMembers) {
+      if (m.family_primary_id) {
+        map[m.family_primary_id] = (map[m.family_primary_id] ?? 0) + 1;
+      }
+    }
+    return map;
+  }, [initialMembers]);
+
+  // Group family members directly beneath their main member.
+  const ordered = useMemo(() => {
+    const childrenByPrimary = new Map<string, Member[]>();
+    const tops: Member[] = [];
+    for (const m of filtered) {
+      if (m.family_primary_id) {
+        const arr = childrenByPrimary.get(m.family_primary_id) ?? [];
+        arr.push(m);
+        childrenByPrimary.set(m.family_primary_id, arr);
+      } else {
+        tops.push(m);
+      }
+    }
+    const out: Member[] = [];
+    const placed = new Set<string>();
+    for (const m of tops) {
+      out.push(m);
+      placed.add(m.id);
+      for (const k of childrenByPrimary.get(m.id) ?? []) {
+        out.push(k);
+        placed.add(k.id);
+      }
+    }
+    // Children whose main member isn't in the current (filtered) view.
+    for (const m of filtered) if (!placed.has(m.id)) out.push(m);
+    return out;
+  }, [filtered]);
 
   const total = initialMembers.length;
   const searching = query.trim().length > 0;
@@ -262,26 +311,49 @@ export default function MemberManager({
                 </td>
               </tr>
             ) : (
-              filtered.map((m) => {
+              ordered.map((m) => {
                 const label =
                   m.display_name || m.account_name || m.email || "Member";
                 const isOwner = m.role === "owner";
+                const isFamilyChild = !!m.family_primary_id;
+                const primaryName = isFamilyChild
+                  ? nameById[m.family_primary_id as string] ?? "their family"
+                  : null;
+                const childCount = childCountById[m.id] ?? 0;
                 const busy = busyId === m.id;
                 return (
                   <tr
                     key={m.id}
                     className="border-b border-ocean-800/40 last:border-0"
                   >
-                    <td className="px-4 py-3">
+                    <td className={`px-4 py-3 ${isFamilyChild ? "pl-8" : ""}`}>
                       <div className="flex items-center gap-2 text-ocean-100">
+                        {isFamilyChild && (
+                          <span
+                            className="text-ocean-600 shrink-0"
+                            title="Family member"
+                          >
+                            ↳
+                          </span>
+                        )}
                         {isOwner && (
                           <Crown className="w-4 h-4 text-amber-300 shrink-0" />
                         )}
                         <span>{label}</span>
+                        {childCount > 0 && (
+                          <span className="shrink-0 rounded-full border border-ocean-700/60 bg-ocean-800/50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ocean-300">
+                            Family · {childCount}
+                          </span>
+                        )}
                         {busy && (
                           <Loader2 className="w-3.5 h-3.5 animate-spin text-ocean-500" />
                         )}
                       </div>
+                      {isFamilyChild && (
+                        <div className="text-[11px] text-ocean-500">
+                          Family of {primaryName}
+                        </div>
+                      )}
                       <div className="text-xs text-ocean-500 flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
                         {m.account_name && <span>@{m.account_name}</span>}
                         {m.email && m.email !== label && (
