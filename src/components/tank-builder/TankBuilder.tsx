@@ -31,8 +31,8 @@ import {
 } from "@/lib/waterCheck/engine";
 
 const FREE_TANK_LIMIT = 4;
-const MAX_PHOTOS = 6;
-const MAX_PHOTO_BYTES = 25 * 1024 * 1024; // generous input cap; we compress below
+const MAX_PHOTOS = 4;
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // input cap; images are resized/compressed below
 const MAX_DIM = 1920; // longest edge after resize
 
 // Water reading form: which fields we show and how they're labelled.
@@ -381,7 +381,7 @@ export default function TankBuilder({ species }: { species: Species[] }) {
           continue;
         }
         if (file.size > MAX_PHOTO_BYTES) {
-          setPhotoMsg("That photo is too large (max 25 MB).");
+          setPhotoMsg("That photo is too large (max 10 MB).");
           continue;
         }
 
