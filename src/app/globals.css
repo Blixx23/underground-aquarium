@@ -46,3 +46,34 @@ body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-
   animation-iteration-count: infinite;
   will-change: transform, opacity;
 }
+/* ===================================================================
+   LEGIBILITY PASS — subtle, sitewide, fully reversible.
+   Lifts dim form text, placeholders, and muted secondary text a notch,
+   and gives inputs/dropdowns a faint edge so they read clearly on the
+   dark theme. To revert: delete everything below this line.
+   =================================================================== */
+
+/* Native dropdown menus (where the browser honors option styling) */
+select option,
+select optgroup {
+  background-color: #07223a;
+  color: #e8f4ff;
+}
+
+/* Faint inner edge so fields and dropdowns are visible on the dark bg */
+select,
+input,
+textarea {
+  box-shadow: inset 0 0 0 1px rgba(125, 196, 240, 0.14);
+}
+
+/* Brighter placeholders */
+::placeholder {
+  color: #7ea7c6 !important;
+  opacity: 1 !important;
+}
+
+/* Nudge the two dimmest muted-text shades up a notch (secondary text,
+   helper lines, captions). Brighter, still clearly "muted". */
+.text-ocean-600 { color: #6f9cc0 !important; }
+.text-ocean-500 { color: #83aed2 !important; }
