@@ -48,6 +48,7 @@ export default function MemberManager({
 
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
 
@@ -217,6 +218,32 @@ export default function MemberManager({
     }
   }
 
+  async function sendDuesRequest(id: string) {
+    setError(null);
+    setNotice(null);
+    setBusyId(id);
+    try {
+      const res = await fetch("/api/clubs/dues/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId, memberId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't send the request.");
+      setNotice(
+        data.emailed
+          ? "Dues request emailed."
+          : "Couldn't email — email isn't set up."
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Couldn't send the request."
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function removeMember(id: string, label: string) {
     if (!confirm(`Remove ${label} from the club?`)) return;
     setError(null);
@@ -269,6 +296,11 @@ export default function MemberManager({
       {error && (
         <p className="text-sm text-coral-300 mb-4 rounded-lg border border-coral-500/30 bg-coral-500/10 px-4 py-2">
           {error}
+        </p>
+      )}
+      {notice && (
+        <p className="text-sm text-emerald-300 mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2">
+          {notice}
         </p>
       )}
 
@@ -485,6 +517,15 @@ export default function MemberManager({
                                 <Lock className="w-3 h-3 text-ocean-500" />
                               </span>
                             )}
+                          {dues?.label === "Owes" && (
+                            <button
+                              onClick={() => sendDuesRequest(m.id)}
+                              disabled={busy}
+                              className="block text-[11px] text-ocean-400 hover:text-emerald-300 underline-offset-2 hover:underline transition-colors disabled:opacity-50"
+                            >
+                              Send dues request
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>
