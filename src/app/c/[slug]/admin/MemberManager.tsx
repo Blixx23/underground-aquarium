@@ -11,6 +11,7 @@ type Member = {
   role: string;
   status: string;
   tier: string;
+  officer_title?: string | null;
   display_name: string | null;
   email: string | null;
   phone?: string | null;
@@ -50,6 +51,9 @@ export default function MemberManager({
 
   const [renewalDraft, setRenewalDraft] = useState<Record<string, string>>(
     Object.fromEntries(initialMembers.map((m) => [m.id, m.paid_through ?? ""]))
+  );
+  const [titleDraft, setTitleDraft] = useState<Record<string, string>>(
+    Object.fromEntries(initialMembers.map((m) => [m.id, m.officer_title ?? ""]))
   );
 
   // Search by name, @username, email, or phone. Phone matching ignores
@@ -136,6 +140,26 @@ export default function MemberManager({
     }
   }
 
+  async function updateTitle(id: string) {
+    const value = (titleDraft[id] ?? "").trim();
+    const current = initialMembers.find((m) => m.id === id)?.officer_title ?? "";
+    if (value === (current ?? "")) return; // nothing changed
+    setError(null);
+    setBusyId(id);
+    try {
+      const { error: updErr } = await supabase
+        .from("club_members")
+        .update({ officer_title: value || null })
+        .eq("id", id);
+      if (updErr) throw updErr;
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't update title.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function setRenewal(id: string) {
     setError(null);
     setBusyId(id);
@@ -208,6 +232,14 @@ export default function MemberManager({
       {/* Roster */}
       <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 overflow-x-auto mb-8">
         <table className="w-full text-sm">
+          <datalist id="officer-titles">
+            <option value="President" />
+            <option value="Vice President" />
+            <option value="Treasurer" />
+            <option value="Secretary" />
+            <option value="Events Coordinator" />
+            <option value="Membership Chair" />
+          </datalist>
           <thead>
             <tr className="text-left text-ocean-500 border-b border-ocean-800/60">
               <th className="font-medium px-4 py-3">Member</th>
@@ -281,6 +313,22 @@ export default function MemberManager({
                             </option>
                           ))}
                         </select>
+                      )}
+                      {m.role !== "member" && (
+                        <input
+                          list="officer-titles"
+                          value={titleDraft[m.id] ?? ""}
+                          disabled={busy}
+                          placeholder="Title (e.g. President)"
+                          onChange={(e) =>
+                            setTitleDraft((prev) => ({
+                              ...prev,
+                              [m.id]: e.target.value,
+                            }))
+                          }
+                          onBlur={() => updateTitle(m.id)}
+                          className="mt-1.5 w-36 rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-xs text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500"
+                        />
                       )}
                     </td>
                     <td className="px-4 py-3">

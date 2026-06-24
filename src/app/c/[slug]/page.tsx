@@ -90,6 +90,42 @@ export default async function ClubHomePage({
     .eq("status", "active");
   const memberCount = count ?? 0;
 
+  // Leadership: owner + officers/admins, shown publicly so visitors and members
+  // can see who runs the club. Titles (officer_title) override the generic role.
+  const roleRank: Record<string, number> = { owner: 0, admin: 1, officer: 2 };
+  const { data: leaderRows } = await supabase
+    .from("club_members")
+    .select("user_id, role, officer_title, display_name")
+    .eq("club_id", club.id)
+    .in("role", ["owner", "admin", "officer"])
+    .neq("status", "pending");
+  const leaderIds = (leaderRows ?? [])
+    .map((r) => r.user_id)
+    .filter((id): id is string => Boolean(id));
+  let leaderUsernames: Record<string, string> = {};
+  if (leaderIds.length) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("id", leaderIds);
+    leaderUsernames = Object.fromEntries(
+      (profs ?? []).map((p) => [p.id, p.username as string])
+    );
+  }
+  const leaders = (leaderRows ?? [])
+    .map((r) => {
+      const username = r.user_id ? leaderUsernames[r.user_id] ?? null : null;
+      return {
+        name: r.display_name || username || "Member",
+        username,
+        title:
+          r.officer_title ||
+          (r.role === "owner" ? "Organizer" : r.role === "admin" ? "Admin" : "Officer"),
+        role: r.role,
+      };
+    })
+    .sort((a, b) => (roleRank[a.role] ?? 9) - (roleRank[b.role] ?? 9));
+
   let standings: Standing[] = [];
   if (isMember) {
     const { data: sData } = await supabase.rpc("club_award_standings", {
@@ -281,6 +317,37 @@ export default async function ClubHomePage({
           isOfficer={isOfficer}
           events={clubEvents}
         />
+
+        {leaders.length > 0 && (
+          <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-6">
+            <h2 className="font-display text-lg text-white mb-3">Leadership</h2>
+            <ul className="space-y-2.5">
+              {leaders.map((l, i) => (
+                <li
+                  key={`${l.username ?? l.name}-${i}`}
+                  className="flex items-center justify-between gap-3 text-sm"
+                >
+                  <span className="flex items-center gap-2 text-ocean-100">
+                    {l.role === "owner" && (
+                      <Crown className="w-4 h-4 text-amber-300 shrink-0" />
+                    )}
+                    {l.username ? (
+                      <a
+                        href={`/u/${l.username}`}
+                        className="hover:text-white transition-colors"
+                      >
+                        {l.name}
+                      </a>
+                    ) : (
+                      <span>{l.name}</span>
+                    )}
+                  </span>
+                  <span className="text-ocean-400 shrink-0">{l.title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {(club.contact_name ||
           club.contact_email ||
