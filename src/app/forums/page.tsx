@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MessagesSquare, ChevronRight } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import ForumSearchBar from "@/components/forum/ForumSearchBar";
 
 export const revalidate = 120;
 
@@ -40,9 +41,13 @@ export default async function ForumsIndex() {
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="font-display text-3xl text-white mb-1">Forums</h1>
-        <p className="text-ocean-400 mb-8">
+        <p className="text-ocean-400 mb-6">
           Ask questions, share builds, and talk shop with other aquarists.
         </p>
+
+        <div className="mb-8">
+          <ForumSearchBar />
+        </div>
 
         <div className="space-y-3">
           {cats.map((c) => {
