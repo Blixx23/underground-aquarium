@@ -19,6 +19,9 @@ import BubbleBadge from "@/components/bubbles/BubbleBadge";
 import Certifications, {
   type Certification,
 } from "@/components/profile/Certifications";
+import ClubsAndAwards, {
+  type ClubAward,
+} from "@/components/profile/ClubsAndAwards";
 
 type SavedTank = {
   id: string;
@@ -83,6 +86,12 @@ export default async function ProfilePage() {
       };
     })
     .filter((x): x is Certification => x !== null);
+
+  const { data: clubsData } = await supabase.rpc("user_clubs_awards", {
+    p_user_id: user.id,
+    p_public_only: false,
+  });
+  const myClubs = (clubsData ?? []) as ClubAward[];
 
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const isAdmin = Boolean(profile?.is_admin);
@@ -165,6 +174,13 @@ export default async function ProfilePage() {
           rows={certs}
           heading="Awards & Certifications"
           emptyText="You haven't earned any certifications yet."
+        />
+
+        {/* Your clubs */}
+        <ClubsAndAwards
+          rows={myClubs}
+          heading="Your clubs"
+          emptyText="You haven't joined any clubs yet."
         />
 
         {/* Your tanks */}

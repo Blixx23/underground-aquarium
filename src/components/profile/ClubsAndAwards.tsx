@@ -42,10 +42,10 @@ export default function ClubsAndAwards({
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
           <p className="text-sm text-ocean-300">{emptyText}</p>
           <Link
-            href="/clubs"
+            href="/clubs/discover"
             className="mt-2 inline-block text-sm font-medium text-emerald-400 hover:text-emerald-300"
           >
-            Explore clubs →
+            Find clubs near you →
           </Link>
         </div>
       </section>
