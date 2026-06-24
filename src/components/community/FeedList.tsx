@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MessageSquare, Fish, MessagesSquare, Loader2 } from "lucide-react";
 import type { FeedItem } from "@/lib/communityFeed";
-import FeedLikeButton from "@/components/community/FeedLikeButton";
+import TankVoteControl from "@/components/tanks/TankVoteControl";
 import VoteControl from "@/components/forum/VoteControl";
 
 function FeedCard({ item }: { item: FeedItem }) {
@@ -54,11 +54,22 @@ function FeedCard({ item }: { item: FeedItem }) {
         </span>
 
         {isTank ? (
-          <FeedLikeButton
-            tankId={item.id}
-            initialLikes={item.like_count}
-            commentCount={item.comment_count}
-          />
+          <div className="flex items-center gap-3 shrink-0">
+            <TankVoteControl
+              tankId={item.id}
+              initialScore={item.like_count}
+              orientation="horizontal"
+              size="sm"
+            />
+            <Link
+              href={`${item.href}#comments`}
+              aria-label="View comments"
+              className="inline-flex items-center gap-1 text-xs text-ocean-400 hover:text-emerald-300 transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              {item.comment_count}
+            </Link>
+          </div>
         ) : item.op_post_id ? (
           <div className="flex items-center gap-3 shrink-0">
             <VoteControl
