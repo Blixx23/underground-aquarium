@@ -153,10 +153,23 @@ export default function NotificationBell({
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
     const id = setInterval(load, 60000);
+
+    // React immediately to sign-in / sign-out instead of waiting for the timer.
+    // Drop any open channel so it re-subscribes for the right user (or stays
+    // gone once signed out), then re-evaluate.
+    const { data: authSub } = supabase.auth.onAuthStateChange(() => {
+      if (channel) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
+      load();
+    });
+
     return () => {
       active = false;
       window.removeEventListener("focus", onFocus);
       clearInterval(id);
+      authSub.subscription.unsubscribe();
       if (channel) supabase.removeChannel(channel);
     };
   }, [supabase]);
