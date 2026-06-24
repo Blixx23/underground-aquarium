@@ -12,6 +12,7 @@ export type FeedItem = {
   href: string;
   created_at: string;
   meta: string | null;
+  op_post_id: string | null;
   authorName: string;
   authorUsername: string | null;
 };
@@ -25,7 +26,7 @@ export async function getFeedPage(
   const { data } = await supabasePublic
     .from("community_feed")
     .select(
-      "feed_type, id, author_id, title, excerpt, image_url, like_count, comment_count, href, created_at, meta"
+      "feed_type, id, author_id, title, excerpt, image_url, like_count, comment_count, href, created_at, meta, op_post_id"
     )
     // created_at is the feed order; id breaks ties (e.g. seeded posts share a
     // timestamp) so paging stays stable.
