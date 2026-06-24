@@ -57,6 +57,7 @@ export default function MemberManager({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("member");
   const [tier, setTier] = useState("individual");
+  const [paidThrough, setPaidThrough] = useState("");
 
   const [titleDraft, setTitleDraft] = useState<Record<string, string>>(
     Object.fromEntries(initialMembers.map((m) => [m.id, m.officer_title ?? ""]))
@@ -154,21 +155,39 @@ export default function MemberManager({
       setError("Enter at least a name or an email.");
       return;
     }
+    const migratedDate = clubHasDues && paidThrough ? paidThrough : null;
     setAdding(true);
     try {
-      const { error: insErr } = await supabase.from("club_members").insert({
-        club_id: clubId,
-        display_name: name.trim() || null,
-        email: email.trim() || null,
-        role,
-        tier,
-        status: clubHasDues ? "prospect" : "active",
-      });
+      const { data: inserted, error: insErr } = await supabase
+        .from("club_members")
+        .insert({
+          club_id: clubId,
+          display_name: name.trim() || null,
+          email: email.trim() || null,
+          role,
+          tier,
+          // A member with an "already paid through" date comes in active;
+          // otherwise they're a prospect who owes until they pay online.
+          status: migratedDate || !clubHasDues ? "active" : "prospect",
+        })
+        .select("id")
+        .single();
       if (insErr) throw insErr;
+
+      // Record the pre-platform paid-through date (one-time, at add only).
+      if (migratedDate && inserted?.id) {
+        const { error: dateErr } = await supabase.rpc("set_member_renewal", {
+          p_member: inserted.id,
+          p_date: migratedDate,
+        });
+        if (dateErr) throw dateErr;
+      }
+
       setName("");
       setEmail("");
       setRole("member");
       setTier("individual");
+      setPaidThrough("");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't add member.");
@@ -568,6 +587,25 @@ export default function MemberManager({
             className={inputClass}
           />
         </div>
+        {clubHasDues && (
+          <div className="mb-3">
+            <label className="block text-xs text-ocean-400 mb-1">
+              Already paid through{" "}
+              <span className="text-ocean-600">(existing members only)</span>
+            </label>
+            <input
+              type="date"
+              value={paidThrough}
+              onChange={(e) => setPaidThrough(e.target.value)}
+              className="rounded-lg bg-ocean-900/60 border border-ocean-800/60 px-2 py-1 text-sm text-white focus:outline-none focus:border-ocean-500"
+            />
+            <p className="text-[11px] text-ocean-600 mt-1">
+              Use this only to carry over a member who already paid before joining
+              Underground Aquarium. Leave blank for new members — they&apos;ll pay
+              online. This date can&apos;t be changed later.
+            </p>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-3">
           <select
             value={role}
