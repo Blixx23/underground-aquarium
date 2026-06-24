@@ -61,7 +61,7 @@ async function getThread(categorySlug: string, threadSlug: string) {
   const { data: thread } = await supabasePublic
     .from("forum_threads")
     .select(
-      "id, slug, title, is_seeded, is_locked, reply_count, created_at, last_activity_at"
+      "id, slug, title, images, is_seeded, is_locked, reply_count, created_at, last_activity_at"
     )
     .eq("category_id", cat.id)
     .eq("slug", threadSlug)
@@ -101,6 +101,9 @@ export default async function ThreadPage({ params }: Params) {
   const { cat, thread: t } = data;
   const locked = Boolean(t.is_locked);
   const threadPath = `/forums/${category}/${thread}`;
+  const threadImages = Array.isArray((t as { images?: unknown }).images)
+    ? ((t as { images?: string[] }).images as string[])
+    : [];
 
   const { data: postsData } = await supabasePublic
     .from("forum_posts")
@@ -250,6 +253,23 @@ export default async function ThreadPage({ params }: Params) {
               · {timeAgo(op?.created_at ?? null)}
             </p>
             <Markdown>{op?.body ?? ""}</Markdown>
+            {threadImages.length > 0 && (
+              <div
+                className={`mt-4 grid gap-2 ${
+                  threadImages.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                }`}
+              >
+                {threadImages.map((url) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={url}
+                    src={url}
+                    alt="Post photo"
+                    className="w-full rounded-xl border border-ocean-800/60 object-cover max-h-[28rem]"
+                  />
+                ))}
+              </div>
+            )}
             {op && (
               <div className="mt-3">
                 <ReportButton
