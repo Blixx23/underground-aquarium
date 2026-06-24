@@ -8,6 +8,7 @@ export type ClubAward = {
   name: string;
   logo_url: string | null;
   role: string | null;
+  officer_title: string | null;
   award_titles: AwardTitle[] | null;
   total_points: number | string;
   bap_points: number | string;
@@ -63,6 +64,7 @@ export default function ClubsAndAwards({
           const hap = Number(r.hap_points) || 0;
           const title = titleForPoints(total, r.award_titles);
           const role = r.role ? ROLE_LABEL[r.role] ?? r.role : null;
+          const leadershipLabel = r.officer_title || role;
           return (
             <Link
               key={r.club_id}
@@ -87,9 +89,9 @@ export default function ClubsAndAwards({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="truncate font-medium text-white">{r.name}</h3>
-                    {role && (
+                    {leadershipLabel && (
                       <span className="shrink-0 rounded-full border border-ocean-700/60 bg-ocean-800/50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ocean-300">
-                        {role}
+                        {leadershipLabel}
                       </span>
                     )}
                   </div>
