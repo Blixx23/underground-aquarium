@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { Resend } from "resend";
-import { emailLayout, emailStats, emailCallout } from "@/lib/email";
+import { emailLayout, emailStats } from "@/lib/email";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -18,14 +18,6 @@ type ShippingDetails = {
     country?: string | null;
   } | null;
 };
-
-function formatAddress(s: ShippingDetails | null): string {
-  if (!s || !s.address) return "No shipping address provided.";
-  const a = s.address;
-  const cityLine = [a.city, a.state, a.postal_code].filter(Boolean).join(", ");
-  const lines = [a.line1, a.line2, cityLine, a.country].filter(Boolean);
-  return [s.name, ...lines].filter(Boolean).join("<br>");
-}
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -361,48 +353,6 @@ export async function POST(request: Request) {
       const resend = process.env.RESEND_API_KEY
         ? new Resend(process.env.RESEND_API_KEY)
         : null;
-
-      // Email the seller that they made a sale.
-      try {
-        if (resend && updatedOrder?.store_id) {
-          const { data: store } = await supabaseAdmin
-            .from("stores")
-            .select("owner_id, name")
-            .eq("id", updatedOrder.store_id)
-            .maybeSingle();
-
-          if (store?.owner_id) {
-            const { data: ownerData } =
-              await supabaseAdmin.auth.admin.getUserById(store.owner_id);
-            const sellerEmail = ownerData?.user?.email;
-
-            if (sellerEmail) {
-              await resend.emails.send({
-                from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
-                to: sellerEmail,
-                subject: `You sold ${productName}`,
-                html: emailLayout({
-                  preheader: `You sold ${productName} for $${amount}`,
-                  title: "You made a sale",
-                  intro: `<strong>${productName}</strong> sold for $${amount}.`,
-                  bodyHtml:
-                    emailStats([
-                      ["Item", productName],
-                      ["Amount", `$${amount}`],
-                    ]) + emailCallout("Ship to", formatAddress(shipping)),
-                  cta: {
-                    label: "View your sales",
-                    url: "https://www.undergroundaquarium.com/sell/sales",
-                  },
-                }),
-              });
-              console.log(`Sale email sent to seller ${sellerEmail}.`);
-            }
-          }
-        }
-      } catch (emailErr) {
-        console.error("Seller email failed:", emailErr);
-      }
 
       // Email the buyer a receipt.
       try {
