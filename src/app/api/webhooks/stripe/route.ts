@@ -335,6 +335,28 @@ export async function POST(request: Request) {
       const amount = (updatedOrder.amount_total / 100).toFixed(2);
       const productName = updatedOrder.product_name ?? "Item";
 
+      // In-app notification to the seller (fires independently of email).
+      try {
+        if (updatedOrder?.store_id) {
+          const { data: notifyStore } = await supabaseAdmin
+            .from("stores")
+            .select("owner_id")
+            .eq("id", updatedOrder.store_id)
+            .maybeSingle();
+          if (notifyStore?.owner_id) {
+            await supabaseAdmin.from("notifications").insert({
+              user_id: notifyStore.owner_id,
+              type: "sale",
+              title: "You made a sale!",
+              body: `${productName} sold for $${amount}. Time to ship it.`,
+              link: "/sell/sales",
+            });
+          }
+        }
+      } catch (notifyErr) {
+        console.error("Seller sale notification failed:", notifyErr);
+      }
+
       // Create the email client only if a key is configured (keeps builds safe).
       const resend = process.env.RESEND_API_KEY
         ? new Resend(process.env.RESEND_API_KEY)
