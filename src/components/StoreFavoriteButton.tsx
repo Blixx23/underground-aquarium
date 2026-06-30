@@ -58,11 +58,13 @@ export default function StoreFavoriteButton({
   }
 
   return (
+    <div className="flex flex-col gap-1.5">
     <div className="flex items-center gap-3">
       <button
         onClick={toggle}
         disabled={busy}
         aria-pressed={favorited}
+        title="Favorite this shop to get notified when they post updates"
         className={
           "inline-flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-medium transition-colors disabled:opacity-50 " +
           (favorited
@@ -82,6 +84,12 @@ export default function StoreFavoriteButton({
           to favorite
         </span>
       )}
+    </div>
+      <p className="text-xs text-ocean-500">
+        {favorited
+          ? "You'll be notified when this shop posts an update."
+          : "Favorite to get this shop's updates in your notifications."}
+      </p>
     </div>
   );
 }

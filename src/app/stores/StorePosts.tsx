@@ -186,6 +186,12 @@ export default function StorePosts({
         },
         ...prev,
       ]);
+      // Notify followers (people who favorited the shop). Fire and forget.
+      fetch("/api/stores/notify-followers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId: row.id }),
+      }).catch(() => {});
       resetComposer();
     } catch {
       setError("Couldn't post that update. Please try again.");
