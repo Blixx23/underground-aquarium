@@ -71,7 +71,6 @@ async function purgeAccount(uid: string): Promise<StepLog[]> {
   // Delete personal data.
   for (const table of [
     "tanks",
-    "tank_likes",
     "tank_votes",
     "notifications",
     "club_members",
