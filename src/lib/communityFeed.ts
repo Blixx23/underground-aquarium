@@ -1,7 +1,7 @@
 import { supabasePublic } from "@/lib/supabase/public";
 
 export type FeedItem = {
-  feed_type: "tank" | "thread";
+  feed_type: "tank" | "thread" | "store_post";
   id: string;
   author_id: string | null;
   title: string;
@@ -56,11 +56,16 @@ export async function getFeedPage(
 
   const items: FeedItem[] = rows.map((r) => {
     const n = r.author_id ? nameById.get(r.author_id) : undefined;
+    // Store posts are authored by the shop (carried in `meta`), not a user.
+    const authorName =
+      r.feed_type === "store_post"
+        ? r.meta || "A local shop"
+        : n?.full || n?.username || "An aquarist";
     return {
       ...r,
       like_count: r.like_count ?? 0,
       comment_count: r.comment_count ?? 0,
-      authorName: n?.full || n?.username || "An aquarist",
+      authorName,
       authorUsername: n?.username ?? null,
     };
   });

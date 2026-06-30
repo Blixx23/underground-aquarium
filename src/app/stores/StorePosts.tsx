@@ -1,15 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import { Megaphone, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Megaphone, Plus, Pencil, Trash2, X, ImagePlus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Post = {
   id: string;
   title: string | null;
   body: string;
+  images: string[] | null;
   createdAt: string;
 };
+
+const MAX_PHOTOS = 4;
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // input cap; resized/compressed below
+const MAX_DIM = 1920; // longest edge after resize
+const BUCKET = "store-post-images";
+
+// Resize + compress in the browser before upload (mirrors the forum/tank pipeline).
+async function compressImage(file: File): Promise<Blob> {
+  const dataUrl: string = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("read failed"));
+    reader.readAsDataURL(file);
+  });
+
+  const img: HTMLImageElement = await new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error("decode failed"));
+    im.src = dataUrl;
+  });
+
+  let { width, height } = img;
+  if (width > MAX_DIM || height > MAX_DIM) {
+    const scale = Math.min(MAX_DIM / width, MAX_DIM / height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("no canvas context");
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const blob: Blob | null = await new Promise((resolve) =>
+    canvas.toBlob((b) => resolve(b), "image/jpeg", 0.82)
+  );
+  if (!blob) throw new Error("encode failed");
+  return blob;
+}
 
 export default function StorePosts({
   storeId,
@@ -28,19 +71,95 @@ export default function StorePosts({
   const [composing, setComposing] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newBody, setNewBody] = useState("");
+  const [newImages, setNewImages] = useState<string[]>([]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
 
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOwner && posts.length === 0) return null;
 
+  async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = ""; // allow re-selecting the same file later
+    if (files.length === 0 || !currentUserId) return;
+    setPhotoMsg(null);
+
+    setUploading(true);
+    let count = newImages.length;
+    try {
+      for (const file of files) {
+        if (count >= MAX_PHOTOS) {
+          setPhotoMsg(`Up to ${MAX_PHOTOS} photos per update.`);
+          break;
+        }
+        if (!file.type.startsWith("image/")) {
+          setPhotoMsg("Images only, please.");
+          continue;
+        }
+        if (file.size > MAX_PHOTO_BYTES) {
+          setPhotoMsg("That photo is too large (max 10 MB).");
+          continue;
+        }
+
+        let blob: Blob = file;
+        let ext = "jpg";
+        let contentType = "image/jpeg";
+        try {
+          blob = await compressImage(file);
+        } catch {
+          blob = file;
+          ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+          contentType = file.type || "image/jpeg";
+        }
+
+        const path = `${currentUserId}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, blob, { contentType });
+        if (upErr) {
+          setPhotoMsg("A photo failed to upload — try again.");
+          continue;
+        }
+        const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+        setNewImages((prev) => [...prev, data.publicUrl]);
+        count++;
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeNewImage(url: string) {
+    setNewImages((prev) => prev.filter((u) => u !== url));
+    const marker = `/${BUCKET}/`;
+    const idx = url.indexOf(marker);
+    if (idx !== -1) {
+      const path = url.slice(idx + marker.length);
+      try {
+        await supabase.storage.from(BUCKET).remove([path]);
+      } catch {
+        // ignore — orphaned file is harmless
+      }
+    }
+  }
+
+  function resetComposer() {
+    setComposing(false);
+    setNewTitle("");
+    setNewBody("");
+    setNewImages([]);
+    setPhotoMsg(null);
+  }
+
   async function createPost() {
     const text = newBody.trim();
-    if (!text || busy || !currentUserId) return;
+    if ((!text && newImages.length === 0) || busy || !currentUserId) return;
     setBusy(true);
     setError(null);
     try {
@@ -51,6 +170,7 @@ export default function StorePosts({
           user_id: currentUserId,
           title: newTitle.trim() || null,
           body: text,
+          images: newImages.length > 0 ? newImages : null,
         })
         .select("id,created_at")
         .single();
@@ -61,13 +181,12 @@ export default function StorePosts({
           id: row.id,
           title: newTitle.trim() || null,
           body: text,
+          images: newImages.length > 0 ? newImages : null,
           createdAt: row.created_at,
         },
         ...prev,
       ]);
-      setNewTitle("");
-      setNewBody("");
-      setComposing(false);
+      resetComposer();
     } catch {
       setError("Couldn't post that update. Please try again.");
     } finally {
@@ -97,9 +216,7 @@ export default function StorePosts({
       if (upError) throw upError;
       setPosts((prev) =>
         prev.map((p) =>
-          p.id === id
-            ? { ...p, title: editTitle.trim() || null, body: text }
-            : p
+          p.id === id ? { ...p, title: editTitle.trim() || null, body: text } : p
         )
       );
       setEditingId(null);
@@ -151,11 +268,7 @@ export default function StorePosts({
           <div className="flex items-center justify-between mb-3">
             <p className="text-white font-medium">New update</p>
             <button
-              onClick={() => {
-                setComposing(false);
-                setNewTitle("");
-                setNewBody("");
-              }}
+              onClick={resetComposer}
               aria-label="Close"
               className="text-ocean-400 hover:text-white transition-colors"
             >
@@ -176,14 +289,66 @@ export default function StorePosts({
               placeholder="What's new? New shipment, sale, event…"
               className={inputClass}
             />
-            {error && <p className="text-xs text-red-300">{error}</p>}
-            <button
-              onClick={createPost}
-              disabled={busy || !newBody.trim()}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-4 py-2.5 text-sm font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
-            >
-              {busy ? "Posting…" : "Post update"}
-            </button>
+
+            {/* Photos */}
+            {newImages.length > 0 && (
+              <div className="grid grid-cols-4 gap-2">
+                {newImages.map((url) => (
+                  <div key={url} className="relative group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt="Upload preview"
+                      className="aspect-square w-full object-cover rounded-lg border border-white/10"
+                    />
+                    <button
+                      onClick={() => removeNewImage(url)}
+                      aria-label="Remove photo"
+                      className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {photoMsg && <p className="text-xs text-amber-300">{photoMsg}</p>}
+
+            <div className="flex items-center justify-between gap-3">
+              {newImages.length < MAX_PHOTOS ? (
+                <label className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 text-ocean-300 px-3 py-1.5 text-xs cursor-pointer hover:text-white hover:border-white/20 transition-colors">
+                  {uploading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <ImagePlus className="w-3.5 h-3.5" />
+                  )}
+                  {uploading ? "Uploading…" : "Add photos"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFiles}
+                    disabled={uploading}
+                    className="hidden"
+                  />
+                </label>
+              ) : (
+                <span className="text-xs text-ocean-600">
+                  Photo limit reached
+                </span>
+              )}
+
+              {error && <p className="text-xs text-red-300">{error}</p>}
+
+              <button
+                onClick={createPost}
+                disabled={busy || uploading || (!newBody.trim() && newImages.length === 0)}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-4 py-2.5 text-sm font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+              >
+                {busy ? "Posting…" : "Post update"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -240,9 +405,7 @@ export default function StorePosts({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     {p.title && (
-                      <p className="text-white text-sm font-medium">
-                        {p.title}
-                      </p>
+                      <p className="text-white text-sm font-medium">{p.title}</p>
                     )}
                     <p className="text-ocean-500 text-xs">
                       {new Date(p.createdAt).toLocaleDateString()}
@@ -268,9 +431,30 @@ export default function StorePosts({
                     </div>
                   )}
                 </div>
-                <p className="text-ocean-200 text-sm mt-2 whitespace-pre-wrap">
-                  {p.body}
-                </p>
+                {p.body && (
+                  <p className="text-ocean-200 text-sm mt-2 whitespace-pre-wrap">
+                    {p.body}
+                  </p>
+                )}
+                {p.images && p.images.length > 0 && (
+                  <div
+                    className={
+                      "mt-3 grid gap-2 " +
+                      (p.images.length === 1 ? "grid-cols-1" : "grid-cols-2")
+                    }
+                  >
+                    {p.images.map((url) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={url}
+                        src={url}
+                        alt="Shop update"
+                        className="w-full max-h-96 object-cover rounded-lg border border-white/10"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )
           )}

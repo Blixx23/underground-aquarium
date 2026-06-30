@@ -139,6 +139,12 @@ export default function StoreReviews({
       setReviews((prev) =>
         prev.map((r) => (r.id === id ? { ...r, response: text } : r))
       );
+      // Let the reviewer know the shop replied (fire and forget).
+      fetch("/api/stores/notify-response", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewId: id }),
+      }).catch(() => {});
       setRespondingId(null);
       setDraft("");
     } catch {

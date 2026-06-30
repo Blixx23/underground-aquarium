@@ -151,7 +151,7 @@ export default async function StoreDetailPage({ params }: Params) {
   // Shop updates
   const { data: postRows } = await supabasePublic
     .from("store_posts")
-    .select("id,title,body,created_at")
+    .select("id,title,body,images,created_at")
     .eq("store_id", store.id)
     .order("created_at", { ascending: false });
   const initialPosts = (
@@ -159,12 +159,14 @@ export default async function StoreDetailPage({ params }: Params) {
       id: string;
       title: string | null;
       body: string;
+      images: string[] | null;
       created_at: string;
     }[]) ?? []
   ).map((p) => ({
     id: p.id,
     title: p.title,
     body: p.body,
+    images: p.images,
     createdAt: p.created_at,
   }));
 

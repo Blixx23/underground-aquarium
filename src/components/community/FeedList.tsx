@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { MessageSquare, Fish, MessagesSquare, Loader2 } from "lucide-react";
+import { MessageSquare, Fish, MessagesSquare, Store, Loader2 } from "lucide-react";
 import type { FeedItem } from "@/lib/communityFeed";
 import TankVoteControl from "@/components/tanks/TankVoteControl";
 import VoteControl from "@/components/forum/VoteControl";
 
 function FeedCard({ item }: { item: FeedItem }) {
   const isTank = item.feed_type === "tank";
-  const TypeIcon = isTank ? Fish : MessagesSquare;
-  const typeLabel = isTank ? "Tank" : "Discussion";
+  const isStore = item.feed_type === "store_post";
+  const TypeIcon = isTank ? Fish : isStore ? Store : MessagesSquare;
+  const typeLabel = isTank ? "Tank" : isStore ? "Shop update" : "Discussion";
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden flex flex-col hover:border-emerald-500/40 transition-colors">
@@ -53,7 +54,14 @@ function FeedCard({ item }: { item: FeedItem }) {
           by {item.authorName}
         </span>
 
-        {isTank ? (
+        {isStore ? (
+          <Link
+            href={item.href}
+            className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200 transition-colors shrink-0"
+          >
+            <Store className="w-3.5 h-3.5" /> View shop
+          </Link>
+        ) : isTank ? (
           <div className="flex items-center gap-3 shrink-0">
             <TankVoteControl
               tankId={item.id}
