@@ -140,6 +140,17 @@ export default function PostListingForm({
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [regions]);
 
+  const selectedStateName = useMemo(
+    () => states.find((s) => s.code === stateCode)?.name ?? "",
+    [states, stateCode]
+  );
+
+  const selectedRegionName = useMemo(() => {
+    const region = regions.find((r) => r.id === regionId);
+    if (!region) return "";
+    return `${region.name}, ${region.state_name}`;
+  }, [regions, regionId]);
+
   const stateRegions = useMemo(
     () => regions.filter((r) => r.state_code === stateCode),
     [regions, stateCode]
@@ -513,55 +524,98 @@ export default function PostListingForm({
       </div>
 
       {/* Where */}
-      <div>
-        <label className="flex items-center gap-2 text-sm text-ocean-300 mb-2">
+      <fieldset className="rounded-2xl border border-ocean-800/60 bg-ocean-900/30 p-5">
+        <legend className="flex items-center gap-2 px-2 text-sm text-ocean-300">
           <MapPin className="w-4 h-4 text-ocean-500" />
           Where are you?
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <select
-            value={stateCode}
-            onChange={(e) => setStateCode(e.target.value)}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              State…
-            </option>
-            {states.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.name}
+        </legend>
+
+        <div className="space-y-4">
+          <div>
+            <label
+              htmlFor="listing-state"
+              className="block text-xs font-mono uppercase tracking-wider text-ocean-500 mb-2"
+            >
+              1 · State
+            </label>
+            <select
+              id="listing-state"
+              value={stateCode}
+              onChange={(e) => setStateCode(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Choose your state…</option>
+              {states.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="listing-region"
+              className={`block text-xs font-mono uppercase tracking-wider mb-2 ${
+                stateCode ? "text-ocean-500" : "text-ocean-700"
+              }`}
+            >
+              2 · Closest metro area
+            </label>
+            <select
+              id="listing-region"
+              value={regionId}
+              onChange={(e) => setRegionId(e.target.value)}
+              disabled={!stateCode}
+              className={`${inputClass} disabled:opacity-40 disabled:cursor-not-allowed`}
+            >
+              <option value="">
+                {stateCode
+                  ? `Choose an area in ${selectedStateName}…`
+                  : "Choose your state first"}
               </option>
-            ))}
-          </select>
-          <select
-            value={regionId}
-            onChange={(e) => setRegionId(e.target.value)}
-            disabled={!stateCode}
-            className={`${inputClass} disabled:opacity-50`}
-          >
-            <option value="" disabled>
-              {stateCode ? "Area…" : "Pick a state first"}
-            </option>
-            {stateRegions.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+              {stateRegions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="listing-city"
+              className="block text-xs font-mono uppercase tracking-wider text-ocean-500 mb-2"
+            >
+              3 · Your town — optional
+            </label>
+            <input
+              id="listing-city"
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              maxLength={60}
+              placeholder="Roseville"
+              className={inputClass}
+            />
+          </div>
         </div>
-        <input
-          type="text"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          maxLength={60}
-          placeholder="Your town (optional) — e.g. Roseville"
-          className={`${inputClass} mt-3`}
-        />
-        <p className="text-xs text-ocean-500 mt-2">
-          Your exact address is never shown. The town just helps buyers judge
-          the drive.
-        </p>
-      </div>
+
+        {selectedRegionName ? (
+          <p className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+            Your ad will show in{" "}
+            <span className="font-medium text-emerald-100">
+              {selectedRegionName}
+            </span>
+            {city.trim() ? `, listed as ${city.trim()}` : ""}.
+          </p>
+        ) : (
+          <p className="mt-4 text-xs text-ocean-500">
+            Buyers browse by metro area, so this is what puts your ad in front
+            of people near you. Your exact address is never shown.
+          </p>
+        )}
+      </fieldset>
 
       {/* Price + condition */}
       {kind !== "wanted" && (
@@ -571,17 +625,23 @@ export default function PostListingForm({
               <label className="block text-sm text-ocean-300 mb-2">
                 Price (USD)
               </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="25.00"
-                className={inputClass}
-              />
+              <div className="relative">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ocean-400">
+                  $
+                </span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className={`${inputClass} pl-8`}
+                />
+              </div>
               <p className="text-xs text-ocean-500 mt-2">
-                Leave blank for &ldquo;contact for price&rdquo;.
+                Leave it empty and your ad shows &ldquo;Contact for
+                price&rdquo;.
               </p>
             </div>
           )}

@@ -23,7 +23,7 @@ import {
 } from "@/lib/config";
 
 const nav = [
-  { label: "Marketplace", href: "/marketplace" },
+  { label: "Classifieds", href: "/marketplace" },
   {
     label: "Resources",
     children: [
@@ -33,7 +33,6 @@ const nav = [
       { label: "Fish Stores", href: "/stores" },
       { label: "Glossary", href: "/glossary" },
       { label: "Blog", href: "/blog" },
-      { label: "Vendor Guide", href: "/vendor-guide" },
     ],
   },
   {
@@ -240,6 +239,26 @@ export default function Navbar() {
 
         {/* Mobile: notifications + toggle */}
         <div className="md:hidden flex items-center gap-1">
+          {user && MESSAGING_ENABLED && (
+            <Link
+              href="/messages"
+              onClick={() => setOpen(false)}
+              className="p-2 text-ocean-300 hover:text-white"
+              aria-label="Messages"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </Link>
+          )}
+          {user && MY_LISTINGS_ENABLED && (
+            <Link
+              href="/my/listings"
+              onClick={() => setOpen(false)}
+              className="p-2 text-ocean-300 hover:text-white"
+              aria-label="My listings"
+            >
+              <ClipboardList className="w-5 h-5" />
+            </Link>
+          )}
           <NotificationBell variant="link" onNavigate={() => setOpen(false)} />
           <button
             className="p-2 text-ocean-300 hover:text-white"
