@@ -146,6 +146,13 @@ export default async function ListingPage({
   const regionUrl = `/marketplace/${listing.state_code.toLowerCase()}/${listing.region_slug}`;
   const sellerName = seller?.username ?? "A hobbyist";
 
+  // The three ways a buyer can reach this poster, worked out once so the
+  // owner preview and the buyer view can never disagree.
+  const messagingOn = MESSAGING_ENABLED && listing.allow_messages;
+  const emailShown = listing.show_email && !!listing.contact_email;
+  const canBeContacted =
+    messagingOn || emailShown || !!listing.contact_phone;
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-5xl mx-auto">
@@ -247,23 +254,64 @@ export default async function ListingPage({
               </p>
 
               {isOwner ? (
-                MY_LISTINGS_ENABLED ? (
-                  <Link
-                    href="/my/listings"
-                    className="mt-4 inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl border border-ocean-700/60 text-ocean-200 hover:text-white hover:border-ocean-600 transition-colors"
-                  >
-                    <Pencil className="w-4 h-4" />
-                    This is your listing — manage it
-                  </Link>
-                ) : (
-                  <p className="mt-4 inline-flex items-center gap-2 text-sm text-ocean-500">
-                    <Pencil className="w-4 h-4" />
-                    This is your listing.
-                  </p>
-                )
+                <>
+                  {/* You can't message yourself, so show what buyers get
+                      instead of a button that would do nothing. */}
+                  <div className="mt-4 rounded-xl border border-ocean-800/60 bg-ocean-950/50 p-4">
+                    <p className="text-xs font-mono uppercase tracking-wider text-ocean-500 mb-3">
+                      What buyers see
+                    </p>
+
+                    {canBeContacted ? (
+                      <ul className="space-y-2 text-sm">
+                        {messagingOn && (
+                          <li className="flex items-center gap-2 text-ocean-200">
+                            <MessageCircle className="w-4 h-4 shrink-0 text-emerald-400" />
+                            A &ldquo;Message {seller?.username ?? "you"}&rdquo;
+                            button
+                          </li>
+                        )}
+                        {emailShown && (
+                          <li className="flex items-center gap-2 text-ocean-200">
+                            <Mail className="w-4 h-4 shrink-0 text-emerald-400" />
+                            <span className="break-all">
+                              {listing.contact_email}
+                            </span>
+                          </li>
+                        )}
+                        {listing.contact_phone && (
+                          <li className="flex items-center gap-2 text-ocean-200">
+                            <Phone className="w-4 h-4 shrink-0 text-emerald-400" />
+                            {listing.contact_phone}
+                          </li>
+                        )}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-amber-200">
+                        Nothing. Nobody can reach you about this listing. Edit
+                        it and switch on site messages, or add a phone number.
+                      </p>
+                    )}
+                  </div>
+
+                  {MY_LISTINGS_ENABLED ? (
+                    <Link
+                      href="/my/listings"
+                      className="mt-3 inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl border border-ocean-700/60 text-ocean-200 hover:text-white hover:border-ocean-600 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Manage this listing
+                    </Link>
+                  ) : (
+                    <p className="mt-3 inline-flex items-center gap-2 text-sm text-ocean-500">
+                      <Pencil className="w-4 h-4" />
+                      This is your listing.
+                    </p>
+                  )}
+                </>
               ) : (
                 <>
-                  {MESSAGING_ENABLED && listing.allow_messages && (
+                  {messagingOn && (
                     <Link
                       href={`/messages/new?listing=${listing.slug}`}
                       className="mt-4 inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-ocean-600 hover:bg-ocean-500 text-white font-medium transition-colors"
@@ -273,9 +321,9 @@ export default async function ListingPage({
                     </Link>
                   )}
 
-                  {(listing.show_email && listing.contact_email) || listing.contact_phone ? (
+                  {emailShown || listing.contact_phone ? (
                     <div className="mt-4 space-y-2 text-sm">
-                      {listing.show_email && listing.contact_email && (
+                      {emailShown && (
                         <a
                           href={`mailto:${listing.contact_email}?subject=${encodeURIComponent(listing.title)}`}
                           className="flex items-center gap-2 text-ocean-300 hover:text-white transition-colors break-all"
@@ -296,9 +344,7 @@ export default async function ListingPage({
                     </div>
                   ) : null}
 
-                  {!(MESSAGING_ENABLED && listing.allow_messages) &&
-                    !listing.contact_phone &&
-                    !(listing.show_email && listing.contact_email) && (
+                  {!canBeContacted && (
                       <p className="mt-4 text-sm text-ocean-500">
                         This poster didn&apos;t leave a way to contact them.
                       </p>
