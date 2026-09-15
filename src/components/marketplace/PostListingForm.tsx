@@ -10,6 +10,7 @@ import { CATEGORIES } from "@/lib/marketplace/categories";
 import { CONDITIONS } from "@/lib/marketplace/listings";
 import type { MarketRegion } from "@/lib/marketplace/regions";
 import { LISTING_LIFETIME_DAYS } from "@/lib/config";
+import { prepareImage } from "@/lib/images/prepareImage";
 
 const MAX_PHOTOS = 8;
 
@@ -150,53 +151,46 @@ export default function PostListingForm({
   }, [stateCode, regionId, regions]);
 
   async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(e.target.files ?? []);
+    const input = e.target;
+    const selected = Array.from(input.files ?? []);
     if (selected.length === 0) return;
     setError(null);
 
     const room = MAX_PHOTOS - photoCount;
     if (room <= 0) {
       setError(`That's the limit — ${MAX_PHOTOS} photos per listing.`);
+      // Clear the picker so choosing the same file again still fires onChange.
+      input.value = "";
       return;
     }
 
     setConverting(true);
     const added: Photo[] = [];
+    const failures: string[] = [];
 
     for (const original of selected.slice(0, room)) {
-      let file = original;
-      const isHeic =
-        /image\/hei[cf]/i.test(original.type) ||
-        /\.(heic|heif)$/i.test(original.name);
-
-      if (isHeic) {
-        try {
-          const heic2any = (await import("heic2any")).default;
-          const result = await heic2any({
-            blob: original,
-            toType: "image/jpeg",
-            quality: 0.9,
-          });
-          const blob = Array.isArray(result) ? result[0] : result;
-          file = new File(
-            [blob],
-            original.name.replace(/\.(heic|heif)$/i, ".jpg"),
-            { type: "image/jpeg" }
-          );
-        } catch {
-          setError(
-            `"${original.name}" couldn't be processed. Try a JPG or PNG instead.`
-          );
-          continue;
-        }
+      try {
+        // Handles HEIC conversion, EXIF rotation and downscaling.
+        const file = await prepareImage(original);
+        added.push({ file, preview: URL.createObjectURL(file) });
+      } catch (err) {
+        failures.push(
+          err instanceof Error
+            ? err.message
+            : `"${original.name}" couldn't be processed.`
+        );
       }
-
-      added.push({ file, preview: URL.createObjectURL(file) });
     }
 
-    setPhotos((prev) => [...prev, ...added]);
+    if (added.length > 0) {
+      setPhotos((prev) => [...prev, ...added]);
+    }
+    if (failures.length > 0) {
+      setError(failures.join(" "));
+    }
+
     setConverting(false);
-    e.target.value = "";
+    input.value = "";
   }
 
   function removePhoto(index: number) {
@@ -648,7 +642,7 @@ export default function PostListingForm({
             )}
             <input
               type="file"
-              accept="image/*,.heic,.heif"
+              accept="image/*,image/heic,image/heif,.heic,.heif,.HEIC,.HEIF"
               multiple
               onChange={handleFiles}
               className="hidden"
@@ -657,7 +651,7 @@ export default function PostListingForm({
         )}
         <p className="text-xs text-ocean-500 mt-2">
           Listings with a clear photo get far more replies. The first one is the
-          cover.
+          cover. iPhone HEIC photos are converted automatically.
         </p>
       </div>
 
