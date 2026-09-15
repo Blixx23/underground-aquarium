@@ -8,6 +8,8 @@ export type MarketRegion = {
   name: string;
   is_primary: boolean;
   sort_order: number;
+  lat: number | null;
+  lng: number | null;
 };
 
 export type StateGroup = {
@@ -21,7 +23,7 @@ export type StateGroup = {
 export type RegionCounts = Map<string, number>;
 
 const REGION_COLUMNS =
-  "id, state_code, state_name, slug, name, is_primary, sort_order";
+  "id, state_code, state_name, slug, name, is_primary, sort_order, lat, lng";
 
 /** Every region, ordered by state then the curated order inside each state. */
 export async function getAllRegions(): Promise<MarketRegion[]> {

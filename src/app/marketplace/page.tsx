@@ -10,6 +10,9 @@ import {
   regionHref,
 } from "@/lib/marketplace/regions";
 import { CATEGORIES } from "@/lib/marketplace/categories";
+import NearMeButton, {
+  type LocatableRegion,
+} from "@/components/marketplace/NearMeButton";
 
 export const revalidate = 300;
 
@@ -35,6 +38,20 @@ export default async function MarketplacePage() {
 
   const totalListings = states.reduce((n, s) => n + s.listingCount, 0);
 
+  // Only regions we actually have coordinates for can be matched against
+  // someone's location. Until the geocoder has run, this is empty and the
+  // button simply doesn't render.
+  const locatable: LocatableRegion[] = regions
+    .filter((r) => r.lat !== null && r.lng !== null)
+    .map((r) => ({
+      state_code: r.state_code,
+      slug: r.slug,
+      name: r.name,
+      state_name: r.state_name,
+      lat: r.lat as number,
+      lng: r.lng as number,
+    }));
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-7xl mx-auto">
@@ -51,6 +68,10 @@ export default async function MarketplacePage() {
             free, browsing is free, and you deal with the other hobbyist
             directly.
           </p>
+          <div className="mt-8">
+            <NearMeButton regions={locatable} />
+          </div>
+
           {totalListings > 0 && (
             <p className="text-sm text-ocean-500 mt-4">
               {totalListings.toLocaleString()} live{" "}
@@ -88,21 +109,20 @@ export default async function MarketplacePage() {
           </section>
         )}
 
-        {/* Categories */}
-        <section className="mb-14">
-          <h2 className="flex items-center gap-2 font-display text-xl text-white mb-5">
-            <Tag className="w-5 h-5 text-ocean-400" />
-            What people post here
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* Categories — one compact strip, not twelve cards */}
+        <section className="mb-12">
+          <p className="flex items-center gap-2 text-sm text-ocean-400 mb-3">
+            <Tag className="w-4 h-4 text-ocean-500" />
+            People post
+          </p>
+          <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => (
-              <div
+              <span
                 key={c.key}
-                className="rounded-2xl bg-ocean-900/40 border border-ocean-800/50 px-5 py-4"
+                className="rounded-full border border-ocean-800/60 bg-ocean-900/40 px-3 py-1.5 text-sm text-ocean-300"
               >
-                <p className="text-white font-medium mb-1">{c.label}</p>
-                <p className="text-sm text-ocean-400">{c.blurb}</p>
-              </div>
+                {c.label}
+              </span>
             ))}
           </div>
         </section>
