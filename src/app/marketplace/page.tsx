@@ -100,8 +100,8 @@ export default async function MarketplacePage() {
                 key={c.key}
                 className="rounded-2xl bg-ocean-900/40 border border-ocean-800/50 px-5 py-4"
               >
-                <p className="text-ocean-100 font-medium mb-1">{c.label}</p>
-                <p className="text-sm text-ocean-500">{c.blurb}</p>
+                <p className="text-white font-medium mb-1">{c.label}</p>
+                <p className="text-sm text-ocean-400">{c.blurb}</p>
               </div>
             ))}
           </div>
@@ -113,27 +113,23 @@ export default async function MarketplacePage() {
             <MapPin className="w-5 h-5 text-ocean-400" />
             Pick your state
           </h2>
-          <p className="text-sm text-ocean-500 mb-6">
+          <p className="text-sm text-ocean-400 mb-6">
             Then choose the metro area closest to you.
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {states.map((s) => (
               <Link
                 key={s.code}
                 href={stateHref(s.code)}
-                className="group flex items-baseline justify-between gap-2 py-2 border-b border-ocean-900/70 hover:border-ocean-700 transition-colors"
+                className="group flex items-center justify-between gap-3 rounded-xl border border-ocean-800/50 bg-ocean-900/40 px-4 py-3 hover:bg-ocean-800/50 hover:border-ocean-600/70 transition-colors"
               >
-                <span className="text-ocean-300 group-hover:text-white transition-colors">
+                <span className="text-ocean-100 group-hover:text-white transition-colors">
                   {s.name}
                 </span>
-                {s.listingCount > 0 ? (
-                  <span className="shrink-0 text-xs text-emerald-400">
+                {s.listingCount > 0 && (
+                  <span className="shrink-0 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
                     {s.listingCount}
-                  </span>
-                ) : (
-                  <span className="shrink-0 text-xs text-ocean-700">
-                    {s.regions.length}
                   </span>
                 )}
               </Link>
@@ -141,8 +137,7 @@ export default async function MarketplacePage() {
           </div>
 
           <p className="text-xs text-ocean-600 mt-6">
-            Green numbers are live listings. Grey numbers are how many metro
-            areas that state is split into.
+            A green number is how many ads are live in that state right now.
           </p>
         </section>
       </div>

@@ -83,19 +83,17 @@ export default async function StatePage({
               >
                 <span className="flex items-center gap-2.5 min-w-0">
                   <MapPin className="w-4 h-4 shrink-0 text-ocean-600 group-hover:text-ocean-400 transition-colors" />
-                  <span className="truncate text-ocean-200 group-hover:text-white transition-colors">
+                  <span className="truncate text-ocean-100 group-hover:text-white transition-colors">
                     {r.name}
                   </span>
                   {r.is_primary && flagship && (
                     <Star className="w-3.5 h-3.5 shrink-0 text-amber-400/70" />
                   )}
                 </span>
-                {count > 0 ? (
-                  <span className="shrink-0 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-xs text-emerald-300">
+                {count > 0 && (
+                  <span className="shrink-0 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
                     {count}
                   </span>
-                ) : (
-                  <span className="shrink-0 text-xs text-ocean-700">empty</span>
                 )}
               </Link>
             );
