@@ -11,11 +11,13 @@ import {
   LogOut,
   MessageCircle,
   ClipboardList,
+  Plus,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
+import MessageBell from "./MessageBell";
 import {
   MESSAGING_ENABLED,
   MY_LISTINGS_ENABLED,
@@ -197,15 +199,7 @@ export default function Navbar() {
                   <ClipboardList className="w-4 h-4" />
                 </Link>
               )}
-              {MESSAGING_ENABLED && (
-                <Link
-                  href="/messages"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
-                  aria-label="Messages"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                </Link>
-              )}
+              <MessageBell />
               <Link
                 href="/profile"
                 className="flex items-center gap-2 px-4 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
@@ -238,27 +232,16 @@ export default function Navbar() {
         </div>
 
         {/* Mobile: notifications + toggle */}
-        <div className="md:hidden flex items-center gap-1">
-          {user && MESSAGING_ENABLED && (
-            <Link
-              href="/messages"
-              onClick={() => setOpen(false)}
-              className="p-2 text-ocean-300 hover:text-white"
-              aria-label="Messages"
-            >
-              <MessageCircle className="w-5 h-5" />
-            </Link>
-          )}
-          {user && MY_LISTINGS_ENABLED && (
-            <Link
-              href="/my/listings"
-              onClick={() => setOpen(false)}
-              className="p-2 text-ocean-300 hover:text-white"
-              aria-label="My listings"
-            >
-              <ClipboardList className="w-5 h-5" />
-            </Link>
-          )}
+        <div className="md:hidden flex items-center gap-0.5">
+          <Link
+            href={POST_AD_PATH}
+            onClick={() => setOpen(false)}
+            aria-label="Post a free ad"
+            className="mr-1 flex h-9 w-9 items-center justify-center rounded-full bg-ocean-600 text-white shadow-lg shadow-ocean-600/30 active:bg-ocean-500 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+          </Link>
+          <MessageBell onNavigate={() => setOpen(false)} />
           <NotificationBell variant="link" onNavigate={() => setOpen(false)} />
           <button
             className="p-2 text-ocean-300 hover:text-white"
