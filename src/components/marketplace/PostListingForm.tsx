@@ -45,6 +45,36 @@ function slugify(text: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Supabase errors are plain objects, not Error instances, so `err.message`
+ * was being swallowed and everyone saw "something went wrong". This digs the
+ * real reason out of whatever gets thrown.
+ */
+function describeError(err: unknown, fallback: string): string {
+  if (typeof err === "string" && err.trim()) return err;
+
+  if (err && typeof err === "object") {
+    const e = err as {
+      message?: string;
+      error?: string;
+      details?: string;
+      hint?: string;
+      code?: string;
+      statusCode?: string | number;
+    };
+    const parts = [e.message || e.error, e.details, e.hint].filter(
+      (p): p is string => typeof p === "string" && p.trim().length > 0
+    );
+    const code = e.code ?? e.statusCode;
+    if (parts.length > 0) {
+      return code ? `${parts.join(" — ")} (${code})` : parts.join(" — ");
+    }
+    if (code) return `${fallback} (${code})`;
+  }
+
+  return fallback;
+}
+
 function kindOf(listing: ExistingListing): ListingKind {
   if (listing.is_wanted) return "wanted";
   if (listing.price_cents === 0) return "free";
@@ -256,8 +286,15 @@ export default function PostListingForm({
           .slice(2, 8)}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("listing-images")
-          .upload(path, photo.file);
-        if (uploadError) throw uploadError;
+          .upload(path, photo.file, {
+            contentType: photo.file.type || "image/jpeg",
+            upsert: false,
+          });
+        if (uploadError) {
+          throw new Error(
+            `Photo upload failed: ${describeError(uploadError, "unknown storage error")}`
+          );
+        }
         const { data: publicUrl } = supabase.storage
           .from("listing-images")
           .getPublicUrl(path);
@@ -297,7 +334,11 @@ export default function PostListingForm({
           .from("listings")
           .update(fields)
           .eq("id", existing.id);
-        if (updateError) throw updateError;
+        if (updateError) {
+          throw new Error(
+            `Saving failed: ${describeError(updateError, "unknown database error")}`
+          );
+        }
         finalSlug = existing.slug;
       } else {
         const listingSlug = `${slugify(title).slice(0, 60)}-${Math.random()
@@ -315,7 +356,11 @@ export default function PostListingForm({
           })
           .select("slug")
           .single();
-        if (insertError) throw insertError;
+        if (insertError) {
+          throw new Error(
+            `Posting failed: ${describeError(insertError, "unknown database error")}`
+          );
+        }
         finalSlug = created.slug as string;
 
         // Onboarding grant — server verifies ownership; idempotent.
@@ -339,11 +384,12 @@ export default function PostListingForm({
       router.refresh();
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : isEdit
+        describeError(
+          err,
+          isEdit
             ? "Something went wrong saving your changes."
             : "Something went wrong posting your listing."
+        )
       );
       setBusy(false);
     }
