@@ -12,7 +12,9 @@ const PAID_ONLY_PATHS = ["/sell", "/sell/setup"];
 
 // /marketplace/:something used to be an old paid product page. That slot now
 // belongs to state codes (/marketplace/ca), so anything in it that isn't a
-// two-letter state gets sent back to the marketplace index instead of 404ing.
+// two-letter state is sent to the listing page of the same slug. The 17
+// migrated products kept their original slugs, so their old links still land
+// on the right listing.
 const LEGACY_PRODUCT_PATH = /^\/marketplace\/([^/]+)\/?$/;
 
 export async function proxy(request: NextRequest) {
@@ -32,7 +34,7 @@ export async function proxy(request: NextRequest) {
   const legacy = pathname.match(LEGACY_PRODUCT_PATH);
   if (legacy && !/^[a-z]{2}$/i.test(legacy[1])) {
     const url = request.nextUrl.clone();
-    url.pathname = "/marketplace";
+    url.pathname = `/listing/${legacy[1]}`;
     url.search = "";
     return NextResponse.redirect(url);
   }

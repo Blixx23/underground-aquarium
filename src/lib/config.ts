@@ -26,9 +26,26 @@ export const PAID_ORDER_WINDDOWN_ENABLED: boolean = true;
 // live. Clubs still collect dues through Stripe Connect.
 export const CLUB_DUES_ENABLED: boolean = true;
 
+// ============================================================
+// BUILD-ORDER SWITCHES
+//
+// These exist so a half-built feature never shows a button that
+// goes nowhere. Each one flips to true in the step that ships it.
+// ============================================================
+
+// On-site buyer/seller messaging. Ships in Step 5.
+export const MESSAGING_ENABLED: boolean = false;
+
+// The /my/listings manager: renew, mark sold, edit, delete.
+// Ships in Step 6.
+export const MY_LISTINGS_ENABLED: boolean = false;
+
+// ============================================================
+// FREE CLASSIFIEDS SETTINGS
+// ============================================================
+
 // Where "sell something" sends people now that listings are free.
-// Step 4 builds /post — change this one line then.
-export const POST_AD_PATH = "/marketplace";
+export const POST_AD_PATH = "/post";
 
 // How long a free classified ad stays up before it expires.
 // Mirrors the 45-day default in the listings table.
