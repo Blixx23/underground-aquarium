@@ -33,8 +33,8 @@ export const CLUB_DUES_ENABLED: boolean = true;
 // goes nowhere. Each one flips to true in the step that ships it.
 // ============================================================
 
-// On-site buyer/seller messaging. Ships in Step 5.
-export const MESSAGING_ENABLED: boolean = false;
+// On-site buyer/seller messaging. Shipped in Step 5.
+export const MESSAGING_ENABLED: boolean = true;
 
 // The /my/listings manager: renew, mark sold, edit, delete.
 // Ships in Step 6.
