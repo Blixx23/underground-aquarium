@@ -9,8 +9,10 @@
 //   1. createImageBitmap() — native decode. Free and instant where it works,
 //      which is every Apple device, i.e. where HEIC files come from.
 //   2. An <img> tag — same idea, for older Safari without createImageBitmap.
-//   3. heic2any — a WebAssembly decoder. Slow and not always reliable, so it
-//      is the last resort rather than the first move.
+//   3. Our own /api/images/convert endpoint, which runs a real HEIC decoder
+//      server-side. This is the one that saves Chrome and Firefox.
+//   4. heic2any — an in-browser WebAssembly decoder. Unreliable in practice,
+//      kept only as a final long shot.
 //
 // Whatever decodes, we then redraw it onto a canvas at a sane size and export
 // JPEG. That also strips the 8–12MB phone-photo bloat and normalises EXIF
@@ -126,6 +128,43 @@ async function redraw(
 }
 
 /**
+ * Hands the file to our own server, which carries a real HEIC decoder.
+ * This is what saves Chrome and Firefox, where nothing client-side works.
+ */
+async function convertOnServer(file: File): Promise<File | null> {
+  try {
+    const body = new FormData();
+    body.append("file", file);
+
+    const res = await fetch("/api/images/convert", { method: "POST", body });
+
+    if (!res.ok) {
+      let message: string | null = null;
+      try {
+        const data = (await res.json()) as { error?: string };
+        message = data.error ?? null;
+      } catch {
+        message = null;
+      }
+      // Our API explains itself; anything else falls through to the next attempt.
+      if (message) throw new Error(message);
+      return null;
+    }
+
+    const blob = await res.blob();
+    if (blob.size === 0) return null;
+    return new File([blob], jpegName(file.name), {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  } catch (err) {
+    // A message from our own API is worth showing; anything else is noise.
+    if (err instanceof Error && err.message) throw err;
+    return null;
+  }
+}
+
+/**
  * Converts and shrinks a picked file. Throws with a readable message only when
  * every decode path has failed, so the caller can show it to the user.
  */
@@ -154,8 +193,12 @@ export async function prepareImage(file: File): Promise<File> {
     if (out) return out;
   }
 
-  // 3: HEIC that this browser genuinely cannot read on its own.
+  // 3: HEIC this browser genuinely cannot read. Ask our server, which has a
+  // real decoder, before falling back to the flaky in-browser one.
   if (heic) {
+    const serverConverted = await convertOnServer(file);
+    if (serverConverted) return serverConverted;
+
     const converted = await decodeWithHeic2any(file);
     if (converted) {
       const convertedBitmap = await decodeWithBitmap(converted);

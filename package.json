@@ -14,6 +14,7 @@
     "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.8",
+    "heic-convert": "^2.1.0",
     "heic2any": "^0.0.4",
     "lucide-react": "^0.383.0",
     "next": "^16.2.7",
