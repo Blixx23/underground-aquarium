@@ -293,7 +293,7 @@ export default function MyListingsManager({
                       type="button"
                       onClick={() => remove(l)}
                       disabled={busy}
-                      className="inline-flex items-center gap-2 rounded-xl bg-coral-600/80 hover:bg-coral-600 text-white text-sm px-4 py-2 transition-colors disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-xl bg-coral-500 hover:bg-coral-400 text-white font-medium text-sm px-4 py-2 transition-colors disabled:opacity-60"
                     >
                       {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                       Delete for good
