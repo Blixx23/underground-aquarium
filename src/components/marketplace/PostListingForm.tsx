@@ -17,6 +17,25 @@ type ListingKind = "sale" | "free" | "wanted";
 
 type Photo = { file: File; preview: string };
 
+/** The shape the edit page hands in. Absent means "posting something new". */
+export type ExistingListing = {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  description: string | null;
+  price_cents: number | null;
+  is_wanted: boolean;
+  condition: string | null;
+  city: string | null;
+  images: string[] | null;
+  region_id: string;
+  state_code: string;
+  allow_messages: boolean;
+  show_email: boolean;
+  contact_phone: string | null;
+};
+
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -25,35 +44,61 @@ function slugify(text: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function kindOf(listing: ExistingListing): ListingKind {
+  if (listing.is_wanted) return "wanted";
+  if (listing.price_cents === 0) return "free";
+  return "sale";
+}
+
 export default function PostListingForm({
   regions,
+  existing,
 }: {
   regions: MarketRegion[];
+  existing?: ExistingListing;
 }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const isEdit = !!existing;
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  const [kind, setKind] = useState<ListingKind>("sale");
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
-  const [stateCode, setStateCode] = useState("");
-  const [regionId, setRegionId] = useState("");
-  const [city, setCity] = useState("");
-  const [price, setPrice] = useState("");
-  const [condition, setCondition] = useState("");
-  const [description, setDescription] = useState("");
+  const [kind, setKind] = useState<ListingKind>(
+    existing ? kindOf(existing) : "sale"
+  );
+  const [title, setTitle] = useState(existing?.title ?? "");
+  const [category, setCategory] = useState(existing?.category ?? "");
+  const [stateCode, setStateCode] = useState(existing?.state_code ?? "");
+  const [regionId, setRegionId] = useState(existing?.region_id ?? "");
+  const [city, setCity] = useState(existing?.city ?? "");
+  const [price, setPrice] = useState(
+    existing && existing.price_cents !== null && existing.price_cents > 0
+      ? (existing.price_cents / 100).toFixed(2)
+      : ""
+  );
+  const [condition, setCondition] = useState(existing?.condition ?? "");
+  const [description, setDescription] = useState(existing?.description ?? "");
   const [photos, setPhotos] = useState<Photo[]>([]);
+  // Photos already living in storage. Removing one here just drops the URL
+  // from the listing; the file itself stays in the bucket.
+  const [keptImages, setKeptImages] = useState<string[]>(
+    existing?.images ?? []
+  );
   const [converting, setConverting] = useState(false);
 
-  const [allowMessages, setAllowMessages] = useState(true);
-  const [showEmail, setShowEmail] = useState(false);
-  const [contactPhone, setContactPhone] = useState("");
+  const [allowMessages, setAllowMessages] = useState(
+    existing?.allow_messages ?? true
+  );
+  const [showEmail, setShowEmail] = useState(existing?.show_email ?? false);
+  const [contactPhone, setContactPhone] = useState(
+    existing?.contact_phone ?? ""
+  );
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const photoCount = keptImages.length + photos.length;
 
   // States, in alphabetical order by name.
   const states = useMemo(() => {
@@ -79,7 +124,9 @@ export default function PostListingForm({
 
   // Remember the last area someone posted in — most people post repeatedly
   // from the same place, and retyping it every time is friction we don't need.
+  // Never applied when editing: that listing already has an area.
   useEffect(() => {
+    if (isEdit) return;
     try {
       const saved = localStorage.getItem("ua:lastRegion");
       if (!saved) return;
@@ -91,7 +138,7 @@ export default function PostListingForm({
     } catch {
       // No saved area, or storage is blocked. Not a problem.
     }
-  }, [regions]);
+  }, [regions, isEdit]);
 
   // Changing state clears a region that no longer belongs to it.
   useEffect(() => {
@@ -107,7 +154,7 @@ export default function PostListingForm({
     if (selected.length === 0) return;
     setError(null);
 
-    const room = MAX_PHOTOS - photos.length;
+    const room = MAX_PHOTOS - photoCount;
     if (room <= 0) {
       setError(`That's the limit — ${MAX_PHOTOS} photos per listing.`);
       return;
@@ -223,39 +270,67 @@ export default function PostListingForm({
         imageUrls.push(publicUrl.publicUrl);
       }
 
-      const listingSlug = `${slugify(title).slice(0, 60)}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}`;
+      // Photos already on the listing keep their order, new ones go after.
+      const allImages = [...keptImages, ...imageUrls];
 
-      const { data: created, error: insertError } = await supabase
-        .from("listings")
-        .insert({
-          user_id: currentUser.id,
-          region_id: regionId,
-          // The database trigger overwrites these from region_id, so they
-          // can't drift out of sync. Sent only to satisfy the NOT NULL.
-          state_code: stateCode,
-          region_slug: "",
-          title: title.trim(),
-          slug: listingSlug,
-          category,
-          description: description.trim() || null,
-          price_cents: priceCents,
-          is_wanted: kind === "wanted",
-          condition: kind === "wanted" ? null : condition || null,
-          city: city.trim() || null,
-          images: imageUrls.length ? imageUrls : null,
-          allow_messages: allowMessages,
-          show_email: showEmail,
-          // Only stored when they deliberately opt in, so the listing page
-          // never has to reach into the auth tables to display it.
-          contact_email: showEmail ? currentUser.email ?? null : null,
-          contact_phone: contactPhone.trim() || null,
-          status: "active",
-        })
-        .select("slug")
-        .single();
-      if (insertError) throw insertError;
+      // Everything except identity, slug and status is written the same way
+      // whether this is a new post or an edit.
+      const fields = {
+        region_id: regionId,
+        // The trigger overwrites this from region_id, so it can't drift out
+        // of sync. region_slug is only sent on insert, to satisfy its NOT NULL.
+        state_code: stateCode,
+        title: title.trim(),
+        category,
+        description: description.trim() || null,
+        price_cents: priceCents,
+        is_wanted: kind === "wanted",
+        condition: kind === "wanted" ? null : condition || null,
+        city: city.trim() || null,
+        images: allImages.length ? allImages : null,
+        allow_messages: allowMessages,
+        show_email: showEmail,
+        // Only stored when they deliberately opt in, so the listing page
+        // never has to reach into the auth tables to display it.
+        contact_email: showEmail ? currentUser.email ?? null : null,
+        contact_phone: contactPhone.trim() || null,
+      };
+
+      let finalSlug: string;
+
+      if (existing) {
+        const { error: updateError } = await supabase
+          .from("listings")
+          .update(fields)
+          .eq("id", existing.id);
+        if (updateError) throw updateError;
+        finalSlug = existing.slug;
+      } else {
+        const listingSlug = `${slugify(title).slice(0, 60)}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}`;
+
+        const { data: created, error: insertError } = await supabase
+          .from("listings")
+          .insert({
+            ...fields,
+            region_slug: "",
+            user_id: currentUser.id,
+            slug: listingSlug,
+            status: "active",
+          })
+          .select("slug")
+          .single();
+        if (insertError) throw insertError;
+        finalSlug = created.slug as string;
+
+        // Onboarding grant — server verifies ownership; idempotent.
+        fetch("/api/bubbles/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: "first_listing" }),
+        }).catch(() => {});
+      }
 
       try {
         localStorage.setItem(
@@ -266,19 +341,15 @@ export default function PostListingForm({
         // Storage blocked. Harmless.
       }
 
-      // Onboarding grant — server verifies ownership; idempotent.
-      fetch("/api/bubbles/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: "first_listing" }),
-      }).catch(() => {});
-
-      router.push(`/listing/${created.slug}`);
+      router.push(`/listing/${finalSlug}`);
+      router.refresh();
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong posting your listing."
+          : isEdit
+            ? "Something went wrong saving your changes."
+            : "Something went wrong posting your listing."
       );
       setBusy(false);
     }
@@ -497,25 +568,27 @@ export default function PostListingForm({
       {/* Photos */}
       <div>
         <label className="block text-sm text-ocean-300 mb-2">
-          Photos ({photos.length}/{MAX_PHOTOS})
+          Photos ({photoCount}/{MAX_PHOTOS})
         </label>
 
-        {photos.length > 0 && (
+        {photoCount > 0 && (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
-            {photos.map((photo, i) => (
+            {keptImages.map((url, i) => (
               <div
-                key={photo.preview}
+                key={url}
                 className="relative aspect-square rounded-xl overflow-hidden border border-ocean-800/60"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={photo.preview}
+                  src={url}
                   alt={`Photo ${i + 1}`}
                   className="w-full h-full object-cover"
                 />
                 <button
                   type="button"
-                  onClick={() => removePhoto(i)}
+                  onClick={() =>
+                    setKeptImages((prev) => prev.filter((u) => u !== url))
+                  }
                   className="absolute top-1.5 right-1.5 rounded-full bg-ocean-950/80 p-1.5 text-ocean-200 hover:text-white transition-colors"
                   aria-label="Remove photo"
                 >
@@ -528,10 +601,37 @@ export default function PostListingForm({
                 )}
               </div>
             ))}
+
+            {photos.map((photo, i) => (
+              <div
+                key={photo.preview}
+                className="relative aspect-square rounded-xl overflow-hidden border border-ocean-800/60"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo.preview}
+                  alt={`Photo ${keptImages.length + i + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  className="absolute top-1.5 right-1.5 rounded-full bg-ocean-950/80 p-1.5 text-ocean-200 hover:text-white transition-colors"
+                  aria-label="Remove photo"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                {keptImages.length === 0 && i === 0 && (
+                  <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ocean-950/80 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ocean-200">
+                    Cover
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
-        {photos.length < MAX_PHOTOS && (
+        {photoCount < MAX_PHOTOS && (
           <label className="block cursor-pointer rounded-xl border border-dashed border-ocean-700/60 bg-ocean-900/40 hover:border-ocean-500 transition-colors overflow-hidden">
             {converting ? (
               <div className="h-32 flex flex-col items-center justify-center text-ocean-400">
@@ -542,7 +642,7 @@ export default function PostListingForm({
               <div className="h-32 flex flex-col items-center justify-center text-ocean-500">
                 <ImagePlus className="w-7 h-7 mb-2" />
                 <span className="text-sm">
-                  {photos.length === 0 ? "Add photos" : "Add more"}
+                  {photoCount === 0 ? "Add photos" : "Add more"}
                 </span>
               </div>
             )}
@@ -638,11 +738,28 @@ export default function PostListingForm({
           className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-ocean-600 text-white font-medium hover:bg-ocean-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin" />}
-          {busy ? "Posting…" : "Post it, free"}
+          {isEdit
+            ? busy
+              ? "Saving…"
+              : "Save changes"
+            : busy
+              ? "Posting…"
+              : "Post it, free"}
         </button>
-        <p className="text-xs text-ocean-500">
-          Stays up for {LISTING_LIFETIME_DAYS} days. Renew or delete it any time.
-        </p>
+
+        {isEdit ? (
+          <Link
+            href="/my/listings"
+            className="text-sm text-ocean-400 hover:text-white transition-colors"
+          >
+            Cancel
+          </Link>
+        ) : (
+          <p className="text-xs text-ocean-500">
+            Stays up for {LISTING_LIFETIME_DAYS} days. Renew or delete it any
+            time.
+          </p>
+        )}
       </div>
     </form>
   );

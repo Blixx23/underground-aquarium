@@ -10,12 +10,17 @@ import {
   User as UserIcon,
   LogOut,
   MessageCircle,
+  ClipboardList,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
-import { MESSAGING_ENABLED, POST_AD_PATH } from "@/lib/config";
+import {
+  MESSAGING_ENABLED,
+  MY_LISTINGS_ENABLED,
+  POST_AD_PATH,
+} from "@/lib/config";
 
 const nav = [
   { label: "Marketplace", href: "/marketplace" },
@@ -184,6 +189,15 @@ export default function Navbar() {
           <NotificationBell />
           {user ? (
             <>
+              {MY_LISTINGS_ENABLED && (
+                <Link
+                  href="/my/listings"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
+                  aria-label="My listings"
+                >
+                  <ClipboardList className="w-4 h-4" />
+                </Link>
+              )}
               {MESSAGING_ENABLED && (
                 <Link
                   href="/messages"
@@ -270,6 +284,16 @@ export default function Navbar() {
           <div className="mt-4 flex flex-col gap-3">
             {user ? (
               <>
+                {MY_LISTINGS_ENABLED && (
+                  <Link
+                    href="/my/listings"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-center gap-2 py-3 text-ocean-200"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    My listings
+                  </Link>
+                )}
                 {MESSAGING_ENABLED && (
                   <Link
                     href="/messages"

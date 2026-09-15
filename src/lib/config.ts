@@ -36,9 +36,9 @@ export const CLUB_DUES_ENABLED: boolean = true;
 // On-site buyer/seller messaging. Shipped in Step 5.
 export const MESSAGING_ENABLED: boolean = true;
 
-// The /my/listings manager: renew, mark sold, edit, delete.
-// Ships in Step 6.
-export const MY_LISTINGS_ENABLED: boolean = false;
+// The /my/listings manager: publish, renew, mark sold, edit, delete.
+// Shipped in Step 6.
+export const MY_LISTINGS_ENABLED: boolean = true;
 
 // ============================================================
 // FREE CLASSIFIEDS SETTINGS
