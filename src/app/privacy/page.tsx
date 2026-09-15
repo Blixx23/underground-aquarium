@@ -58,17 +58,20 @@ export default function PrivacyPage() {
               and messages.
             </p>
             <p>
-              <span className="text-white">Transaction information.</span> When
-              you buy or sell, we collect order details such as the items,
-              amounts, and the shipping address provided at checkout, plus a
-              seller&apos;s ship-from address used to create shipping labels.
+              <span className="text-white">Listing information.</span> When you
+              post a classified ad we store what you put in it: the title,
+              description, photos, price, the metro area you chose, and any
+              contact details you chose to display. Your ads and your messages
+              are yours; your email address is never shown on a listing unless
+              you tick the box asking us to show it.
             </p>
             <p>
-              <span className="text-white">Payment information.</span> Payments
-              and payouts are handled by Stripe. We do not collect or store your
-              full card number. Stripe may collect identity and bank details
-              directly from sellers and clubs to enable payouts, under
-              Stripe&apos;s own privacy policy.
+              <span className="text-white">Payment information.</span> We do not
+              process payments for listings and never see your card details.
+              Deals are settled directly between the two people involved. If a
+              club collects dues through the site, that payment is handled by
+              Stripe under their own privacy policy, and we do not store your
+              full card number.
             </p>
             <p>
               <span className="text-white">Club information.</span> If you join or
@@ -99,7 +102,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-5 space-y-1.5 text-ocean-300">
               <li>provide, operate, and improve the Service;</li>
               <li>
-                process orders, enable payouts, and collect applicable fees;
+                deliver messages between members about a listing;
               </li>
               <li>
                 send transactional messages such as order updates and account
@@ -121,9 +124,10 @@ export default function PrivacyPage() {
             <p>
               <span className="text-white">Service providers.</span> We share data
               with the providers that run our platform, only as needed to operate
-              the Service: Supabase (database, accounts, and storage), Stripe
-              (payments and payouts), Resend (email delivery), Vercel (hosting),
-              and OpenStreetMap&apos;s Nominatim (geocoding).
+              the Service: Supabase (database, accounts, and storage), Resend
+              (email delivery), Vercel (hosting), OpenStreetMap&apos;s Nominatim
+              (geocoding), and Stripe, used only where a club collects its own
+              dues.
             </p>
             <p>
               <span className="text-white">Other users.</span> Some information is
@@ -169,7 +173,7 @@ export default function PrivacyPage() {
             <p>
               We keep your information for as long as your account is active and
               as needed to provide the Service. We may retain certain records —
-              such as completed orders and payout history — for longer when needed
+              such as club dues records — for longer when needed
               for legal, tax, accounting, or fraud-prevention purposes, even after
               a listing or account is removed.
             </p>

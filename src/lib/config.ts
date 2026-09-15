@@ -58,8 +58,12 @@ export const LISTING_LIFETIME_DAYS = 45;
 // They have no effect on free classified listings.
 // ============================================================
 
-// The platform fee charged on each sale, as a decimal.
-export const PLATFORM_FEE_PERCENT = 0.05; // 0.05 = 5%
+// The platform takes nothing. Underground Aquarium is free to use:
+// no listing fees, no commission, no cut of club dues.
+// Kept as a constant only because the club dues checkout and the
+// wind-down code still read it. Already-placed orders use the fee
+// that was stored on the order at the time, so this does not change them.
+export const PLATFORM_FEE_PERCENT = 0;
 
 // A ready-to-display label built from the same value.
 export const PLATFORM_FEE_LABEL = `${PLATFORM_FEE_PERCENT * 100}%`;
@@ -68,5 +72,6 @@ export const PLATFORM_FEE_LABEL = `${PLATFORM_FEE_PERCENT * 100}%`;
 // their payout, if the buyer hasn't already confirmed receipt.
 export const PAYOUT_AUTO_RELEASE_DAYS = 5;
 
-// Flat markup on every shipping label, in cents. 150 = $1.50.
-export const SHIPPING_LABEL_FEE_CENTS = 150;
+// Flat markup on every shipping label, in cents. Zero — we don't
+// mark up shipping either.
+export const SHIPPING_LABEL_FEE_CENTS = 0;

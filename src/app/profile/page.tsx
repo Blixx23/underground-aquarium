@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Plus,
-  ShoppingBag,
+  MessageCircle,
   Store,
   Fish,
   Globe,
@@ -47,13 +47,6 @@ export default async function ProfilePage() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const { data: stores } = await supabase
-    .from("stores")
-    .select("id")
-    .eq("owner_id", user.id);
-  const storeIds = (stores ?? []).map((s) => (s as { id: string }).id);
-  const hasShop = storeIds.length > 0;
-
   const { data: tanksData } = await supabase
     .from("tanks")
     .select("id, name, gallons, items, updated_at, is_public")
@@ -97,11 +90,10 @@ export default async function ProfilePage() {
   const isAdmin = Boolean(profile?.is_admin);
 
   const actions = [
+    { href: "/my/listings", label: "My listings", Icon: Store },
+    { href: "/messages", label: "Messages", Icon: MessageCircle },
+    { href: "/post", label: "Post free ad", Icon: Plus },
     { href: "/tank-builder", label: "Tank Builder", Icon: Fish },
-    { href: "/orders", label: "My orders", Icon: ShoppingBag },
-    hasShop
-      ? { href: "/sell/listings", label: "Seller Hub", Icon: Store }
-      : { href: "/sell/setup", label: "Start selling", Icon: Plus },
     { href: "/account", label: "Account & data", Icon: Settings },
     ...(isAdmin
       ? [{ href: "/admin", label: "Admin", Icon: ShieldCheck }]

@@ -5,9 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Private / transactional pages crawlers shouldn't index.
-      // Adjust this list to match your real routes.
-      disallow: ["/api/", "/orders", "/sell/sales", "/checkout/"],
+      // Private pages crawlers shouldn't index.
+      disallow: ["/api/", "/messages", "/my/", "/account", "/profile"],
     },
     sitemap: "https://www.undergroundaquarium.com/sitemap.xml",
   };

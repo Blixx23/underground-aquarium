@@ -11,7 +11,6 @@ import {
   Bell,
   ShieldCheck,
 } from "lucide-react";
-import { PLATFORM_FEE_LABEL } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Run Your Aquarium Club Online | Underground Aquarium",
@@ -28,7 +27,7 @@ const benefits = [
   {
     icon: CreditCard,
     title: "Collect dues online",
-    desc: "Members pay dues by card through Stripe. Money lands in your club's own account — no spreadsheets, no chasing checks.",
+    desc: "Members pay dues by card and the money lands in your club's own account. We take none of it. No spreadsheets, no chasing checks.",
   },
   {
     icon: ClipboardCheck,
@@ -185,9 +184,9 @@ export default function RunAClubPage() {
               Free to run your club
             </h2>
             <p className="text-ocean-300 text-lg leading-relaxed mb-8">
-              No monthly fees. Creating and running your club costs nothing. When
-              you collect dues online, a small {PLATFORM_FEE_LABEL} platform fee
-              applies — only on what you actually collect.
+              No monthly fees, no setup cost, and no cut of your dues. Creating
+              and running your club here is free, and every dollar your members
+              pay goes to your club.
             </p>
             <Link
               href="/clubs/new"

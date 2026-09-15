@@ -145,37 +145,43 @@ export default function TermsPage() {
 
           <section className="space-y-3">
             <h2 className="font-display text-2xl text-emerald-400">
-              Buying and selling
+              Classified listings
             </h2>
             <p>
-              When you buy an item, your contract for that item is with the
-              seller, not with us. Returns, refunds, and disputes are handled
-              between the buyer and the seller; we may help facilitate a
-              resolution but we are not obligated to and we are not responsible
-              for the outcome.
+              Listings on Underground Aquarium are free classified ads. We are
+              not a party to any deal you make. We do not process payments, hold
+              funds, arrange shipping, verify items, or vet the people you deal
+              with. Everything that happens after two people connect here is
+              between them.
             </p>
             <p>
-              To sell, you must connect a payout account and complete the setup
-              steps we require before your listings can go live. You agree to
-              describe items honestly, honor your listings, ship promptly, and
-              comply with all laws and taxes that apply to your sales. You are
-              responsible for determining, collecting, and remitting any taxes on
-              your sales.
+              You agree to describe items honestly, to post only things you
+              actually have and may lawfully sell or give away, and to comply
+              with all laws that apply to you — including any rules on keeping,
+              selling, or transporting live animals and plants in your state.
+              You are responsible for any taxes on anything you sell.
+            </p>
+            <p>
+              Because no money passes through us, we cannot reverse a payment,
+              recover an item, or mediate a dispute. Meet in a public place,
+              inspect livestock before paying, and use your judgment.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="font-display text-2xl text-emerald-400">
-              Fees and payments
+              Fees
             </h2>
             <p>
-              Payments are processed by Stripe, and your use of payments is
-              subject to Stripe&apos;s terms. We charge a service fee on
-              marketplace transactions and a fee on club dues we help collect;
-              applicable fees are disclosed before you complete a transaction. We
-              may change our fees going forward, and we will give notice of
-              material changes. Payouts to sellers and clubs are made through
-              Stripe once the applicable conditions are met.
+              Underground Aquarium is free to use. There is no charge to create
+              an account, to post a listing, to browse, to message anyone, or to
+              run a club here, and we take no commission on anything.
+            </p>
+            <p>
+              Clubs may choose to collect their own membership dues through the
+              site. That money goes to the club, not to us, and we take none of
+              it. If we ever introduce a paid feature, it will be optional and
+              we will give notice before it applies to you.
             </p>
           </section>
 

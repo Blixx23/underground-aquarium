@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Fish, Waves, MapPin, ExternalLink, User } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import ClubsAndAwards, { type ClubAward } from "@/components/profile/ClubsAndAwards";
-import ProfileShop, { type ShopItem } from "@/components/profile/ProfileShop";
+import { categoryLabel } from "@/lib/marketplace/categories";
+import { formatPrice } from "@/lib/marketplace/listings";
 import Certifications, {
   type Certification,
 } from "@/components/profile/Certifications";
@@ -116,29 +117,26 @@ export default async function PublicProfilePage({ params }: Params) {
     })
     .filter((x): x is Certification => x !== null);
 
-  const { data: storeRows } = await supabasePublic
-    .from("stores")
-    .select("id, slug")
-    .eq("owner_id", profile.id);
-  const storeIds = (storeRows ?? []).map((r) => (r as { id: string }).id);
-  const storeSlug =
-    (storeRows ?? [])[0]
-      ? ((storeRows ?? [])[0] as { slug: string }).slug
-      : null;
+  type PublicListing = {
+    id: string;
+    slug: string;
+    title: string;
+    category: string;
+    price_cents: number | null;
+    is_wanted: boolean;
+    images: string[] | null;
+    city: string | null;
+  };
 
-  let shopItems: ShopItem[] = [];
-  if (storeIds.length > 0) {
-    const { data: prod } = await supabasePublic
-      .from("products")
-      .select("id, name, slug, price, images, category, stock")
-      .in("store_id", storeIds)
-      .eq("is_active", true)
-      .is("archived_at", null)
-      .not("is_draft", "is", true)
-      .order("created_at", { ascending: false })
-      .limit(48);
-    shopItems = (prod ?? []) as unknown as ShopItem[];
-  }
+  const { data: listingRows } = await supabasePublic
+    .from("listings")
+    .select("id, slug, title, category, price_cents, is_wanted, images, city")
+    .eq("user_id", profile.id)
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString())
+    .order("bumped_at", { ascending: false })
+    .limit(48);
+  const openListings = (listingRows ?? []) as unknown as PublicListing[];
 
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
@@ -235,7 +233,47 @@ export default async function PublicProfilePage({ params }: Params) {
             })}
           </div>
         )}
-        <ProfileShop items={shopItems} storeSlug={storeSlug} />
+        {openListings.length > 0 && (
+          <section className="mt-12">
+            <h2 className="mb-4 font-display text-2xl text-emerald-400">
+              Currently listed
+            </h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {openListings.map((l) => {
+                const image = l.images?.[0];
+                return (
+                  <Link
+                    key={l.id}
+                    href={`/listing/${l.slug}`}
+                    className="group block overflow-hidden rounded-2xl border border-ocean-800/60 bg-ocean-900/40 transition-colors hover:border-ocean-600/70"
+                  >
+                    <div className="flex aspect-square items-center justify-center overflow-hidden bg-ocean-950">
+                      {image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={image}
+                          alt={l.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <Fish className="h-8 w-8 text-ocean-700" />
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="truncate text-sm text-white">{l.title}</p>
+                      <p className="mt-0.5 text-xs text-ocean-500">
+                        {l.is_wanted ? "Wanted" : formatPrice(l.price_cents)}
+                        {" · "}
+                        {categoryLabel(l.category)}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <div className="mt-12 pt-6 border-t border-ocean-800/40">
           <ReportButton

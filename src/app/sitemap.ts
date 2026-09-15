@@ -9,8 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = [
     "",
     "/marketplace",
-    "/sell",
-    "/vendor-guide",
+    "/post",
     "/glossary",
     "/species",
     "/tank-builder",
@@ -52,13 +51,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .select("slug")
     .eq("status", "published");
 
-  // Active marketplace listings. Mirror the product page's own filters
-  // (active, and not a live animal) so we never list a URL that would 404.
-  const { data: products } = await supabasePublic
-    .from("products")
+  // Every state and metro-area page — these are the pages that actually
+  // rank for "aquarium classifieds <city>".
+  const { data: regions } = await supabasePublic
+    .from("market_regions")
+    .select("state_code, slug");
+
+  // Live classified listings only, so we never list a URL that would 404.
+  const { data: listings } = await supabasePublic
+    .from("listings")
     .select("slug")
-    .eq("is_active", true)
-    .not("is_live_animal", "is", true);
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString());
 
   // Published courses — each has a public landing page.
   const { data: courses } = await supabasePublic
@@ -136,12 +140,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const productEntries = (products ?? []).map((p) => ({
-    url: `${baseUrl}/marketplace/${p.slug}`,
+  const stateCodes = [
+    ...new Set(
+      ((regions ?? []) as unknown as { state_code: string }[]).map((r) =>
+        r.state_code.toLowerCase()
+      )
+    ),
+  ];
+
+  const stateEntries = stateCodes.map((code) => ({
+    url: `${baseUrl}/marketplace/${code}`,
     lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
+    changeFrequency: "daily" as const,
+    priority: 0.7,
   }));
+
+  const regionEntries = ((regions ?? []) as unknown as {
+    state_code: string;
+    slug: string;
+  }[]).map((r) => ({
+    url: `${baseUrl}/marketplace/${r.state_code.toLowerCase()}/${r.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "daily" as const,
+    priority: 0.7,
+  }));
+
+  const listingEntries = ((listings ?? []) as unknown as { slug: string }[]).map(
+    (l) => ({
+      url: `${baseUrl}/listing/${l.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.6,
+    })
+  );
 
   const courseEntries = (courses ?? []).map((c) => ({
     url: `${baseUrl}/courses/${c.slug}`,
@@ -179,7 +210,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...storeEntries,
     ...clubEntries,
     ...eventEntries,
-    ...productEntries,
+    ...stateEntries,
+    ...regionEntries,
+    ...listingEntries,
     ...courseEntries,
     ...forumCategoryEntries,
     ...forumThreadEntries,
