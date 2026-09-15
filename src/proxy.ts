@@ -10,6 +10,11 @@ import { PAID_MARKETPLACE_ENABLED, POST_AD_PATH } from "@/lib/config";
 // reachable until every open order has cleared.
 const PAID_ONLY_PATHS = ["/sell", "/sell/setup"];
 
+// /marketplace/:something used to be an old paid product page. That slot now
+// belongs to state codes (/marketplace/ca), so anything in it that isn't a
+// two-letter state gets sent back to the marketplace index instead of 404ing.
+const LEGACY_PRODUCT_PATH = /^\/marketplace\/([^/]+)\/?$/;
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -20,6 +25,14 @@ export async function proxy(request: NextRequest) {
   ) {
     const url = request.nextUrl.clone();
     url.pathname = POST_AD_PATH;
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  const legacy = pathname.match(LEGACY_PRODUCT_PATH);
+  if (legacy && !/^[a-z]{2}$/i.test(legacy[1])) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/marketplace";
     url.search = "";
     return NextResponse.redirect(url);
   }
