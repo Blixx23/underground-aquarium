@@ -62,14 +62,18 @@ export default function MyListingsManager({
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
 
-  async function run(id: string, work: () => Promise<{ error: unknown }>) {
+  // `work` awaits the Supabase call itself and hands back just the error.
+  // Supabase query builders are thenable but are not Promises, so they can't
+  // be returned straight out of a callback typed as returning a Promise.
+  async function run(
+    id: string,
+    work: () => Promise<{ message: string } | null>
+  ) {
     setBusyId(id);
     setError(null);
-    const { error: err } = await work();
+    const err = await work();
     if (err) {
-      setError(
-        err instanceof Error ? err.message : "That didn't save. Try again."
-      );
+      setError(err.message || "That didn't save. Try again.");
       setBusyId(null);
       return;
     }
@@ -82,16 +86,17 @@ export default function MyListingsManager({
     const expires = new Date(
       Date.now() + LISTING_LIFETIME_DAYS * 86400000
     ).toISOString();
-    return run(l.id, () =>
-      supabase
+    return run(l.id, async () => {
+      const { error: err } = await supabase
         .from("listings")
         .update({
           status: "active",
           bumped_at: new Date().toISOString(),
           expires_at: expires,
         })
-        .eq("id", l.id)
-    );
+        .eq("id", l.id);
+      return err;
+    });
   }
 
   function renew(l: ManagedListing) {
@@ -99,13 +104,23 @@ export default function MyListingsManager({
   }
 
   function markSold(l: ManagedListing) {
-    return run(l.id, () =>
-      supabase.from("listings").update({ status: "sold" }).eq("id", l.id)
-    );
+    return run(l.id, async () => {
+      const { error: err } = await supabase
+        .from("listings")
+        .update({ status: "sold" })
+        .eq("id", l.id);
+      return err;
+    });
   }
 
   function remove(l: ManagedListing) {
-    return run(l.id, () => supabase.from("listings").delete().eq("id", l.id));
+    return run(l.id, async () => {
+      const { error: err } = await supabase
+        .from("listings")
+        .delete()
+        .eq("id", l.id);
+      return err;
+    });
   }
 
   if (listings.length === 0) {
