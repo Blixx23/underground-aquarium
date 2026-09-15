@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
+import { blockIfPaidMarketplaceOff } from "@/lib/paidGuard";
 
 function slugify(text: string) {
   return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 export async function POST(request: Request) {
+  // No new seller payout accounts while listings are free. Existing
+  // connected accounts are untouched and can still receive payouts on
+  // orders that were already paid for.
+  const paidOff = blockIfPaidMarketplaceOff();
+  if (paidOff) return paidOff;
+
   try {
     const supabase = await createClient();
     const {

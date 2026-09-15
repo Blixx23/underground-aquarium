@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { PLATFORM_FEE_PERCENT } from "@/lib/config";
+import { blockIfPaidMarketplaceOff } from "@/lib/paidGuard";
 
 export async function POST(request: Request) {
+  // Free classifieds site: no new paid checkouts. Flip
+  // PAID_MARKETPLACE_ENABLED in src/lib/config.ts to bring this back.
+  const paidOff = blockIfPaidMarketplaceOff();
+  if (paidOff) return paidOff;
+
   try {
     const supabase = await createClient();
     const {
