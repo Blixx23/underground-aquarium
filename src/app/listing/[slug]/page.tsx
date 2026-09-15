@@ -148,7 +148,7 @@ export default async function ListingPage({
 
   // The three ways a buyer can reach this poster, worked out once so the
   // owner preview and the buyer view can never disagree.
-  const messagingOn = MESSAGING_ENABLED && listing.allow_messages;
+  const messagingOn = MESSAGING_ENABLED;
   const emailShown = listing.show_email && !!listing.contact_email;
   const canBeContacted =
     messagingOn || emailShown || !!listing.contact_phone;
@@ -255,42 +255,37 @@ export default async function ListingPage({
 
               {isOwner ? (
                 <>
-                  {/* You can't message yourself, so show what buyers get
-                      instead of a button that would do nothing. */}
+                  {/* You can't message yourself, so say plainly how buyers
+                      will be reaching you instead. */}
                   <div className="mt-4 rounded-xl border border-ocean-800/60 bg-ocean-950/50 p-4">
-                    <p className="text-xs font-mono uppercase tracking-wider text-ocean-500 mb-3">
-                      What buyers see
+                    <p className="text-ocean-100 mb-1">This is your listing.</p>
+                    <p className="text-sm text-ocean-400">
+                      Buyers contact you by messaging you here, and it lands in
+                      your inbox.
                     </p>
 
-                    {canBeContacted ? (
-                      <ul className="space-y-2 text-sm">
-                        {messagingOn && (
-                          <li className="flex items-center gap-2 text-ocean-200">
-                            <MessageCircle className="w-4 h-4 shrink-0 text-emerald-400" />
-                            A &ldquo;Message {seller?.username ?? "you"}&rdquo;
-                            button
-                          </li>
-                        )}
-                        {emailShown && (
-                          <li className="flex items-center gap-2 text-ocean-200">
-                            <Mail className="w-4 h-4 shrink-0 text-emerald-400" />
-                            <span className="break-all">
-                              {listing.contact_email}
-                            </span>
-                          </li>
-                        )}
-                        {listing.contact_phone && (
-                          <li className="flex items-center gap-2 text-ocean-200">
-                            <Phone className="w-4 h-4 shrink-0 text-emerald-400" />
-                            {listing.contact_phone}
-                          </li>
-                        )}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-amber-200">
-                        Nothing. Nobody can reach you about this listing. Edit
-                        it and switch on site messages, or add a phone number.
-                      </p>
+                    {(emailShown || listing.contact_phone) && (
+                      <>
+                        <p className="mt-4 text-xs text-ocean-500">
+                          You also chose to show:
+                        </p>
+                        <ul className="mt-2 space-y-2 text-sm">
+                          {emailShown && (
+                            <li className="flex items-center gap-2 text-ocean-200">
+                              <Mail className="w-4 h-4 shrink-0 text-ocean-500" />
+                              <span className="break-all">
+                                {listing.contact_email}
+                              </span>
+                            </li>
+                          )}
+                          {listing.contact_phone && (
+                            <li className="flex items-center gap-2 text-ocean-200">
+                              <Phone className="w-4 h-4 shrink-0 text-ocean-500" />
+                              {listing.contact_phone}
+                            </li>
+                          )}
+                        </ul>
+                      </>
                     )}
                   </div>
 

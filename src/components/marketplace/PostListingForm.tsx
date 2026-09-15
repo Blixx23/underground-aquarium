@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Fish, Loader2, ImagePlus, X, MapPin } from "lucide-react";
+import {
+  Fish,
+  Loader2,
+  ImagePlus,
+  X,
+  MapPin,
+  MessageCircle,
+} from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { CATEGORIES } from "@/lib/marketplace/categories";
@@ -118,9 +125,6 @@ export default function PostListingForm({
   );
   const [converting, setConverting] = useState(false);
 
-  const [allowMessages, setAllowMessages] = useState(
-    existing?.allow_messages ?? true
-  );
   const [showEmail, setShowEmail] = useState(existing?.show_email ?? false);
   const [contactPhone, setContactPhone] = useState(
     existing?.contact_phone ?? ""
@@ -330,7 +334,8 @@ export default function PostListingForm({
         condition: kind === "wanted" ? null : condition || null,
         city: city.trim() || null,
         images: allImages.length ? allImages : null,
-        allow_messages: allowMessages,
+        // Every poster has an account, so every listing can be messaged.
+        allow_messages: true,
         show_email: showEmail,
         // Only stored when they deliberately opt in, so the listing page
         // never has to reach into the auth tables to display it.
@@ -779,25 +784,24 @@ export default function PostListingForm({
       {/* Contact */}
       <fieldset className="rounded-2xl border border-ocean-800/60 bg-ocean-900/30 p-5">
         <legend className="px-2 text-sm text-ocean-300">
-          How should people reach you?
+          How people reach you
         </legend>
 
-        <label className="flex items-start gap-3 py-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={allowMessages}
-            onChange={(e) => setAllowMessages(e.target.checked)}
-            className="mt-1 accent-ocean-500"
-          />
+        <div className="flex items-start gap-3 rounded-xl border border-ocean-800/50 bg-ocean-950/40 px-4 py-3">
+          <MessageCircle className="mt-0.5 w-4 h-4 shrink-0 text-emerald-400" />
           <span>
             <span className="block text-ocean-200 text-sm">
-              Messages on the site
+              Buyers message you here
             </span>
             <span className="block text-xs text-ocean-500">
-              Recommended. Your email stays private.
+              Always on. Your email address is never shown.
             </span>
           </span>
-        </label>
+        </div>
+
+        <p className="pt-4 pb-1 text-xs text-ocean-500">
+          Optional, if you&apos;d rather people could also reach you directly:
+        </p>
 
         <label className="flex items-start gap-3 py-2 cursor-pointer">
           <input
