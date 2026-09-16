@@ -11,6 +11,13 @@ import Certifications, {
 } from "@/components/profile/Certifications";
 import ReportButton from "@/components/ReportButton";
 import BubbleBadge from "@/components/bubbles/BubbleBadge";
+import TrophyCase from "@/components/society/TrophyCase";
+import {
+  BADGE_COLUMNS,
+  type EarnedBadge,
+  type SocietyBadge,
+} from "@/lib/society/badges";
+import { SOCIETY_SLUG } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +91,40 @@ export default async function PublicProfilePage({ params }: Params) {
   const tanks = (tanksData ?? []) as CommunityTank[];
   const displayName = profile.full_name || profile.username || "Aquarist";
   const websiteUrl = profile.website ? normalizeUrl(profile.website) : null;
+
+  // Society badges. Public on purpose — the trophy case is the advertisement,
+  // so it has to render for a visitor with no account.
+  const { data: badgeCatalogue } = await supabasePublic
+    .from("society_badges")
+    .select(BADGE_COLUMNS)
+    .order("sort_order");
+
+  const { data: societyRow } = await supabasePublic
+    .from("clubs")
+    .select("id")
+    .eq("slug", SOCIETY_SLUG)
+    .maybeSingle();
+
+  let earnedBadges: EarnedBadge[] = [];
+  if (societyRow) {
+    const { data: mine } = await supabasePublic
+      .from("member_badges")
+      .select(`badge_key, earned_at, detail, society_badges(${BADGE_COLUMNS})`)
+      .eq("user_id", profile.id)
+      .eq("club_id", societyRow.id);
+
+    earnedBadges = ((mine ?? []) as unknown as {
+      earned_at: string;
+      detail: string | null;
+      society_badges: SocietyBadge | null;
+    }[])
+      .filter((r) => r.society_badges)
+      .map((r) => ({
+        ...(r.society_badges as SocietyBadge),
+        earned_at: r.earned_at,
+        detail: r.detail,
+      }));
+  }
 
   const { data: clubsData } = await supabasePublic.rpc("user_clubs_awards", {
     p_user_id: profile.id,
@@ -176,6 +217,12 @@ export default async function PublicProfilePage({ params }: Params) {
             </div>
           </div>
         </div>
+
+        <TrophyCase
+          catalogue={(badgeCatalogue ?? []) as unknown as SocietyBadge[]}
+          earned={earnedBadges}
+          heading="Trophy case"
+        />
 
         <ClubsAndAwards rows={clubs} heading="Society & awards" />
 

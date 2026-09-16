@@ -20,6 +20,13 @@ import {
   SOC_PILL,
 } from "@/lib/society/theme";
 import SocietySeal from "@/components/society/SocietySeal";
+import MemberCard from "@/components/society/MemberCard";
+import TrophyCase from "@/components/society/TrophyCase";
+import {
+  BADGE_COLUMNS,
+  type EarnedBadge,
+  type SocietyBadge,
+} from "@/lib/society/badges";
 import PayDuesButton from "./PayDuesButton";
 import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
@@ -87,11 +94,13 @@ export default async function ClubHomePage({
   let myEmail: string | null = null;
   let myTier: string | null = null;
   let myFamilyPrimaryId: string | null = null;
+  let myNumber: number | null = null;
+  let myJoinedAt: string | null = null;
   if (user) {
     const { data: me } = await supabase
       .from("club_members")
       .select(
-        "role, status, paid_through, display_name, email, tier, family_primary_id"
+        "role, status, paid_through, display_name, email, tier, family_primary_id, member_number, joined_at"
       )
       .eq("club_id", club.id)
       .eq("user_id", user.id)
@@ -103,6 +112,8 @@ export default async function ClubHomePage({
     myEmail = me?.email ?? null;
     myTier = me?.tier ?? null;
     myFamilyPrimaryId = me?.family_primary_id ?? null;
+    myNumber = me?.member_number ?? null;
+    myJoinedAt = me?.joined_at ?? null;
   }
   const isApplicant = status === "pending";
   const isMember = role !== null && !isApplicant;
@@ -198,6 +209,45 @@ export default async function ClubHomePage({
     : isFamilyMain
     ? `Pay ${money(myDuesCents)} family dues`
     : `Pay ${money(myDuesCents)} dues`;
+
+  // Badges. sync_member_badges recomputes the ones that are pure functions of
+  // membership facts (milestone from the member number, longevity from the join
+  // date) and inserts any that are missing. Idempotent, so calling it on every
+  // page load costs one cheap round trip and saves running a cron.
+  let badgeCatalogue: SocietyBadge[] = [];
+  let myBadges: EarnedBadge[] = [];
+  if (isSociety) {
+    if (user && isMember) {
+      await supabase.rpc("sync_member_badges", {
+        p_user_id: user.id,
+        p_club_id: club.id,
+      });
+    }
+
+    const [{ data: cat }, { data: mine }] = await Promise.all([
+      supabase.from("society_badges").select(BADGE_COLUMNS).order("sort_order"),
+      user
+        ? supabase
+            .from("member_badges")
+            .select(`earned_at, detail, society_badges(${BADGE_COLUMNS})`)
+            .eq("user_id", user.id)
+            .eq("club_id", club.id)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    badgeCatalogue = (cat ?? []) as unknown as SocietyBadge[];
+    myBadges = ((mine ?? []) as unknown as {
+      earned_at: string;
+      detail: string | null;
+      society_badges: SocietyBadge | null;
+    }[])
+      .filter((r) => r.society_badges)
+      .map((r) => ({
+        ...(r.society_badges as SocietyBadge),
+        earned_at: r.earned_at,
+        detail: r.detail,
+      }));
+  }
 
   const eventCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
   let eventsQuery = supabase
@@ -304,6 +354,20 @@ export default async function ClubHomePage({
             </span>
           )}
         </div>
+
+        {isSociety && isMember && (
+          <MemberCard
+            className="mb-6"
+            name={myName || club.name}
+            memberNumber={myNumber}
+            joinedAt={myJoinedAt}
+            title={titleFor(
+              standings.find((st) => st.user_id === user?.id)?.total_points ?? 0
+            )}
+            tier={myTier}
+            paidThrough={paidThrough}
+          />
+        )}
 
         {nextMeeting && (
           <Link
@@ -541,6 +605,15 @@ export default async function ClubHomePage({
                 </div>
               )}
             </div>
+
+            {isSociety && (
+              <TrophyCase
+                catalogue={badgeCatalogue}
+                earned={myBadges}
+                showLocked
+                heading="Your trophy case"
+              />
+            )}
 
             <MemberSelfEdit
               clubId={club.id}
