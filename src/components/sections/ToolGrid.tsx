@@ -44,7 +44,6 @@ const TOOLS: Tool[] = [
     label: "Tank Builder",
     desc: "Catch aggression, bioload and size problems before you buy the fish, not after.",
     Icon: Wrench,
-    wide: true,
   },
   {
     href: "/water-check",
@@ -134,7 +133,7 @@ export default function ToolGrid() {
                 <h3 className="font-display text-base sm:text-xl text-white mb-1.5 sm:mb-2 group-hover:text-ocean-100 transition-colors">
                   {t.label}
                   {t.highlight && (
-                    <span className="ml-3 inline-flex items-center gap-1.5 rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wider text-sky-300">
+                    <span className="ml-2.5 inline-flex items-center rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-1 align-middle font-mono text-[10px] font-medium uppercase leading-none tracking-[0.15em] text-sky-300">
                       Busiest
                     </span>
                   )}
