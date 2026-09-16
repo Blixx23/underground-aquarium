@@ -132,11 +132,6 @@ export default function ToolGrid() {
               <div className="min-w-0 flex-1">
                 <h3 className="font-display text-base sm:text-xl text-white mb-1.5 sm:mb-2 group-hover:text-ocean-100 transition-colors">
                   {t.label}
-                  {t.highlight && (
-                    <span className="ml-2.5 inline-flex items-center rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-1 align-middle font-mono text-[10px] font-medium uppercase leading-none tracking-[0.15em] text-sky-300">
-                      Busiest
-                    </span>
-                  )}
                 </h3>
                 <p
                   className={`text-sm sm:text-base leading-snug sm:leading-relaxed line-clamp-3 sm:line-clamp-none ${
