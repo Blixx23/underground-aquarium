@@ -13,6 +13,9 @@ export type LocatableRegion = {
   lng: number;
 };
 
+const DEFAULT_BUTTON_CLASS =
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-ocean-600 px-6 py-3.5 font-medium text-white transition-colors hover:bg-ocean-500 disabled:opacity-60";
+
 /** Great-circle distance in miles. */
 function distanceMiles(
   lat1: number,
@@ -38,10 +41,12 @@ function distanceMiles(
 export default function NearMeButton({
   regions,
   className,
+  wrapperClassName,
 }: {
   regions: LocatableRegion[];
-  /** Extra classes for the button itself, e.g. to make it full width. */
+  /** Replaces the button's classes outright, so a caller can match a button row exactly. */
   className?: string;
+  wrapperClassName?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -96,19 +101,17 @@ export default function NearMeButton({
   }
 
   return (
-    <div className={className?.includes("w-full") ? "w-full sm:w-auto" : undefined}>
+    <div className={wrapperClassName}>
       <button
         type="button"
         onClick={locate}
         disabled={busy}
-        className={`inline-flex items-center justify-center gap-2.5 rounded-xl bg-ocean-600 hover:bg-ocean-500 px-5 py-3 text-white font-medium transition-colors disabled:opacity-60 ${
-          className ?? ""
-        }`}
+        className={className ?? DEFAULT_BUTTON_CLASS}
       >
         {busy ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
         ) : (
-          <Crosshair className="w-4 h-4" />
+          <Crosshair className="h-4 w-4 shrink-0" />
         )}
         {busy ? "Finding…" : "Near me"}
       </button>

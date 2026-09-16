@@ -5,6 +5,13 @@ import NearMeButton, {
   type LocatableRegion,
 } from "@/components/marketplace/NearMeButton";
 
+// One shape for all three buttons. Identical padding, identical height,
+// so the row can't come out ragged at any width.
+const BTN =
+  "inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl px-6 font-medium transition-colors sm:w-auto";
+const BTN_PRIMARY = `${BTN} bg-ocean-600 text-white hover:bg-ocean-500`;
+const BTN_SECONDARY = `${BTN} border border-ocean-700/60 bg-ocean-900/60 text-ocean-200 hover:border-ocean-500 hover:text-white`;
+
 export default function Hero({
   locatable,
   liveListings,
@@ -44,29 +51,30 @@ export default function Hero({
         </p>
 
         {/*
-          Two columns on a phone with the primary spanning both, a single
-          centred row from sm up. No nesting, so nothing can drift out of
-          alignment at any width.
+          Two columns on a phone with the primary spanning both, one centred
+          row from sm up. Every child is a direct flex item at the same fixed
+          height, so nothing can sit proud of the others.
         */}
-        <div className="mx-auto grid max-w-md grid-cols-2 gap-3 sm:flex sm:max-w-none sm:flex-wrap sm:items-start sm:justify-center">
+        <div className="mx-auto grid max-w-md grid-cols-2 gap-3 sm:flex sm:max-w-none sm:items-center sm:justify-center">
           <Link
             href="/marketplace"
-            className="group col-span-2 inline-flex items-center justify-center gap-2.5 rounded-xl bg-ocean-600 px-7 py-3.5 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-ocean-500 hover:shadow-xl hover:shadow-ocean-600/30 sm:col-span-1"
+            className={`group col-span-2 sm:col-span-1 ${BTN_PRIMARY}`}
           >
             Browse the classifieds
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
           </Link>
 
-          <Link
-            href={POST_AD_PATH}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-ocean-700/50 bg-ocean-900/70 px-4 py-3.5 font-medium text-ocean-200 transition-all duration-300 hover:border-ocean-500 hover:text-white sm:px-7"
-          >
+          <Link href={POST_AD_PATH} className={BTN_SECONDARY}>
             <Plus className="h-4 w-4 shrink-0" />
             Post ad
           </Link>
 
           {locatable.length > 0 && (
-            <NearMeButton regions={locatable} className="w-full sm:w-auto" />
+            <NearMeButton
+              regions={locatable}
+              className={BTN_SECONDARY}
+              wrapperClassName="w-full sm:w-auto"
+            />
           )}
         </div>
 
