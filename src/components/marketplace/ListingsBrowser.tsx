@@ -104,7 +104,7 @@ export default function ListingsBrowser({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search ${regionName} listings…`}
-            className="w-full rounded-full bg-ocean-900/60 border border-ocean-800/60 pl-11 pr-10 py-2.5 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
+            className="w-full rounded-full bg-ocean-900/60 border border-ocean-800/60 pl-11 pr-10 py-2.5 text-base sm:text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 transition-colors"
           />
           {query && (
             <button
@@ -119,7 +119,7 @@ export default function ListingsBrowser({
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          className="rounded-full bg-ocean-900/60 border border-ocean-800/60 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-ocean-500 transition-colors"
+          className="w-full sm:w-auto rounded-full bg-ocean-900/60 border border-ocean-800/60 px-4 py-2.5 text-base sm:text-sm text-white focus:outline-none focus:border-ocean-500 transition-colors"
         >
           {SORTS.map((s) => (
             <option key={s.key} value={s.key}>
