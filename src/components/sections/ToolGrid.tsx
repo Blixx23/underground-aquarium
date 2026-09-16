@@ -12,13 +12,14 @@ import {
   GraduationCap,
   ArrowRight,
 } from "lucide-react";
+import { SOCIETY_PATH } from "@/lib/config";
 
 type Tool = {
   href: string;
   label: string;
   desc: string;
   Icon: typeof Fish;
-  /** The two headline tools get a wider tile. */
+  /** Headline tools get a full-width tile. */
   wide?: boolean;
 };
 
@@ -35,6 +36,13 @@ const TOOLS: Tool[] = [
     label: "Tank Builder",
     desc: "Catch aggression, bioload and size problems before you buy the fish, not after.",
     Icon: Wrench,
+    wide: true,
+  },
+  {
+    href: SOCIETY_PATH,
+    label: "The Society",
+    desc: "One national aquarium society, open to anyone. Breeder and plant awards, member events, a card with your name on it.",
+    Icon: Users,
     wide: true,
   },
   {
@@ -56,15 +64,9 @@ const TOOLS: Tool[] = [
     Icon: MessagesSquare,
   },
   {
-    href: "/clubs",
-    label: "Clubs",
-    desc: "Find your local aquarium society, or start one and run it here.",
-    Icon: Users,
-  },
-  {
     href: "/events",
     label: "Events",
-    desc: "Swaps, auctions, club nights and expos happening near you.",
+    desc: "Swaps, auctions, meetups and expos happening near you.",
     Icon: CalendarDays,
   },
   {

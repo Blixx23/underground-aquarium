@@ -22,6 +22,7 @@ import {
   MESSAGING_ENABLED,
   MY_LISTINGS_ENABLED,
   POST_AD_PATH,
+  SOCIETY_PATH,
 } from "@/lib/config";
 
 const nav = [
@@ -42,7 +43,7 @@ const nav = [
     children: [
       { label: "Community Hub", href: "/community" },
       { label: "Forums", href: "/forums" },
-      { label: "Clubs", href: "/clubs" },
+      { label: "The Society", href: SOCIETY_PATH },
       { label: "Events", href: "/events" },
     ],
   },

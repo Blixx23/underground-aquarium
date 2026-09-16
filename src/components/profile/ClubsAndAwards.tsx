@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Trophy, Fish, Leaf, Users, Crown } from "lucide-react";
 import { titleForPoints, type AwardTitle } from "@/lib/awards/titles";
+import { SOCIETY_PATH } from "@/lib/config";
 
 export type ClubAward = {
   club_id: string;
@@ -25,7 +26,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function ClubsAndAwards({
   rows,
-  heading = "Clubs & awards",
+  heading = "Society & awards",
   emptyText,
 }: {
   rows: ClubAward[];
@@ -42,10 +43,10 @@ export default function ClubsAndAwards({
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
           <p className="text-sm text-ocean-300">{emptyText}</p>
           <Link
-            href="/clubs/discover"
+            href={SOCIETY_PATH}
             className="mt-2 inline-block text-sm font-medium text-emerald-400 hover:text-emerald-300"
           >
-            Find clubs near you →
+            Join the Society →
           </Link>
         </div>
       </section>

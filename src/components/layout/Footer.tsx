@@ -1,23 +1,24 @@
 import Link from "next/link";
 import { Fish, Github, Twitter, Mail } from "lucide-react";
+import { POST_AD_PATH, SOCIETY_PATH } from "@/lib/config";
 
 const links = {
-  Marketplace: [
-    { label: "Browse Stores", href: "/marketplace" },
-    { label: "Start Selling", href: "/sell" },
-    { label: "Vendor Guide", href: "/vendor-guide" },
-    { label: "Legal Notice", href: "/legal" },
+  Classifieds: [
+    { label: "Browse by area", href: "/marketplace" },
+    { label: "Post a free ad", href: POST_AD_PATH },
+    { label: "My listings", href: "/my/listings" },
+    { label: "Messages", href: "/messages" },
   ],
   Resources: [
     { label: "Fish Species", href: "/species" },
+    { label: "Tank Builder", href: "/tank-builder" },
     { label: "Glossary", href: "/glossary" },
-    { label: "Blog", href: "/blog" },
-    { label: "Events", href: "/events" },
+    { label: "Local fish stores", href: "/stores" },
   ],
   Community: [
-    { label: "Forums", href: "/community" },
-    { label: "Discord", href: "/discord" },
-    { label: "Submit Event", href: "/events/submit" },
+    { label: "Forums", href: "/forums" },
+    { label: "The Society", href: SOCIETY_PATH },
+    { label: "Events", href: "/events" },
     { label: "About Us", href: "/about" },
   ],
 };
@@ -44,7 +45,8 @@ export default function Footer() {
               </div>
             </Link>
             <p className="text-sm text-ocean-400 leading-relaxed">
-              The hobbyist-first marketplace and community for freshwater aquarium enthusiasts.
+              Free local classifieds for the aquarium hobby, the care library
+              that goes with it, and home of the Underground Aquarium Society.
             </p>
             <div className="flex gap-3 mt-6">
               {[
@@ -87,17 +89,21 @@ export default function Footer() {
 
         <div className="mt-16 pt-8 border-t border-ocean-800/40 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-ocean-600 font-mono">
-            © {new Date().getFullYear()} UndergroundAquarium.com — Built for the hobby, by the hobby.
+            © {new Date().getFullYear()} UndergroundAquarium.com — Built for the
+            hobby, by the hobby.
           </p>
           <div className="flex gap-6 text-xs text-ocean-600">
-            <Link href="/privacy" className="hover:text-ocean-400 transition-colors">
+            <Link
+              href="/privacy"
+              className="hover:text-ocean-400 transition-colors"
+            >
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-ocean-400 transition-colors">
+            <Link
+              href="/terms"
+              className="hover:text-ocean-400 transition-colors"
+            >
               Terms of Service
-            </Link>
-            <Link href="/legal" className="hover:text-ocean-400 transition-colors">
-              Vendor Legal
             </Link>
           </div>
         </div>

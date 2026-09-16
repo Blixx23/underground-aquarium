@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import {
   ShieldCheck,
-  ClipboardCheck,
+  Users,
   ArrowRight,
   GraduationCap,
   Fish,
@@ -12,6 +12,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { SOCIETY_NAME, SOCIETY_SLUG, SOCIETY_HOME_PATH } from "@/lib/config";
 
 type AdminTool = {
   href: string;
@@ -35,14 +36,23 @@ export default async function AdminHubPage() {
     .maybeSingle();
   if (!profile?.is_admin) notFound();
 
-  // Clubs awaiting review — platform admin reads via the service-role client,
-  // since normal club RLS doesn't expose other people's unapproved clubs.
-  const { count: clubCount } = await supabaseAdmin
+  // There is one society now, so there is no approval queue. What the admin
+  // hub cares about instead is who is waiting to be let into it.
+  const { data: societyRow } = await supabaseAdmin
     .from("clubs")
-    .select("id", { count: "exact", head: true })
-    .eq("is_public", true)
-    .eq("approved", false);
-  const pendingClubs = clubCount ?? 0;
+    .select("id")
+    .eq("slug", SOCIETY_SLUG)
+    .maybeSingle();
+
+  let pendingMembers = 0;
+  if (societyRow) {
+    const { count } = await supabaseAdmin
+      .from("club_members")
+      .select("id", { count: "exact", head: true })
+      .eq("club_id", societyRow.id)
+      .eq("status", "pending");
+    pendingMembers = count ?? 0;
+  }
 
   // Draft (unpublished) courses still need finishing/publishing.
   const { count: draftCourseCount } = await supabaseAdmin
@@ -70,11 +80,11 @@ export default async function AdminHubPage() {
   // the same pending indicator automatically.
   const tools: AdminTool[] = [
     {
-      href: "/admin/clubs",
-      label: "Club review",
-      description: "Approve or reject clubs awaiting review",
-      Icon: ClipboardCheck,
-      pending: pendingClubs,
+      href: `${SOCIETY_HOME_PATH}/admin`,
+      label: "Society admin",
+      description: `Roster, dues, officers and applications for ${SOCIETY_NAME}`,
+      Icon: Users,
+      pending: pendingMembers,
     },
     {
       href: "/admin/courses",

@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/session";
-import { PAID_MARKETPLACE_ENABLED, POST_AD_PATH } from "@/lib/config";
+import {
+  PAID_MARKETPLACE_ENABLED,
+  POST_AD_PATH,
+  SOCIETY_PATH,
+} from "@/lib/config";
 
 // Pages that only make sense when the paid marketplace is running.
 // While it's off, anyone landing here gets sent to the free posting flow.
@@ -17,6 +21,10 @@ const PAID_ONLY_PATHS = ["/sell", "/sell/setup"];
 // on the right listing.
 const LEGACY_PRODUCT_PATH = /^\/marketplace\/([^/]+)\/?$/;
 
+// The multi-club directory is gone. There is one society now, so every
+// /clubs URL — the index, discover, new, start — lands on its front door.
+const LEGACY_CLUBS_PATH = /^\/clubs(\/.*)?$/;
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -27,6 +35,13 @@ export async function proxy(request: NextRequest) {
   ) {
     const url = request.nextUrl.clone();
     url.pathname = POST_AD_PATH;
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  if (LEGACY_CLUBS_PATH.test(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = SOCIETY_PATH;
     url.search = "";
     return NextResponse.redirect(url);
   }

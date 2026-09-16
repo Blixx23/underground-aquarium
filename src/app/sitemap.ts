@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { supabasePublic } from "@/lib/supabase/public";
+import { SOCIETY_PATH, SOCIETY_HOME_PATH } from "@/lib/config";
 
 const baseUrl = "https://www.undergroundaquarium.com";
 
@@ -20,9 +21,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/community",
     "/about",
     "/courses",
-    "/clubs",
-    "/clubs/start",
-    "/clubs/discover",
+    SOCIETY_PATH,
+    SOCIETY_HOME_PATH,
     "/forums",
   ];
 
@@ -38,11 +38,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from("fish_stores")
     .select("slug")
     .eq("status", "published");
-
-  // Only approved, public clubs — reads the same view the Discover page uses.
-  const { data: clubs } = await supabasePublic
-    .from("public_club_directory")
-    .select("slug");
 
   // Published events. Past events still have live, indexable pages, so we
   // include everything published rather than only upcoming ones.
@@ -126,13 +121,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const clubEntries = (clubs ?? []).map((c) => ({
-    url: `${baseUrl}/c/${c.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
-
   const eventEntries = (events ?? []).map((e) => ({
     url: `${baseUrl}/events/${e.slug}`,
     lastModified: new Date(),
@@ -208,7 +196,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...termEntries,
     ...speciesEntries,
     ...storeEntries,
-    ...clubEntries,
     ...eventEntries,
     ...stateEntries,
     ...regionEntries,

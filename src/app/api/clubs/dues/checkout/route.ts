@@ -94,6 +94,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    // The platform takes nothing (PLATFORM_FEE_PERCENT is 0), so the fee is 0.
+    // Stripe rejects application_fee_amount: 0 on a destination charge, so the
+    // field has to be left off entirely rather than sent as a zero.
     const fee = Math.round(amount * PLATFORM_FEE_PERCENT);
     const origin = request.headers.get("origin") ?? new URL(request.url).origin;
 
@@ -112,7 +115,7 @@ export async function POST(request: Request) {
         },
       ],
       payment_intent_data: {
-        application_fee_amount: fee,
+        ...(fee > 0 ? { application_fee_amount: fee } : {}),
         transfer_data: { destination: club.stripe_account_id },
       },
       customer_email: user.email ?? undefined,

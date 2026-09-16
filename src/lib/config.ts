@@ -22,9 +22,32 @@ export const PAID_MARKETPLACE_ENABLED: boolean = false;
 // to false. Turning this off early strands money mid-flight.
 export const PAID_ORDER_WINDDOWN_ENABLED: boolean = true;
 
-// Club dues are a separate business from the marketplace and stay
-// live. Clubs still collect dues through Stripe Connect.
+// Society dues. The one paid thing on the site: membership in the
+// Underground Aquarium Society, collected through Stripe Connect.
+// (The constant keeps its old name because the dues tables, RPCs and
+// API routes underneath are still the club machinery — the Society is
+// simply the only tenant now.)
 export const CLUB_DUES_ENABLED: boolean = true;
+
+// ============================================================
+// THE SOCIETY
+//
+// undergroundaquarium.com used to host many clubs. It now IS one
+// society, national, with no chapters. These constants are the single
+// source of truth for its name and where it lives.
+// ============================================================
+
+export const SOCIETY_NAME = "Underground Aquarium Society";
+export const SOCIETY_SHORT_NAME = "the Society";
+
+// The row in `clubs` that is the Society. Its member area is /c/<slug>.
+export const SOCIETY_SLUG = "underground-aquarium-society";
+
+// The public front door people are linked to from nav, footer and home.
+export const SOCIETY_PATH = "/society";
+
+// Where the Society's member area lives (roster, dues, BAP/HAP, events).
+export const SOCIETY_HOME_PATH = `/c/${SOCIETY_SLUG}`;
 
 // ============================================================
 // BUILD-ORDER SWITCHES
@@ -54,13 +77,13 @@ export const LISTING_LIFETIME_DAYS = 45;
 // ============================================================
 // LEGACY PAID SETTINGS
 //
-// Still used by club dues and by any paid order winding down.
+// Still used by Society dues and by any paid order winding down.
 // They have no effect on free classified listings.
 // ============================================================
 
 // The platform takes nothing. Underground Aquarium is free to use:
-// no listing fees, no commission, no cut of club dues.
-// Kept as a constant only because the club dues checkout and the
+// no listing fees, no commission, no cut of Society dues.
+// Kept as a constant only because the Society dues checkout and the
 // wind-down code still read it. Already-placed orders use the fee
 // that was stored on the order at the time, so this does not change them.
 export const PLATFORM_FEE_PERCENT = 0;
