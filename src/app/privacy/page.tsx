@@ -54,7 +54,7 @@ export default function PrivacyPage() {
               (passwords are stored in hashed form by our authentication
               provider). You may add profile details such as a display name, bio,
               location, and website. We also collect the content you create —
-              listings and photos, tanks, reviews, club information, forum posts,
+              listings and photos, tanks, reviews, Society records, forum posts,
               and messages.
             </p>
             <p>
@@ -69,15 +69,15 @@ export default function PrivacyPage() {
               <span className="text-white">Payment information.</span> We do not
               process payments for listings and never see your card details.
               Deals are settled directly between the two people involved. If a
-              club collects dues through the site, that payment is handled by
-              Stripe under their own privacy policy, and we do not store your
-              full card number.
+              you pay Society dues, that payment is handled by Stripe under
+              their own privacy policy, and we do not store your full card
+              number.
             </p>
             <p>
-              <span className="text-white">Club information.</span> If you join or
-              run a club, contact details you provide (such as name, email, and
-              phone) may be visible to that club&apos;s officers so they can
-              manage membership.
+              <span className="text-white">Society membership.</span> If you
+              join the Underground Aquarium Society, contact details you provide
+              (such as name, email, and phone) are visible to Society officers
+              so they can manage the roster and your award entries.
             </p>
             <p>
               <span className="text-white">Location information.</span> To power
@@ -108,7 +108,7 @@ export default function PrivacyPage() {
                 send transactional messages such as order updates and account
                 notices;
               </li>
-              <li>run community features like profiles, clubs, and events;</li>
+              <li>run community features like profiles, the Society, and events;</li>
               <li>
                 keep the Service safe — detecting and preventing fraud, abuse, and
                 violations of our Terms; and
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
               with the providers that run our platform, only as needed to operate
               the Service: Supabase (database, accounts, and storage), Resend
               (email delivery), Vercel (hosting), OpenStreetMap&apos;s Nominatim
-              (geocoding), and Stripe, used only where a club collects its own
+              (geocoding), and Stripe, used only where the Society collects its own
               dues.
             </p>
             <p>
@@ -173,7 +173,7 @@ export default function PrivacyPage() {
             <p>
               We keep your information for as long as your account is active and
               as needed to provide the Service. We may retain certain records —
-              such as club dues records — for longer when needed
+              such as Society dues records — for longer when needed
               for legal, tax, accounting, or fraud-prevention purposes, even after
               a listing or account is removed.
             </p>

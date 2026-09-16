@@ -69,12 +69,13 @@ export default async function BreedingIndex() {
         </h1>
         <p className="text-ocean-300 mb-10 max-w-2xl">
           Real spawn reports and propagation write-ups from hobbyists across our
-          clubs — how they actually did it, with photos. Browse by species.
+          Society members — how they actually did it, with photos. Browse by
+          species.
         </p>
 
         {species.length === 0 ? (
           <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-8 text-center text-ocean-400">
-            No breeding guides yet. When club members share their approved spawn
+            No breeding guides yet. When Society members share their approved spawn
             reports, they&apos;ll appear here.
           </div>
         ) : (

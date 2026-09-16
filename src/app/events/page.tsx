@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Events",
   description:
-    "Aquarium club meetups, frag swaps, auctions, and shop events. Find something near you or post your own.",
+    "Aquarium society meetups, frag swaps, auctions, and shop events. Find something near you or post your own.",
 };
 
 type EventRow = {
@@ -113,7 +113,7 @@ export default async function EventsPage() {
               Aquarium events
             </h1>
             <p className="text-ocean-300">
-              Club meetups, frag swaps, auctions, and shop happenings. Find one
+              Society meetups, frag swaps, auctions, and shop happenings. Find one
               near you — or post your own.
             </p>
           </div>

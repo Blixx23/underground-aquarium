@@ -5,14 +5,12 @@ import {
   FlaskConical,
   BookOpen,
   MessagesSquare,
-  Users,
   CalendarDays,
   Store,
   Library,
   GraduationCap,
   ArrowRight,
 } from "lucide-react";
-import { SOCIETY_PATH } from "@/lib/config";
 
 type Tool = {
   href: string;
@@ -21,6 +19,8 @@ type Tool = {
   Icon: typeof Fish;
   /** Headline tools get a full-width tile. */
   wide?: boolean;
+  /** Lifts one tile out of the grid without taking it out of the palette. */
+  highlight?: boolean;
 };
 
 const TOOLS: Tool[] = [
@@ -32,17 +32,18 @@ const TOOLS: Tool[] = [
     wide: true,
   },
   {
+    href: "/forums",
+    label: "Forums",
+    desc: "Ask anything. Get answers from people who've killed the same fish you're about to — usually within the hour.",
+    Icon: MessagesSquare,
+    wide: true,
+    highlight: true,
+  },
+  {
     href: "/tank-builder",
     label: "Tank Builder",
     desc: "Catch aggression, bioload and size problems before you buy the fish, not after.",
     Icon: Wrench,
-    wide: true,
-  },
-  {
-    href: SOCIETY_PATH,
-    label: "The Society",
-    desc: "One national aquarium society, open to anyone. Breeder and plant awards, member events, a card with your name on it.",
-    Icon: Users,
     wide: true,
   },
   {
@@ -56,12 +57,6 @@ const TOOLS: Tool[] = [
     label: "Species Library",
     desc: "Honest care profiles: real adult size, real temperament, real tank minimums.",
     Icon: BookOpen,
-  },
-  {
-    href: "/forums",
-    label: "Forums",
-    desc: "Ask anything. Get answers from people who've killed the same fish you're about to.",
-    Icon: MessagesSquare,
   },
   {
     href: "/events",
@@ -109,33 +104,56 @@ export default function ToolGrid() {
             <Link
               key={t.href}
               href={t.href}
-              className={`group relative flex flex-col rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-4 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:border-ocean-500/70 hover:bg-ocean-800/40 hover:shadow-2xl hover:shadow-ocean-950/60 ${
+              className={`group relative flex flex-col rounded-2xl border p-4 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+                t.highlight
+                  ? "border-sky-500/40 bg-gradient-to-br from-sky-500/[0.10] to-transparent hover:border-sky-400/70 hover:shadow-sky-950/60"
+                  : "border-ocean-800/60 bg-ocean-900/40 hover:border-ocean-500/70 hover:bg-ocean-800/40 hover:shadow-ocean-950/60"
+              } ${
                 t.wide
                   ? "col-span-2 lg:col-span-3 sm:flex-row sm:items-center sm:gap-5"
                   : ""
               }`}
             >
               <div
-                className={`inline-flex w-10 h-10 sm:w-12 sm:h-12 shrink-0 items-center justify-center rounded-xl bg-ocean-800/60 border border-ocean-700/50 group-hover:border-ocean-500/60 transition-colors ${
-                  t.wide ? "mb-3 sm:mb-0" : "mb-3 sm:mb-4"
-                }`}
+                className={`inline-flex w-10 h-10 sm:w-12 sm:h-12 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+                  t.highlight
+                    ? "bg-sky-500/10 border-sky-500/40 group-hover:border-sky-400/70"
+                    : "bg-ocean-800/60 border-ocean-700/50 group-hover:border-ocean-500/60"
+                } ${t.wide ? "mb-3 sm:mb-0" : "mb-3 sm:mb-4"}`}
               >
-                <t.Icon className="w-5 h-5 text-ocean-300 group-hover:text-ocean-200 transition-colors" />
+                <t.Icon
+                  className={`w-5 h-5 transition-colors ${
+                    t.highlight
+                      ? "text-sky-300"
+                      : "text-ocean-300 group-hover:text-ocean-200"
+                  }`}
+                />
               </div>
 
               <div className="min-w-0 flex-1">
                 <h3 className="font-display text-base sm:text-xl text-white mb-1.5 sm:mb-2 group-hover:text-ocean-100 transition-colors">
                   {t.label}
+                  {t.highlight && (
+                    <span className="ml-3 inline-flex items-center gap-1.5 rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wider text-sky-300">
+                      Busiest
+                    </span>
+                  )}
                 </h3>
-                <p className="text-sm sm:text-base text-ocean-400 leading-snug sm:leading-relaxed line-clamp-3 sm:line-clamp-none">
+                <p
+                  className={`text-sm sm:text-base leading-snug sm:leading-relaxed line-clamp-3 sm:line-clamp-none ${
+                    t.highlight ? "text-sky-100/60" : "text-ocean-400"
+                  }`}
+                >
                   {t.desc}
                 </p>
               </div>
 
               <ArrowRight
-                className={`hidden sm:block w-4 h-4 text-ocean-600 group-hover:text-ocean-300 group-hover:translate-x-1 transition-all ${
-                  t.wide ? "mt-4 sm:mt-0 sm:ml-4" : "mt-4"
-                }`}
+                className={`hidden sm:block w-4 h-4 group-hover:translate-x-1 transition-all ${
+                  t.highlight
+                    ? "text-sky-500/70 group-hover:text-sky-300"
+                    : "text-ocean-600 group-hover:text-ocean-300"
+                } ${t.wide ? "mt-4 sm:mt-0 sm:ml-4" : "mt-4"}`}
               />
             </Link>
           ))}

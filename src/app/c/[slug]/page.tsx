@@ -13,6 +13,13 @@ import {
   Globe,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { SOCIETY_SLUG } from "@/lib/config";
+import {
+  SOC_EYEBROW,
+  SOC_CARD,
+  SOC_PILL,
+} from "@/lib/society/theme";
+import SocietySeal from "@/components/society/SocietySeal";
 import PayDuesButton from "./PayDuesButton";
 import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
@@ -48,6 +55,17 @@ export default async function ClubHomePage({
 }) {
   const { slug } = await params;
   const sp = await searchParams;
+
+  // This page is the Society's member area as well as the generic club page.
+  // When it's the Society, it wears the brass theme and drops the word "club"
+  // entirely — nobody joins "a club" here any more, they join the Society.
+  const isSociety = slug === SOCIETY_SLUG;
+  const cardClass = isSociety
+    ? SOC_CARD
+    : "rounded-2xl border border-ocean-800/60 bg-ocean-900/40";
+  const panelClass = isSociety
+    ? `${SOC_CARD} hover:border-amber-400/50`
+    : "rounded-2xl border border-ocean-700/60 bg-ocean-800/40 hover:bg-ocean-800/60";
   const supabase = await createClient();
   const {
     data: { user },
@@ -230,7 +248,9 @@ export default async function ClubHomePage({
         {sp?.dues === "success" && <DuesSuccessBanner />}
 
         <div className="flex items-center gap-4 mb-2">
-          {club.logo_url ? (
+          {isSociety && !club.logo_url ? (
+            <SocietySeal size={64} className="h-16 w-16 shrink-0" />
+          ) : club.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={club.logo_url}
@@ -243,6 +263,9 @@ export default async function ClubHomePage({
             </div>
           )}
           <div>
+            {isSociety && (
+              <p className={`${SOC_EYEBROW} mb-1`}>Member area</p>
+            )}
             <h1 className="font-display text-3xl text-white leading-tight">
               {club.name}
             </h1>
@@ -265,6 +288,9 @@ export default async function ClubHomePage({
           </span>
           {club.dues_amount_cents > 0 && (
             <span>· Dues {money(club.dues_amount_cents)}</span>
+          )}
+          {isSociety && isMember && (
+            <span className={SOC_PILL}>Member</span>
           )}
           {isMember && role && (
             <span className="inline-flex items-center gap-1.5 capitalize">
@@ -307,7 +333,13 @@ export default async function ClubHomePage({
         )}
 
         {duesDue && (
-          <div className="rounded-2xl border border-emerald-700/40 bg-emerald-900/10 px-6 py-5 mb-6">
+          <div
+            className={`${
+              isSociety
+                ? "rounded-2xl border border-amber-500/40 bg-amber-500/[0.08]"
+                : "rounded-2xl border border-emerald-700/40 bg-emerald-900/10"
+            } px-6 py-5 mb-6`}
+          >
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <p className="text-white font-medium">{payHeading}</p>
@@ -321,14 +353,15 @@ export default async function ClubHomePage({
         {isOfficer && (
           <Link
             href={`/c/${slug}/admin`}
-            className="flex items-center justify-between gap-4 rounded-2xl border border-ocean-700/60 bg-ocean-800/40 px-6 py-5 mb-6 hover:bg-ocean-800/60 transition-colors group"
+            className={`flex items-center justify-between gap-4 ${panelClass} px-6 py-5 mb-6 transition-colors group`}
           >
             <span className="flex items-center gap-3">
               <Settings className="w-6 h-6 text-ocean-200" />
               <span>
                 <span className="block text-white font-medium">Admin console</span>
                 <span className="block text-sm text-ocean-400">
-                  Manage members, dues, and club settings
+                  Manage members, dues, and {isSociety ? "Society" : "club"}{" "}
+                  settings
                 </span>
               </span>
             </span>
@@ -538,8 +571,12 @@ export default async function ClubHomePage({
           </div>
         ) : user ? (
           club.is_public ? (
-            <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-8 text-center">
-              <Users className="w-8 h-8 text-ocean-500 mx-auto mb-3" />
+            <div className={`${cardClass} px-6 py-8 text-center`}>
+              {isSociety ? (
+                <SocietySeal size={72} className="mx-auto mb-4 h-[72px] w-[72px]" />
+              ) : (
+                <Users className="w-8 h-8 text-ocean-500 mx-auto mb-3" />
+              )}
               <p className="text-ocean-300 mb-4">
                 Apply to join {club.name}
                 {club.dues_amount_cents > 0
@@ -553,6 +590,7 @@ export default async function ClubHomePage({
                 dues={club.dues_amount_cents}
                 familyDues={club.family_dues_amount_cents}
                 lifetimeDues={club.lifetime_dues_amount_cents}
+                society={isSociety}
               />
             </div>
           ) : (
@@ -564,12 +602,20 @@ export default async function ClubHomePage({
             </div>
           )
         ) : (
-          <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-8 text-center">
-            <Users className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
+          <div className={`${cardClass} px-6 py-8 text-center`}>
+            {isSociety ? (
+              <SocietySeal size={72} className="mx-auto mb-4 h-[72px] w-[72px]" />
+            ) : (
+              <Users className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
+            )}
             <p className="text-ocean-300 mb-4">You&apos;re viewing {club.name}.</p>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
+              className={
+                isSociety
+                  ? "inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-medium text-ocean-950 hover:bg-amber-300 transition-colors"
+                  : "inline-flex items-center gap-2 rounded-full bg-ocean-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
+              }
             >
               Sign in to join
             </Link>
@@ -578,7 +624,11 @@ export default async function ClubHomePage({
 
         {isMember && role !== "owner" && (
           <div className="mt-10 pt-6 border-t border-ocean-900/60">
-            <LeaveClubButton clubId={club.id} clubName={club.name} />
+            <LeaveClubButton
+              clubId={club.id}
+              clubName={club.name}
+              label={isSociety ? "Leave the Society" : "Leave this club"}
+            />
           </div>
         )}
       </div>

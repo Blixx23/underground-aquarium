@@ -168,11 +168,11 @@ export default async function ProfilePage() {
           emptyText="You haven't earned any certifications yet."
         />
 
-        {/* Your clubs */}
+        {/* Society membership and award standing */}
         <ClubsAndAwards
           rows={myClubs}
-          heading="Your clubs"
-          emptyText="You haven't joined any clubs yet."
+          heading="Society & awards"
+          emptyText="You're not a member of the Society yet."
         />
 
         {/* Your tanks */}

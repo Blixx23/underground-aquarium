@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Fish, Github, Twitter, Mail } from "lucide-react";
 import { POST_AD_PATH, SOCIETY_PATH } from "@/lib/config";
+import { BUILD_LABEL } from "@/lib/version";
 
 const links = {
   Classifieds: [
@@ -91,6 +92,17 @@ export default function Footer() {
           <p className="text-xs text-ocean-600 font-mono">
             © {new Date().getFullYear()} UndergroundAquarium.com — Built for the
             hobby, by the hobby.
+            {/*
+              Which deploy you're looking at. Set from the commit Vercel built,
+              so it's never stale. Dimmer than the copyright on purpose — it's
+              there when you go looking and invisible when you aren't.
+            */}
+            <span
+              className="ml-2 text-ocean-700"
+              title="Build this page was served from"
+            >
+              build {BUILD_LABEL}
+            </span>
           </p>
           <div className="flex gap-6 text-xs text-ocean-600">
             <Link

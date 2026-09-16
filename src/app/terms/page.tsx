@@ -105,7 +105,7 @@ export default function TermsPage() {
             </h2>
             <p>
               You keep ownership of the content you post — listings, tanks,
-              reviews, forum posts, photos, club information, and so on. By
+              reviews, forum posts, photos, Society records, and so on. By
               posting it, you grant us a non-exclusive, worldwide, royalty-free
               license to host, store, display, reproduce, and distribute that
               content as needed to operate and promote the Service. This license
@@ -214,28 +214,38 @@ export default function TermsPage() {
             </h2>
             <p>
               Underground Aquarium is free to use. There is no charge to create
-              an account, to post a listing, to browse, to message anyone, or to
-              run a club here, and we take no commission on anything.
+              an account, to post a listing, to browse, or to message anyone,
+              and we take no commission on anything you buy or sell here.
             </p>
             <p>
-              Clubs may choose to collect their own membership dues through the
-              site. That money goes to the club, not to us, and we take none of
-              it. If we ever introduce a paid feature, it will be optional and
-              we will give notice before it applies to you.
+              Membership in the Underground Aquarium Society is the one paid
+              thing on the site, and it is optional. Everything described above
+              stays free whether or not you are a member. If we ever introduce
+              another paid feature, it will also be optional and we will give
+              notice before it applies to you.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="font-display text-2xl text-emerald-400">
-              Clubs and dues
+              The Society and membership dues
             </h2>
             <p>
-              Clubs are operated by their own officers and members, not by
-              Underground Aquarium. If you run or join a club, you are
-              responsible for how you use member information and for following
-              your club&apos;s own rules and any laws that apply to it. Dues and
-              payments collected through the Service are handled the same way as
-              marketplace payments and are subject to the fees described above.
+              The Underground Aquarium Society is operated by Underground
+              Aquarium. Membership is open to anyone with an account, subject to
+              approval by a Society officer, and is voluntary.
+            </p>
+            <p>
+              Dues are shown before you pay and are processed by Stripe.
+              Membership runs for the term shown at checkout and does not renew
+              automatically unless the checkout says so. Letting a membership
+              lapse does not affect your account, your listings, or anything
+              else on the site.
+            </p>
+            <p>
+              Award program entries, titles, and standings are records the
+              Society keeps. Officers may correct or remove an entry that
+              doesn&apos;t meet the program rules.
             </p>
           </section>
 

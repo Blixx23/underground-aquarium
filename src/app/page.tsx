@@ -1,10 +1,12 @@
 import { supabasePublic } from "@/lib/supabase/public";
 import { getAllRegions } from "@/lib/marketplace/regions";
 import { LISTING_COLUMNS, type Listing } from "@/lib/marketplace/listings";
+import { SOCIETY_SLUG } from "@/lib/config";
 import type { LocatableRegion } from "@/components/marketplace/NearMeButton";
 import Hero from "@/components/sections/Hero";
 import ToolGrid from "@/components/sections/ToolGrid";
 import JustPosted from "@/components/sections/JustPosted";
+import SocietyBanner from "@/components/sections/SocietyBanner";
 import CTA from "@/components/sections/CTA";
 
 // The homepage shows live listings, so it can't be fully static, but it
@@ -31,6 +33,24 @@ export default async function HomePage() {
 
   const listings = (listingData ?? []) as unknown as Listing[];
 
+  // Society roster and entry price for the banner. Both are cosmetic, so a
+  // missing row just renders the banner without those two numbers.
+  const { data: societyRow } = await supabasePublic
+    .from("clubs")
+    .select("id, dues_amount_cents")
+    .eq("slug", SOCIETY_SLUG)
+    .maybeSingle();
+
+  let societyMembers = 0;
+  if (societyRow) {
+    const { count } = await supabasePublic
+      .from("club_members")
+      .select("id", { count: "exact", head: true })
+      .eq("club_id", societyRow.id)
+      .eq("status", "active");
+    societyMembers = count ?? 0;
+  }
+
   const locatable: LocatableRegion[] = regions
     .filter((r) => r.lat !== null && r.lng !== null)
     .map((r) => ({
@@ -50,6 +70,10 @@ export default async function HomePage() {
     <div className="overflow-x-clip">
       <Hero locatable={locatable} liveListings={liveCount ?? 0} />
       <ToolGrid />
+      <SocietyBanner
+        memberCount={societyMembers}
+        duesCents={societyRow?.dues_amount_cents ?? 0}
+      />
       <JustPosted listings={listings} regionNames={regionNames} />
       <CTA />
     </div>

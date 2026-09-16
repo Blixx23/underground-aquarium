@@ -15,6 +15,7 @@ export default function JoinClubForm({
   dues = 0,
   familyDues = null,
   lifetimeDues = null,
+  society = false,
 }: {
   clubId: string;
   clubName?: string;
@@ -22,6 +23,8 @@ export default function JoinClubForm({
   dues?: number;
   familyDues?: number | null;
   lifetimeDues?: number | null;
+  /** Brass styling and Society wording, rather than the generic club form. */
+  society?: boolean;
 }) {
   const tierOptions = [
     {
@@ -54,7 +57,11 @@ export default function JoinClubForm({
       return;
     }
     if (!phone.trim()) {
-      setError("Please add a phone number so the club can reach you.");
+      setError(
+        society
+          ? "Please add a phone number so the Society can reach you."
+          : "Please add a phone number so the club can reach you."
+      );
       return;
     }
     setSubmitting(true);
@@ -86,10 +93,14 @@ export default function JoinClubForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
+        className={
+          society
+            ? "inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-3 text-sm font-semibold text-ocean-950 transition-all duration-300 hover:bg-amber-300 hover:shadow-lg hover:shadow-amber-500/25"
+            : "inline-flex items-center gap-2 rounded-full bg-ocean-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
+        }
       >
         <UserPlus className="w-4 h-4" />
-        Request to join
+        {society ? "Apply for membership" : "Request to join"}
       </button>
     );
   }
@@ -156,7 +167,9 @@ export default function JoinClubForm({
         />
       </div>
       <div>
-        <label className={labelClass}>Note to the officers (optional)</label>
+        <label className={labelClass}>
+          Note to the {society ? "Society" : "club"} officers (optional)
+        </label>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -168,7 +181,11 @@ export default function JoinClubForm({
         <button
           onClick={submit}
           disabled={submitting}
-          className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-5 py-2 text-sm font-medium text-white hover:bg-ocean-600 transition-colors disabled:opacity-60"
+          className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
+            society
+              ? "bg-amber-400 text-ocean-950 hover:bg-amber-300"
+              : "bg-ocean-700 text-white hover:bg-ocean-600"
+          }`}
         >
           {submitting ? (
             <Loader2 className="w-4 h-4 animate-spin" />

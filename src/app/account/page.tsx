@@ -34,7 +34,7 @@ export default async function AccountPage() {
               <h2 className="font-medium text-white">Download your data</h2>
               <p className="mt-1 text-sm text-ocean-400">
                 Get a copy of the personal information we hold about your
-                account — your profile, tanks, listings, orders, and club
+                account — your profile, tanks, listings, orders, and Society
                 memberships — as a JSON file.
               </p>
               <a

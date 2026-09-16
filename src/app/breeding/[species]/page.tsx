@@ -56,7 +56,7 @@ export async function generateMetadata({
   const count = guides.length;
   const description = `How aquarium hobbyists bred ${name} — real spawn reports with tank setup, water parameters, and photos. ${count} breeding ${
     count === 1 ? "guide" : "guides"
-  } from UndergroundAquarium club members.`;
+  } from Underground Aquarium Society members.`;
   const url = `/breeding/${species}`;
   const firstPhoto = guides.find(
     (g) => Array.isArray(g.photos) && g.photos.length > 0
@@ -142,7 +142,7 @@ export default async function SpeciesGuide({ params }: Params) {
                       {g.breeder_name || g.breeder_username}
                     </Link>
                   ) : (
-                    <span className="font-medium text-white">A club member</span>
+                    <span className="font-medium text-white">A Society member</span>
                   )}
                   <span className="text-ocean-500">·</span>
                   {g.club_is_public ? (

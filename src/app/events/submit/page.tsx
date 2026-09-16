@@ -60,7 +60,7 @@ export default async function SubmitEventPage() {
           Submit an event
         </h1>
         <p className="text-ocean-300 mb-8">
-          Frag swaps, club meetups, auctions, sales — tell the community what's
+          Frag swaps, Society meetups, auctions, sales — tell the community what's
           happening.
         </p>
         <SubmitEventForm

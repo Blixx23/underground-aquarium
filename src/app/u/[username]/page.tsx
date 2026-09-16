@@ -177,7 +177,7 @@ export default async function PublicProfilePage({ params }: Params) {
           </div>
         </div>
 
-        <ClubsAndAwards rows={clubs} heading="Clubs" />
+        <ClubsAndAwards rows={clubs} heading="Society & awards" />
 
         <Certifications rows={certs} heading="Awards & Certifications" />
 

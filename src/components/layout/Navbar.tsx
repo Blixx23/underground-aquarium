@@ -25,7 +25,20 @@ import {
   SOCIETY_PATH,
 } from "@/lib/config";
 
-const nav = [
+type NavChild = {
+  label: string;
+  href: string;
+  /** Marks the Society so it can wear its own colour in both menus. */
+  society?: boolean;
+};
+
+type NavItem = {
+  label: string;
+  href?: string;
+  children?: NavChild[];
+};
+
+const nav: NavItem[] = [
   { label: "Classifieds", href: "/marketplace" },
   {
     label: "Resources",
@@ -43,7 +56,7 @@ const nav = [
     children: [
       { label: "Community Hub", href: "/community" },
       { label: "Forums", href: "/forums" },
-      { label: "The Society", href: SOCIETY_PATH },
+      { label: "The Society", href: SOCIETY_PATH, society: true },
       { label: "Events", href: "/events" },
     ],
   },
@@ -165,7 +178,12 @@ export default function Navbar() {
                           key={child.href}
                           href={child.href}
                           onClick={() => setDropdown(null)}
-                          className="block px-4 py-2.5 text-sm text-ocean-300 hover:text-white hover:bg-ocean-800/60 transition-all"
+                          className={cn(
+                            "block px-4 py-2.5 text-sm transition-all",
+                            child.society
+                              ? "text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"
+                              : "text-ocean-300 hover:bg-ocean-800/60 hover:text-white"
+                          )}
                         >
                           {child.label}
                         </Link>
@@ -267,7 +285,12 @@ export default function Navbar() {
                     key={child.href}
                     href={child.href}
                     onClick={() => setOpen(false)}
-                    className="block px-4 py-2.5 text-ocean-300 hover:text-white"
+                    className={cn(
+                      "block px-4 py-2.5",
+                      child.society
+                        ? "text-amber-300 hover:text-amber-200"
+                        : "text-ocean-300 hover:text-white"
+                    )}
                   >
                     {child.label}
                   </Link>
