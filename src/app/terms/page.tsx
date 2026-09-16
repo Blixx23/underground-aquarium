@@ -170,6 +170,46 @@ export default function TermsPage() {
 
           <section className="space-y-3">
             <h2 className="font-display text-2xl text-emerald-400">
+              Live animals and plants
+            </h2>
+            <p>
+              Fish, invertebrates, coral and aquatic plants may be listed here.
+              Selling and rehoming them is legal in the United States, but which
+              species you may keep, sell, transport or release is decided by
+              your state, and in some cases your county or city. Those rules
+              differ everywhere and they change.
+            </p>
+            <p>
+              <span className="text-white">
+                Knowing the law where you are is your responsibility, not ours.
+              </span>{" "}
+              By posting a listing you confirm you may lawfully possess the
+              species and pass it to someone else, that you hold any permit or
+              licence required of you, and that you are not offering anything
+              restricted, prohibited, protected or invasive in your state. The
+              same applies to the buyer for their own state.
+            </p>
+            <p>
+              We do not inspect listings, verify species, or check anyone&apos;s
+              permits, and nothing here should be read as telling you a
+              particular sale is legal. If you are not certain about a species,
+              check with your state wildlife or agriculture agency before you
+              post it.
+            </p>
+            <p>
+              Never release aquarium livestock or plants into a waterway, storm
+              drain or the wild. Rehome it, or ask in the forums and somebody
+              will take it.
+            </p>
+            <p>
+              We may remove any listing at our discretion, including anything we
+              believe is restricted where the poster is, anything cruel or
+              neglectful, and anything that misrepresents what is being offered.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-2xl text-emerald-400">
               Fees
             </h2>
             <p>

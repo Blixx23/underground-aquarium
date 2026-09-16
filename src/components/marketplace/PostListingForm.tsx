@@ -21,6 +21,16 @@ import { prepareImage } from "@/lib/images/prepareImage";
 
 const MAX_PHOTOS = 8;
 
+// Anything alive is regulated differently state to state, so these categories
+// get a reminder that checking the rules is the poster's job.
+const LIVE_CATEGORIES = new Set([
+  "livestock-freshwater",
+  "livestock-saltwater",
+  "livestock-inverts",
+  "plants",
+]);
+
+
 type ListingKind = "sale" | "free" | "wanted";
 
 type Photo = { file: File; preview: string };
@@ -526,6 +536,23 @@ export default function PostListingForm({
             </option>
           ))}
         </select>
+
+        {LIVE_CATEGORIES.has(category) && (
+          <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <p className="text-sm text-amber-200">
+              Which species you can legally sell, move or rehome is set by your
+              state, and it varies. Checking that for what you&apos;re posting
+              is on you, not us.
+            </p>
+            <p className="mt-1.5 text-xs text-amber-200/70">
+              Never release anything into the wild. See our{" "}
+              <Link href="/terms" className="underline hover:text-amber-100">
+                terms
+              </Link>
+              .
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Where */}
