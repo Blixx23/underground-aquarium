@@ -1,37 +1,75 @@
-"use client";
 import Link from "next/link";
-import { ShoppingBag, Users, ArrowRight } from "lucide-react";
-import { PLATFORM_FEE_LABEL } from "@/lib/config";
+import { Plus, ArrowRight } from "lucide-react";
+import { POST_AD_PATH } from "@/lib/config";
+import NearMeButton, {
+  type LocatableRegion,
+} from "@/components/marketplace/NearMeButton";
 
-export default function Hero() {
+export default function Hero({
+  locatable,
+  liveListings,
+}: {
+  locatable: LocatableRegion[];
+  liveListings: number;
+}) {
   return (
-    <section style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"transparent"}}>
-      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"600px",height:"400px",background:"radial-gradient(ellipse,rgba(18,100,160,0.2) 0%,transparent 70%)",pointerEvents:"none"}}/>
-      <div style={{position:"relative",zIndex:10,maxWidth:"860px",margin:"0 auto",padding:"120px 24px 60px",textAlign:"center"}}>
-        <h1 style={{fontFamily:"'Cinzel Decorative',Georgia,serif",fontSize:"clamp(2.2rem,6vw,5rem)",color:"#ffffff",lineHeight:1.1,marginBottom:"24px",textShadow:"0 0 80px rgba(58,163,232,0.5)"}}>
-          Dive Into the{" "}<span style={{color:"#7dc4f0"}}>Underground</span>
-        </h1>
-        <p style={{fontFamily:"Georgia,serif",fontSize:"1.2rem",color:"rgba(194,228,250,0.85)",maxWidth:"580px",margin:"0 auto 40px",lineHeight:1.75}}>
-          Buy, sell, and connect with aquarium enthusiasts. Rare plants, equipment, and 3D-printed gear — everything the hobby needs, in one place.
+    <section className="relative flex items-center justify-center pt-36 pb-20">
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] max-w-full h-[420px] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse, rgba(18,100,160,0.22) 0%, transparent 70%)",
+        }}
+      />
+
+      <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
+        <p className="inline-block text-[11px] font-mono tracking-[0.25em] text-ocean-400 uppercase border border-ocean-700/50 rounded-full px-4 py-1.5 mb-8">
+          Free · No fees · No commission
         </p>
-        <div style={{display:"flex",flexWrap:"wrap",gap:"16px",justifyContent:"center",marginBottom:"60px"}}>
-          <Link href="/marketplace" style={{display:"inline-flex",alignItems:"center",gap:"10px",padding:"14px 28px",background:"#0e4a76",color:"#fff",borderRadius:"14px",fontSize:"1.05rem",fontWeight:600,textDecoration:"none",boxShadow:"0 0 30px rgba(14,74,118,0.6)"}}>
-            <ShoppingBag size={18}/> Browse Marketplace <ArrowRight size={15}/>
+
+        <h1 className="font-display text-white leading-[1.08] mb-6 text-[clamp(2.3rem,6.5vw,4.6rem)] glow-text">
+          The aquarium hobby,
+          <br />
+          <span className="text-ocean-300">all in one place</span>
+        </h1>
+
+        <p className="font-body text-lg md:text-xl text-ocean-300/85 max-w-xl mx-auto mb-10 leading-relaxed">
+          Buy and sell locally, plan your tank, diagnose your water, look up any
+          species, find your club, and argue about substrate with people who
+          care as much as you do.
+        </p>
+
+        <div className="flex flex-wrap gap-3 justify-center">
+          <Link
+            href="/marketplace"
+            className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-ocean-600 hover:bg-ocean-500 text-white font-medium transition-all duration-300 hover:shadow-xl hover:shadow-ocean-600/30 hover:-translate-y-0.5"
+          >
+            Browse the classifieds
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
-          <Link href="/sell" style={{display:"inline-flex",alignItems:"center",gap:"10px",padding:"14px 28px",background:"rgba(7,34,54,0.8)",color:"#c2e4fa",border:"1px solid rgba(26,130,204,0.4)",borderRadius:"14px",fontSize:"1.05rem",fontWeight:600,textDecoration:"none"}}>
-            <Users size={18}/> Open Your Shop
+          <Link
+            href={POST_AD_PATH}
+            className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-ocean-900/70 border border-ocean-700/50 text-ocean-200 font-medium hover:text-white hover:border-ocean-500 transition-all duration-300"
+          >
+            <Plus className="w-4 h-4" />
+            Post free ad
           </Link>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px",maxWidth:"400px",margin:"0 auto"}}>
-          {[["Free","To Join"],[PLATFORM_FEE_LABEL,"Commission"],["∞","Species"]].map(([v,l])=>(
-            <div key={l} style={{textAlign:"center"}}>
-              <div style={{fontFamily:"Georgia,serif",fontSize:"1.9rem",color:"#c2e4fa",textShadow:"0 0 20px rgba(58,163,232,0.5)"}}>{v}</div>
-              <div style={{fontFamily:"monospace",fontSize:"9px",letterSpacing:"0.1em",color:"#1a82cc",textTransform:"uppercase",marginTop:"4px"}}>{l}</div>
-            </div>
-          ))}
-        </div>
+
+        {locatable.length > 0 && (
+          <div className="mt-5 flex justify-center">
+            <NearMeButton regions={locatable} />
+          </div>
+        )}
+
+        <p className="mt-8 text-sm text-ocean-500">
+          {liveListings > 0
+            ? `${liveListings.toLocaleString()} live ${
+                liveListings === 1 ? "listing" : "listings"
+              } · 413 metro areas · free to post, always`
+            : "413 metro areas · free to post, always"}
+        </p>
       </div>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,height:"100px",background:"linear-gradient(to top,#020b18,transparent)",pointerEvents:"none"}}/>
     </section>
   );
 }

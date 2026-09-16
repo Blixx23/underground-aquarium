@@ -130,7 +130,7 @@ export default function DeletionPendingPage() {
 
         <p className="mt-5 text-center text-xs text-ocean-500">
           Reactivating restores your account, but listings you had live were
-          hidden — you can re-publish them from your Seller Hub.
+          hidden — you can re-publish them from My Listings.
         </p>
       </div>
     </main>
