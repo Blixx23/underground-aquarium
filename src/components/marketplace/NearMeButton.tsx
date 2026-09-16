@@ -37,8 +37,11 @@ function distanceMiles(
  */
 export default function NearMeButton({
   regions,
+  className,
 }: {
   regions: LocatableRegion[];
+  /** Extra classes for the button itself, e.g. to make it full width. */
+  className?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -98,7 +101,9 @@ export default function NearMeButton({
         type="button"
         onClick={locate}
         disabled={busy}
-        className="inline-flex items-center gap-2.5 rounded-xl bg-ocean-600 hover:bg-ocean-500 px-5 py-3 text-white font-medium transition-colors disabled:opacity-60"
+        className={`inline-flex items-center justify-center gap-2.5 rounded-xl bg-ocean-600 hover:bg-ocean-500 px-5 py-3 text-white font-medium transition-colors disabled:opacity-60 ${
+          className ?? ""
+        }`}
       >
         {busy ? (
           <Loader2 className="w-4 h-4 animate-spin" />

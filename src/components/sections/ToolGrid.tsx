@@ -26,14 +26,14 @@ const TOOLS: Tool[] = [
   {
     href: "/marketplace",
     label: "Classifieds",
-    desc: "Fish, coral, plants, tanks and gear from keepers in your own metro area. Free to post, free to browse, no cut taken.",
+    desc: "Fish, coral, plants, tanks and gear from keepers in your metro area. Free to post, free to browse.",
     Icon: Fish,
     wide: true,
   },
   {
     href: "/tank-builder",
     label: "Tank Builder",
-    desc: "Plan a stocking list and catch aggression, bioload and size problems before you buy the fish, not after.",
+    desc: "Catch aggression, bioload and size problems before you buy the fish, not after.",
     Icon: Wrench,
     wide: true,
   },
@@ -89,46 +89,50 @@ const TOOLS: Tool[] = [
 
 export default function ToolGrid() {
   return (
-    <section className="relative py-24 bg-ocean-950">
+    <section className="relative py-16 sm:py-24 bg-ocean-950">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-ocean-900/20 to-transparent pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-6">
-        <div className="mb-12">
+        <div className="mb-8 sm:mb-12">
           <p className="text-xs font-mono tracking-[0.25em] text-ocean-500 uppercase mb-4">
             Everything here is free
           </p>
-          <h2 className="font-display text-4xl md:text-5xl text-white">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl text-white">
             Pick your <span className="text-ocean-300">weapon</span>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {TOOLS.map((t) => (
             <Link
               key={t.href}
               href={t.href}
-              className={`group relative flex flex-col rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-ocean-500/70 hover:bg-ocean-800/40 hover:shadow-2xl hover:shadow-ocean-950/60 ${
-                t.wide ? "lg:col-span-3 lg:flex-row lg:items-center lg:gap-6" : ""
+              className={`group relative flex flex-col rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-4 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:border-ocean-500/70 hover:bg-ocean-800/40 hover:shadow-2xl hover:shadow-ocean-950/60 ${
+                t.wide
+                  ? "col-span-2 lg:col-span-3 sm:flex-row sm:items-center sm:gap-5"
+                  : ""
               }`}
             >
               <div
-                className={`inline-flex w-12 h-12 shrink-0 items-center justify-center rounded-xl bg-ocean-800/60 border border-ocean-700/50 group-hover:border-ocean-500/60 transition-colors ${
-                  t.wide ? "mb-4 lg:mb-0" : "mb-4"
+                className={`inline-flex w-10 h-10 sm:w-12 sm:h-12 shrink-0 items-center justify-center rounded-xl bg-ocean-800/60 border border-ocean-700/50 group-hover:border-ocean-500/60 transition-colors ${
+                  t.wide ? "mb-3 sm:mb-0" : "mb-3 sm:mb-4"
                 }`}
               >
                 <t.Icon className="w-5 h-5 text-ocean-300 group-hover:text-ocean-200 transition-colors" />
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-xl text-white mb-2 group-hover:text-ocean-100 transition-colors">
+                <h3 className="font-display text-base sm:text-xl text-white mb-1.5 sm:mb-2 group-hover:text-ocean-100 transition-colors">
                   {t.label}
                 </h3>
-                <p className="text-ocean-400 leading-relaxed">{t.desc}</p>
+                <p className="text-sm sm:text-base text-ocean-400 leading-snug sm:leading-relaxed line-clamp-3 sm:line-clamp-none">
+                  {t.desc}
+                </p>
               </div>
 
               <ArrowRight
-                className={`w-4 h-4 text-ocean-600 group-hover:text-ocean-300 group-hover:translate-x-1 transition-all ${
-                  t.wide ? "mt-4 lg:mt-0 lg:ml-4" : "mt-4"
+                className={`hidden sm:block w-4 h-4 text-ocean-600 group-hover:text-ocean-300 group-hover:translate-x-1 transition-all ${
+                  t.wide ? "mt-4 sm:mt-0 sm:ml-4" : "mt-4"
                 }`}
               />
             </Link>
