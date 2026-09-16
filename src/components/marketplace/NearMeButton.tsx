@@ -96,7 +96,7 @@ export default function NearMeButton({
   }
 
   return (
-    <div>
+    <div className={className?.includes("w-full") ? "w-full sm:w-auto" : undefined}>
       <button
         type="button"
         onClick={locate}
@@ -110,7 +110,7 @@ export default function NearMeButton({
         ) : (
           <Crosshair className="w-4 h-4" />
         )}
-        {busy ? "Finding you…" : "See what's near me"}
+        {busy ? "Finding…" : "Near me"}
       </button>
 
       {error && <p className="mt-3 text-sm text-amber-200">{error}</p>}
