@@ -94,13 +94,16 @@ export default async function ClubHomePage({
   let myEmail: string | null = null;
   let myTier: string | null = null;
   let myFamilyPrimaryId: string | null = null;
+  // Set when the membership lookup itself failed. Distinct from "no row",
+  // because those two must never render the same thing.
+  let membershipError: string | null = null;
   let myNumber: number | null = null;
   let myJoinedAt: string | null = null;
   if (user) {
-    const { data: me } = await supabase
+    const { data: me, error: meError } = await supabase
       .from("club_members")
       .select(
-        "role, status, paid_through, display_name, email, tier, family_primary_id, member_number, joined_at"
+        "role, status, paid_through, display_name, email, tier, family_primary_id"
       )
       .eq("club_id", club.id)
       .eq("user_id", user.id)
@@ -112,11 +115,26 @@ export default async function ClubHomePage({
     myEmail = me?.email ?? null;
     myTier = me?.tier ?? null;
     myFamilyPrimaryId = me?.family_primary_id ?? null;
-    myNumber = me?.member_number ?? null;
-    myJoinedAt = me?.joined_at ?? null;
+    membershipError = meError?.message ?? null;
   }
+
   const isApplicant = status === "pending";
   const isMember = role !== null && !isApplicant;
+
+  // Member number and join date get their own query on purpose. They were added
+  // later, so if that migration hasn't run this fails alone and costs the card a
+  // number — rather than failing the membership lookup and silently demoting a
+  // member to a stranger.
+  if (user && isMember) {
+    const { data: extra } = await supabase
+      .from("club_members")
+      .select("member_number, joined_at")
+      .eq("club_id", club.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    myNumber = extra?.member_number ?? null;
+    myJoinedAt = extra?.joined_at ?? null;
+  }
   const isOfficer = role === "owner" || role === "admin" || role === "officer";
   const isFamilyMain = myTier === "family" && !myFamilyPrimaryId;
 
@@ -641,6 +659,20 @@ export default async function ClubHomePage({
               clubName={club.name}
               label="Withdraw request"
             />
+          </div>
+        ) : membershipError ? (
+          <div className="rounded-2xl border border-coral-500/40 bg-coral-500/10 px-6 py-8 text-center">
+            <p className="font-medium text-white">
+              Couldn&apos;t load your membership
+            </p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-ocean-300">
+              Something went wrong reading the roster, so we can&apos;t tell
+              whether you&apos;re a member. This is our problem, not yours —
+              nothing about your membership has changed. Try again in a minute.
+            </p>
+            <p className="mt-3 font-mono text-xs text-ocean-500">
+              {membershipError}
+            </p>
           </div>
         ) : user ? (
           club.is_public ? (
