@@ -62,7 +62,7 @@ export default async function BreederProgramPage() {
     .eq("is_active", true);
 
   const species = ((data ?? []) as unknown as AwardSpecies[]) ?? [];
-  const submitHref = `/c/${SOCIETY_SLUG}/awards/submit`;
+  const submitHref = "/society/breeder/new";
 
   return (
     <div>
@@ -198,7 +198,7 @@ export default async function BreederProgramPage() {
           href={submitHref}
           className="text-sm text-amber-300 transition-colors hover:text-amber-200"
         >
-          Or start a blank log →
+          Or open a blank log →
         </Link>
       </div>
 

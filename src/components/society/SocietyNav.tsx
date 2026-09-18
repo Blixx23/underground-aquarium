@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Fish,
   FileStack,
+  NotebookPen,
   Trophy,
   ScrollText,
   Ticket,
@@ -46,6 +47,7 @@ export default function SocietyNav({
   const items: Item[] = [
     { href: "/society/home", label: "Overview", Icon: LayoutDashboard },
     { href: "/society/breeder", label: "Breeder Program", Icon: Fish },
+    { href: "/society/logs", label: "Spawn Logs", Icon: NotebookPen },
     {
       href: "/society/submissions",
       label: "My Submissions",
