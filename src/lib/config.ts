@@ -46,8 +46,13 @@ export const SOCIETY_SLUG = "underground-aquarium-society";
 // The public front door people are linked to from nav, footer and home.
 export const SOCIETY_PATH = "/society";
 
-// Where the Society's member area lives (roster, dues, BAP/HAP, events).
-export const SOCIETY_HOME_PATH = `/c/${SOCIETY_SLUG}`;
+// The Society's member area. Its own route tree with a side nav, rather than
+// the generic club page — non-members who land here are sent to SOCIETY_PATH.
+export const SOCIETY_HOME_PATH = "/society/home";
+
+// The generic club page for the Society. Still reachable, and still where the
+// awards submit/review flows live, but no longer the front door.
+export const SOCIETY_CLUB_PATH = `/c/${SOCIETY_SLUG}`;
 
 // ============================================================
 // BUILD-ORDER SWITCHES

@@ -35,11 +35,13 @@ type NavChild = {
 type NavItem = {
   label: string;
   href?: string;
+  society?: boolean;
   children?: NavChild[];
 };
 
 const nav: NavItem[] = [
   { label: "Classifieds", href: "/marketplace" },
+  { label: "The Society", href: SOCIETY_PATH, society: true },
   {
     label: "Resources",
     children: [
@@ -56,7 +58,6 @@ const nav: NavItem[] = [
     children: [
       { label: "Community Hub", href: "/community" },
       { label: "Forums", href: "/forums" },
-      { label: "The Society", href: SOCIETY_PATH, society: true },
       { label: "Events", href: "/events" },
     ],
   },
@@ -196,7 +197,12 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={item.href!}
-                className="px-4 py-2 text-sm tracking-wide text-ocean-300 hover:text-white transition-colors font-body"
+                className={cn(
+                  "px-4 py-2 text-sm tracking-wide transition-colors font-body",
+                  item.society
+                    ? "text-amber-300 hover:text-amber-200"
+                    : "text-ocean-300 hover:text-white"
+                )}
               >
                 {item.label}
               </Link>
@@ -301,7 +307,12 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href!}
                 onClick={() => setOpen(false)}
-                className="block px-2 py-3 text-ocean-200 hover:text-white border-b border-ocean-800/30"
+                className={cn(
+                  "block px-2 py-3 border-b border-ocean-800/30",
+                  item.society
+                    ? "text-amber-300 hover:text-amber-200"
+                    : "text-ocean-200 hover:text-white"
+                )}
               >
                 {item.label}
               </Link>
