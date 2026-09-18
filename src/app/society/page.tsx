@@ -29,7 +29,7 @@ export const revalidate = 300;
 export const metadata: Metadata = {
   title: `${SOCIETY_NAME} — join the national aquarium society`,
   description:
-    "One aquarium society, nationwide, open to anyone who keeps fish. Breeder and plant award programs, member events, and a community that takes the hobby seriously.",
+    "One aquarium society, nationwide, open to anyone who keeps fish. A judged breeder award program, a permanent species registry, and recognition that somebody actually verified.",
 };
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -42,8 +42,8 @@ const PERKS = [
   },
   {
     Icon: Sprout,
-    title: "Horticultural Award Program",
-    body: "The same rigour for plants. Propagate it, prove it, climb the board.",
+    title: "The Species Registry",
+    body: "The first member to log an approved spawn of a species holds that record permanently. Right now every one of them is unclaimed.",
   },
   {
     Icon: Users,
@@ -52,8 +52,8 @@ const PERKS = [
   },
   {
     Icon: CalendarDays,
-    title: "Member events",
-    body: "Swaps, auctions, talks and meetups on the calendar — members see them first.",
+    title: "A card and a certificate",
+    body: "A permanent member number, a trophy case on your public profile, and a signed certificate for every title you earn.",
   },
 ];
 
