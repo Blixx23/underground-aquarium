@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { supabasePublic } from "@/lib/supabase/public";
-import { SOCIETY_PATH, SOCIETY_HOME_PATH } from "@/lib/config";
+import { SOCIETY_PATH } from "@/lib/config";
 
 const baseUrl = "https://www.undergroundaquarium.com";
 
@@ -22,7 +22,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/about",
     "/courses",
     SOCIETY_PATH,
-    SOCIETY_HOME_PATH,
     "/forums",
   ];
 

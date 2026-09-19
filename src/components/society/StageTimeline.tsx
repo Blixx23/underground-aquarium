@@ -285,8 +285,9 @@ export default function StageTimeline({
             All five stages logged
           </p>
           <p className="mx-auto mb-4 max-w-md text-sm text-amber-100/65">
-            Submitting sends this to other members for review. Nothing can be
-            added or changed afterwards.
+            Submitting sends this for review — to three members chosen at
+            random, or to the judge while the Society is still small. Nothing
+            can be added, changed or withdrawn afterwards.
           </p>
           <button
             onClick={submit}

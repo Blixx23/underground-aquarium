@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Trophy, Sprout, CalendarDays } from "lucide-react";
-import { SOCIETY_PATH, SOCIETY_HOME_PATH } from "@/lib/config";
+import { SOCIETY_PATH, SOCIETY_CLUB_PATH } from "@/lib/config";
 import SocietySeal from "@/components/society/SocietySeal";
 
 /**
@@ -100,7 +100,7 @@ export default function SocietyBanner({
 
               <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
                 <Link
-                  href={SOCIETY_HOME_PATH}
+                  href={SOCIETY_CLUB_PATH}
                   className="group inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 to-amber-500 px-8 font-semibold tracking-wide text-[#04060a] shadow-lg shadow-amber-500/20 transition-all duration-300 hover:from-amber-200 hover:to-amber-400 hover:shadow-xl hover:shadow-amber-400/30 sm:w-auto"
                 >
                   Apply for membership

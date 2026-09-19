@@ -10,7 +10,8 @@ import {
   Trophy,
   ScrollText,
   Ticket,
-  Settings,
+  ShieldCheck,
+  Gavel,
   type LucideIcon,
 } from "lucide-react";
 import SocietySeal from "@/components/society/SocietySeal";
@@ -34,13 +35,19 @@ export default function SocietyNav({
   displayName,
   title,
   isOfficer,
+  isJudge = false,
   pendingSubmissions = 0,
+  pendingReviews = 0,
+  judgeQueue = 0,
 }: {
   memberNumber: number | null;
   displayName: string;
   title: string | null;
   isOfficer: boolean;
+  isJudge?: boolean;
   pendingSubmissions?: number;
+  pendingReviews?: number;
+  judgeQueue?: number;
 }) {
   const pathname = usePathname();
 
@@ -54,13 +61,24 @@ export default function SocietyNav({
       Icon: FileStack,
       badge: pendingSubmissions || undefined,
     },
+    {
+      href: "/society/review",
+      label: "Review Queue",
+      Icon: ShieldCheck,
+      badge: pendingReviews || undefined,
+    },
     { href: "/society/leaderboard", label: "Leaderboard", Icon: Trophy },
     { href: "/society/certificates", label: "Certificates", Icon: ScrollText },
     { href: "/society/raffle", label: "Raffle", Icon: Ticket },
   ];
 
-  if (isOfficer) {
-    items.push({ href: "/society/admin", label: "Society Admin", Icon: Settings });
+  if (isJudge) {
+    items.push({
+      href: "/society/judge",
+      label: "Judge's Desk",
+      Icon: Gavel,
+      badge: judgeQueue || undefined,
+    });
   }
 
   const isActive = (href: string) =>

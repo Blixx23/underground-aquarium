@@ -4,6 +4,7 @@ import {
   PAID_MARKETPLACE_ENABLED,
   POST_AD_PATH,
   SOCIETY_PATH,
+  SOCIETY_SLUG,
 } from "@/lib/config";
 
 // Pages that only make sense when the paid marketplace is running.
@@ -25,6 +26,17 @@ const LEGACY_PRODUCT_PATH = /^\/marketplace\/([^/]+)\/?$/;
 // /clubs URL — the index, discover, new, start — lands on its front door.
 const LEGACY_CLUBS_PATH = /^\/clubs(\/.*)?$/;
 
+// The Society's club-era award pages. Submissions now go through spawn logs
+// and rulings through the judge's desk; the old forms would only lead to an
+// error from the database. Deliberately NOT redirected: the club page itself
+// (it holds the join form, so applicants must be able to reach it), /admin
+// (dues and roster), and /awards/list (the species point list).
+const SOCIETY_LEGACY_AWARDS: Record<string, string> = {
+  [`/c/${SOCIETY_SLUG}/awards`]: "/society/leaderboard",
+  [`/c/${SOCIETY_SLUG}/awards/submit`]: "/society/breeder/new",
+  [`/c/${SOCIETY_SLUG}/awards/review`]: "/society/judge",
+};
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -36,6 +48,13 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = POST_AD_PATH;
     url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  const societyTarget = SOCIETY_LEGACY_AWARDS[pathname.replace(/\/$/, "")];
+  if (societyTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = societyTarget;
     return NextResponse.redirect(url);
   }
 

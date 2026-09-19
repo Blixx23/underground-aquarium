@@ -10,7 +10,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { SOCIETY_NAME, SOCIETY_SLUG, SOCIETY_HOME_PATH } from "@/lib/config";
+import {
+  SOCIETY_NAME,
+  SOCIETY_SLUG,
+  SOCIETY_HOME_PATH,
+  SOCIETY_CLUB_PATH,
+} from "@/lib/config";
 import {
   SOC_EYEBROW,
   SOC_ACCENT,
@@ -98,7 +103,10 @@ export default async function SocietyPage() {
   const lifetimeDues = society?.lifetime_dues_amount_cents ?? null;
   const hasTiers = dues > 0 || Boolean(familyDues) || Boolean(lifetimeDues);
 
-  const ctaHref = society ? SOCIETY_HOME_PATH : "/login";
+  // Members go to their area. Everyone else goes to the club page, which is
+  // where the join form lives (and which asks signed-out visitors to sign in).
+  // Sending an applicant to /society/home would bounce them straight back here.
+  const ctaHref = isMember ? SOCIETY_HOME_PATH : SOCIETY_CLUB_PATH;
   const ctaLabel = isMember
     ? "Go to the member area"
     : society

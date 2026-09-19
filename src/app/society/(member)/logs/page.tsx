@@ -5,19 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import {
   SPAWN_LOG_COLUMNS,
   STATUS_LABEL,
+  STATUS_CLASS,
   type SpawnLog,
 } from "@/lib/society/spawnLogs";
 import { SOC_EYEBROW, SOC_BTN_PRIMARY } from "@/lib/society/theme";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_CLASS: Record<string, string> = {
-  open: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-  submitted: "border-sky-500/40 bg-sky-500/10 text-sky-300",
-  approved: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
-  rejected: "border-coral-500/40 bg-coral-500/10 text-coral-300",
-  withdrawn: "border-ocean-700/60 bg-ocean-900/40 text-ocean-500",
-};
+
 
 export default async function SpawnLogsPage() {
   const ctx = await getSocietyContext();

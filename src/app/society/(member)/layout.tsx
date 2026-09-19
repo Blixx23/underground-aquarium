@@ -77,6 +77,26 @@ export default async function SocietyMemberLayout({
     .eq("user_id", ctx.userId)
     .eq("status", "pending");
 
+  // Review queue and judge badges in the nav.
+  const [{ data: queue }, { data: judgeFlag }] = await Promise.all([
+    supabase.rpc("my_review_queue"),
+    supabase.rpc("is_society_judge", {
+      p_club_id: ctx.society.id,
+      p_user_id: ctx.userId,
+    }),
+  ]);
+  const pendingReviews = ((queue as { status: string }[] | null) ?? []).filter(
+    (r) => r.status === "pending"
+  ).length;
+
+  let judgeQueue = 0;
+  if (judgeFlag) {
+    const { data: jq } = await supabase.rpc("judge_queue", {
+      p_club_id: ctx.society.id,
+    });
+    judgeQueue = ((jq as unknown[] | null) ?? []).length;
+  }
+
   const lapsed =
     ctx.membership?.paid_through !== null &&
     ctx.membership?.paid_through !== undefined &&
@@ -103,7 +123,10 @@ export default async function SocietyMemberLayout({
             displayName={ctx.membership?.display_name || "Member"}
             title={title}
             isOfficer={ctx.isOfficer}
+            isJudge={Boolean(judgeFlag)}
             pendingSubmissions={pending ?? 0}
+            pendingReviews={pendingReviews}
+            judgeQueue={judgeQueue}
           />
 
           <div className="mt-6 min-w-0 lg:mt-0">{children}</div>

@@ -22,7 +22,21 @@ export type SpawnLog = {
   species_name: string;
   challenge_code: string;
   tank_note: string | null;
-  status: "open" | "submitted" | "approved" | "rejected" | "withdrawn";
+  status:
+    | "open"
+    | "submitted"
+    | "in_review"
+    | "awaiting_judge"
+    | "approved"
+    | "rejected"
+    | "appealed"
+    | "withdrawn";
+  judge_reason: string | null;
+  appeal_reason: string | null;
+  appealed_at: string | null;
+  decided_by: string | null;
+  decision_note: string | null;
+  requires_unanimous: boolean;
   opened_at: string;
   submitted_at: string | null;
   points_awarded: number | null;
@@ -30,14 +44,29 @@ export type SpawnLog = {
 };
 
 export const SPAWN_LOG_COLUMNS =
-  "id, club_id, user_id, species_id, species_name, challenge_code, tank_note, status, opened_at, submitted_at, points_awarded, is_first_in_society";
+  "id, club_id, user_id, species_id, species_name, challenge_code, tank_note, status, opened_at, submitted_at, points_awarded, is_first_in_society, judge_reason, appeal_reason, appealed_at, decided_by, decision_note, requires_unanimous";
 
 export const STATUS_LABEL: Record<SpawnLog["status"], string> = {
   open: "In progress",
-  submitted: "In review",
+  submitted: "Submitted",
+  in_review: "Peer review",
+  awaiting_judge: "With the judge",
   approved: "Approved",
   rejected: "Rejected",
+  appealed: "Under appeal",
   withdrawn: "Withdrawn",
+};
+
+/** One place for status colours, so every page agrees. */
+export const STATUS_CLASS: Record<SpawnLog["status"], string> = {
+  open: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  submitted: "border-sky-500/40 bg-sky-500/10 text-sky-300",
+  in_review: "border-sky-500/40 bg-sky-500/10 text-sky-300",
+  awaiting_judge: "border-violet-500/40 bg-violet-500/10 text-violet-300",
+  approved: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+  rejected: "border-coral-500/40 bg-coral-500/10 text-coral-300",
+  appealed: "border-violet-500/40 bg-violet-500/10 text-violet-300",
+  withdrawn: "border-ocean-700/60 bg-ocean-900/40 text-ocean-500",
 };
 
 /**

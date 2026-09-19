@@ -12,7 +12,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { SOCIETY_NAME, SOCIETY_SLUG, SOCIETY_HOME_PATH } from "@/lib/config";
+import { SOCIETY_NAME, SOCIETY_SLUG, SOCIETY_CLUB_PATH } from "@/lib/config";
 
 type AdminTool = {
   href: string;
@@ -80,7 +80,7 @@ export default async function AdminHubPage() {
   // the same pending indicator automatically.
   const tools: AdminTool[] = [
     {
-      href: `${SOCIETY_HOME_PATH}/admin`,
+      href: `${SOCIETY_CLUB_PATH}/admin`,
       label: "Society admin",
       description: `Roster, dues, officers and applications for ${SOCIETY_NAME}`,
       Icon: Users,
