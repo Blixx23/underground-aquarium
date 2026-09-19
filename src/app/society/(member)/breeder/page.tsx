@@ -58,7 +58,7 @@ export default async function BreederProgramPage() {
     .from("club_award_species")
     .select("id, program, common_name, scientific_name, category, points")
     .eq("club_id", ctx.society!.id)
-    .eq("program", "BAP")
+    .eq("program", "bap")
     .eq("is_active", true);
 
   const species = ((data ?? []) as unknown as AwardSpecies[]) ?? [];
