@@ -69,14 +69,15 @@ export default async function CertificatesPage() {
               ).getFullYear()}`}
           </p>
         </div>
-        <button
-          disabled
-          title="Certificate PDFs are being built"
-          className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 rounded-xl border border-ocean-800/60 px-5 py-2.5 text-sm text-ocean-600"
+        {/* Plain link, not client JS: the route issues the certificate in the
+            database and streams the PDF back as a download. */}
+        <a
+          href="/api/society/certificate?kind=membership"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-amber-300"
         >
           <Download className="h-4 w-4" />
-          Download
-        </button>
+          Download PDF
+        </a>
       </div>
 
       <h2 className="mb-4 font-display text-xl text-white">Award certificates</h2>
@@ -132,27 +133,33 @@ export default async function CertificatesPage() {
                 </span>
               </span>
 
-              <button
-                disabled
-                title={
-                  t.earned
-                    ? "Certificate PDFs are being built"
-                    : "Earn this title to unlock its certificate"
-                }
-                className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 rounded-xl border border-ocean-800/60 px-4 py-2 text-sm text-ocean-600"
-              >
-                <Download className="h-4 w-4" />
-                PDF
-              </button>
+              {t.earned ? (
+                <a
+                  href={`/api/society/certificate?kind=title&title=${encodeURIComponent(t.title)}`}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-amber-300"
+                >
+                  <Download className="h-4 w-4" />
+                  PDF
+                </a>
+              ) : (
+                <span
+                  title="Earn this title to unlock its certificate"
+                  className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 rounded-xl border border-ocean-800/60 px-4 py-2 text-sm text-ocean-600"
+                >
+                  <Lock className="h-4 w-4" />
+                  PDF
+                </span>
+              )}
             </li>
           ))}
         </ul>
       )}
 
       <p className="mt-6 rounded-xl border border-ocean-800/60 bg-ocean-900/30 px-4 py-3 text-xs text-ocean-500">
-        Downloads are switched off until the signed PDF template is finished.
-        Every certificate you&apos;ve earned will be available here the moment
-        it ships — nothing is lost in the meantime.
+        Each certificate carries a permanent code. Anyone can check it at
+        undergroundaquarium.com/verify, so a printed certificate can always be
+        proven genuine. Downloading the same certificate again gives you the
+        same code.
       </p>
     </div>
   );
