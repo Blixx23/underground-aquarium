@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
   return new NextResponse(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="UAS-${slug}-${cert.code}.pdf"`,
+      "Content-Disposition": `attachment; filename="${cert.code}-${slug}.pdf"`,
       "Cache-Control": "private, no-store",
     },
   });

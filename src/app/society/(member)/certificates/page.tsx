@@ -1,4 +1,5 @@
-import { ScrollText, Download, Lock } from "lucide-react";
+import Link from "next/link";
+import { ScrollText, Download, Lock, ShieldCheck } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import { titleForPoints } from "@/lib/awards/titles";
@@ -12,10 +13,22 @@ export default async function CertificatesPage() {
   const supabase = await createClient();
   const societyId = ctx.society!.id;
 
-  const [{ data: sData }, { data: ladderRow }] = await Promise.all([
+  const [{ data: sData }, { data: ladderRow }, { data: issuedRows }] = await Promise.all([
     supabase.rpc("club_award_standings", { p_club_id: societyId }),
     supabase.from("clubs").select("award_titles").eq("id", societyId).maybeSingle(),
+    supabase
+      .from("society_certificates")
+      .select("kind, title, code, status")
+      .eq("user_id", ctx.userId),
   ]);
+
+  // Registry numbers for anything already issued, so members can hand
+  // a code to whoever wants proof without downloading the PDF again.
+  const issued = new Map(
+    ((issuedRows as { kind: string; title: string | null; code: string; status: string }[] | null) ?? [])
+      .map((r) => [r.kind === "membership" ? "membership" : `title:${r.title}`, r])
+  );
+  const membershipCert = issued.get("membership");
 
   const points = Number(
     ((sData as { user_id: string; total_points: number }[] | null) ?? []).find(
@@ -68,6 +81,7 @@ export default async function CertificatesPage() {
                 ctx.membership.joined_at
               ).getFullYear()}`}
           </p>
+          {membershipCert && <RegistryLink code={membershipCert.code} revoked={membershipCert.status === "revoked"} />}
         </div>
         {/* Plain link, not client JS: the route issues the certificate in the
             database and streams the PDF back as a download. */}
@@ -131,6 +145,12 @@ export default async function CertificatesPage() {
                   {t.min_points} points
                   {!t.earned && ` · ${t.min_points - points} to go`}
                 </span>
+                {issued.get(`title:${t.title}`) && (
+                  <RegistryLink
+                    code={issued.get(`title:${t.title}`)!.code}
+                    revoked={issued.get(`title:${t.title}`)!.status === "revoked"}
+                  />
+                )}
               </span>
 
               {t.earned ? (
@@ -156,11 +176,30 @@ export default async function CertificatesPage() {
       )}
 
       <p className="mt-6 rounded-xl border border-ocean-800/60 bg-ocean-900/30 px-4 py-3 text-xs text-ocean-500">
-        Each certificate carries a permanent code. Anyone can check it at
-        undergroundaquarium.com/verify, so a printed certificate can always be
-        proven genuine. Downloading the same certificate again gives you the
-        same code.
+        Each certificate carries a permanent registry number. Anyone can check
+        it at{" "}
+        <Link href="/verify" className="text-amber-300/80 hover:text-amber-300">
+          undergroundaquarium.com/verify
+        </Link>
+        , or by scanning the QR code on the certificate, so a printed
+        certificate can always be proven genuine. Downloading the same
+        certificate again gives you the same number.
       </p>
     </div>
+  );
+}
+
+function RegistryLink({ code, revoked }: { code: string; revoked: boolean }) {
+  return (
+    <Link
+      href={`/verify/${code}`}
+      className={`mt-1.5 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-wider ${
+        revoked ? "text-coral-300" : "text-amber-300/80 hover:text-amber-300"
+      }`}
+    >
+      <ShieldCheck className="h-3.5 w-3.5" />
+      {code}
+      {revoked && " · revoked"}
+    </Link>
   );
 }

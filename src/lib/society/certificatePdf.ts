@@ -8,6 +8,7 @@ import {
   type RGB,
 } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
+import QRCode from "qrcode";
 import { SIGNATURE_FONT_BASE64 } from "./signatureFont";
 
 /**
@@ -262,9 +263,18 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
   page.drawText(signer, { x: rightX + (colW - serif.widthOfTextAtSize(signer, 11)) / 2, y: 105, size: 11, font: serif, color: SOFT });
   page.drawText(role, { x: rightX + (colW - serifItalic.widthOfTextAtSize(role, 10)) / 2, y: 92, size: 10, font: serifItalic, color: SOFT });
 
-  // Verification footer.
-  const ver = `Certificate ${input.code}   ·   Verify at ${input.verifyUrl.replace(/^https?:\/\//, "")}`;
+  // Registry number, top right, the way a diploma carries its serial.
+  const regNo = `No. ${input.code}`;
+  page.drawText(regNo, { x: W - 58 - mono.widthOfTextAtSize(regNo, 8.5), y: H - 60, size: 8.5, font: mono, color: BRASS });
+
+  // Verification footer, and a QR code that opens this certificate's
+  // record in the registry.
+  const site = input.verifyUrl.replace(/^https?:\/\//, "").replace(/\/verify\/.*$/, "/verify");
+  const ver = `Registry No. ${input.code}   ·   Verify at ${site}`;
   centered(page, ver, 50, mono, 8.5, SOFT);
+  qr(page, input.verifyUrl, W - 52 - 50, 56, 50);
+  const scan = "SCAN TO VERIFY";
+  page.drawText(scan, { x: W - 52 - 25 - mono.widthOfTextAtSize(scan, 5.5) / 2, y: 48, size: 5.5, font: mono, color: SOFT });
 
   return pdf.save();
 }
@@ -299,4 +309,19 @@ async function penSignature(pdf: PDFDocument, page: PDFPage, name: string, x: nu
     `C ${x0 + w * 0.2} ${Y(dip - t)}, ${x0 + w * 0.48} ${Y(dip + rise * 0.35 - t * 0.6)}, ${x1} ${Y(y1)} ` +
     `C ${x0 + w * 0.48} ${Y(dip + rise * 0.35 + t * 0.2)}, ${x0 + w * 0.2} ${Y(dip + t * 0.4)}, ${x0} ${Y(y0)} Z`;
   page.drawSvgPath(sliver, { x: 0, y: 0, color: PEN, opacity: 0.92 });
+}
+
+/** A QR code drawn as vectors: one path, crisp at any print size. */
+function qr(page: PDFPage, text: string, x: number, y: number, size: number) {
+  const { modules } = QRCode.create(text, { errorCorrectionLevel: "M" });
+  const n = modules.size;
+  const cell = size / n;
+  let d = "";
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (modules.get(r, c)) d += `M ${c} ${r} h 1 v 1 h -1 Z `;
+    }
+  }
+  // drawSvgPath's y axis points down, which is exactly how QR rows run.
+  page.drawSvgPath(d, { x, y: y + size, scale: cell, color: INK });
 }
