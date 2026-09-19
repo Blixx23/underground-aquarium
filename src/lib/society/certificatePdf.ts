@@ -7,6 +7,8 @@ import {
   type PDFPage,
   type RGB,
 } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
+import { SIGNATURE_FONT_BASE64 } from "./signatureFont";
 
 /**
  * The Society's certificates.
@@ -17,7 +19,9 @@ import {
  * ivory reads as the same institution and prints clean.
  *
  * US Letter landscape, drawn entirely with vectors and the PDF standard
- * fonts, so it's sharp at any size and needs no font files at runtime.
+ * fonts, so it's sharp at any size. The one exception is the signature: a
+ * script face in Underground Aquarium blue, bundled with the code, used
+ * until a scanned signature is dropped in at public/society/signature.png.
  */
 
 export type CertificateInput = {
@@ -47,6 +51,12 @@ const SOFT: RGB = rgb(0.33, 0.33, 0.35);
 const BRASS: RGB = rgb(0.66, 0.49, 0.18);
 const BRASS_LIGHT: RGB = rgb(0.8, 0.65, 0.34);
 const IVORY: RGB = rgb(0.985, 0.97, 0.93);
+/** Underground Aquarium blue (ocean-600, #0e4a76), a touch deeper like wet fountain-pen ink. */
+const PEN: RGB = rgb(0.05, 0.25, 0.42);
+
+function base64ToBytes(b64: string): Uint8Array {
+  return Uint8Array.from(Buffer.from(b64, "base64"));
+}
 
 function centered(page: PDFPage, text: string, y: number, font: PDFFont, size: number, color: RGB, spacing = 0) {
   if (spacing === 0) {
@@ -165,6 +175,8 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
   pdf.setSubject(`Certificate ${input.code}`);
   pdf.setCreator("undergroundaquarium.com");
 
+  pdf.registerFontkit(fontkit);
+
   const page = pdf.addPage([W, H]);
   const serif = await pdf.embedFont(StandardFonts.TimesRoman);
   const serifBold = await pdf.embedFont(StandardFonts.TimesRomanBold);
@@ -228,7 +240,7 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
   page.drawText(dateStr, { x: leftX + (colW - dW) / 2, y: 128, size: 16, font: serifItalic, color: INK });
   page.drawLine({ start: { x: leftX, y: 120 }, end: { x: leftX + colW, y: 120 }, thickness: 0.7, color: INK });
   const dl = "Date of Issue";
-  page.drawText(dl, { x: leftX + (colW - serif.widthOfTextAtSize(dl, 11)) / 2, y: 104, size: 11, font: serif, color: SOFT });
+  page.drawText(dl, { x: leftX + (colW - serif.widthOfTextAtSize(dl, 11)) / 2, y: 105, size: 11, font: serif, color: SOFT });
 
   // Signature, right.
   const rightX = W - 110 - colW;
@@ -243,18 +255,48 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
     const ih = img.height * s;
     page.drawImage(img, { x: rightX + (colW - iw) / 2, y: 122, width: iw, height: ih });
   } else {
-    const sw = serifBoldItalic.widthOfTextAtSize(signer, 20);
-    page.drawText(signer, { x: rightX + (colW - sw) / 2, y: 128, size: 20, font: serifBoldItalic, color: INK });
+    await penSignature(pdf, page, signer, rightX, colW);
   }
   page.drawLine({ start: { x: rightX, y: 120 }, end: { x: rightX + colW, y: 120 }, thickness: 0.7, color: INK });
-  // With a scanned signature the caption names the signer; with the
-  // typeset stand-in the name is already on the line, so just the role.
-  const signLine = input.signaturePng ? `${signer}, ${role}` : role;
-  page.drawText(signLine, { x: rightX + (colW - serif.widthOfTextAtSize(signLine, 11)) / 2, y: 104, size: 11, font: serif, color: SOFT });
+  // Printed name and role under the line, as on any signed instrument.
+  page.drawText(signer, { x: rightX + (colW - serif.widthOfTextAtSize(signer, 11)) / 2, y: 105, size: 11, font: serif, color: SOFT });
+  page.drawText(role, { x: rightX + (colW - serifItalic.widthOfTextAtSize(role, 10)) / 2, y: 92, size: 10, font: serifItalic, color: SOFT });
 
   // Verification footer.
   const ver = `Certificate ${input.code}   ·   Verify at ${input.verifyUrl.replace(/^https?:\/\//, "")}`;
   centered(page, ver, 50, mono, 8.5, SOFT);
 
   return pdf.save();
+}
+
+/**
+ * The typeset signature: a script hand in pen blue, set at a slight climb
+ * and crossing the rule the way a real signature does, finished with a
+ * tapered underline flourish.
+ */
+async function penSignature(pdf: PDFDocument, page: PDFPage, name: string, x: number, colW: number) {
+  const font = await pdf.embedFont(base64ToBytes(SIGNATURE_FONT_BASE64), { subset: true });
+  const size = fitSize(font, name, 34, colW - 16);
+  const w = font.widthOfTextAtSize(name, size);
+  const tilt = 4;
+  const sx = x + (colW - w) / 2 - 2;
+  const sy = 124;
+  page.drawText(name, { x: sx, y: sy, size, font, color: PEN, rotate: degrees(tilt) });
+
+  // Flourish: a quick tapered swash under the name, heavy where the pen
+  // lands and thinning to nothing as it lifts off. Drawn as a filled
+  // sliver so the taper is real, not a uniform stroke.
+  const rise = Math.tan((tilt * Math.PI) / 180) * w;
+  const x0 = sx + w * 0.12;
+  const x1 = sx + w * 0.82;
+  const y0 = sy - 6;
+  const y1 = sy - 2 + rise * 0.75;
+  const dip = sy - 10;
+  const t = 1.3; // thickness at the heaviest point
+  const Y = (v: number) => -v; // drawSvgPath's y axis points down
+  const sliver =
+    `M ${x0} ${Y(y0)} ` +
+    `C ${x0 + w * 0.2} ${Y(dip - t)}, ${x0 + w * 0.48} ${Y(dip + rise * 0.35 - t * 0.6)}, ${x1} ${Y(y1)} ` +
+    `C ${x0 + w * 0.48} ${Y(dip + rise * 0.35 + t * 0.2)}, ${x0 + w * 0.2} ${Y(dip + t * 0.4)}, ${x0} ${Y(y0)} Z`;
+  page.drawSvgPath(sliver, { x: 0, y: 0, color: PEN, opacity: 0.92 });
 }
