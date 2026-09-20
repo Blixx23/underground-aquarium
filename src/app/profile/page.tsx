@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  Plus,
-  MessageCircle,
   Store,
   Fish,
   Globe,
@@ -12,10 +10,11 @@ import {
   ExternalLink,
   ShieldCheck,
   Settings,
-  Newspaper,
   Trophy,
-  Bell,
   Pencil,
+  ScrollText,
+  Wrench,
+  Droplets,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
@@ -24,6 +23,7 @@ import Certifications, {
   type Certification,
 } from "@/components/profile/Certifications";
 import AvatarUpload from "@/components/profile/AvatarUpload";
+import SignOutButton from "@/components/profile/SignOutButton";
 import SocietySeal from "@/components/society/SocietySeal";
 import { SOCIETY_HOME_PATH, SOCIETY_PATH } from "@/lib/config";
 
@@ -100,21 +100,35 @@ export default async function ProfilePage({
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const isAdmin = Boolean(profile?.is_admin);
 
-  const actions = [
-    ...(profile?.username
-      ? [{ href: `/u/${profile.username}`, label: "Public profile", Icon: ExternalLink }]
-      : []),
-    { href: "/feed", label: "The Feed", Icon: Newspaper },
-    { href: "/trophies", label: "Trophies", Icon: Trophy },
-    { href: "/notifications", label: "Notifications", Icon: Bell },
-    { href: "/messages", label: "Messages", Icon: MessageCircle },
-    { href: "/my/listings", label: "My listings", Icon: Store },
-    { href: "/post", label: "Post free ad", Icon: Plus },
-    { href: "/tank-builder", label: "Tank Builder", Icon: Fish },
-    { href: "/account", label: "Account & data", Icon: Settings },
-    ...(isAdmin
-      ? [{ href: "/admin", label: "Admin", Icon: ShieldCheck }]
-      : []),
+  // Messages, notifications, the feed and posting already live on the
+  // top and bottom bars, so this page only holds what's yours.
+  const groups: { title: string; items: { href: string; label: string; Icon: typeof Store }[] }[] = [
+    {
+      title: "Your stuff",
+      items: [
+        ...(profile?.username
+          ? [{ href: `/u/${profile.username}`, label: "Public profile", Icon: ExternalLink }]
+          : []),
+        { href: "/my/listings", label: "My listings", Icon: Store },
+        { href: "#tanks", label: "My tanks", Icon: Fish },
+        { href: "/trophies", label: "Trophies", Icon: Trophy },
+        ...(inSociety ? [{ href: "/society/certificates", label: "Certificates", Icon: ScrollText }] : []),
+      ],
+    },
+    {
+      title: "Tools",
+      items: [
+        { href: "/tank-builder", label: "Tank Builder", Icon: Wrench },
+        { href: "/water-check", label: "Water Check", Icon: Droplets },
+      ],
+    },
+    {
+      title: "Settings",
+      items: [
+        { href: "/account", label: "Account & data", Icon: Settings },
+        ...(isAdmin ? [{ href: "/admin", label: "Admin", Icon: ShieldCheck }] : []),
+      ],
+    },
   ];
 
   return (
@@ -209,23 +223,26 @@ export default async function ProfilePage({
           </span>
         </Link>
 
-        {/* Quick actions */}
-        <div className="mt-8">
-          <p className="mb-3 font-mono text-xs uppercase tracking-widest text-ocean-500">
-            Quick actions
-          </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {actions.map((a) => (
-              <Link
-                key={a.href}
-                href={a.href}
-                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-colors hover:border-emerald-500/40 hover:bg-white/10"
-              >
-                <a.Icon className="h-5 w-5 text-ocean-300" />
-                <span className="text-sm text-ocean-200">{a.label}</span>
-              </Link>
-            ))}
+        {/* Your stuff, tools, settings */}
+        {groups.map((g) => (
+          <div key={g.title} className="mt-7">
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-ocean-500">{g.title}</p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+              {g.items.map((a) => (
+                <Link
+                  key={a.href}
+                  href={a.href}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2 py-3 text-center transition-colors hover:border-ocean-500/40 hover:bg-white/10"
+                >
+                  <a.Icon className="h-5 w-5 text-ocean-300" />
+                  <span className="text-xs leading-tight text-ocean-200">{a.label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
+        ))}
+        <div className="mt-3">
+          <SignOutButton />
         </div>
 
         {/* Certifications */}
@@ -236,7 +253,7 @@ export default async function ProfilePage({
         />
 
         {/* Your tanks */}
-        <section className="mt-10">
+        <section id="tanks" className="mt-10 scroll-mt-24">
           <h2 className="mb-4 font-display text-2xl text-white">Your tanks</h2>
           {tanks.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">

@@ -8,11 +8,21 @@ import {
   Fish,
   ChevronDown,
   LogOut,
-  MessageCircle,
   ClipboardList,
   Trophy,
   Settings,
   Newspaper,
+} from "lucide-react";
+import {
+  MessagesSquare,
+  Store,
+  CalendarDays,
+  GraduationCap,
+  BookOpen,
+  Wrench,
+  Droplets,
+  ScrollText,
+  Info,
 } from "lucide-react";
 import Avatar from "@/components/profile/Avatar";
 import type { User } from "@supabase/supabase-js";
@@ -21,7 +31,6 @@ import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
 import MessageBell from "./MessageBell";
 import {
-  MESSAGING_ENABLED,
   MY_LISTINGS_ENABLED,
   POST_AD_PATH,
   SOCIETY_PATH,
@@ -64,6 +73,20 @@ const nav: NavItem[] = [
     ],
   },
   { label: "Courses", href: "/courses" },
+];
+
+/** The phone menu: places on the site, not things about you. */
+const EXPLORE = [
+  { href: "/forums", label: "Forums", Icon: MessagesSquare },
+  { href: "/species", label: "Fish Species", Icon: Fish },
+  { href: "/stores", label: "Fish Stores", Icon: Store },
+  { href: "/events", label: "Events", Icon: CalendarDays },
+  { href: "/courses", label: "Courses", Icon: GraduationCap },
+  { href: "/glossary", label: "Glossary", Icon: BookOpen },
+  { href: "/tank-builder", label: "Tank Builder", Icon: Wrench },
+  { href: "/water-check", label: "Water Check", Icon: Droplets },
+  { href: "/verify", label: "Certificate Registry", Icon: ScrollText },
+  { href: "/about", label: "About", Icon: Info },
 ];
 
 export default function Navbar() {
@@ -353,109 +376,32 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu: just the site's sections. Your own stuff lives on the Me tab. */}
       {open && (
-        <div className="md:hidden bg-ocean-950/98 backdrop-blur-xl border-t border-ocean-800/50 px-6 pt-4 pb-[calc(2rem_+_env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_5rem)] overflow-y-auto">
-          {nav.map((item) =>
-            item.children ? (
-              <div key={item.label}>
-                <p className="px-2 py-3 text-xs uppercase tracking-widest text-ocean-500 font-mono">
-                  {item.label}
-                </p>
-                {item.children.map((child) => (
-                  <Link
-                    key={child.href}
-                    href={child.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "block px-4 py-2.5",
-                      child.society
-                        ? "text-amber-300 hover:text-amber-200"
-                        : "text-ocean-300 hover:text-white"
-                    )}
-                  >
-                    {child.label}
-                  </Link>
-                ))}
-              </div>
-            ) : (
+        <div className="md:hidden bg-ocean-950/98 backdrop-blur-xl border-t border-ocean-800/50 px-4 pt-3 pb-[calc(6rem_+_env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_5rem)] overflow-y-auto">
+          <p className="px-2 pb-2 font-mono text-[11px] uppercase tracking-widest text-ocean-500">Explore</p>
+          <div className="grid grid-cols-2 gap-2">
+            {EXPLORE.map(({ href, label, Icon }) => (
               <Link
-                key={item.href}
-                href={item.href!}
+                key={href}
+                href={href}
                 onClick={() => setOpen(false)}
-                className={cn(
-                  "block px-2 py-3 border-b border-ocean-800/30",
-                  item.society
-                    ? "text-amber-300 hover:text-amber-200"
-                    : "text-ocean-200 hover:text-white"
-                )}
+                className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-ocean-100 active:bg-white/10"
               >
-                {item.label}
+                <Icon className="h-4 w-4 shrink-0 text-ocean-400" />
+                {label}
               </Link>
-            )
-          )}
-          <div className="mt-4 flex flex-col gap-3">
-            {user ? (
-              <>
-                {MY_LISTINGS_ENABLED && (
-                  <Link
-                    href="/my/listings"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center justify-center gap-2 py-3 text-ocean-200"
-                  >
-                    <ClipboardList className="w-4 h-4" />
-                    My listings
-                  </Link>
-                )}
-                {MESSAGING_ENABLED && (
-                  <Link
-                    href="/messages"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center justify-center gap-2 py-3 text-ocean-200"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Messages
-                  </Link>
-                )}
-                <Link
-                  href={publicHref}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-2 py-3 text-ocean-100"
-                >
-                  <Avatar name={displayName} src={me?.avatar_url ?? null} size={24} />
-                  {displayName}
-                </Link>
-                <Link
-                  href="/profile"
-                  onClick={() => setOpen(false)}
-                  className="text-center py-3 text-ocean-300"
-                >
-                  Dashboard &amp; settings
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="text-center py-3 text-ocean-300"
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="text-center py-3 text-ocean-300"
-              >
-                Sign In
-              </Link>
-            )}
-            <Link
-              href={POST_AD_PATH}
-              onClick={() => setOpen(false)}
-              className="text-center py-3 bg-ocean-600 text-white rounded-xl font-medium"
-            >
-              Post Free Ad
-            </Link>
+            ))}
           </div>
+          {!user && (
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="mt-4 block rounded-xl bg-ocean-600 py-3 text-center font-medium text-white"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
       )}
     </header>
