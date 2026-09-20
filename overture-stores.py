@@ -138,6 +138,25 @@ def cmd_dump(con, path: str, cat: str, categories: list[str], out: str):
         f"list_contains({alt}, '{c}')" for c in categories
     )
 
+    # The aquatic_pet_store category is accurate but not exhaustive: real
+    # fish stores like Glass House Aquatics (Casper WY) sit under plain
+    # pet_store with no aquatic tag at all. So sweep the wider pet
+    # categories for names that say, unambiguously, aquarium shop. Name
+    # matching is only safe here because the category already narrowed it
+    # to pet retail — "Tropical Treasures" in isolation could be anything.
+    WIDER = ("pet_store", "pet_supplies", "animal_or_pet_service")
+    NAME_SAYS_FISH = (
+        r"aquari|aquatic|\btropical\b|reef|coral|cichlid|discus|"
+        r"\bkoi\b|betta|guppy|saltwater|freshwater|fish (store|shop|room|"
+        r"place|world|gallery|gallery|hut|hous)|\bfish\b.*\b(pet|store|shop)|"
+        r"\bfins\b|\bscales\b"
+    )
+    wider_quoted = ", ".join(f"'{c}'" for c in WIDER)
+    wide_clause = (
+        f"({cat} in ({wider_quoted}) "
+        f"and regexp_matches(lower(names.primary), '{NAME_SAYS_FISH}'))"
+    )
+
     rows = con.execute(f"""
         select
             id,
@@ -155,7 +174,7 @@ def cmd_dump(con, path: str, cat: str, categories: list[str], out: str):
             confidence
         from read_parquet('{path}', hive_partitioning=1)
         where {us_filter()}
-          and ({cat} in ({quoted}) or {alt_clause})
+          and ({cat} in ({quoted}) or {alt_clause} or {wide_clause})
           and names.primary is not null
         order by region, city, name
     """).fetchall()

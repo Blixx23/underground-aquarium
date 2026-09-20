@@ -85,6 +85,11 @@ function slugify(name, city, state) {
   return base || `shop-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/**
+ * Tags are only worth having when the shop's own name or site says so.
+ * An earlier version defaulted to Freshwater, which ended up on three
+ * quarters of the directory and told a visitor nothing. No signal, no tag.
+ */
 function tagsFor(name, website) {
   const out = new Set();
   const hay = `${name} ${website || ""}`.toLowerCase();
@@ -93,8 +98,7 @@ function tagsFor(name, website) {
   if (/plant|aquascap/.test(hay)) out.add("Plants");
   if (/shrimp/.test(hay)) out.add("Shrimp");
   if (/koi|pond/.test(hay)) out.add("Pond");
-  if (out.size === 0) out.add("Freshwater");
-  return [...out];
+  return [...out].sort(); // tags is NOT NULL, so no signal means an empty list
 }
 
 function metresBetween(lat1, lon1, lat2, lon2) {
