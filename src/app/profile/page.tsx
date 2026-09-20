@@ -15,6 +15,7 @@ import {
   Newspaper,
   Trophy,
   Bell,
+  Pencil,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
@@ -37,7 +38,12 @@ type SavedTank = {
   is_public: boolean;
 };
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string }>;
+}) {
+  const editing = (await searchParams).edit === "1";
   const supabase = await createClient();
   const {
     data: { user },
@@ -143,17 +149,36 @@ export default async function ProfilePage() {
                 <BubbleBadge balance={profile?.bubble_balance ?? 0} peakRank={profile?.bubble_tier_seen ?? 0} />
               </div>
             </div>
-            {profile?.username && (
-              <Link
-                href={`/u/${profile.username}`}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-xs text-ocean-200 transition-colors hover:bg-white/5"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">View public profile</span>
-                <span className="sm:hidden">Public</span>
-              </Link>
-            )}
+            <div className="flex shrink-0 flex-col gap-2">
+              {!editing && (
+                <Link
+                  href="/profile?edit=1"
+                  scroll={false}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-ocean-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-ocean-500"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit profile
+                </Link>
+              )}
+              {profile?.username && (
+                <Link
+                  href={`/u/${profile.username}`}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-xs text-ocean-200 transition-colors hover:bg-white/5"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">View public profile</span>
+                  <span className="sm:hidden">Public</span>
+                </Link>
+              )}
+            </div>
           </div>
+
+          {/* Editing happens right here, under your name, not at the bottom of the page. */}
+          {editing && (
+            <div className="mt-6 border-t border-white/10 pt-6">
+              <ProfileForm userId={user.id} profile={profile} />
+            </div>
+          )}
         </div>
 
         {/* Society */}
@@ -263,13 +288,6 @@ export default async function ProfilePage() {
           )}
         </section>
 
-        {/* Edit profile */}
-        <section className="mt-10">
-          <h2 className="mb-4 font-display text-2xl text-white">Edit profile</h2>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
-            <ProfileForm userId={user.id} profile={profile} />
-          </div>
-        </section>
       </div>
     </main>
   );

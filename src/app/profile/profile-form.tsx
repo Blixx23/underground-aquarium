@@ -52,13 +52,13 @@
        }
 
        setSaving(false)
-       setStatus(error ? `Error: ${error.message}` : 'Saved!')
-     }
-
-     async function handleSignOut() {
-       await supabase.auth.signOut()
+       if (error) {
+         setStatus(`Error: ${error.message}`)
+         return
+       }
+       // Close the editor; the header above shows the new details.
+       router.replace('/profile', { scroll: false })
        router.refresh()
-       router.push('/login')
      }
 
      const fieldClass =
@@ -92,23 +92,24 @@
            <input value={website} onChange={(e) => setWebsite(e.target.value)} className={fieldClass} />
          </label>
 
-         {status && (
-           <p className={`text-sm ${status.startsWith('Error') ? 'text-red-400' : 'text-emerald-400'}`}>
-             {status}
-           </p>
-         )}
+         {status && <p className="text-sm text-red-400">{status}</p>}
 
-         <button
-           type="submit"
-           disabled={saving}
-           className="mt-2 rounded-lg bg-ocean-500 px-4 py-2 font-medium text-white transition hover:bg-ocean-400 disabled:opacity-50"
-         >
-           {saving ? 'Saving…' : 'Save changes'}
-         </button>
-
-         <button type="button" onClick={handleSignOut} className="text-sm text-ocean-400 hover:text-white">
-           Sign out
-         </button>
+         <div className="mt-2 flex gap-3">
+           <button
+             type="submit"
+             disabled={saving}
+             className="flex-1 rounded-lg bg-ocean-500 px-4 py-2 font-medium text-white hover:bg-ocean-400 disabled:opacity-50"
+           >
+             {saving ? 'Saving…' : 'Save'}
+           </button>
+           <button
+             type="button"
+             onClick={() => router.replace('/profile', { scroll: false })}
+             className="rounded-lg border border-white/15 px-4 py-2 text-ocean-200 hover:bg-white/5"
+           >
+             Cancel
+           </button>
+         </div>
        </form>
      )
    }

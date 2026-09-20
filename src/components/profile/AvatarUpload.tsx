@@ -59,6 +59,13 @@ export default function AvatarUpload({
   const [url, setUrl] = useState<string | null>(initialUrl);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+
+  // Photos save the moment you pick one; say so right here.
+  function flash(msg: string) {
+    setDone(msg);
+    setTimeout(() => setDone(null), 2500);
+  }
 
   async function pick(file: File | undefined) {
     if (!file) return;
@@ -80,6 +87,7 @@ export default function AvatarUpload({
       const { error: rpcErr } = await supabase.rpc("set_my_avatar", { p_url: publicUrl });
       if (rpcErr) throw new Error(rpcErr.message);
       setUrl(publicUrl);
+      flash("Photo saved");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed.");
@@ -99,6 +107,7 @@ export default function AvatarUpload({
       return;
     }
     setUrl(null);
+    flash("Photo removed");
     router.refresh();
   }
 
@@ -148,6 +157,7 @@ export default function AvatarUpload({
           </button>
         )}
       </div>
+      {done && <p className="text-[11px] text-emerald-400">{done}</p>}
       {error && <p className="max-w-[10rem] text-center text-[11px] text-coral-300">{error}</p>}
     </div>
   );
