@@ -58,6 +58,14 @@ function hasSession(request: NextRequest): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Signed in, the front door is the feed.
+  if (pathname === "/" && hasSession(request)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/feed";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   if (
     SIGNED_IN_PATHS.some((p) => (p.endsWith("/") ? pathname.startsWith(p) : pathname === p || pathname.startsWith(p + "/"))) &&
     !hasSession(request)

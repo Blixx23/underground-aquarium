@@ -188,7 +188,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href={user ? "/feed" : "/"} className="flex items-center gap-3 group">
           <div className="relative w-10 h-10">
             <div className="absolute inset-0 rounded-full bg-ocean-600/30 group-hover:bg-ocean-500/40 transition-all duration-300 animate-glow-pulse" />
             <div className="relative z-10 flex items-center justify-center w-full h-full">
