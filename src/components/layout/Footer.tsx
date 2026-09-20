@@ -17,6 +17,7 @@ const links = {
     { label: "Local fish stores", href: "/stores" },
   ],
   Community: [
+    { label: "Feed", href: "/feed" },
     { label: "Forums", href: "/forums" },
     { label: "The Society", href: SOCIETY_PATH },
     { label: "Verify a certificate", href: "/verify" },
