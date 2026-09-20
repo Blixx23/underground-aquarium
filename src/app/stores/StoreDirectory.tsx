@@ -12,8 +12,10 @@ import {
   LocateFixed,
   ChevronLeft,
 } from "lucide-react";
+import Stars from "@/components/stores/Stars";
 
 type StoreRow = {
+  id: string;
   slug: string;
   name: string;
   city: string | null;
@@ -22,6 +24,8 @@ type StoreRow = {
   claimed_by: string | null;
   lat: number | null;
   lng: number | null;
+  rating_avg: number | null;
+  rating_count: number;
 };
 
 const STATE_NAMES: Record<string, string> = {
@@ -198,7 +202,13 @@ export default function StoreDirectory({
             />
           )}
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <Stars
+          rating={s.rating_avg}
+          count={s.rating_count}
+          size={13}
+          className="mt-1.5"
+        />
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           {place && (
             <span className="flex items-center gap-1 text-ocean-400">
               <MapPin className="h-3.5 w-3.5" />

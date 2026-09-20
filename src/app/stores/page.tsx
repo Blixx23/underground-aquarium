@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 type StoreRow = {
+  id: string;
   slug: string;
   name: string;
   city: string | null;
@@ -23,6 +24,8 @@ type StoreRow = {
   claimed_by: string | null;
   lat: number | null;
   lng: number | null;
+  rating_avg: number | null;
+  rating_count: number;
 };
 
 const PAGE_SIZE = 1000;
@@ -38,7 +41,7 @@ async function getAllStores(): Promise<StoreRow[]> {
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await supabasePublic
       .from("fish_stores")
-      .select("slug, name, city, state, tags, claimed_by, lat, lng")
+      .select("id, slug, name, city, state, tags, claimed_by, lat, lng")
       .eq("status", "published")
       .order("state", { ascending: true })
       .order("city", { ascending: true })
@@ -49,7 +52,26 @@ async function getAllStores(): Promise<StoreRow[]> {
     all.push(...batch);
     if (batch.length < PAGE_SIZE) break;
   }
-  return all;
+
+  // Star ratings come from a small view over store_reviews. If it hasn't
+  // been created yet, the directory still loads, just without stars filled.
+  const ratings = new Map<string, { avg: number; count: number }>();
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabasePublic
+      .from("store_ratings")
+      .select("store_id, rating_avg, rating_count")
+      .range(from, from + PAGE_SIZE - 1);
+    if (error || !data) break;
+    for (const r of data as { store_id: string; rating_avg: number; rating_count: number }[]) {
+      ratings.set(r.store_id, { avg: Number(r.rating_avg), count: r.rating_count });
+    }
+    if (data.length < PAGE_SIZE) break;
+  }
+
+  return all.map((s) => {
+    const r = ratings.get(s.id);
+    return { ...s, rating_avg: r?.avg ?? null, rating_count: r?.count ?? 0 };
+  });
 }
 
 export default async function StoresPage({

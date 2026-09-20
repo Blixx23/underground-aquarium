@@ -5,6 +5,11 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+/**
+ * A heart, the same one the feed uses: grey until you tap it, coral once
+ * you have. Favoriting a shop is what puts its updates in your
+ * notifications, but the heart says that on its own.
+ */
 export default function StoreFavoriteButton({
   storeId,
   initialFavorited,
@@ -58,38 +63,28 @@ export default function StoreFavoriteButton({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-    <div className="flex items-center gap-3">
+    <span className="relative inline-flex items-center">
       <button
+        type="button"
         onClick={toggle}
         disabled={busy}
         aria-pressed={favorited}
-        title="Favorite this shop to get notified when they post updates"
-        className={
-          "inline-flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-medium transition-colors disabled:opacity-50 " +
-          (favorited
-            ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
-            : "border-white/10 text-ocean-300 hover:text-white hover:border-white/20")
-        }
+        aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-white/5 disabled:opacity-50 ${
+          favorited ? "text-coral-400" : "text-ocean-400 hover:text-white"
+        }`}
       >
-        <Heart className={"w-4 h-4 " + (favorited ? "fill-current" : "")} />
-        {favorited ? "Favorited" : "Favorite"}
-        {count > 0 && <span className="text-ocean-400 font-normal">· {count}</span>}
+        <Heart className={`h-5 w-5 ${favorited ? "fill-current" : ""}`} />
+        {count > 0 && <span>{count}</span>}
       </button>
       {needAuth && (
-        <span className="text-xs text-ocean-400">
+        <span className="absolute right-0 top-full z-10 mt-1 whitespace-nowrap rounded-lg border border-white/10 bg-ocean-900 px-3 py-1.5 text-xs text-ocean-300 shadow-lg">
           <Link href="/login" className="text-emerald-400 hover:text-emerald-300">
             Sign in
           </Link>{" "}
           to favorite
         </span>
       )}
-    </div>
-      <p className="text-xs text-ocean-500">
-        {favorited
-          ? "You'll get their updates."
-          : "Favorite for updates."}
-      </p>
-    </div>
+    </span>
   );
 }

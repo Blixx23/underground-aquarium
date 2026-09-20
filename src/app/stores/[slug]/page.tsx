@@ -8,7 +8,6 @@ import {
   Clock,
   ArrowLeft,
   Navigation,
-  Star,
   BadgeCheck,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
@@ -22,6 +21,7 @@ import TrackedLink from "@/components/stores/TrackedLink";
 import StorePhotos, { type StorePhoto } from "@/components/stores/StorePhotos";
 import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpecialHours";
 import OsmCredit from "@/components/stores/OsmCredit";
+import Stars from "@/components/stores/Stars";
 
 export const dynamic = "force-dynamic";
 
@@ -248,7 +248,16 @@ export default async function StoreDetailPage({ params }: Params) {
 
         {/* Name, place and standing — everything you need to decide, before any scrolling. */}
         <header className="mt-5 border-b border-white/10 pb-6">
-          <h1 className="font-display text-3xl text-white sm:text-4xl">{store.name}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="font-display text-3xl text-white sm:text-4xl">{store.name}</h1>
+            <div className="shrink-0 pt-1">
+              <StoreFavoriteButton
+                storeId={store.id}
+                initialFavorited={isFavorited}
+                initialCount={favoriteCount ?? 0}
+              />
+            </div>
+          </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             {place && (
               <span className="flex items-center gap-1.5 text-ocean-300">
@@ -256,15 +265,9 @@ export default async function StoreDetailPage({ params }: Params) {
                 {store.address ? `${store.address}, ${place}` : place}
               </span>
             )}
-            {ratingAvg != null && (
-              <a href="#reviews" className="flex items-center gap-1.5 text-amber-300 hover:text-amber-200">
-                <Star className="h-4 w-4 fill-current" />
-                {ratingAvg.toFixed(1)}
-                <span className="text-ocean-400">
-                  ({ratingCount} {ratingCount === 1 ? "review" : "reviews"})
-                </span>
-              </a>
-            )}
+            <a href="#reviews" className="transition-opacity hover:opacity-80">
+              <Stars rating={ratingAvg} count={ratingCount} size={16} />
+            </a>
             {store.claimed_by && (
               <span className="inline-flex items-center gap-1 text-emerald-300">
                 <BadgeCheck className="h-4 w-4" /> Owner managed
@@ -384,13 +387,6 @@ export default async function StoreDetailPage({ params }: Params) {
                   )}
                 </div>
 
-                <div className="mt-3 border-t border-white/10 pt-3">
-                  <StoreFavoriteButton
-                    storeId={store.id}
-                    initialFavorited={isFavorited}
-                    initialCount={favoriteCount ?? 0}
-                  />
-                </div>
               </div>
 
               <StoreSpecialHours storeId={store.id} initial={specialDays} isOwner={false} />
@@ -401,12 +397,8 @@ export default async function StoreDetailPage({ params }: Params) {
                 claimed={!!store.claimed_by}
               />
 
-              <p className="mt-6 text-xs leading-relaxed text-ocean-600">
-                A free directory. Shops don&apos;t sell through this site and we take no
-                commission — call or visit for prices and availability.
-              </p>
 
-              {store.source === "osm" && <OsmCredit className="mt-3" />}
+              {store.source === "osm" && <OsmCredit className="mt-6" />}
             </div>
           </aside>
         </div>
