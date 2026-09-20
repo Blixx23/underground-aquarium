@@ -23,10 +23,10 @@ const FLYERS = [
     blurb: "By the register, or in the bag with a fish. Reviews bring new customers.",
   },
   {
-    key: "community",
-    title: "Join the local fish community",
-    cta: "Scan to join us",
-    blurb: "For a noticeboard, a club meeting or a swap meet table.",
+    key: "newtank",
+    title: "Don't lose your first fish",
+    cta: "Scan for free help",
+    blurb: "For beginners buying a first tank. Free care guides, a stocking planner and a water checker, so their fish live and they come back to you.",
   },
 ] as const;
 

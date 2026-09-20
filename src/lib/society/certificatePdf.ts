@@ -224,16 +224,24 @@ function seal(page: PDFPage, cx: number, cy: number, r: number, fonts: { caps: P
     diamond(page, cx + side * 75 * k, cy, 4.2 * k, BRASS);
   }
 
-  // Fish and waves: the web seal's paths, 200-unit viewBox centred at 100,100.
+  // Fish and waves. The fish is the site icon, on its own 24-unit grid,
+  // scaled into the seal; borderWidth is in path units.
   const origin = { x: cx - 100 * k, y: cy + 100 * k, scale: k };
-  const stroke = { borderColor: BRASS, borderWidth: 2.2 * k };
-  page.drawSvgPath("M 78,92 C 90,80 112,80 124,92 C 112,104 90,104 78,92 Z", { ...origin, ...stroke });
-  page.drawSvgPath("M 78,92 L 66,84 L 70,92 L 66,100 Z", { ...origin, ...stroke });
-  page.drawSvgPath("M 96,83 C 100,75 108,74 112,79", { ...origin, ...stroke });
-  page.drawSvgPath("M 97,101 C 99,107 105,108 108,104", { ...origin, ...stroke });
-  page.drawSvgPath("M 74,116 Q 82,110 90,116 Q 98,122 106,116 Q 114,110 122,116", { ...origin, ...stroke });
-  page.drawSvgPath("M 80,126 Q 87,120.5 94,126 T 108,126", { ...origin, borderColor: BRASS_LIGHT, borderWidth: 1.8 * k });
-  page.drawCircle({ x: cx + 15 * k, y: cy + 11 * k, size: 2.2 * k, color: BRASS });
+  const stroke = { borderColor: BRASS, borderWidth: 2.2 };
+  const fishK = k * 2.3;
+  const fishOrigin = { x: cx - 12 * fishK, y: cy + 10 * k + 12 * fishK, scale: fishK };
+  for (const d of [
+    "M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z",
+    "M18 12v.5",
+    "M16 17.93a9.77 9.77 0 0 1 0-11.86",
+    "M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33",
+    "M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4",
+    "m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98",
+  ]) {
+    page.drawSvgPath(d, { ...fishOrigin, borderColor: BRASS, borderWidth: 2 });
+  }
+  page.drawSvgPath("M 74,130 Q 82,124 90,130 Q 98,136 106,130 Q 114,124 122,130", { ...origin, ...stroke });
+  page.drawSvgPath("M 80,140 Q 87,134.5 94,140 Q 101,145.5 108,140", { ...origin, borderColor: BRASS_LIGHT, borderWidth: 1.8 });
 }
 
 /**

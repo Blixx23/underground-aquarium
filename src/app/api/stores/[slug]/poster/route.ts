@@ -5,7 +5,7 @@ import { buildStorePoster, type FlyerStyle } from "@/lib/stores/storePoster";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const STYLES: FlyerStyle[] = ["visit", "updates", "review", "community"];
+const STYLES: FlyerStyle[] = ["visit", "updates", "review", "newtank"];
 
 /**
  * The shop's free print kit: window sign, counter card, handout cards and a

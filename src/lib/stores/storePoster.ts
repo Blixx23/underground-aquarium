@@ -12,7 +12,7 @@ const SOFT: RGB = rgb(0.42, 0.49, 0.56);
 const PAPER: RGB = rgb(1, 1, 1);
 const MIST: RGB = rgb(0.86, 0.93, 0.98);
 
-export type FlyerStyle = "visit" | "updates" | "review" | "community";
+export type FlyerStyle = "visit" | "updates" | "review" | "newtank";
 
 const W = 612;
 const H = 792;
@@ -40,50 +40,119 @@ function fit(font: PDFFont, text: string, max: number, width: number, min: numbe
   return size;
 }
 
-/** The fish mark, same drawing as the Society seal. */
-function fishMark(page: PDFPage, cx: number, cy: number, size: number, color: RGB, weight = 2.4) {
-  const k = size / 60;
-  const o = { x: cx - 100 * k, y: cy + 100 * k, scale: k };
-  const s = { borderColor: color, borderWidth: weight * k };
-  page.drawSvgPath("M 78,92 C 90,80 112,80 124,92 C 112,104 90,104 78,92 Z", { ...o, ...s });
-  page.drawSvgPath("M 78,92 L 66,84 L 70,92 L 66,100 Z", { ...o, ...s });
-  page.drawSvgPath("M 96,83 C 100,75 108,74 112,79", { ...o, ...s });
-  page.drawSvgPath("M 97,101 C 99,107 105,108 108,104", { ...o, ...s });
-  page.drawSvgPath("M 74,110 Q 82,104 90,110 Q 98,116 106,110 Q 114,104 122,110", { ...o, ...s });
-  page.drawCircle({ x: cx + 15 * k, y: cy + 11 * k, size: 2.6 * k, color });
+/**
+ * The Underground Aquarium fish: the same drawing as the site icon, in a
+ * 24-unit box. Stroke width is given in path units, which pdf-lib scales
+ * along with the path, so the mark keeps the icon's weight at any size.
+ */
+const FISH_PATHS = [
+  "M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z",
+  "M18 12v.5",
+  "M16 17.93a9.77 9.77 0 0 1 0-11.86",
+  "M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33",
+  "M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4",
+  "m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98",
+];
+
+function fishMark(page: PDFPage, cx: number, cy: number, size: number, color: RGB, weight = 1.9) {
+  const k = size / 24;
+  const o = { x: cx - 12 * k, y: cy + 12 * k, scale: k };
+  for (const d of FISH_PATHS) {
+    page.drawSvgPath(d, { ...o, borderColor: color, borderWidth: weight });
+  }
 }
 
-/** QR code with the mark knocked out of the middle. Error correction H. */
+/** A circle as an SVG path, in drawSvgPath's y-down space. */
+function circlePath(cx: number, cy: number, r: number) {
+  const k = r * 0.5523;
+  return (
+    `M ${cx - r} ${cy} ` +
+    `C ${cx - r} ${cy - k}, ${cx - k} ${cy - r}, ${cx} ${cy - r} ` +
+    `C ${cx + k} ${cy - r}, ${cx + r} ${cy - k}, ${cx + r} ${cy} ` +
+    `C ${cx + r} ${cy + k}, ${cx + k} ${cy + r}, ${cx} ${cy + r} ` +
+    `C ${cx - k} ${cy + r}, ${cx - r} ${cy + k}, ${cx - r} ${cy} Z `
+  );
+}
+
+/** A rounded square as an SVG path, in drawSvgPath's y-down space. */
+function roundedPath(x: number, y: number, w: number, h: number, r: number) {
+  const k = r * 0.4477;
+  return (
+    `M ${x + r} ${y} L ${x + w - r} ${y} ` +
+    `C ${x + w - k} ${y}, ${x + w} ${y + k}, ${x + w} ${y + r} ` +
+    `L ${x + w} ${y + h - r} ` +
+    `C ${x + w} ${y + h - k}, ${x + w - k} ${y + h}, ${x + w - r} ${y + h} ` +
+    `L ${x + r} ${y + h} ` +
+    `C ${x + k} ${y + h}, ${x} ${y + h - k}, ${x} ${y + h - r} ` +
+    `L ${x} ${y + r} ` +
+    `C ${x} ${y + k}, ${x + k} ${y}, ${x + r} ${y} Z `
+  );
+}
+
+/**
+ * The QR code, drawn properly: round dots for the data, rounded corner
+ * eyes, and the shop's mark on a navy badge in the middle. Error
+ * correction H, and the badge covers well under a fifth of the code, so
+ * every scanner still reads it.
+ */
 function qrWithMark(page: PDFPage, text: string, x: number, y: number, size: number, dark: RGB, markColor: RGB, disc: RGB) {
   const { modules } = QRCode.create(text, { errorCorrectionLevel: "H" });
   const n = modules.size;
   const cell = size / n;
-  const hole = Math.round(n * 0.22);
+  const hole = Math.round(n * 0.2);
   const from = Math.floor((n - hole) / 2);
   const to = from + hole;
 
-  let d = "";
+  const inEye = (r: number, c: number) =>
+    (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+
+  // Data modules stay square so every scanner reads them cleanly; the
+  // corners and the badge are where the code gets its character.
+  let data = "";
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; c++) {
-      if (!modules.get(r, c)) continue;
+      if (!modules.get(r, c) || inEye(r, c)) continue;
       if (r >= from && r < to && c >= from && c < to) continue;
-      d += `M ${c} ${r} h 1 v 1 h -1 Z `;
+      data += `M ${c} ${r} h 1 v 1 h -1 Z `;
     }
   }
-  page.drawSvgPath(d, { x, y: y + size, scale: cell, color: dark });
+  page.drawSvgPath(data, { x, y: y + size, scale: cell, color: dark });
 
+  // The three corner eyes, drawn as rounded frames with a rounded pupil.
+  for (const [er, ec] of [
+    [0, 0],
+    [0, n - 7],
+    [n - 7, 0],
+  ] as [number, number][]) {
+    // Border width is in path units here, so 1 = one module thick.
+    const outer = roundedPath(ec + 0.5, er + 0.5, 6, 6, 1.9);
+    page.drawSvgPath(outer, { x, y: y + size, scale: cell, borderColor: dark, borderWidth: 1 });
+    const pupil = roundedPath(ec + 2, er + 2, 3, 3, 1);
+    page.drawSvgPath(pupil, { x, y: y + size, scale: cell, color: dark });
+  }
+
+  // The badge: a navy rounded square with the fish in it, on a white gap.
   const cx = x + size / 2;
   const cy = y + size / 2;
-  const r = (hole * cell) / 2 + cell;
-  page.drawCircle({ x: cx, y: cy, size: r, color: disc });
-  page.drawCircle({ x: cx, y: cy, size: r, borderColor: markColor, borderWidth: 1.2 });
-  fishMark(page, cx, cy, r * 1.3, markColor, 2.2);
+  const gap = (hole * cell) / 2 + cell * 1.1;
+  const badge = gap * 1.6;
+  page.drawSvgPath(roundedPath(cx - gap, -(cy + gap), gap * 2, gap * 2, gap * 0.42), {
+    x: 0,
+    y: 0,
+    color: disc,
+  });
+  page.drawSvgPath(roundedPath(cx - badge / 2, -(cy + badge / 2), badge, badge, badge * 0.26), {
+    x: 0,
+    y: 0,
+    color: markColor,
+  });
+  fishMark(page, cx, cy, badge * 0.66, disc, 2);
 }
 
 /** Wordmark: the fish, then UNDERGROUND over AQUARIUM. */
 function wordmark(page: PDFPage, cx: number, y: number, fonts: Fonts, scale: number, color: RGB) {
   const topW = widthOf(fonts.caps, "UNDERGROUND", 13 * scale, 3.2 * scale);
-  fishMark(page, cx - topW / 2 - 18 * scale, y + 3 * scale, 22 * scale, color);
+  fishMark(page, cx - topW / 2 - 18 * scale, y + 2 * scale, 22 * scale, color, 1.9);
   centered(page, "UNDERGROUND", cx + 12 * scale, y + 6 * scale, fonts.caps, 13 * scale, color, 3.2 * scale);
   centered(page, "AQUARIUM", cx + 12 * scale, y - 7 * scale, fonts.caps, 9 * scale, color, 5.4 * scale);
 }
@@ -101,45 +170,29 @@ const COPY: Record<FlyerStyle, Copy> = {
     kicker: "BEFORE YOU DRIVE OVER",
     headline: ["FIND US", "ONLINE"],
     cta: "SCAN THIS CODE",
-    bullets: [
-      "Hours, directions and phone",
-      "Our latest news and restock posts",
-      "Photos of the shop and the tanks",
-    ],
+    bullets: ["Hours, directions and phone", "Our latest news and restock posts"],
     footnote: "Point your phone camera at the code. That's it.",
   },
   updates: {
     kicker: "NEVER MISS A DROP",
-    headline: ["GET OUR", "SHOP", "UPDATES"],
+    headline: ["GET OUR", "SHOP UPDATES"],
     cta: "SCAN TO FOLLOW US",
-    bullets: [
-      "We post when new fish land",
-      "You get a notification, free",
-      "Sales and events too",
-    ],
+    bullets: ["We post when new fish land", "You get a notification, free"],
     footnote: "Follow us on Underground Aquarium. Takes ten seconds.",
   },
   review: {
     kicker: "HOW DID WE DO?",
     headline: ["LEAVE US", "A REVIEW"],
     cta: "SCAN AND TELL US",
-    bullets: [
-      "One minute, from your phone",
-      "Helps other keepers find us",
-      "We read every single one",
-    ],
+    bullets: ["One minute, from your phone", "It helps other keepers find us"],
     footnote: "Thanks for shopping local. It keeps this hobby alive.",
   },
-  community: {
-    kicker: "FOR EVERY FISH KEEPER",
-    headline: ["JOIN THE", "LOCAL FISH", "COMMUNITY"],
-    cta: "SCAN TO JOIN US",
-    bullets: [
-      "Free classifieds between hobbyists",
-      "Care guides for hundreds of species",
-      "Forums, tank planner and water check",
-    ],
-    footnote: "Free to join. Come say hello, and find us on there too.",
+  newtank: {
+    kicker: "JUST SET UP A TANK?",
+    headline: ["DON'T LOSE", "YOUR FIRST FISH"],
+    cta: "SCAN FOR FREE HELP",
+    bullets: ["Care guides and a water checker", "A planner that catches bad tank mixes"],
+    footnote: "Free help from your local fish store. Ask us anything in store, too.",
   },
 };
 
@@ -173,33 +226,33 @@ function drawFlyer(
   centered(page, copy.kicker, cx, 674, fonts.caps, 11.5, accent, 3.4);
 
   // Headline: two or three heavy lines, bottom-anchored so the grid holds.
-  const lines = copy.headline;
-  const step = lines.length >= 3 ? 42 : 48;
-  let hy = lines.length >= 3 ? 640 : 616;
+  // Two lines, no more: a poster people read from across the room.
+  const lines = copy.headline.slice(0, 2);
+  const size = Math.min(...lines.map((l) => fit(fonts.caps, l, 42, inner, 20, 1.5)));
+  let hy = lines.length > 1 ? 616 : 592;
   for (const line of lines) {
-    const size = fit(fonts.caps, line, lines.length >= 3 ? 36 : 42, inner, 20, 1.5);
     centered(page, line, cx, hy, fonts.caps, size, head, 1.5);
-    hy -= step;
+    hy -= size + 12;
   }
 
   // The code, on a white panel so it scans off any background.
-  const qr = 224;
+  const qr = 236;
   const panel = qr + 40;
   const px = cx - panel / 2;
-  const py = 276;
+  const py = 262;
   page.drawRectangle({ x: px, y: py, width: panel, height: panel, color: PAPER });
   page.drawRectangle({ x: px, y: py, width: panel, height: panel, borderColor: accent, borderWidth: 2 });
-  qrWithMark(page, opts.url, px + 20, py + 20, qr, INK, SEA, PAPER);
+  qrWithMark(page, opts.url, px + 20, py + 20, qr, NAVY, SEA, PAPER);
 
   // The instruction, as a solid band that reads like a button.
   const ctaH = 42;
-  const ctaY = 216;
+  const ctaY = 200;
   const ctaW = Math.min(inner, widthOf(fonts.caps, copy.cta, 17, 3) + 76);
   page.drawRectangle({ x: cx - ctaW / 2, y: ctaY, width: ctaW, height: ctaH, color: accent });
   centered(page, copy.cta, cx, ctaY + 14, fonts.caps, 17, dark ? NAVY : PAPER, 3);
 
   // Three reasons, ticked.
-  let by = 182;
+  let by = 164;
   for (const b of copy.bullets) {
     const size = fit(fonts.serif, b, 13.5, inner - 34, 10);
     const bx = cx - (widthOf(fonts.serif, b, size) + 24) / 2;
