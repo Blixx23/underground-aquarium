@@ -83,23 +83,46 @@ export async function getSocietyContext(): Promise<SocietyContext> {
   const isApplicant = me.status === "pending";
   const isMember = me.role !== null && !isApplicant;
 
+  // Each newer column on its own, so one missing migration can't blank
+  // the other: no number yet shouldn't also lose "member since".
   let member_number: number | null = null;
   let joined_at: string | null = null;
+  let display_name: string | null = me.display_name?.trim() || null;
   if (isMember) {
-    const { data: extra } = await supabase
-      .from("club_members")
-      .select("member_number, joined_at")
-      .eq("club_id", society.id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    member_number = extra?.member_number ?? null;
-    joined_at = extra?.joined_at ?? null;
+    const [{ data: num }, { data: joined }, { data: prof }] = await Promise.all([
+      supabase
+        .from("club_members")
+        .select("member_number")
+        .eq("club_id", society.id)
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("club_members")
+        .select("joined_at")
+        .eq("club_id", society.id)
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      display_name
+        ? Promise.resolve({ data: null })
+        : supabase.from("profiles").select("full_name, username").eq("id", user.id).maybeSingle(),
+    ]);
+    member_number = (num as { member_number?: number | null } | null)?.member_number ?? null;
+    joined_at = (joined as { joined_at?: string | null } | null)?.joined_at ?? null;
+    if (!display_name) {
+      const p = prof as { full_name?: string | null; username?: string | null } | null;
+      display_name = p?.full_name?.trim() || p?.username || null;
+    }
   }
 
   return {
     society: society as SocietyRow,
     userId: user.id,
-    membership: { ...(me as Omit<Membership, "member_number" | "joined_at">), member_number, joined_at },
+    membership: {
+      ...(me as Omit<Membership, "member_number" | "joined_at">),
+      display_name,
+      member_number,
+      joined_at,
+    },
     isMember,
     isApplicant,
     isOfficer: ["owner", "admin", "officer"].includes(me.role ?? ""),

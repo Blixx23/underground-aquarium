@@ -35,7 +35,7 @@ export default function MemberCard({
   const number =
     memberNumber !== null
       ? `UAS-${String(memberNumber).padStart(4, "0")}`
-      : "UAS-————";
+      : null;
 
   const isLifetime = tier === "lifetime";
   const standing = isLifetime
@@ -87,9 +87,11 @@ export default function MemberCard({
           )}
 
           <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            <span className="font-mono text-sm tracking-[0.12em] text-amber-200 sm:text-base">
-              {number}
-            </span>
+            {number && (
+              <span className="font-mono text-sm tracking-[0.12em] text-amber-200 sm:text-base">
+                {number}
+              </span>
+            )}
             {joinYear && (
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-amber-500/60">
                 Member since {joinYear}
