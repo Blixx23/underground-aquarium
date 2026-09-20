@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import {
   MessagesSquare,
-  Store,
   CalendarDays,
   GraduationCap,
   BookOpen,
@@ -23,6 +22,7 @@ import {
   Droplets,
   ScrollText,
   Info,
+  MapPin,
 } from "lucide-react";
 import Avatar from "@/components/profile/Avatar";
 import type { User } from "@supabase/supabase-js";
@@ -41,6 +41,8 @@ type NavChild = {
   href: string;
   /** Marks the Society so it can wear its own colour in both menus. */
   society?: boolean;
+  /** Small heading this link sits under in a dropdown. */
+  group?: string;
 };
 
 type NavItem = {
@@ -51,35 +53,31 @@ type NavItem = {
 };
 
 const nav: NavItem[] = [
+  { label: "Feed", href: "/feed" },
   { label: "Classifieds", href: "/marketplace" },
+  { label: "Shops Near Me", href: "/stores?near=1" },
   { label: "The Society", href: SOCIETY_PATH, society: true },
   {
-    label: "Resources",
+    label: "More",
     children: [
-      { label: "Tank Builder", href: "/tank-builder" },
-      { label: "Water Check", href: "/water-check" },
-      { label: "Fish Species", href: "/species" },
-      { label: "Fish Stores", href: "/stores" },
-      { label: "Glossary", href: "/glossary" },
+      { label: "Forums", href: "/forums", group: "Community" },
+      { label: "Events", href: "/events", group: "Community" },
+      { label: "Trophies", href: "/trophies", group: "Community" },
+      { label: "Fish Species", href: "/species", group: "Learn" },
+      { label: "Courses", href: "/courses", group: "Learn" },
+      { label: "Glossary", href: "/glossary", group: "Learn" },
+      { label: "Tank Builder", href: "/tank-builder", group: "Tools" },
+      { label: "Water Check", href: "/water-check", group: "Tools" },
+      { label: "All Fish Stores", href: "/stores", group: "Tools" },
     ],
   },
-  {
-    label: "Community",
-    children: [
-      { label: "Feed", href: "/feed" },
-      { label: "Trophies", href: "/trophies" },
-      { label: "Forums", href: "/forums" },
-      { label: "Events", href: "/events" },
-    ],
-  },
-  { label: "Courses", href: "/courses" },
 ];
 
 /** The phone menu: places on the site, not things about you. */
 const EXPLORE = [
+  { href: "/stores?near=1", label: "Shops Near Me", Icon: MapPin },
   { href: "/forums", label: "Forums", Icon: MessagesSquare },
   { href: "/species", label: "Fish Species", Icon: Fish },
-  { href: "/stores", label: "Fish Stores", Icon: Store },
   { href: "/events", label: "Events", Icon: CalendarDays },
   { href: "/courses", label: "Courses", Icon: GraduationCap },
   { href: "/glossary", label: "Glossary", Icon: BookOpen },
@@ -221,27 +219,29 @@ export default function Navbar() {
                 onMouseEnter={() => openDropdown(item.label)}
                 onMouseLeave={scheduleClose}
               >
-                <button className="flex items-center gap-1 px-4 py-2 text-sm tracking-wide text-ocean-300 hover:text-white transition-colors font-body">
+                <button className="flex items-center gap-1 px-3 py-2 text-sm tracking-wide text-ocean-300 hover:text-white transition-colors font-body">
                   {item.label}
                   <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                 </button>
                 {dropdown === item.label && (
-                  <div className="absolute top-full left-0 pt-2 w-48">
-                    <div className="py-2 bg-ocean-900/95 backdrop-blur-xl border border-ocean-700/50 rounded-xl shadow-2xl shadow-ocean-950/80">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={() => setDropdown(null)}
-                          className={cn(
-                            "block px-4 py-2.5 text-sm transition-all",
-                            child.society
-                              ? "text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"
-                              : "text-ocean-300 hover:bg-ocean-800/60 hover:text-white"
+                  <div className="absolute top-full right-0 pt-2">
+                    <div className="grid w-[26rem] grid-cols-3 gap-4 rounded-xl border border-ocean-700/50 bg-ocean-900/95 p-4 shadow-2xl shadow-ocean-950/80 backdrop-blur-xl">
+                      {[...new Set(item.children.map((c) => c.group ?? ""))].map((g) => (
+                        <div key={g}>
+                          {g && (
+                            <p className="mb-1.5 px-2 font-mono text-[10px] uppercase tracking-widest text-ocean-500">{g}</p>
                           )}
-                        >
-                          {child.label}
-                        </Link>
+                          {item.children!.filter((c) => (c.group ?? "") === g).map((child) => (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => setDropdown(null)}
+                              className="block rounded-lg px-2 py-1.5 text-sm text-ocean-300 transition-colors hover:bg-ocean-800/60 hover:text-white"
+                            >
+                              {child.label}
+                            </Link>
+                          ))}
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -252,7 +252,7 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href!}
                 className={cn(
-                  "px-4 py-2 text-sm tracking-wide transition-colors font-body",
+                  "whitespace-nowrap px-3 py-2 text-sm tracking-wide transition-colors font-body",
                   item.society
                     ? "text-amber-300 hover:text-amber-200"
                     : "text-ocean-300 hover:text-white"

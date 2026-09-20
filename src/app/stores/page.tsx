@@ -25,7 +25,12 @@ type StoreRow = {
   lng: number | null;
 };
 
-export default async function StoresPage() {
+export default async function StoresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ near?: string }>;
+}) {
+  const { near } = await searchParams;
   const { data } = await supabasePublic
     .from("fish_stores")
     .select("slug, name, city, state, description, tags, claimed_by, lat, lng")
@@ -133,7 +138,7 @@ export default async function StoresPage() {
             </p>
           </div>
         ) : (
-          <StoreDirectory stores={stores} />
+          <StoreDirectory stores={stores} autoLocate={near === "1"} />
         )}
 
         <div className="mt-12">

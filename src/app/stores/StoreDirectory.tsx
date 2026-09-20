@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -40,7 +40,7 @@ function milesBetween(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
+export default function StoreDirectory({ stores, autoLocate = false }: { stores: StoreRow[]; autoLocate?: boolean }) {
   const [query, setQuery] = useState("");
   const [activeType, setActiveType] = useState<string | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
@@ -48,6 +48,16 @@ export default function StoreDirectory({ stores }: { stores: StoreRow[] }) {
   );
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
+
+  // Arriving from "Shops near me": ask for location straight away.
+  const asked = useRef(false);
+  useEffect(() => {
+    if (autoLocate && !asked.current) {
+      asked.current = true;
+      findMe();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLocate]);
 
   const allTypes = useMemo(() => {
     const set = new Set<string>();
