@@ -190,23 +190,17 @@ export default function WaterCheckPage() {
 
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="max-w-2xl mb-8">
-          <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-2">
-            Water Check
-          </p>
-          <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
-            Is your water safe?
-          </h1>
-          <p className="text-ocean-300">
-            Enter your test-kit numbers and get a plain-English read on what&apos;s
-            healthy, what isn&apos;t, and exactly how to fix it. Enter only what you
-            have — no account needed.
+        <div className="mb-6">
+          <h1 className="font-display text-3xl text-white sm:text-4xl">Water Check</h1>
+          <p className="mt-1 text-ocean-300">
+            Enter your test-kit numbers and get a plain-English read on what&apos;s healthy,
+            what isn&apos;t, and how to fix it. Fill in only what you have.
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="grid items-start gap-6 xl:grid-cols-2">
           {/* Grouped reading form */}
           <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
             <div className="flex items-center justify-between mb-5">
@@ -277,13 +271,15 @@ export default function WaterCheckPage() {
             </div>
           </div>
 
+          {/* Results stay beside the form on wide screens. */}
+          <div className="space-y-6 xl:sticky xl:top-24">
           {/* Empty state */}
           {waterResult.status === "empty" ? (
             <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center">
               <Droplets className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
               <p className="text-white font-medium mb-1">Enter a reading to begin</p>
               <p className="text-ocean-400 text-sm">
-                Fill in at least one value above and your results appear here.
+                Fill in at least one value and your results appear here.
               </p>
             </div>
           ) : (
@@ -381,6 +377,7 @@ export default function WaterCheckPage() {
               <Fish className="w-4 h-4" />
               Keeping fish? Use the Tank Builder for checks tailored to your stock →
             </Link>
+          </div>
           </div>
         </div>
       </div>

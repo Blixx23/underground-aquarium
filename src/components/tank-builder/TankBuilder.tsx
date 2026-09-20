@@ -668,25 +668,18 @@ export default function TankBuilder({ species }: { species: Species[] }) {
 
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8 max-w-2xl">
-          <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-2">
-            Tank Builder
-          </p>
-          <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
-            Plan a tank
-          </h1>
-          <p className="text-ocean-300">
-            Set your size and add the fish you have in mind. Live compatibility,
-            stocking, and equipment guidance show on the right — plus a Water tab
-            to check your parameters and track them over time.
+        <div className="mb-6">
+          <h1 className="font-display text-3xl text-white sm:text-4xl">Tank Builder</h1>
+          <p className="mt-1 text-ocean-300">
+            Pick a size, add fish, and see compatibility, stocking and equipment advice as you go.
           </p>
         </div>
 
         {/* Saved-tank switcher (tap to load) */}
         {user && savedTanks.length > 0 && (
-          <div className="mb-8">
+          <div className="mb-6">
             <p className="text-[11px] uppercase tracking-wide text-ocean-400 mb-2">
               Your tanks
             </p>
@@ -694,7 +687,7 @@ export default function TankBuilder({ species }: { species: Species[] }) {
               <button
                 onClick={newBuild}
                 className={
-                  "shrink-0 snap-start w-44 h-28 flex flex-col justify-center rounded-xl border border-dashed px-3.5 py-3 text-left transition-colors " +
+                  "shrink-0 snap-start w-40 h-24 flex flex-col justify-center rounded-xl border border-dashed px-3.5 py-3 text-left transition-colors " +
                   (!currentTankId
                     ? "border-emerald-500/40 bg-emerald-500/5"
                     : "border-white/15 hover:border-white/30")
@@ -714,7 +707,7 @@ export default function TankBuilder({ species }: { species: Species[] }) {
                     <button
                       onClick={() => loadTank(t)}
                       className={
-                        "w-44 h-28 flex flex-col text-left rounded-xl border px-3.5 py-3 pr-8 transition-colors " +
+                        "w-40 h-24 flex flex-col text-left rounded-xl border px-3.5 py-3 pr-8 transition-colors " +
                         (active
                           ? "bg-emerald-500/10 border-emerald-500/40"
                           : "bg-white/5 border-white/10 hover:border-white/20")
@@ -750,9 +743,10 @@ export default function TankBuilder({ species }: { species: Species[] }) {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+        <div className="grid xl:grid-cols-2 gap-6 xl:gap-8 items-start">
           {/* ---------------- Build column ---------------- */}
-          <div className="space-y-6">
+          <div className="space-y-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-ocean-500">1 · Your tank</p>
             {/* Tank size */}
             <div>
               <label className="block text-sm text-ocean-300 mb-2">Tank size</label>
@@ -986,7 +980,9 @@ export default function TankBuilder({ species }: { species: Species[] }) {
           </div>
 
           {/* ---------------- Analysis column ---------------- */}
-          <div className="space-y-6">
+          {/* Stays in view while you add fish on the left. */}
+          <div className="space-y-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-ocean-500">2 · How it looks</p>
             {/* Tabs */}
             <div className="grid grid-cols-2 rounded-xl bg-white/5 border border-white/10 p-1">
               <button

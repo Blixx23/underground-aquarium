@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, X, Filter, ChevronDown } from "lucide-react";
-import SuggestSpecies from "@/app/species/SuggestSpecies";
+import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
 
 type Species = {
   slug: string;
