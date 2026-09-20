@@ -4,8 +4,6 @@ import Link from "next/link";
 import {
   Store,
   Fish,
-  Globe,
-  Lock,
   MapPin,
   ExternalLink,
   ShieldCheck,
@@ -25,6 +23,7 @@ import Certifications, {
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import SignOutButton from "@/components/profile/SignOutButton";
 import SocietySeal from "@/components/society/SocietySeal";
+import TankTile from "@/components/tanks/TankTile";
 import { SOCIETY_HOME_PATH, SOCIETY_PATH } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Your profile" };
@@ -36,6 +35,8 @@ type SavedTank = {
   items: unknown[] | null;
   updated_at: string;
   is_public: boolean;
+  images: string[] | null;
+  description: string | null;
 };
 
 export default async function ProfilePage({
@@ -58,12 +59,17 @@ export default async function ProfilePage({
     .eq("id", user.id)
     .maybeSingle();
 
-  const { data: tanksData } = await supabase
-    .from("tanks")
-    .select("id, name, gallons, items, updated_at, is_public")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
-  const tanks = (tanksData ?? []) as SavedTank[];
+  // Description arrives with step 55; until then, tiles just go without it.
+  const tanksQuery = (cols: string) =>
+    supabase.from("tanks").select(cols).eq("user_id", user.id).order("updated_at", { ascending: false });
+  let { data: tanksData, error: tanksErr } = await tanksQuery(
+    "id, name, gallons, items, updated_at, is_public, images, description"
+  );
+  if (tanksErr) ({ data: tanksData } = await tanksQuery("id, name, gallons, items, updated_at, is_public, images"));
+  const tanks = ((tanksData ?? []) as unknown as SavedTank[]).map((t) => ({
+    ...t,
+    description: t.description ?? null,
+  }));
 
   const { data: certData } = await supabase
     .from("course_completions")
@@ -269,39 +275,10 @@ export default async function ProfilePage({
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {tanks.map((t) => {
-                const count = Array.isArray(t.items) ? t.items.length : 0;
-                return (
-                  <Link
-                    key={t.id}
-                    href={`/tanks/${t.id}`}
-                    className="block rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:border-emerald-500/40 hover:bg-white/10"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="truncate font-medium text-white">
-                        {t.name}
-                      </h3>
-                      {t.is_public ? (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300/90">
-                          <Globe className="h-2.5 w-2.5" /> Posted
-                        </span>
-                      ) : (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-ocean-400">
-                          <Lock className="h-2.5 w-2.5" /> Private
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-ocean-400">
-                      {t.gallons ? `${t.gallons} gal · ` : ""}
-                      {count} species
-                    </p>
-                    <p className="mt-2 text-xs text-ocean-500">
-                      Updated {new Date(t.updated_at).toLocaleDateString()}
-                    </p>
-                  </Link>
-                );
-              })}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {tanks.map((t) => (
+                <TankTile key={t.id} tank={t} showVisibility />
+              ))}
             </div>
           )}
         </section>

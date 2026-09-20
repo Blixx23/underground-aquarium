@@ -24,6 +24,7 @@ import {
   type StockItem,
   type Issue,
 } from "@/lib/tankBuilder/engine";
+import { MAX_TANK_PHOTOS } from "@/lib/tanks/showcase";
 import {
   checkWater,
   type WaterReading,
@@ -31,7 +32,7 @@ import {
 } from "@/lib/waterCheck/engine";
 
 const FREE_TANK_LIMIT = 4;
-const MAX_PHOTOS = 4;
+const MAX_PHOTOS = MAX_TANK_PHOTOS;
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // input cap; images are resized/compressed below
 const MAX_DIM = 1920; // longest edge after resize
 

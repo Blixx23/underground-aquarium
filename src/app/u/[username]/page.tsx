@@ -27,6 +27,7 @@ import Feed from "@/components/feed/Feed";
 import { fetchFeed } from "@/lib/feed";
 import { getViewer } from "@/lib/feedViewer";
 import { SOCIETY_PATH } from "@/lib/config";
+import TankTile from "@/components/tanks/TankTile";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ type Tank = {
   gallons: number | null;
   items: unknown[] | null;
   images: string[] | null;
+  description?: string | null;
 };
 
 type Listing = {
@@ -482,53 +484,25 @@ async function Sidebar({
 }
 
 async function TanksTab({ profileId, name }: { profileId: string; name: string }) {
-  const { data } = await supabasePublic
-    .from("tanks")
-    .select("id, name, gallons, items, images")
-    .eq("user_id", profileId)
-    .eq("is_public", true)
-    .order("updated_at", { ascending: false })
-    .limit(60);
-  const tanks = (data ?? []) as Tank[];
+  const q = (cols: string) =>
+    supabasePublic
+      .from("tanks")
+      .select(cols)
+      .eq("user_id", profileId)
+      .eq("is_public", true)
+      .order("updated_at", { ascending: false })
+      .limit(60);
+  let { data, error } = await q("id, name, gallons, items, images, description");
+  if (error) ({ data } = await q("id, name, gallons, items, images"));
+  const tanks = (data ?? []) as unknown as Tank[];
 
   if (tanks.length === 0) return <Empty icon={Fish} text={`${name} hasn't shared any tanks yet.`} />;
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {tanks.map((t) => {
-        const cover = t.images?.[0];
-        const species = Array.isArray(t.items) ? t.items.length : 0;
-        return (
-          <Link
-            key={t.id}
-            href={`/tanks/${t.id}`}
-            className="group block overflow-hidden rounded-2xl border border-ocean-800/60 bg-ocean-900/40 transition-colors hover:border-ocean-600/70"
-          >
-            <div className="aspect-[4/3] overflow-hidden bg-ocean-950">
-              {cover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={cover}
-                  alt={t.name ?? "Tank"}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <Waves className="h-8 w-8 text-ocean-700" />
-                </div>
-              )}
-            </div>
-            <div className="p-4">
-              <p className="truncate font-medium text-white">{t.name || "Untitled tank"}</p>
-              <p className="mt-0.5 text-sm text-ocean-400">
-                {t.gallons ? `${t.gallons} gal · ` : ""}
-                {species} species
-              </p>
-            </div>
-          </Link>
-        );
-      })}
+      {tanks.map((t) => (
+        <TankTile key={t.id} tank={t} />
+      ))}
     </div>
   );
 }
