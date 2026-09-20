@@ -5,28 +5,28 @@ import { Download, Copy, Check, QrCode, Share2, Megaphone } from "lucide-react";
 
 const FLYERS = [
   {
-    key: "visit",
-    title: "Find us online",
-    cta: "Scan this code",
-    blurb: "Your everyday poster. For the front door, the window, or above the tanks.",
+    key: "save",
+    title: "Save us to your phone",
+    cta: "Scan to save us",
+    blurb: "By the door or the register. Your customer leaves with your hours and number in their pocket.",
   },
   {
     key: "updates",
-    title: "Get our shop updates",
+    title: "Know what just came in",
     cta: "Scan to follow us",
-    blurb: "Turns walk-ins into followers who hear the moment you post new arrivals.",
+    blurb: "Above the tanks. Turns a one-off visitor into someone who hears every time you post new stock.",
   },
   {
     key: "review",
     title: "Leave us a review",
     cta: "Scan and tell us",
-    blurb: "By the register, or in the bag with a fish. Reviews bring new customers.",
+    blurb: "At the register, where they're happy with what they just bought. Reviews bring new customers.",
   },
   {
     key: "newtank",
-    title: "Don't lose your first fish",
-    cta: "Scan for free help",
-    blurb: "For beginners buying a first tank. Free care guides, a stocking planner and a water checker, so their fish live and they come back to you.",
+    title: "Free help with your tank",
+    cta: "Scan for free guides",
+    blurb: "By the starter kits. Care guides, a stocking planner and a water checker, so their fish live and they come back to you.",
   },
 ] as const;
 
@@ -62,8 +62,9 @@ export default function PromoKit({ slug, name }: { slug: string; name: string })
           Posters
         </h2>
         <p className="mb-4 text-sm text-ocean-400">
-          Full page, US Letter, one clear instruction on each. Your QR code is in the middle of
-          every one. Print the dark version for a window, or the light version to save ink.
+          Full page, US Letter, with your shop name across the top and your QR code in the middle.
+          Each one is written for somebody standing in your shop, so it tells them what to do next
+          rather than trying to talk them into visiting. Plain paper, light on ink.
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -78,14 +79,14 @@ export default function PromoKit({ slug, name }: { slug: string; name: string })
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
                 >
                   <Download className="h-4 w-4" />
-                  Dark
+                  Download PDF
                 </a>
                 <a
-                  href={`/api/stores/${slug}/poster?style=${f.key}&ink=light`}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm text-ocean-200 transition-colors hover:bg-white/5"
+                  href={`/api/stores/${slug}/poster?style=${f.key}&ink=dark`}
+                  title="Dark version, for a print shop or a screen"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/15 px-3 py-2 text-xs text-ocean-400 transition-colors hover:bg-white/5"
                 >
-                  <Download className="h-4 w-4" />
-                  Light
+                  Dark
                 </a>
               </div>
             </div>

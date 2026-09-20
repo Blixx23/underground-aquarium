@@ -5,7 +5,7 @@ import { buildStorePoster, type FlyerStyle } from "@/lib/stores/storePoster";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const STYLES: FlyerStyle[] = ["visit", "updates", "review", "newtank"];
+const STYLES: FlyerStyle[] = ["save", "updates", "review", "newtank"];
 
 /**
  * The shop's free print kit: window sign, counter card, handout cards and a
@@ -15,8 +15,9 @@ const STYLES: FlyerStyle[] = ["visit", "updates", "review", "newtank"];
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const asked = request.nextUrl.searchParams.get("style") as FlyerStyle | null;
-  const style: FlyerStyle = asked && STYLES.includes(asked) ? asked : "visit";
-  const dark = request.nextUrl.searchParams.get("ink") !== "light";
+  const style: FlyerStyle = asked && STYLES.includes(asked) ? asked : "save";
+  // Plain paper by default: a shop is printing this on their own inkjet.
+  const dark = request.nextUrl.searchParams.get("ink") === "dark";
 
   const { data: store } = await supabasePublic
     .from("fish_stores")
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   return new NextResponse(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${slug}-${style}${dark ? "" : "-light"}.pdf"`,
+      "Content-Disposition": `attachment; filename="${slug}-${style}${dark ? "-dark" : ""}.pdf"`,
       "Cache-Control": "public, max-age=3600",
     },
   });

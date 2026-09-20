@@ -12,7 +12,7 @@ const SOFT: RGB = rgb(0.42, 0.49, 0.56);
 const PAPER: RGB = rgb(1, 1, 1);
 const MIST: RGB = rgb(0.86, 0.93, 0.98);
 
-export type FlyerStyle = "visit" | "updates" | "review" | "newtank";
+export type FlyerStyle = "save" | "updates" | "review" | "newtank";
 
 const W = 612;
 const H = 792;
@@ -165,41 +165,50 @@ type Copy = {
   footnote: string;
 };
 
+/**
+ * All four are written for somebody standing in the shop, looking at the
+ * wall. Nobody scans a poster to decide whether to visit a shop they are
+ * already standing in, so every one of these is about what happens next:
+ * keep us on your phone, hear about new stock, leave a review, get help
+ * with the tank you just bought.
+ */
 const COPY: Record<FlyerStyle, Copy> = {
-  visit: {
-    kicker: "BEFORE YOU DRIVE OVER",
-    headline: ["FIND US", "ONLINE"],
-    cta: "SCAN THIS CODE",
-    bullets: ["Hours, directions and phone", "Our latest news and restock posts"],
-    footnote: "Point your phone camera at the code. That's it.",
+  save: {
+    kicker: "WHILE YOU'RE HERE",
+    headline: ["SAVE US TO", "YOUR PHONE"],
+    cta: "SCAN TO SAVE US",
+    bullets: ["Our hours, directions and phone", "One tap next time you need us"],
+    footnote: "No app. It just opens our page in your browser.",
   },
   updates: {
-    kicker: "NEVER MISS A DROP",
-    headline: ["GET OUR", "SHOP UPDATES"],
+    kicker: "NEW FISH MOST WEEKS",
+    headline: ["KNOW WHAT", "JUST CAME IN"],
     cta: "SCAN TO FOLLOW US",
-    bullets: ["We post when new fish land", "You get a notification, free"],
-    footnote: "Follow us on Underground Aquarium. Takes ten seconds.",
+    bullets: ["We post the day new stock lands", "You get a notification, free"],
+    footnote: "Follow us and you'll know before your next trip out.",
   },
   review: {
-    kicker: "HOW DID WE DO?",
+    kicker: "FOUND WHAT YOU CAME FOR?",
     headline: ["LEAVE US", "A REVIEW"],
     cta: "SCAN AND TELL US",
-    bullets: ["One minute, from your phone", "It helps other keepers find us"],
+    bullets: ["One minute, right from your phone", "It helps other keepers find us"],
     footnote: "Thanks for shopping local. It keeps this hobby alive.",
   },
   newtank: {
-    kicker: "JUST SET UP A TANK?",
-    headline: ["DON'T LOSE", "YOUR FIRST FISH"],
-    cta: "SCAN FOR FREE HELP",
-    bullets: ["Care guides and a water checker", "A planner that catches bad tank mixes"],
-    footnote: "Free help from your local fish store. Ask us anything in store, too.",
+    kicker: "SETTING UP YOUR FIRST TANK?",
+    headline: ["FREE HELP", "WITH YOUR TANK"],
+    cta: "SCAN FOR FREE GUIDES",
+    bullets: ["Care guides and a water checker", "A planner that catches bad mixes"],
+    footnote: "Free from your local fish store. Ask us anything in store, too.",
   },
 };
 
 /**
  * One full-page flyer, built around a single instruction: scan this.
- * Everything sits on a fixed grid, so nothing shifts or collides whatever
- * the shop is called. Dark for a window, light to save ink.
+ *
+ * Printed on a shop's own inkjet, so the sheet stays white: navy type,
+ * one small solid band, and a black code. The dark version exists for a
+ * print shop or a screen, but nobody has to burn a cartridge to use this.
  */
 function drawFlyer(
   page: PDFPage,
@@ -208,7 +217,7 @@ function drawFlyer(
 ) {
   const { copy, dark } = opts;
   const bg = dark ? NAVY : PAPER;
-  const head = dark ? PAPER : INK;
+  const head = dark ? PAPER : NAVY;
   const muted = dark ? MIST : SOFT;
   const accent = dark ? TIDE : SEA;
   const cx = W / 2;
@@ -216,47 +225,60 @@ function drawFlyer(
   const inner = W - pad * 2;
 
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: bg });
-  page.drawRectangle({ x: 0, y: H - 12, width: W, height: 12, color: dark ? TIDE : NAVY });
-  page.drawRectangle({ x: 0, y: 0, width: W, height: 12, color: dark ? TIDE : NAVY });
 
-  // Who this is, first.
-  centered(page, opts.name, cx, 712, fonts.bold, fit(fonts.bold, opts.name, 30, inner, 15), head);
-  if (opts.place) centered(page, opts.place, cx, 692, fonts.italic, 13.5, muted);
+  // A navy band across the top carries the shop's name in white. It is the
+  // only heavy area of ink on the sheet, and it gives the flyer its punch.
+  const bandH = 168;
+  if (!dark) {
+    page.drawRectangle({ x: 0, y: H - bandH, width: W, height: bandH, color: NAVY });
+    page.drawRectangle({ x: 0, y: H - bandH - 6, width: W, height: 6, color: TIDE });
+  } else {
+    page.drawRectangle({ x: 0, y: H - 10, width: W, height: 10, color: TIDE });
+  }
 
-  centered(page, copy.kicker, cx, 674, fonts.caps, 11.5, accent, 3.4);
+  wordmark(page, cx, H - 44, fonts, 0.85, dark ? PAPER : MIST);
 
-  // Headline: two or three heavy lines, bottom-anchored so the grid holds.
-  // Two lines, no more: a poster people read from across the room.
+  const nameSize = fit(fonts.bold, opts.name, 40, inner, 17);
+  centered(page, opts.name, cx, H - 112, fonts.bold, nameSize, PAPER);
+  if (opts.place) centered(page, opts.place, cx, H - 136, fonts.italic, 14, MIST);
+
+  // The hook.
+  centered(page, copy.kicker, cx, dark ? 640 : H - bandH - 26, fonts.caps, 12, accent, 3.4);
+
   const lines = copy.headline.slice(0, 2);
-  const size = Math.min(...lines.map((l) => fit(fonts.caps, l, 42, inner, 20, 1.5)));
-  let hy = lines.length > 1 ? 616 : 592;
+  const size = Math.min(...lines.map((l) => fit(fonts.caps, l, 38, inner, 20, 1.5)));
+  let hy = lines.length > 1 ? 548 : 520;
   for (const line of lines) {
     centered(page, line, cx, hy, fonts.caps, size, head, 1.5);
     hy -= size + 12;
   }
 
-  // The code, on a white panel so it scans off any background.
+  // The code, framed by a hairline rather than a block of colour.
   const qr = 236;
-  const panel = qr + 40;
-  const px = cx - panel / 2;
-  const py = 262;
-  page.drawRectangle({ x: px, y: py, width: panel, height: panel, color: PAPER });
-  page.drawRectangle({ x: px, y: py, width: panel, height: panel, borderColor: accent, borderWidth: 2 });
-  qrWithMark(page, opts.url, px + 20, py + 20, qr, NAVY, SEA, PAPER);
+  const qx = cx - qr / 2;
+  const qy = 222;
+  page.drawRectangle({
+    x: qx - 18,
+    y: qy - 18,
+    width: qr + 36,
+    height: qr + 36,
+    color: PAPER,
+    borderColor: accent,
+    borderWidth: 1.2,
+  });
+  qrWithMark(page, opts.url, qx, qy, qr, NAVY, SEA, PAPER);
 
-  // The instruction, as a solid band that reads like a button.
+  // One solid band: the instruction.
   const ctaH = 42;
-  const ctaY = 200;
+  const ctaY = 156;
   const ctaW = Math.min(inner, widthOf(fonts.caps, copy.cta, 17, 3) + 76);
   page.drawRectangle({ x: cx - ctaW / 2, y: ctaY, width: ctaW, height: ctaH, color: accent });
-  centered(page, copy.cta, cx, ctaY + 14, fonts.caps, 17, dark ? NAVY : PAPER, 3);
+  centered(page, copy.cta, cx, ctaY + 14, fonts.caps, 17, PAPER, 3);
 
-  // Three reasons, ticked.
-  let by = 164;
-  for (const b of copy.bullets) {
-    const size = fit(fonts.serif, b, 13.5, inner - 34, 10);
-    const bx = cx - (widthOf(fonts.serif, b, size) + 24) / 2;
-    // A tick, drawn from the text baseline up (drawSvgPath's y runs downward).
+  let by = 122;
+  for (const b of copy.bullets.slice(0, 2)) {
+    const bs = fit(fonts.serif, b, 13.5, inner - 34, 10);
+    const bx = cx - (widthOf(fonts.serif, b, bs) + 24) / 2;
     page.drawSvgPath("M 0 5 L 4 9 L 11 0", {
       x: bx,
       y: by + 11,
@@ -264,15 +286,13 @@ function drawFlyer(
       borderWidth: 1.9,
       scale: 1.1,
     });
-    page.drawText(b, { x: bx + 24, y: by, size, font: fonts.serif, color: muted });
+    page.drawText(b, { x: bx + 24, y: by, size: bs, font: fonts.serif, color: muted });
     by -= 21;
   }
 
-  // Footer.
-  centered(page, copy.footnote, cx, 100, fonts.italic, 12, muted);
-  page.drawLine({ start: { x: pad, y: 84 }, end: { x: W - pad, y: 84 }, thickness: 0.8, color: dark ? SEA : MIST });
-  wordmark(page, cx, 58, fonts, 1.05, head);
-  centered(page, opts.url.replace(/^https?:\/\//, ""), cx, 30, fonts.bold, 11, accent);
+  centered(page, copy.footnote, cx, 74, fonts.italic, 12, muted);
+  page.drawLine({ start: { x: pad, y: 58 }, end: { x: W - pad, y: 58 }, thickness: 1, color: accent });
+  centered(page, opts.url.replace(/^https?:\/\//, ""), cx, 34, fonts.bold, 12, head);
 }
 
 export async function buildStorePoster(opts: {
@@ -297,8 +317,8 @@ export async function buildStorePoster(opts: {
     name: opts.name,
     place: [opts.city, opts.state].filter(Boolean).join(", "),
     url: opts.url,
-    copy: COPY[opts.style] ?? COPY.visit,
-    dark: opts.dark ?? true,
+    copy: COPY[opts.style] ?? COPY.save,
+    dark: opts.dark ?? false,
   });
 
   return pdf.save();
