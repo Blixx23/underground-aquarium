@@ -87,8 +87,8 @@ export default function StoreFavoriteButton({
     </div>
       <p className="text-xs text-ocean-500">
         {favorited
-          ? "You'll be notified when this shop posts an update."
-          : "Favorite to get this shop's updates in your notifications."}
+          ? "You'll get their updates."
+          : "Favorite for updates."}
       </p>
     </div>
   );

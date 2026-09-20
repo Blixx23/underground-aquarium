@@ -8,6 +8,8 @@ import {
   Clock,
   ArrowLeft,
   Navigation,
+  Star,
+  BadgeCheck,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
@@ -224,153 +226,190 @@ export default async function StoreDetailPage({ params }: Params) {
     ? `tel:${store.phone.replace(/[^0-9+]/g, "")}`
     : null;
 
+  const ratingCount = initialReviews.length;
+  const ratingAvg = ratingCount
+    ? initialReviews.reduce((n, r) => n + r.rating, 0) / ratingCount
+    : null;
+
+  const rowClass =
+    "flex items-start gap-3 rounded-xl px-3.5 py-3 text-sm transition-colors";
+
   return (
-    <main className="min-h-screen pt-24 pb-20 px-6">
-      <div className="max-w-2xl mx-auto">
+    <main className="min-h-screen px-6 pb-20 pt-24">
+      <div className="mx-auto max-w-6xl">
         <StoreTracker storeId={store.id} />
-        <div className="mb-6">
-          <Link
-            href="/stores"
-            className="inline-flex items-center gap-2 text-ocean-300 hover:text-white transition-colors text-sm"
-          >
-            <ArrowLeft className="w-4 h-4" /> All fish stores
-          </Link>
-        </div>
 
-        <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-2">
-          Local Fish Store
-        </p>
-        <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
-          {store.name}
-        </h1>
-        {place && (
-          <p className="text-ocean-300 flex items-center gap-1.5 mb-4">
-            <MapPin className="w-4 h-4 shrink-0" />
-            {store.address ? `${store.address}, ${place}` : place}
-          </p>
-        )}
+        <Link
+          href="/stores"
+          className="inline-flex items-center gap-2 text-sm text-ocean-300 transition-colors hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" /> All fish stores
+        </Link>
 
-        {store.tags && store.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-6">
-            {store.tags.map((t) => (
-              <span
-                key={t}
-                className="text-[11px] uppercase tracking-wide text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-0.5"
-              >
-                {t}
+        {/* Name, place and standing — everything you need to decide, before any scrolling. */}
+        <header className="mt-5 border-b border-white/10 pb-6">
+          <h1 className="font-display text-3xl text-white sm:text-4xl">{store.name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            {place && (
+              <span className="flex items-center gap-1.5 text-ocean-300">
+                <MapPin className="h-4 w-4 shrink-0" />
+                {store.address ? `${store.address}, ${place}` : place}
               </span>
-            ))}
+            )}
+            {ratingAvg != null && (
+              <a href="#reviews" className="flex items-center gap-1.5 text-amber-300 hover:text-amber-200">
+                <Star className="h-4 w-4 fill-current" />
+                {ratingAvg.toFixed(1)}
+                <span className="text-ocean-400">
+                  ({ratingCount} {ratingCount === 1 ? "review" : "reviews"})
+                </span>
+              </a>
+            )}
+            {store.claimed_by && (
+              <span className="inline-flex items-center gap-1 text-emerald-300">
+                <BadgeCheck className="h-4 w-4" /> Owner managed
+              </span>
+            )}
           </div>
-        )}
-
-        {store.description && (
-          <p className="text-ocean-200 leading-relaxed mb-8">
-            {store.description}
-          </p>
-        )}
-
-        <div className="space-y-3 mb-8">
-          {store.hours && (
-            <div className="flex items-start gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-              <Clock className="w-4 h-4 text-ocean-400 mt-0.5 shrink-0" />
-              <p className="text-ocean-200 text-sm whitespace-pre-wrap">
-                {store.hours}
-              </p>
+          {store.tags && store.tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {store.tags.map((t) => (
+                <span
+                  key={t}
+                  className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-300/90"
+                >
+                  {t}
+                </span>
+              ))}
             </div>
           )}
-          {phoneHref && (
-            <TrackedLink
-              href={phoneHref}
+        </header>
+
+        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+          {/* ---- What the shop has to say ---- */}
+          <div className="order-2 min-w-0 lg:order-1">
+            {store.description && (
+              <p className="mb-8 leading-relaxed text-ocean-200">{store.description}</p>
+            )}
+
+            {isOwner && (
+              <div className="mb-8 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-5">
+                <p className="font-medium text-white">You manage this shop</p>
+                <p className="mt-1 text-sm text-ocean-300">
+                  Photos, hours, replies and your free marketing kit all live in one place.
+                </p>
+                <Link
+                  href={`/my/shops/${store.slug}`}
+                  className="mt-3 inline-block rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
+                >
+                  Open your shop dashboard
+                </Link>
+              </div>
+            )}
+
+            <StorePhotos
               storeId={store.id}
-              kind="phone"
-              className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-emerald-500/40 transition-colors"
-            >
-              <Phone className="w-4 h-4 text-ocean-400 shrink-0" />
-              <span className="text-ocean-200 text-sm">{store.phone}</span>
-            </TrackedLink>
-          )}
-          {websiteHref && (
-            <TrackedLink
-              href={websiteHref}
+              userId={user?.id ?? null}
+              initial={photos}
+              isOwner={false}
+            />
+
+            <StorePosts
               storeId={store.id}
-              kind="website"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-emerald-500/40 transition-colors"
-            >
-              <Globe className="w-4 h-4 text-ocean-400 shrink-0" />
-              <span className="text-ocean-200 text-sm truncate">
-                {websiteLabel}
-              </span>
-            </TrackedLink>
-          )}
-        </div>
+              initialPosts={initialPosts}
+              isOwner={isOwner}
+              currentUserId={user?.id ?? null}
+            />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <TrackedLink
-            href={directionsUrl}
-            storeId={store.id}
-            kind="directions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-5 py-3 text-sm font-medium hover:bg-emerald-500/25 transition-colors"
-          >
-            <Navigation className="w-4 h-4" /> Get directions
-          </TrackedLink>
-          <StoreFavoriteButton
-            storeId={store.id}
-            initialFavorited={isFavorited}
-            initialCount={favoriteCount ?? 0}
-          />
-        </div>
-
-        <StoreSpecialHours storeId={store.id} initial={specialDays} isOwner={false} />
-
-        <StorePhotos storeId={store.id} userId={user?.id ?? null} initial={photos} isOwner={false} />
-
-        {isOwner && (
-          <div className="mt-10 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-5">
-            <p className="font-medium text-white">You manage this shop</p>
-            <p className="mt-1 text-sm text-ocean-300">
-              Stock, photos, hours, replies and your free marketing kit all live in one place.
-            </p>
-            <Link
-              href={`/my/shops/${store.slug}`}
-              className="mt-3 inline-block rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
-            >
-              Open your shop dashboard
-            </Link>
+            <div id="reviews" />
+            <StoreReviews
+              storeId={store.id}
+              initialReviews={initialReviews}
+              currentUserId={user?.id ?? null}
+              currentUserName={currentUserName}
+              isOwner={isOwner}
+            />
           </div>
-        )}
 
-        <StorePosts
-          storeId={store.id}
-          initialPosts={initialPosts}
-          isOwner={isOwner}
-          currentUserId={user?.id ?? null}
-        />
+          {/* ---- Getting there and getting in touch ---- */}
+          <aside className="order-1 lg:order-2">
+            <div className="lg:sticky lg:top-24">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <TrackedLink
+                  href={directionsUrl}
+                  storeId={store.id}
+                  kind="directions"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
+                >
+                  <Navigation className="h-4 w-4" /> Get directions
+                </TrackedLink>
 
-        <div id="reviews" />
-        <StoreReviews
-          storeId={store.id}
-          initialReviews={initialReviews}
-          currentUserId={user?.id ?? null}
-          currentUserName={currentUserName}
-          isOwner={isOwner}
-        />
+                <div className="mt-3 space-y-1">
+                  {phoneHref && (
+                    <TrackedLink
+                      href={phoneHref}
+                      storeId={store.id}
+                      kind="phone"
+                      className={`${rowClass} hover:bg-white/5`}
+                    >
+                      <Phone className="mt-0.5 h-4 w-4 shrink-0 text-ocean-400" />
+                      <span className="font-medium text-white">{store.phone}</span>
+                    </TrackedLink>
+                  )}
+                  {websiteHref && (
+                    <TrackedLink
+                      href={websiteHref}
+                      storeId={store.id}
+                      kind="website"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${rowClass} hover:bg-white/5`}
+                    >
+                      <Globe className="mt-0.5 h-4 w-4 shrink-0 text-ocean-400" />
+                      <span className="min-w-0 break-words text-ocean-200">{websiteLabel}</span>
+                    </TrackedLink>
+                  )}
+                  {store.hours && (
+                    <div className={rowClass}>
+                      <Clock className="mt-0.5 h-4 w-4 shrink-0 text-ocean-400" />
+                      <p className="whitespace-pre-wrap text-ocean-200">{store.hours}</p>
+                    </div>
+                  )}
+                  {!phoneHref && !websiteHref && !store.hours && (
+                    <p className="px-3.5 py-2 text-sm text-ocean-500">
+                      No phone or hours listed yet.
+                    </p>
+                  )}
+                </div>
 
-        <p className="mt-10 text-xs leading-relaxed text-ocean-600">
-          Underground Aquarium is a free directory. Shops don&apos;t sell through this site and we take
-          no commission. Call or visit the shop for prices and what&apos;s available.
-        </p>
+                <div className="mt-3 border-t border-white/10 pt-3">
+                  <StoreFavoriteButton
+                    storeId={store.id}
+                    initialFavorited={isFavorited}
+                    initialCount={favoriteCount ?? 0}
+                  />
+                </div>
+              </div>
 
-        {store.source === "osm" && <OsmCredit className="mt-4" />}
+              <StoreSpecialHours storeId={store.id} initial={specialDays} isOwner={false} />
 
-        <ClaimStore
-          storeId={store.id}
-          storeName={store.name}
-          claimed={!!store.claimed_by}
-        />
+              <ClaimStore
+                storeId={store.id}
+                storeName={store.name}
+                claimed={!!store.claimed_by}
+              />
+
+              <p className="mt-6 text-xs leading-relaxed text-ocean-600">
+                A free directory. Shops don&apos;t sell through this site and we take no
+                commission — call or visit for prices and availability.
+              </p>
+
+              {store.source === "osm" && <OsmCredit className="mt-3" />}
+            </div>
+          </aside>
+        </div>
       </div>
     </main>
   );
