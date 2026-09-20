@@ -76,8 +76,11 @@ export default async function CertificatesPage() {
       </p>
 
       {/* Membership certificate — the one thing everybody has from day one. */}
-      <div className={`${SOC_CARD} mb-8 flex flex-wrap items-center gap-5 p-5 sm:p-6`}>
-        <SocietySeal size={80} className="h-20 w-20 shrink-0" />
+      {/* Phones: seal and title side by side, the button full width underneath.
+          Wider screens: all three in one row. */}
+      <div className={`${SOC_CARD} mb-8 flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-6`}>
+        <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
+        <SocietySeal size={80} className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
         <div className="min-w-0 flex-1">
           <p className="font-display text-lg text-white">
             Certificate of Membership
@@ -92,11 +95,12 @@ export default async function CertificatesPage() {
           </p>
           {membershipCert && <RegistryLink code={membershipCert.code} revoked={membershipCert.status === "revoked"} />}
         </div>
+        </div>
         {/* Plain link, not client JS: the route issues the certificate in the
             database and streams the PDF back as a download. */}
         <a
           href="/api/society/certificate?kind=membership"
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-amber-300"
+          className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-semibold text-ocean-950 transition-colors hover:bg-amber-300 sm:w-auto sm:py-2.5"
         >
           <Download className="h-4 w-4" />
           Download PDF
