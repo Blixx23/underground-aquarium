@@ -12,13 +12,11 @@ import {
 import { supabasePublic } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import ClaimStore from "../ClaimStore";
-import EditStore from "../EditStore";
 import StoreReviews from "../StoreReviews";
 import StorePosts from "../StorePosts";
 import StoreFavoriteButton from "@/components/StoreFavoriteButton";
 import StoreTracker from "@/components/stores/StoreTracker";
 import TrackedLink from "@/components/stores/TrackedLink";
-import StoreStock, { type StockItem } from "@/components/stores/StoreStock";
 import StorePhotos, { type StorePhoto } from "@/components/stores/StorePhotos";
 import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpecialHours";
 
@@ -187,12 +185,7 @@ export default async function StoreDetailPage({ params }: Params) {
   }));
 
   // The shop's own extras: what's in today, photos, and any odd hours coming up.
-  const [{ data: stockRows }, { data: photoRows }, { data: specialRows }] = await Promise.all([
-    supabasePublic
-      .from("store_stock")
-      .select("id, name, note, created_at")
-      .eq("store_id", store.id)
-      .order("created_at", { ascending: false }),
+  const [{ data: photoRows }, { data: specialRows }] = await Promise.all([
     supabasePublic
       .from("store_photos")
       .select("id, url, caption")
@@ -206,7 +199,6 @@ export default async function StoreDetailPage({ params }: Params) {
       .gte("day", new Date().toISOString().slice(0, 10))
       .order("day"),
   ]);
-  const stock = (stockRows ?? []) as StockItem[];
   const photos = (photoRows ?? []) as StorePhoto[];
   const specialDays = (specialRows ?? []) as SpecialDay[];
 
@@ -242,21 +234,6 @@ export default async function StoreDetailPage({ params }: Params) {
             <ArrowLeft className="w-4 h-4" /> All fish stores
           </Link>
         </div>
-
-        <EditStore
-          store={{
-            id: store.id,
-            address: store.address,
-            city: store.city,
-            state: store.state,
-            phone: store.phone,
-            website: store.website,
-            hours: store.hours,
-            description: store.description,
-            tags: store.tags,
-          }}
-          isOwner={isOwner}
-        />
 
         <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-2">
           Local Fish Store
@@ -345,32 +322,22 @@ export default async function StoreDetailPage({ params }: Params) {
           />
         </div>
 
-        <StoreSpecialHours storeId={store.id} initial={specialDays} isOwner={isOwner} />
+        <StoreSpecialHours storeId={store.id} initial={specialDays} isOwner={false} />
 
-        <StoreStock storeId={store.id} initial={stock} isOwner={isOwner} />
-
-        <StorePhotos storeId={store.id} userId={user?.id ?? null} initial={photos} isOwner={isOwner} />
+        <StorePhotos storeId={store.id} userId={user?.id ?? null} initial={photos} isOwner={false} />
 
         {isOwner && (
           <div className="mt-10 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-5">
             <p className="font-medium text-white">You manage this shop</p>
             <p className="mt-1 text-sm text-ocean-300">
-              See how many people found you, and print a window sign with your QR code.
+              Stock, photos, hours, replies and your free marketing kit all live in one place.
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                href="/my/shops"
-                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
-              >
-                Your shop dashboard
-              </Link>
-              <Link
-                href={`/api/stores/${store.slug}/poster`}
-                className="rounded-xl border border-white/15 px-4 py-2 text-sm text-ocean-200 transition-colors hover:bg-white/5"
-              >
-                Print a window sign
-              </Link>
-            </div>
+            <Link
+              href={`/my/shops/${store.slug}`}
+              className="mt-3 inline-block rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
+            >
+              Open your shop dashboard
+            </Link>
           </div>
         )}
 
@@ -389,6 +356,11 @@ export default async function StoreDetailPage({ params }: Params) {
           currentUserName={currentUserName}
           isOwner={isOwner}
         />
+
+        <p className="mt-10 text-xs leading-relaxed text-ocean-600">
+          Underground Aquarium is a free directory. Shops don&apos;t sell through this site and we take
+          no commission. Call or visit the shop for prices and what&apos;s available.
+        </p>
 
         <ClaimStore
           storeId={store.id}

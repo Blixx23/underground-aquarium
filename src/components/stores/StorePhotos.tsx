@@ -15,11 +15,14 @@ export default function StorePhotos({
   userId,
   initial,
   isOwner,
+  heading = true,
 }: {
   storeId: string;
   userId: string | null;
   initial: StorePhoto[];
   isOwner: boolean;
+  /** The dashboard supplies its own title. */
+  heading?: boolean;
 }) {
   const [supabase] = useState(() => createClient());
   const [photos, setPhotos] = useState(initial);
@@ -62,8 +65,8 @@ export default function StorePhotos({
   if (!isOwner && photos.length === 0) return null;
 
   return (
-    <section className="mt-10">
-      <h2 className="mb-3 font-display text-xl text-white">Photos</h2>
+    <section className={heading ? "mt-10" : ""}>
+      {heading && <h2 className="mb-3 font-display text-xl text-white">Photos</h2>}
 
       {photos.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
