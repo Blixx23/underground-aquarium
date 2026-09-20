@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -88,7 +88,25 @@ const EXPLORE = [
 ];
 
 export default function Navbar() {
+  const pathname = usePathname() || "/";
   const [scrolled, setScrolled] = useState(false);
+
+  /** Is this the section you're looking at right now? */
+  function onSection(href?: string): boolean {
+    if (!href) return false;
+    const base = href.split("?")[0];
+    if (base === "/") return pathname === "/";
+    if (base === "/feed") return pathname === "/feed" || pathname.startsWith("/feed/");
+    if (base === "/marketplace") {
+      return ["/marketplace", "/listings", "/listing", "/post"].some(
+        (p) => pathname === p || pathname.startsWith(p + "/")
+      );
+    }
+    if (base === SOCIETY_PATH) {
+      return pathname.startsWith("/society") || pathname.startsWith("/c/");
+    }
+    return pathname === base || pathname.startsWith(base + "/");
+  }
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -219,9 +237,19 @@ export default function Navbar() {
                 onMouseEnter={() => openDropdown(item.label)}
                 onMouseLeave={scheduleClose}
               >
-                <button className="flex items-center gap-1 px-3 py-2 text-sm tracking-wide text-ocean-300 hover:text-white transition-colors font-body">
+                <button
+                  className={cn(
+                    "relative flex items-center gap-1 px-3 py-2 text-sm tracking-wide transition-colors font-body",
+                    item.children.some((c) => onSection(c.href))
+                      ? "text-white"
+                      : "text-ocean-300 hover:text-white"
+                  )}
+                >
                   {item.label}
                   <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                  {item.children.some((c) => onSection(c.href)) && (
+                    <span className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-ocean-300" />
+                  )}
                 </button>
                 {dropdown === item.label && (
                   <div className="absolute top-full right-0 pt-2">
@@ -236,7 +264,10 @@ export default function Navbar() {
                               key={child.href}
                               href={child.href}
                               onClick={() => setDropdown(null)}
-                              className="block rounded-lg px-2 py-1.5 text-sm text-ocean-300 transition-colors hover:bg-ocean-800/60 hover:text-white"
+                              className={cn(
+                                "block rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-ocean-800/60 hover:text-white",
+                                onSection(child.href) ? "bg-ocean-800/60 text-white" : "text-ocean-300"
+                              )}
                             >
                               {child.label}
                             </Link>
@@ -251,14 +282,28 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={item.href!}
+                aria-current={onSection(item.href) ? "page" : undefined}
                 className={cn(
-                  "whitespace-nowrap px-3 py-2 text-sm tracking-wide transition-colors font-body",
+                  "relative whitespace-nowrap px-3 py-2 text-sm tracking-wide transition-colors font-body",
                   item.society
-                    ? "text-amber-300 hover:text-amber-200"
-                    : "text-ocean-300 hover:text-white"
+                    ? onSection(item.href)
+                      ? "text-amber-200"
+                      : "text-amber-300/70 hover:text-amber-200"
+                    : onSection(item.href)
+                      ? "text-white"
+                      : "text-ocean-300 hover:text-white"
                 )}
               >
                 {item.label}
+                {/* The lit bar under the section you're in. */}
+                {onSection(item.href) && (
+                  <span
+                    className={cn(
+                      "absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full",
+                      item.society ? "bg-amber-300" : "bg-ocean-300"
+                    )}
+                  />
+                )}
               </Link>
             )
           )}
@@ -386,7 +431,12 @@ export default function Navbar() {
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-ocean-100 active:bg-white/10"
+                className={cn(
+                  "flex items-center gap-2.5 rounded-xl border px-3 py-3 text-sm active:bg-white/10",
+                  onSection(href)
+                    ? "border-ocean-400/70 bg-ocean-700/40 text-white"
+                    : "border-white/10 bg-white/5 text-ocean-100"
+                )}
               >
                 <Icon className="h-4 w-4 shrink-0 text-ocean-400" />
                 {label}
