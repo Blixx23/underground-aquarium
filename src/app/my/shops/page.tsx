@@ -8,17 +8,18 @@ export const metadata: Metadata = { title: "My shops" };
 
 export const dynamic = "force-dynamic";
 
+/** Older databases (before step 54) don't report posts, so everything is optional. */
 type Row = {
   id: string;
   name: string;
   slug: string;
   city: string | null;
   state: string | null;
-  views30: number;
-  followers: number;
-  reviews: number;
-  unanswered: number;
-  posts: number;
+  views30?: number;
+  followers?: number;
+  reviews?: number;
+  unanswered?: number;
+  posts?: number;
   last_post: string | null;
 };
 
@@ -69,17 +70,17 @@ export default async function MyShopsPage() {
                     <p className="font-display text-xl text-white">{s.name}</p>
                     <p className="text-sm text-ocean-400">{[s.city, s.state].filter(Boolean).join(", ")}</p>
                   </div>
-                  {s.unanswered > 0 && (
+                  {(s.unanswered ?? 0) > 0 && (
                     <span className="rounded-full bg-amber-400/20 px-3 py-1 text-xs text-amber-200">
                       {s.unanswered} review{s.unanswered === 1 ? "" : "s"} to answer
                     </span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <Stat label="Views, 30 days" value={s.views30} Icon={Eye} />
-                  <Stat label="Following" value={s.followers} Icon={Heart} />
-                  <Stat label="Reviews" value={s.reviews} Icon={MessageSquare} />
-                  <Stat label="Updates" value={s.posts} Icon={Newspaper} />
+                  <Stat label="Views, 30 days" value={s.views30 ?? 0} Icon={Eye} />
+                  <Stat label="Following" value={s.followers ?? 0} Icon={Heart} />
+                  <Stat label="Reviews" value={s.reviews ?? 0} Icon={MessageSquare} />
+                  <Stat label="Updates" value={s.posts ?? 0} Icon={Newspaper} />
                 </div>
               </Link>
             ))}

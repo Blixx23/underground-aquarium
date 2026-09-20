@@ -16,7 +16,7 @@ export default async function ShopOverview({ params }: { params: Promise<{ slug:
     supabase.from("store_posts").select("id", { count: "exact", head: true }).eq("store_id", store.id),
     supabase.from("store_photos").select("id", { count: "exact", head: true }).eq("store_id", store.id),
   ]);
-  const row = ((mine ?? []) as { slug: string; views30: number; followers: number; reviews: number }[]).find(
+  const row = ((mine ?? []) as { slug: string; views30?: number; followers?: number; reviews?: number }[]).find(
     (r) => r.slug === slug
   );
 
