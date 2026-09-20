@@ -65,21 +65,30 @@ export default function TankGallery({ images, name }: { images: string[]; name: 
     <div>
       {/* The cover, big. */}
       <div
-        className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 bg-ocean-950 sm:aspect-[16/9]"
+        className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-ocean-950 sm:aspect-[16/10]"
         onTouchStart={swipeStart}
         onTouchEnd={swipeEnd}
       >
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="block h-full w-full cursor-zoom-in"
+          className="relative block h-full w-full cursor-zoom-in"
           aria-label="View full screen"
         >
+          {/* Photos come in every shape. A blurred copy fills the frame and the
+              real photo sits on top, whole, never cropped or squashed. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={images[active]}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl"
+          />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={images[active]}
             alt={`${name}, photo ${active + 1} of ${count}`}
-            className="h-full w-full object-cover"
+            className="relative h-full w-full object-contain"
           />
         </button>
         {count > 1 && arrow(-1)}
