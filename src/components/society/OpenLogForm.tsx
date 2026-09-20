@@ -13,6 +13,8 @@ import type { AwardSpecies } from "@/components/society/SpeciesBrowser";
  * Everything else about a log is append-only, so this form is deliberately
  * short: what you're breeding, and anything worth noting about the setup.
  */
+const OTHER = "__other__";
+
 export default function OpenLogForm({
   clubId,
   species,
@@ -25,17 +27,33 @@ export default function OpenLogForm({
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
+  // "" = nothing chosen yet, OTHER = not on the list, anything else = a species id.
   const [speciesId, setSpeciesId] = useState(initialSpeciesId ?? "");
   const [otherName, setOtherName] = useState("");
   const [tankNote, setTankNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isOther = speciesId === "";
+  const isOther = speciesId === OTHER;
   const selected = species.find((s) => s.id === speciesId);
+
+  // Grouped by category, so a 200-fish list is scannable.
+  const groups = new Map<string, AwardSpecies[]>();
+  for (const s of species
+    .slice()
+    .sort((a, b) => a.common_name.localeCompare(b.common_name))) {
+    const key = s.category || "Other";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(s);
+  }
+  const categories = [...groups.keys()].sort((a, b) => a.localeCompare(b));
 
   async function open() {
     setError(null);
+    if (!speciesId) {
+      setError("Pick the species you're breeding, or choose Not on the list.");
+      return;
+    }
     if (isOther && !otherName.trim()) {
       setError("Name the species you're breeding.");
       return;
@@ -80,15 +98,19 @@ export default function OpenLogForm({
           onChange={(e) => setSpeciesId(e.target.value)}
           className={inputClass}
         >
-          <option value="">Not on the list — I&apos;ll type it</option>
-          {species
-            .slice()
-            .sort((a, b) => a.common_name.localeCompare(b.common_name))
-            .map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.common_name} · {s.points} pts
-              </option>
-            ))}
+          <option value="" disabled>
+            Choose a species…
+          </option>
+          {categories.map((cat) => (
+            <optgroup key={cat} label={cat}>
+              {groups.get(cat)!.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.common_name} · {s.points} pts
+                </option>
+              ))}
+            </optgroup>
+          ))}
+          <option value={OTHER}>Not on the list — I&apos;ll type it</option>
         </select>
         {selected && (
           <p className="mt-2 text-sm text-amber-300">
