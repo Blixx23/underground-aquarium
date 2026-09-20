@@ -25,6 +25,7 @@ export default function Feed({
   initialItems,
   viewer,
   showComposer = false,
+  composeFocus = false,
   emptyText = "Nothing here yet.",
 }: {
   scope: FeedScope;
@@ -32,6 +33,7 @@ export default function Feed({
   initialItems: FeedItem[];
   viewer: Viewer;
   showComposer?: boolean;
+  composeFocus?: boolean;
   emptyText?: string;
 }) {
   const [supabase] = useState(() => createClient());
@@ -86,6 +88,7 @@ export default function Feed({
           avatar={viewer.avatar}
           society={viewer.society}
           onPosted={refresh}
+          autoFocus={composeFocus}
         />
       )}
 

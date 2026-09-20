@@ -47,7 +47,7 @@ export default function LoginPage() {
 
     // Back to wherever sent them here (Trophies, the member area...).
     router.refresh()
-    router.push(nextFromLocation('/profile'))
+    router.push(nextFromLocation('/feed'))
   }
 
   return (

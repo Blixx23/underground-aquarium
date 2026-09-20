@@ -18,9 +18,9 @@ export const metadata: Metadata = {
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; compose?: string }>;
 }) {
-  const { tab } = await searchParams;
+  const { tab, compose } = await searchParams;
   const { viewer, supabase } = await getViewer();
   const scope: FeedScope = viewer && tab !== "everyone" ? "following" : "everyone";
   const { items } = await fetchFeed(supabase, { scope });
@@ -35,8 +35,7 @@ export default async function FeedPage({
       <div className="mx-auto max-w-2xl">
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.25em] text-ocean-500">Community</p>
-            <h1 className="font-display text-3xl text-white sm:text-4xl">Feed</h1>
+            <h1 className="font-display text-3xl text-white sm:text-4xl">Home</h1>
           </div>
           {!viewer && (
             <Link
@@ -70,6 +69,7 @@ export default async function FeedPage({
           initialItems={items}
           viewer={viewer}
           showComposer
+          composeFocus={compose === "1"}
           emptyText={
             scope === "following"
               ? "Follow people to fill this up, or check out Everyone."

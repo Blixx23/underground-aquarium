@@ -24,12 +24,14 @@ export default function Composer({
   avatar,
   society,
   onPosted,
+  autoFocus = false,
 }: {
   userId: string;
   name: string;
   avatar: string | null;
   society: boolean;
   onPosted: () => void;
+  autoFocus?: boolean;
 }) {
   const [supabase] = useState(() => createClient());
   const [body, setBody] = useState("");
@@ -102,7 +104,8 @@ export default function Composer({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={body ? 3 : 2}
-            placeholder="What's happening in your tanks?"
+            autoFocus={autoFocus}
+            placeholder={`What's happening in your tanks, ${name.split(" ")[0]}?`}
             className="w-full resize-none border-0 bg-transparent py-2 text-base text-white placeholder-ocean-600 outline-none focus:ring-0 sm:text-[15px]"
           />
 

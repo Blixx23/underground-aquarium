@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import BottomNav from "@/components/layout/BottomNav";
 import Bubbles from "@/components/Bubbles";
 import DailyHeartbeat from "@/components/DailyHeartbeat";
 import TrophySync from "@/components/trophies/TrophySync";
@@ -66,6 +67,7 @@ export default function RootLayout({
         <Navbar />
         <main>{children}</main>
         <Footer />
+        <BottomNav />
         <Analytics />
       </body>
     </html>

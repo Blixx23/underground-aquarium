@@ -10,7 +10,6 @@ import {
   LogOut,
   MessageCircle,
   ClipboardList,
-  Plus,
   Trophy,
   Settings,
   Newspaper,
@@ -342,14 +341,7 @@ export default function Navbar() {
 
         {/* Mobile: notifications + toggle */}
         <div className="md:hidden flex items-center gap-0.5">
-          <Link
-            href={POST_AD_PATH}
-            onClick={() => setOpen(false)}
-            aria-label="Post a free ad"
-            className="mr-1 flex h-9 w-9 items-center justify-center rounded-full bg-ocean-600 text-white shadow-lg shadow-ocean-600/30 active:bg-ocean-500 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-          </Link>
+          {/* Posting lives on the bottom bar's centre button on phones. */}
           <MessageBell onNavigate={() => setOpen(false)} />
           <NotificationBell variant="link" onNavigate={() => setOpen(false)} />
           <button

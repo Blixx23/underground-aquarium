@@ -72,7 +72,7 @@ export default function RegisterPage() {
     }
 
     router.refresh();
-    router.push(nextFromLocation("/profile"));
+    router.push(nextFromLocation("/feed"));
   }
 
   return (
