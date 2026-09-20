@@ -30,7 +30,6 @@ type CertRow = {
  */
 export async function GET(request: NextRequest) {
   const kind = request.nextUrl.searchParams.get("kind");
-  const title = request.nextUrl.searchParams.get("title");
 
   const logId = request.nextUrl.searchParams.get("log");
   const courseId = request.nextUrl.searchParams.get("course");
@@ -38,8 +37,12 @@ export async function GET(request: NextRequest) {
   if (kind !== "membership" && kind !== "title" && kind !== "species" && kind !== "course") {
     return NextResponse.json({ error: "Unknown certificate type." }, { status: 400 });
   }
-  if (kind === "title" && !title) {
-    return NextResponse.json({ error: "Which title?" }, { status: 400 });
+  // Rank (title) certificates were retired. Any already issued still verify.
+  if (kind === "title") {
+    return NextResponse.json(
+      { error: "Title certificates are no longer issued. Breeder certificates are issued per species." },
+      { status: 410 }
+    );
   }
   if (kind === "species" && !logId) {
     return NextResponse.json({ error: "Which spawn log?" }, { status: 400 });
@@ -63,7 +66,7 @@ export async function GET(request: NextRequest) {
         ? await supabase.rpc("issue_course_certificate", { p_course: courseId })
         : await supabase.rpc("issue_society_certificate", {
             p_kind: kind,
-            p_title: kind === "title" ? title : null,
+            p_title: null,
           });
   if (error || !data) {
     return NextResponse.json(
@@ -130,7 +133,8 @@ export async function GET(request: NextRequest) {
   return new NextResponse(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${cert.code}-${slug}.pdf"`,
+      // ?inline=1 shows it in the browser (the course certificate page embeds it).
+      "Content-Disposition": `${request.nextUrl.searchParams.get("inline") === "1" ? "inline" : "attachment"}; filename="${cert.code}-${slug}.pdf"`,
       "Cache-Control": "private, no-store",
     },
   });

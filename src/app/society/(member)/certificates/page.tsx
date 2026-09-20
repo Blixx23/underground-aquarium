@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ScrollText, Download, Lock, ShieldCheck } from "lucide-react";
+import { ScrollText, Download, ShieldCheck } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
-import { titleForPoints } from "@/lib/awards/titles";
 import { SOC_EYEBROW, SOC_CARD } from "@/lib/society/theme";
 import SocietySeal from "@/components/society/SocietySeal";
 
@@ -14,11 +13,8 @@ export const dynamic = "force-dynamic";
 export default async function CertificatesPage() {
   const ctx = await getSocietyContext();
   const supabase = await createClient();
-  const societyId = ctx.society!.id;
 
-  const [{ data: sData }, { data: ladderRow }, { data: issuedRows }, { data: logRows }] = await Promise.all([
-    supabase.rpc("club_award_standings", { p_club_id: societyId }),
-    supabase.from("clubs").select("award_titles").eq("id", societyId).maybeSingle(),
+  const [{ data: issuedRows }, { data: logRows }] = await Promise.all([
     supabase
       .from("society_certificates")
       .select("kind, title, code, status")
@@ -61,24 +57,6 @@ export default async function CertificatesPage() {
   );
   const membershipCert = issued.get("membership");
 
-  const points = Number(
-    ((sData as { user_id: string; total_points: number }[] | null) ?? []).find(
-      (s) => s.user_id === ctx.userId
-    )?.total_points ?? 0
-  );
-
-  const ladder =
-    (ladderRow?.award_titles as { title: string; min_points: number }[] | null) ??
-    [];
-
-  const current = titleForPoints(points, ladder);
-
-  // Every rung, so a member can see what they hold and what's next on one page.
-  const rungs = ladder
-    .slice()
-    .sort((a, b) => a.min_points - b.min_points)
-    .map((t) => ({ ...t, earned: points >= t.min_points }));
-
   const memberNumber =
     ctx.membership?.member_number !== null &&
     ctx.membership?.member_number !== undefined
@@ -92,7 +70,7 @@ export default async function CertificatesPage() {
         Certificates
       </h1>
       <p className="mb-8 max-w-xl text-sm text-ocean-400">
-        Every species you breed and every title you earn comes with a signed certificate, dated and carrying
+        Every species you breed comes with a signed certificate, dated and carrying
         a verification code that resolves to a public page proving it&apos;s
         real. Built to be printed and framed.
       </p>
@@ -167,90 +145,6 @@ export default async function CertificatesPage() {
                 <Download className="h-4 w-4" />
                 PDF
               </a>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h2 className="mb-1 font-display text-xl text-white">Title certificates</h2>
-      <p className="mb-4 text-sm text-ocean-400">
-        Your rank in the Breeder Award Program, earned by total points across every species.
-      </p>
-
-      {rungs.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-ocean-800/60 py-14 text-center">
-          <ScrollText className="mx-auto mb-4 h-9 w-9 text-ocean-700" />
-          <p className="text-sm text-ocean-400">
-            No title ladder has been set for the Breeder Award Program yet.
-          </p>
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {rungs.map((t) => (
-            <li
-              key={t.title}
-              className={`flex flex-wrap items-center gap-4 rounded-xl border px-4 py-3 ${
-                t.earned
-                  ? "border-amber-500/30 bg-amber-500/[0.06]"
-                  : "border-ocean-800/60 bg-ocean-900/30"
-              }`}
-            >
-              <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
-                  t.earned
-                    ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
-                    : "border-ocean-800/60 text-ocean-700"
-                }`}
-              >
-                {t.earned ? (
-                  <ScrollText className="h-4 w-4" />
-                ) : (
-                  <Lock className="h-4 w-4" />
-                )}
-              </span>
-
-              <span className="min-w-0 flex-1">
-                <span
-                  className={`block text-sm ${
-                    t.earned ? "text-white" : "text-ocean-600"
-                  }`}
-                >
-                  {t.title}
-                  {t.title === current && (
-                    <span className="ml-2 font-mono text-[10px] uppercase tracking-wider text-amber-400">
-                      current
-                    </span>
-                  )}
-                </span>
-                <span className="block font-mono text-[10px] uppercase tracking-wider text-ocean-600">
-                  {t.min_points} points
-                  {!t.earned && ` · ${t.min_points - points} to go`}
-                </span>
-                {issued.get(`title:${t.title}`) && (
-                  <RegistryLink
-                    code={issued.get(`title:${t.title}`)!.code}
-                    revoked={issued.get(`title:${t.title}`)!.status === "revoked"}
-                  />
-                )}
-              </span>
-
-              {t.earned ? (
-                <a
-                  href={`/api/society/certificate?kind=title&title=${encodeURIComponent(t.title)}`}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-amber-300"
-                >
-                  <Download className="h-4 w-4" />
-                  PDF
-                </a>
-              ) : (
-                <span
-                  title="Earn this title to unlock its certificate"
-                  className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 rounded-xl border border-ocean-800/60 px-4 py-2 text-sm text-ocean-600"
-                >
-                  <Lock className="h-4 w-4" />
-                  PDF
-                </span>
-              )}
             </li>
           ))}
         </ul>
