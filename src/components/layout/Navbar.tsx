@@ -23,6 +23,7 @@ import {
   ScrollText,
   Info,
   MapPin,
+  Crown,
 } from "lucide-react";
 import Avatar from "@/components/profile/Avatar";
 import type { User } from "@supabase/supabase-js";
@@ -409,8 +410,7 @@ export default function Navbar() {
 
         {/* Mobile: notifications + toggle */}
         <div className="md:hidden flex items-center gap-0.5">
-          {/* Posting lives on the bottom bar's centre button on phones. */}
-          <MessageBell onNavigate={() => setOpen(false)} />
+          {/* Posting and Messages live on the bottom bar on phones. */}
           <NotificationBell variant="link" onNavigate={() => setOpen(false)} />
           <button
             className="p-2 text-ocean-300 hover:text-white"
@@ -424,6 +424,20 @@ export default function Navbar() {
       {/* Mobile menu: just the site's sections. Your own stuff lives on the Me tab. */}
       {open && (
         <div className="md:hidden bg-ocean-950/98 backdrop-blur-xl border-t border-ocean-800/50 px-4 pt-3 pb-[calc(6rem_+_env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_5rem)] overflow-y-auto">
+          {/* The Society's home on phones, now it's off the bottom bar. */}
+          <Link
+            href={SOCIETY_PATH}
+            onClick={() => setOpen(false)}
+            className={cn(
+              "mb-4 flex items-center gap-3 rounded-xl border px-4 py-3.5 active:bg-amber-500/15",
+              onSection(SOCIETY_PATH)
+                ? "border-amber-400/60 bg-amber-500/15"
+                : "border-amber-500/30 bg-amber-500/[0.07]"
+            )}
+          >
+            <Crown className="h-5 w-5 shrink-0 text-amber-300" />
+            <span className="font-display text-base text-amber-200">The Society</span>
+          </Link>
           <p className="px-2 pb-2 font-mono text-[11px] uppercase tracking-widest text-ocean-500">Explore</p>
           <div className="grid grid-cols-2 gap-2">
             {EXPLORE.map(({ href, label, Icon }) => (

@@ -3,18 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Newspaper, Tag, Plus, Crown, User as UserIcon, PenSquare, Fish, Egg, X } from "lucide-react";
+import { Newspaper, Tag, Plus, MessageCircle, User as UserIcon, PenSquare, Fish, Egg, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
-import { POST_AD_PATH, SOCIETY_PATH } from "@/lib/config";
+import { POST_AD_PATH } from "@/lib/config";
+import { useUnreadMessages } from "@/lib/hooks/useUnreadMessages";
 
 /** Pages where a bottom bar would get in the way (sign-in, a chat's reply box). */
 const HIDE_ON = [/^\/login/, /^\/register/, /^\/forgot-password/, /^\/auth\//, /^\/messages\/.+/, /^\/admin/];
 
 /**
  * The phone tab bar, like the big social apps: the Feed,
- * Classifieds, a centre Post button, the Society and you.
+ * Classifieds, a centre Post button, Messages and you. The Society
+ * lives on the Me page and at the top of the menu.
  * Hidden from tablet width up, where the top nav has room for everything.
  */
 export default function BottomNav() {
@@ -23,6 +25,7 @@ export default function BottomNav() {
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<{ name: string; avatar: string | null } | null>(null);
   const [sheet, setSheet] = useState(false);
+  const unread = useUnreadMessages();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -138,12 +141,20 @@ export default function BottomNav() {
               <Plus className="h-6 w-6" strokeWidth={2.4} />
             </button>
           </div>
-          <Link href={SOCIETY_PATH} className={tab(is("/society", "/c"))}>
-            <Crown
-              className={`h-6 w-6 ${is("/society", "/c") ? "text-amber-300" : ""}`}
-              strokeWidth={is("/society", "/c") ? 2.4 : 1.8}
-            />
-            Society
+          <Link
+            href={user ? "/messages" : "/login"}
+            className={tab(is("/messages"))}
+            aria-label={unread.count > 0 ? `Messages, ${unread.count} unread` : "Messages"}
+          >
+            <span className="relative">
+              <MessageCircle className="h-6 w-6" strokeWidth={is("/messages") ? 2.4 : 1.8} />
+              {unread.count > 0 && (
+                <span className="absolute -right-2 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-coral-500 px-1 text-[11px] font-medium leading-none text-white ring-2 ring-ocean-950">
+                  {unread.count > 9 ? "9+" : unread.count}
+                </span>
+              )}
+            </span>
+            Messages
           </Link>
           <Link href={user ? "/profile" : "/login"} className={tab(is("/profile", "/trophies", "/account"))}>
             {me ? (
