@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Bubbles from "@/components/Bubbles";
 import DailyHeartbeat from "@/components/DailyHeartbeat";
+import TrophySync from "@/components/trophies/TrophySync";
 import { Analytics } from "@vercel/analytics/next";
 
 export const viewport: Viewport = {
@@ -61,6 +62,7 @@ export default function RootLayout({
       <body>
         <Bubbles />
         <DailyHeartbeat />
+        <TrophySync />
         <Navbar />
         <main>{children}</main>
         <Footer />

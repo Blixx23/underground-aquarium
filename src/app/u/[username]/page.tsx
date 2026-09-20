@@ -17,15 +17,15 @@ import { formatPrice } from "@/lib/marketplace/listings";
 import Certifications, { type Certification } from "@/components/profile/Certifications";
 import ReportButton from "@/components/ReportButton";
 import BubbleBadge from "@/components/bubbles/BubbleBadge";
-import TrophyCase from "@/components/society/TrophyCase";
+import TrophyCabinet from "@/components/trophies/TrophyCabinet";
+import type { TrophyRow } from "@/lib/trophies";
 import SocietySeal from "@/components/society/SocietySeal";
 import FollowButton from "@/components/FollowButton";
 import Avatar from "@/components/profile/Avatar";
 import Feed from "@/components/feed/Feed";
 import { fetchFeed } from "@/lib/feed";
 import { getViewer } from "@/lib/feedViewer";
-import { BADGE_COLUMNS, type EarnedBadge, type SocietyBadge } from "@/lib/society/badges";
-import { SOCIETY_PATH, SOCIETY_SLUG } from "@/lib/config";
+import { SOCIETY_PATH } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +132,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
     { count: tankCount },
     { count: listingCount },
     viewerFollow,
+    { count: trophyCount },
   ] = await Promise.all([
     supabasePublic.rpc("society_public_card", { p_user: profile.id }),
     supabasePublic.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
@@ -151,6 +152,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           .eq("following_id", profile.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    supabasePublic.from("user_trophies").select("trophy_key", { count: "exact", head: true }).eq("user_id", profile.id),
   ]);
 
   const card = ((Array.isArray(cardData) ? cardData[0] : cardData) ?? null) as SocietyCard | null;
@@ -284,6 +286,9 @@ export default async function PublicProfilePage({ params, searchParams }: Params
             <Link href={`${base}/following`} className="text-ocean-400 hover:text-white">
               <span className="font-semibold text-white">{following ?? 0}</span> following
             </Link>
+            <Link href={`${base}?tab=awards`} className="text-ocean-400 hover:text-white">
+              <span className="font-semibold text-amber-300">{trophyCount ?? 0}</span> trophies
+            </Link>
           </div>
         </div>
 
@@ -328,7 +333,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           )}
           {tab === "tanks" && <TanksTab profileId={profile.id} name={displayName} />}
           {tab === "listings" && <ListingsTab profileId={profile.id} name={displayName} />}
-          {tab === "awards" && <AwardsTab profileId={profile.id} name={displayName} society={society} />}
+          {tab === "awards" && <AwardsTab profileId={profile.id} name={displayName} isMe={isMe} />}
         </div>
 
         <div className="mt-16 border-t border-ocean-800/40 pt-6">
@@ -550,37 +555,16 @@ async function ListingsTab({ profileId, name }: { profileId: string; name: strin
   );
 }
 
-async function AwardsTab({ profileId, name, society }: { profileId: string; name: string; society: boolean }) {
-  let catalogue: SocietyBadge[] = [];
-  let earned: EarnedBadge[] = [];
-
-  if (society) {
-    const [{ data: cat }, { data: club }] = await Promise.all([
-      supabasePublic.from("society_badges").select(BADGE_COLUMNS).order("sort_order"),
-      supabasePublic.from("clubs").select("id").eq("slug", SOCIETY_SLUG).maybeSingle(),
-    ]);
-    catalogue = (cat ?? []) as unknown as SocietyBadge[];
-    if (club) {
-      const { data: mine } = await supabasePublic
-        .from("member_badges")
-        .select(`badge_key, earned_at, detail, society_badges(${BADGE_COLUMNS})`)
-        .eq("user_id", profileId)
-        .eq("club_id", club.id);
-      earned = ((mine ?? []) as unknown as {
-        earned_at: string;
-        detail: string | null;
-        society_badges: SocietyBadge | null;
-      }[])
-        .filter((r) => r.society_badges)
-        .map((r) => ({ ...(r.society_badges as SocietyBadge), earned_at: r.earned_at, detail: r.detail }));
-    }
-  }
-
-  const { data: certData } = await supabasePublic
-    .from("course_completions")
-    .select("completed_at, courses(slug, title, badge_title, is_published)")
-    .eq("user_id", profileId)
-    .order("completed_at", { ascending: false });
+async function AwardsTab({ profileId, name, isMe }: { profileId: string; name: string; isMe: boolean }) {
+  const { supabase } = await getViewer();
+  const [{ data: trophyRows }, { data: certData }] = await Promise.all([
+    supabase.rpc("get_trophy_case", { p_user: profileId }),
+    supabasePublic
+      .from("course_completions")
+      .select("completed_at, courses(slug, title, badge_title, is_published)")
+      .eq("user_id", profileId)
+      .order("completed_at", { ascending: false }),
+  ]);
 
   type Row = {
     completed_at: string;
@@ -597,14 +581,24 @@ async function AwardsTab({ profileId, name, society }: { profileId: string; name
     })
     .filter((x): x is Certification => x !== null);
 
-  if (earned.length === 0 && certs.length === 0) {
-    return <Empty icon={Fish} text={`${name} hasn't earned any awards yet.`} />;
-  }
-
   return (
-    <div className="-mt-8">
-      {society && <TrophyCase catalogue={catalogue} earned={earned} heading="Trophy case" />}
-      <Certifications rows={certs} heading="Course certificates" />
+    <div>
+      {isMe && (
+        <p className="mb-6 text-sm text-ocean-400">
+          This is how others see your trophies.{" "}
+          <Link href="/trophies" className="text-ocean-200 hover:text-white">
+            Open your full cabinet
+          </Link>{" "}
+          to see everything you can earn and how close you are.
+        </p>
+      )}
+      <TrophyCabinet rows={(trophyRows ?? []) as TrophyRow[]} isSelf={false} earnedOnly />
+      {certs.length === 0 && !trophyRows?.length && (
+        <p className="text-sm text-ocean-400">{name} hasn&apos;t earned anything yet.</p>
+      )}
+      <div className="-mt-2">
+        <Certifications rows={certs} heading="Course certificates" />
+      </div>
     </div>
   );
 }

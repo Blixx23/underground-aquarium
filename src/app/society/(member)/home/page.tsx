@@ -1,15 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Fish, Trophy, Medal, Ticket } from "lucide-react";
+import { ArrowRight, Fish, Trophy, Ticket } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import { titleForPoints } from "@/lib/awards/titles";
 import MemberCard from "@/components/society/MemberCard";
-import TrophyCase from "@/components/society/TrophyCase";
-import {
-  BADGE_COLUMNS,
-  type EarnedBadge,
-  type SocietyBadge,
-} from "@/lib/society/badges";
+import TrophyCabinet from "@/components/trophies/TrophyCabinet";
+import type { TrophyRow } from "@/lib/trophies";
 import { SOC_EYEBROW, SOC_CARD_LINK } from "@/lib/society/theme";
 
 export const dynamic = "force-dynamic";
@@ -23,13 +19,13 @@ export default async function SocietyHome() {
     p_user_id: ctx.userId,
     p_club_id: societyId,
   });
+  await supabase.rpc("sync_my_trophies");
 
   const [
     { data: standingsData },
     { data: ladderRow },
     { data: subs },
-    { data: cat },
-    { data: mineBadges },
+    { data: trophyRows },
     { count: roster },
   ] = await Promise.all([
     supabase.rpc("club_award_standings", { p_club_id: societyId }),
@@ -39,12 +35,7 @@ export default async function SocietyHome() {
       .select("id, status, points")
       .eq("club_id", societyId)
       .eq("user_id", ctx.userId),
-    supabase.from("society_badges").select(BADGE_COLUMNS).order("sort_order"),
-    supabase
-      .from("member_badges")
-      .select(`earned_at, detail, society_badges(${BADGE_COLUMNS})`)
-      .eq("user_id", ctx.userId)
-      .eq("club_id", societyId),
+    supabase.rpc("get_trophy_case", { p_user: ctx.userId }),
     supabase
       .from("club_members")
       .select("id", { count: "exact", head: true })
@@ -71,18 +62,6 @@ export default async function SocietyHome() {
   const rows = (subs ?? []) as { status: string }[];
   const approved = rows.filter((r) => r.status === "approved").length;
   const pending = rows.filter((r) => r.status === "pending").length;
-
-  const badges = ((mineBadges ?? []) as unknown as {
-    earned_at: string;
-    detail: string | null;
-    society_badges: SocietyBadge | null;
-  }[])
-    .filter((r) => r.society_badges)
-    .map((r) => ({
-      ...(r.society_badges as SocietyBadge),
-      earned_at: r.earned_at,
-      detail: r.detail,
-    })) as EarnedBadge[];
 
   // The next rung on the ladder, so the number on screen has somewhere to go.
   const nextTier = (ladder ?? [])
@@ -184,22 +163,15 @@ export default async function SocietyHome() {
         ))}
       </div>
 
-      {badges.length === 0 && (
-        <div className="mb-6 rounded-2xl border border-dashed border-ocean-800/60 p-6 text-center">
-          <Medal className="mx-auto mb-3 h-7 w-7 text-ocean-700" />
-          <p className="text-sm text-ocean-400">
-            No badges yet. Your membership milestone appears as soon as the
-            roster syncs.
-          </p>
-        </div>
-      )}
-
-      <TrophyCase
-        catalogue={(cat ?? []) as unknown as SocietyBadge[]}
-        earned={badges}
-        showLocked
-        heading="Your trophy case"
-      />
+      <h2 className="mb-4 font-display text-xl text-white sm:text-2xl">Society trophies</h2>
+      <TrophyCabinet rows={(trophyRows ?? []) as TrophyRow[]} isSelf scope="society" />
+      <p className="mt-6 text-sm text-ocean-400">
+        There are site-wide trophies too.{" "}
+        <Link href="/trophies" className="text-amber-300 hover:text-amber-200">
+          See your full cabinet
+        </Link>
+        .
+      </p>
     </div>
   );
 }

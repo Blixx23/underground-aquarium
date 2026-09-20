@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import SuggestTerm from "@/components/glossary/SuggestTerm";
 import { Search, X, Filter, ChevronDown } from "lucide-react";
 
 type Term = {
@@ -224,6 +225,7 @@ export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
             ))}
           </div>
         )}
+        <SuggestTerm categories={categories} />
       </div>
     </main>
   );

@@ -8,6 +8,7 @@ import {
   Fish,
   Flag,
   Droplets,
+  BookOpen,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -68,6 +69,12 @@ export default async function AdminHubPage() {
     .eq("status", "pending");
   const pendingSpecies = speciesCount ?? 0;
 
+  const { count: glossaryCount } = await supabaseAdmin
+    .from("glossary_suggestions")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  const pendingGlossary = glossaryCount ?? 0;
+
   // User reports that haven't been actioned yet.
   const { count: reportCount } = await supabaseAdmin
     .from("reports")
@@ -99,6 +106,13 @@ export default async function AdminHubPage() {
       description: "Review fish and animals the community has suggested",
       Icon: Fish,
       pending: pendingSpecies,
+    },
+    {
+      href: "/admin/glossary",
+      label: "Glossary suggestions",
+      description: "Approve terms the community has suggested",
+      Icon: BookOpen,
+      pending: pendingGlossary,
     },
     {
       href: "/admin/reports",

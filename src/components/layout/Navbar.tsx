@@ -57,6 +57,7 @@ const nav: NavItem[] = [
     label: "Community",
     children: [
       { label: "Feed", href: "/feed" },
+      { label: "Trophies", href: "/trophies" },
       { label: "Community Hub", href: "/community" },
       { label: "Forums", href: "/forums" },
       { label: "Events", href: "/events" },
