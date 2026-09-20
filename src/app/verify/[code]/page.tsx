@@ -155,7 +155,11 @@ function Found({ record, checkedAt }: { record: CertRecord; checkedAt: string })
   const awarded =
     record.kind === "membership"
       ? "Membership, Underground Aquarium Society"
-      : record.title ?? record.program_name;
+      : record.kind === "species"
+        ? `Certified ${record.title ?? ""} Breeder`
+        : record.kind === "course"
+          ? `Completed the course: ${record.title ?? ""}`
+          : record.title ?? record.program_name;
 
   return (
     <>
@@ -231,7 +235,7 @@ function Found({ record, checkedAt }: { record: CertRecord; checkedAt: string })
               <Field label="Program" value={`${record.program} · ${record.program_name}`} />
               <Field label="Date of issue" value={longDate(record.issued_at)} />
               {memberNo && <Field label="Member No." value={memberNo} mono />}
-              {record.kind === "title" && record.points !== null && (
+              {(record.kind === "title" || record.kind === "species") && record.points !== null && (
                 <Field label="Points at issue" value={String(record.points)} />
               )}
               <Field label="Signed by" value="Christopher M. Lewis, Founder & Judge" wide />

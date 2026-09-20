@@ -16,20 +16,48 @@ export default async function CertificatesPage() {
   const supabase = await createClient();
   const societyId = ctx.society!.id;
 
-  const [{ data: sData }, { data: ladderRow }, { data: issuedRows }] = await Promise.all([
+  const [{ data: sData }, { data: ladderRow }, { data: issuedRows }, { data: logRows }] = await Promise.all([
     supabase.rpc("club_award_standings", { p_club_id: societyId }),
     supabase.from("clubs").select("award_titles").eq("id", societyId).maybeSingle(),
     supabase
       .from("society_certificates")
       .select("kind, title, code, status")
       .eq("user_id", ctx.userId),
+    supabase
+      .from("spawn_logs")
+      .select("id, species_id, species_name, decided_at, points_awarded")
+      .eq("user_id", ctx.userId)
+      .eq("status", "approved")
+      .order("decided_at", { ascending: true }),
   ]);
+
+  // One breeder certificate per species: the first approved log for each.
+  type LogRow = { id: string; species_id: string | null; species_name: string | null; decided_at: string | null; points_awarded: number | null };
+  const logs = (logRows ?? []) as LogRow[];
+  const speciesIds = [...new Set(logs.map((l) => l.species_id).filter(Boolean))] as string[];
+  const speciesById = new Map<string, { common_name: string | null; scientific_name: string | null }>();
+  if (speciesIds.length > 0) {
+    const { data: sp } = await supabase
+      .from("club_award_species")
+      .select("id, common_name, scientific_name")
+      .in("id", speciesIds);
+    for (const r of (sp ?? []) as { id: string; common_name: string | null; scientific_name: string | null }[]) {
+      speciesById.set(r.id, r);
+    }
+  }
+  const bred = new Map<string, { logId: string; common: string; scientific: string | null; points: number | null }>();
+  for (const l of logs) {
+    const sp = l.species_id ? speciesById.get(l.species_id) : undefined;
+    const common = sp?.common_name?.trim() || l.species_name?.trim() || "Fish";
+    if (!bred.has(common)) bred.set(common, { logId: l.id, common, scientific: sp?.scientific_name ?? null, points: l.points_awarded });
+  }
+  const speciesCerts = [...bred.values()];
 
   // Registry numbers for anything already issued, so members can hand
   // a code to whoever wants proof without downloading the PDF again.
   const issued = new Map(
     ((issuedRows as { kind: string; title: string | null; code: string; status: string }[] | null) ?? [])
-      .map((r) => [r.kind === "membership" ? "membership" : `title:${r.title}`, r])
+      .map((r) => [r.kind === "membership" ? "membership" : `${r.kind}:${r.title}`, r])
   );
   const membershipCert = issued.get("membership");
 
@@ -64,7 +92,7 @@ export default async function CertificatesPage() {
         Certificates
       </h1>
       <p className="mb-8 max-w-xl text-sm text-ocean-400">
-        Every title you earn comes with a signed certificate, dated and carrying
+        Every species you breed and every title you earn comes with a signed certificate, dated and carrying
         a verification code that resolves to a public page proving it&apos;s
         real. Built to be printed and framed.
       </p>
@@ -97,7 +125,57 @@ export default async function CertificatesPage() {
         </a>
       </div>
 
-      <h2 className="mb-4 font-display text-xl text-white">Award certificates</h2>
+      <h2 className="mb-1 font-display text-xl text-white">Breeder certificates</h2>
+      <p className="mb-4 text-sm text-ocean-400">
+        One for every species you&apos;ve had a spawn log approved for.
+      </p>
+      {speciesCerts.length === 0 ? (
+        <div className="mb-10 rounded-2xl border border-dashed border-ocean-800/60 px-6 py-10 text-center">
+          <ScrollText className="mx-auto mb-3 h-8 w-8 text-ocean-700" />
+          <p className="text-sm text-ocean-400">
+            Get a spawn log approved and you&apos;ll earn a certificate like{" "}
+            <span className="text-ocean-200">Certified Angelfish Breeder</span>.
+          </p>
+          <Link href="/society/breeder/new" className="mt-3 inline-block text-sm text-amber-300 hover:text-amber-200">
+            Open a spawn log
+          </Link>
+        </div>
+      ) : (
+        <ul className="mb-10 space-y-2">
+          {speciesCerts.map((c) => (
+            <li
+              key={c.common}
+              className="flex flex-wrap items-center gap-4 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300">
+                <ScrollText className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm text-white">Certified {c.common} Breeder</span>
+                {c.scientific && <span className="block text-xs italic text-ocean-400">{c.scientific}</span>}
+                {issued.get(`species:${c.common}`) && (
+                  <RegistryLink
+                    code={issued.get(`species:${c.common}`)!.code}
+                    revoked={issued.get(`species:${c.common}`)!.status === "revoked"}
+                  />
+                )}
+              </span>
+              <a
+                href={`/api/society/certificate?kind=species&log=${c.logId}`}
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-amber-300"
+              >
+                <Download className="h-4 w-4" />
+                PDF
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h2 className="mb-1 font-display text-xl text-white">Title certificates</h2>
+      <p className="mb-4 text-sm text-ocean-400">
+        Your rank in the Breeder Award Program, earned by total points across every species.
+      </p>
 
       {rungs.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ocean-800/60 py-14 text-center">

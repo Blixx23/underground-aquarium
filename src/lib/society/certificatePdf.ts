@@ -31,12 +31,17 @@ import {
  */
 
 export type CertificateInput = {
-  kind: "membership" | "title";
+  kind: "membership" | "title" | "species" | "course";
   recipientName: string;
   memberNumber: number | null;
   /** The title earned. Title certificates only. */
   title?: string | null;
-  /** Points held when the title was issued. Title certificates only. */
+  /**
+   * Species certificates: the scientific name. Course certificates: the
+   * badge the course awards.
+   */
+  detail?: string | null;
+  /** Points held when the title was issued, or awarded for the spawn. */
   points?: number | null;
   issuedAt: Date;
   /** Year the member joined, for the membership certificate. */
@@ -205,7 +210,7 @@ function arcText(
 }
 
 /** The Society seal, the same design as on the website, in brass. */
-function seal(page: PDFPage, cx: number, cy: number, r: number, fonts: { caps: PDFFont }) {
+function seal(page: PDFPage, cx: number, cy: number, r: number, fonts: { caps: PDFFont }, bottomText = "SOCIETY · EST. 2026") {
   const k = r / 96; // the web seal is drawn on a 96-radius circle
 
   page.drawCircle({ x: cx, y: cy, size: 96 * k, borderColor: BRASS_LIGHT, borderWidth: 0.9 });
@@ -213,16 +218,10 @@ function seal(page: PDFPage, cx: number, cy: number, r: number, fonts: { caps: P
   page.drawCircle({ x: cx, y: cy, size: 60 * k, borderColor: BRASS, borderWidth: 0.9 });
 
   arcText(page, "UNDERGROUND AQUARIUM", cx, cy, 71 * k, fonts.caps, 11 * k, BRASS, 1.4 * k, false);
-  arcText(page, "SOCIETY · EST. 2026", cx, cy, 79 * k, fonts.caps, 10.5 * k, BRASS, 1.8 * k, true);
+  arcText(page, bottomText, cx, cy, 79 * k, fonts.caps, 10.5 * k, BRASS, 1.8 * k, true);
 
   for (const side of [-1, 1]) {
-    page.drawSquare({
-      x: cx + side * 76 * k - 3 * k,
-      y: cy - 3 * k,
-      size: 6 * k,
-      color: BRASS,
-      rotate: degrees(45),
-    });
+    diamond(page, cx + side * 75 * k, cy, 4.2 * k, BRASS);
   }
 
   // Fish and waves: the web seal's paths, 200-unit viewBox centred at 100,100.
@@ -237,30 +236,48 @@ function seal(page: PDFPage, cx: number, cy: number, r: number, fonts: { caps: P
   page.drawCircle({ x: cx + 15 * k, y: cy + 11 * k, size: 2.2 * k, color: BRASS });
 }
 
+/**
+ * A diamond centred exactly on (cx, cy). Drawn as a path because pdf-lib
+ * rotates squares around their corner, which pushes each one off-centre
+ * in a different direction.
+ */
+function diamond(page: PDFPage, cx: number, cy: number, r: number, color: RGB) {
+  const Y = (v: number) => -v; // drawSvgPath's y axis points down
+  page.drawSvgPath(
+    `M ${cx} ${Y(cy + r)} L ${cx + r} ${Y(cy)} L ${cx} ${Y(cy - r)} L ${cx - r} ${Y(cy)} Z`,
+    { x: 0, y: 0, color }
+  );
+}
+
 function frame(page: PDFPage) {
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: IVORY });
   page.drawRectangle({ x: 20, y: 20, width: W - 40, height: H - 40, borderColor: BRASS, borderWidth: 2.6 });
   page.drawRectangle({ x: 27, y: 27, width: W - 54, height: H - 54, borderColor: BRASS_LIGHT, borderWidth: 0.8 });
   page.drawRectangle({ x: 33, y: 33, width: W - 66, height: H - 66, borderColor: BRASS_LIGHT, borderWidth: 0.35, borderOpacity: 0.7 });
   for (const [x, y] of [[27, 27], [W - 27, 27], [27, H - 27], [W - 27, H - 27]]) {
-    page.drawSquare({ x: x - 4.5, y: y - 4.5, size: 9, color: BRASS, rotate: degrees(45) });
+    diamond(page, x, y, 4.5, BRASS);
   }
 }
 
 function rule(page: PDFPage, y: number, half: number) {
   page.drawLine({ start: { x: W / 2 - half, y }, end: { x: W / 2 - 9, y }, thickness: 0.7, color: BRASS_LIGHT });
-  page.drawSquare({ x: W / 2 - 2.8, y: y - 2.8, size: 5.6, color: BRASS, rotate: degrees(45) });
+  diamond(page, W / 2, y, 3.8, BRASS);
   page.drawLine({ start: { x: W / 2 + 9, y }, end: { x: W / 2 + half, y }, thickness: 0.7, color: BRASS_LIGHT });
 }
 
 export async function buildCertificatePdf(input: CertificateInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
+  const isCourse = input.kind === "course";
   pdf.setTitle(
     input.kind === "membership"
       ? `Certificate of Membership, ${input.recipientName}`
-      : `${input.title}, ${input.recipientName}`
+      : input.kind === "species"
+        ? `Certified ${input.title} Breeder, ${input.recipientName}`
+        : input.kind === "course"
+          ? `${input.title} (course), ${input.recipientName}`
+          : `${input.title}, ${input.recipientName}`
   );
-  pdf.setAuthor("Underground Aquarium Society");
+  pdf.setAuthor(isCourse ? "Underground Aquarium" : "Underground Aquarium Society");
   pdf.setSubject(`Certificate ${input.code}`);
   pdf.setCreator("undergroundaquarium.com");
   pdf.registerFontkit(fontkit);
@@ -277,10 +294,17 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
   const C = W / 2;
 
   // ---- Heading ----
-  text(page, "UNDERGROUND AQUARIUM SOCIETY", C, 532, caps, 13, BRASS_DEEP, 4);
+  text(page, isCourse ? "UNDERGROUND AQUARIUM" : "UNDERGROUND AQUARIUM SOCIETY", C, 532, caps, 13, BRASS_DEEP, 4);
   rule(page, 516, 130);
 
-  const heading = input.kind === "membership" ? "CERTIFICATE OF MEMBERSHIP" : "CERTIFICATE OF ACHIEVEMENT";
+  const heading =
+    input.kind === "membership"
+      ? "CERTIFICATE OF MEMBERSHIP"
+      : input.kind === "species"
+        ? "BREEDER CERTIFICATION"
+        : input.kind === "course"
+          ? "CERTIFICATE OF COMPLETION"
+          : "CERTIFICATE OF ACHIEVEMENT";
   const hSize = fit(caps, heading, 31, W - 200, 22, 2);
   text(page, heading, C, 462, caps, hSize, INK, 2 * (hSize / 31));
 
@@ -308,6 +332,25 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
       memberNo ? `Member No. ${memberNo}` : null,
     ].filter(Boolean).join("   ·   ");
     if (detail) text(page, detail, C, 264, serif, 14, SOFT);
+  } else if (input.kind === "species") {
+    text(page, "has spawned and raised this species under Society peer review and is a", C, 330, serif, 15, SOFT);
+    const t = `Certified ${input.title ?? ""} Breeder`;
+    const tSize = fit(titleFace, t, 36, W - 220, 22);
+    text(page, t, C, 293, titleFace, tSize, BRASS_DEEP);
+    if (input.detail) text(page, input.detail, C, 268, italic, 16, SOFT);
+    const detail = [
+      "Breeder Award Program",
+      input.points ? `${input.points} points` : null,
+      memberNo ? `Member No. ${memberNo}` : null,
+    ].filter(Boolean).join("   ·   ");
+    text(page, detail, C, input.detail ? 246 : 262, serif, 13, SOFT);
+  } else if (input.kind === "course") {
+    text(page, "has successfully completed the course", C, 328, serif, 16, SOFT);
+    const title = input.title ?? "";
+    const tSize = fit(titleFace, title, 36, W - 220, 22);
+    text(page, title, C, 290, titleFace, tSize, BRASS_DEEP);
+    const detail = [input.detail, "Underground Aquarium Courses"].filter(Boolean).join("   ·   ");
+    text(page, detail, C, 262, serif, 14, SOFT);
   } else {
     text(page, "has been awarded the title of", C, 328, serif, 16, SOFT);
     const title = input.title ?? "";
@@ -327,7 +370,7 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
   const leftC = 96 + colW / 2;
   const rightC = W - 96 - colW / 2;
 
-  seal(page, C, 168, 60, { caps });
+  seal(page, C, 168, 60, { caps }, isCourse ? "COURSES · EST. 2026" : "SOCIETY · EST. 2026");
 
   const dateStr = input.issuedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   text(page, dateStr, leftC, LINE_Y + 9, italic, 19, INK);
@@ -335,7 +378,7 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
   text(page, "DATE OF ISSUE", leftC, LINE_Y - 17, caps, 9, SOFT, 1.5);
 
   const signer = input.signerName ?? "Christopher M. Lewis";
-  const role = input.signerRole ?? "Founder & Judge";
+  const role = input.signerRole ?? (isCourse ? "Founder" : "Founder & Judge");
   if (input.signaturePng) {
     const img = await pdf.embedPng(input.signaturePng);
     const s = Math.min((colW - 16) / img.width, 50 / img.height);

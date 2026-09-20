@@ -8,8 +8,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type CertRow = {
-  kind: "membership" | "title";
+  kind: "membership" | "title" | "species" | "course";
   title: string | null;
+  detail: string | null;
   recipient_name: string;
   member_number: number | null;
   points: number | null;
@@ -20,6 +21,8 @@ type CertRow = {
 /**
  * GET /api/society/certificate?kind=membership
  * GET /api/society/certificate?kind=title&title=Breeder
+ * GET /api/society/certificate?kind=species&log=<spawn log id>
+ * GET /api/society/certificate?kind=course&course=<course id>
  *
  * Issuing happens in the database, which decides whether the member has
  * earned it. This route only draws what the database hands back — it
@@ -29,11 +32,20 @@ export async function GET(request: NextRequest) {
   const kind = request.nextUrl.searchParams.get("kind");
   const title = request.nextUrl.searchParams.get("title");
 
-  if (kind !== "membership" && kind !== "title") {
+  const logId = request.nextUrl.searchParams.get("log");
+  const courseId = request.nextUrl.searchParams.get("course");
+
+  if (kind !== "membership" && kind !== "title" && kind !== "species" && kind !== "course") {
     return NextResponse.json({ error: "Unknown certificate type." }, { status: 400 });
   }
   if (kind === "title" && !title) {
     return NextResponse.json({ error: "Which title?" }, { status: 400 });
+  }
+  if (kind === "species" && !logId) {
+    return NextResponse.json({ error: "Which spawn log?" }, { status: 400 });
+  }
+  if (kind === "course" && !courseId) {
+    return NextResponse.json({ error: "Which course?" }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -44,10 +56,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const { data, error } = await supabase.rpc("issue_society_certificate", {
-    p_kind: kind,
-    p_title: kind === "title" ? title : null,
-  });
+  const { data, error } =
+    kind === "species"
+      ? await supabase.rpc("issue_species_certificate", { p_log: logId })
+      : kind === "course"
+        ? await supabase.rpc("issue_course_certificate", { p_course: courseId })
+        : await supabase.rpc("issue_society_certificate", {
+            p_kind: kind,
+            p_title: kind === "title" ? title : null,
+          });
   if (error || !data) {
     return NextResponse.json(
       { error: error?.message ?? "Couldn't issue that certificate." },
@@ -91,6 +108,7 @@ export async function GET(request: NextRequest) {
     recipientName: cert.recipient_name,
     memberNumber: cert.member_number,
     title: cert.title,
+    detail: cert.detail,
     points: cert.points,
     issuedAt: new Date(cert.issued_at),
     memberSince,
@@ -99,7 +117,13 @@ export async function GET(request: NextRequest) {
     signaturePng,
   });
 
-  const slug = (cert.kind === "membership" ? "Membership" : cert.title ?? "Title")
+  const slug = (
+    cert.kind === "membership"
+      ? "Membership"
+      : cert.kind === "species"
+        ? `Certified-${cert.title ?? "Species"}-Breeder`
+        : cert.title ?? "Certificate"
+  )
     .replace(/[^A-Za-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 

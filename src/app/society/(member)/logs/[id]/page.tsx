@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, KeySquare, Clock, Gavel, Check, X, Flag } from "lucide-react";
+import { ArrowLeft, KeySquare, Clock, Gavel, Check, X, Flag, Download } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -190,6 +190,15 @@ export default async function SpawnLogPage({
           </p>
           {log.decision_note && (
             <p className="mt-1 text-sm text-ocean-300">{log.decision_note}</p>
+          )}
+          {log.status === "approved" && (
+            <a
+              href={`/api/society/certificate?kind=species&log=${log.id}`}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-amber-300"
+            >
+              <Download className="h-4 w-4" />
+              Download your breeder certificate
+            </a>
           )}
 
           {outcome.length > 0 && (

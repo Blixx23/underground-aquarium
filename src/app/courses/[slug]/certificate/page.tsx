@@ -128,8 +128,19 @@ export default async function CertificatePage({
           </div>
         </div>
 
+        {/* The framed, verifiable version */}
+        <div className="no-print mt-8 flex justify-center">
+          <a
+            href={`/api/society/certificate?kind=course&course=${course.id}`}
+            className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-3 text-sm font-semibold text-ocean-950 transition-colors hover:bg-amber-300"
+          >
+            <Award className="h-4 w-4" />
+            Download printable certificate (PDF)
+          </a>
+        </div>
+
         {/* Actions */}
-        <div className="no-print mt-8">
+        <div className="no-print mt-4">
           <CertificateActions />
         </div>
       </div>
