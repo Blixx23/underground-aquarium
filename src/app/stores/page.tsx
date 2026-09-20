@@ -36,12 +36,13 @@ export default async function StoresPage({
     .from("fish_stores")
     .select("slug, name, city, state, description, tags, claimed_by, lat, lng")
     .eq("status", "published")
+    .order("state", { ascending: true })
     .order("city", { ascending: true })
     .order("name", { ascending: true });
 
   const stores = (data ?? []) as StoreRow[];
 
-  // Latest updates across shops
+  // Latest updates across shops, shown under the directory.
   const { data: rawPosts } = await supabasePublic
     .from("store_posts")
     .select("id,title,body,created_at,store_id")
@@ -83,63 +84,59 @@ export default async function StoresPage({
       storeName: storeById.get(p.store_id)!.name,
     }));
 
+  const stateCount = new Set(stores.map((s) => s.state).filter(Boolean)).size;
+
   return (
-    <main className="min-h-screen pt-24 pb-20 px-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="max-w-2xl mb-8">
-          <p className="text-emerald-400 text-sm font-medium uppercase tracking-wider mb-2">
-            Local Fish Stores
-          </p>
-          <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
+    <main className="min-h-screen px-6 pb-20 pt-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6 max-w-2xl">
+          <h1 className="font-display text-3xl text-white sm:text-4xl">
             Find a fish store
           </h1>
-          <p className="text-ocean-300">
-            Real aquarium shops worth visiting, wherever you are. Search by name,
-            city, or what they specialize in.
+          <p className="mt-2 text-ocean-300">
+            {stores.length > 0
+              ? `${stores.length} independent aquarium shops across ${stateCount} states. No chains.`
+              : "Real aquarium shops worth visiting, wherever you are."}
           </p>
         </div>
 
+        {stores.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center">
+            <p className="mb-1 font-medium text-white">No stores listed yet</p>
+            <p className="text-sm text-ocean-400">
+              Check back soon as we map out shops in your area.
+            </p>
+          </div>
+        ) : (
+          <StoreDirectory stores={stores} autoLocate={near === "1"} />
+        )}
+
         {latest.length > 0 && (
-          <div className="mb-10">
-            <h2 className="font-display text-xl text-emerald-400 flex items-center gap-2 mb-3">
-              <Megaphone className="w-5 h-5" /> Latest shop updates
+          <div className="mt-16 border-t border-white/10 pt-10">
+            <h2 className="mb-4 flex items-center gap-2 font-display text-xl text-emerald-400">
+              <Megaphone className="h-5 w-5" /> Latest shop updates
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {latest.map((p) => (
                 <Link
                   key={p.id}
                   href={`/stores/${p.storeSlug}`}
-                  className="block rounded-xl bg-white/5 border border-white/10 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+                  className="block rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:border-emerald-500/40 hover:bg-white/10"
                 >
-                  <p className="text-emerald-300 text-[11px] uppercase tracking-wide font-medium truncate">
+                  <p className="truncate text-[11px] font-medium uppercase tracking-wide text-emerald-300">
                     {p.storeName}
                   </p>
                   {p.title && (
-                    <p className="text-white text-sm font-medium mt-1">
-                      {p.title}
-                    </p>
+                    <p className="mt-1 text-sm font-medium text-white">{p.title}</p>
                   )}
-                  <p className="text-ocean-300 text-sm mt-1 line-clamp-2">
-                    {p.body}
-                  </p>
-                  <p className="text-ocean-500 text-xs mt-2">
+                  <p className="mt-1 line-clamp-2 text-sm text-ocean-300">{p.body}</p>
+                  <p className="mt-2 text-xs text-ocean-500">
                     {new Date(p.createdAt).toLocaleDateString()}
                   </p>
                 </Link>
               ))}
             </div>
           </div>
-        )}
-
-        {stores.length === 0 ? (
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center">
-            <p className="text-white font-medium mb-1">No stores listed yet</p>
-            <p className="text-ocean-400 text-sm">
-              Check back soon as we map out shops in your area.
-            </p>
-          </div>
-        ) : (
-          <StoreDirectory stores={stores} autoLocate={near === "1"} />
         )}
 
         <div className="mt-12">
