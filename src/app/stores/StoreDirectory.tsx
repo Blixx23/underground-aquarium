@@ -45,6 +45,21 @@ const STATE_NAMES: Record<string, string> = {
 
 const stateName = (code: string) => STATE_NAMES[code] ?? code;
 
+/**
+ * Lowercase, "&" as "and", apostrophes dropped, everything else that isn't
+ * a letter or digit turned into a space. Applied to both the search and the
+ * shop, so "aquarium depot" finds "Aquarium & Reptile Depot" and "daves
+ * corals" finds "Dave's Corals".
+ */
+function normalise(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/['\u2019]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 /** How many cards to show before asking for more. */
 const PAGE = 48;
 
@@ -126,21 +141,35 @@ export default function StoreDirectory({
     return [...set].sort();
   }, [stores]);
 
-  const q = query.trim().toLowerCase();
+  const q = normalise(query);
   const searching = q.length > 0;
+  // Every word has to turn up somewhere, in any order.
+  const words = useMemo(() => (q ? q.split(" ") : []), [q]);
+
+  // Built once per store rather than on every keystroke.
+  const haystacks = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of stores) {
+      m.set(
+        s.slug,
+        normalise(
+          [s.name, s.city ?? "", s.state ?? "", stateName(s.state ?? ""), ...(s.tags ?? [])].join(" ")
+        )
+      );
+    }
+    return m;
+  }, [stores]);
 
   const filtered = useMemo(() => {
     return stores.filter((s) => {
       if (activeType && !(s.tags ?? []).includes(activeType)) return false;
       // A chosen state doesn't cage a search: searching looks everywhere.
       if (stateCode && !searching && s.state !== stateCode) return false;
-      if (!q) return true;
-      const hay = [s.name, s.city ?? "", s.state ?? "", stateName(s.state ?? ""), ...(s.tags ?? [])]
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(q);
+      if (!words.length) return true;
+      const hay = haystacks.get(s.slug) ?? "";
+      return words.every((w) => hay.includes(w));
     });
-  }, [stores, q, searching, stateCode, activeType]);
+  }, [stores, words, haystacks, searching, stateCode, activeType]);
 
   const ranked = useMemo(() => {
     if (!coords) return null;
