@@ -31,11 +31,11 @@ export default async function FeedPage({
   ];
 
   return (
-    <main className="min-h-screen px-4 pb-24 pt-24 sm:px-6 sm:pt-28">
+    <main className="min-h-screen px-3 pb-24 pt-24 sm:px-6 sm:pt-28">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-6 flex items-end justify-between gap-4">
+        <div className={`mb-3 items-center justify-between gap-4 sm:mb-6 ${viewer ? "hidden sm:flex" : "flex"}`}>
           <div>
-            <h1 className="font-display text-3xl text-white sm:text-4xl">Home</h1>
+            <h1 className="sr-only sm:not-sr-only font-display text-4xl text-white">Home</h1>
           </div>
           {!viewer && (
             <Link
@@ -48,13 +48,13 @@ export default async function FeedPage({
         </div>
 
         {viewer && (
-          <div className="mb-5 flex gap-1 rounded-xl border border-ocean-800/60 bg-ocean-900/40 p-1">
+          <div className="mb-3 flex gap-6 border-b border-ocean-800/60 px-1 sm:mb-5">
             {tabs.map((t) => (
               <Link
                 key={t.key}
                 href={t.href}
-                className={`flex-1 rounded-lg py-2 text-center text-sm font-medium transition-colors ${
-                  scope === t.key ? "bg-ocean-700/70 text-white" : "text-ocean-400 hover:text-white"
+                className={`-mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-semibold transition-colors ${
+                  scope === t.key ? "border-ocean-300 text-white" : "border-transparent text-ocean-500 hover:text-white"
                 }`}
               >
                 {t.label}
