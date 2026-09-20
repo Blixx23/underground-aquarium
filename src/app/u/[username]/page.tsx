@@ -16,6 +16,7 @@ import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice } from "@/lib/marketplace/listings";
 import Certifications, { type Certification } from "@/components/profile/Certifications";
 import ReportButton from "@/components/ReportButton";
+import BlockButton from "@/components/BlockButton";
 import BubbleBadge from "@/components/bubbles/BubbleBadge";
 import TrophyCabinet from "@/components/trophies/TrophyCabinet";
 import type { TrophyRow } from "@/lib/trophies";
@@ -133,6 +134,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
     { count: listingCount },
     viewerFollow,
     { count: trophyCount },
+    viewerBlock,
   ] = await Promise.all([
     supabasePublic.rpc("society_public_card", { p_user: profile.id }),
     supabasePublic.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
@@ -153,6 +155,14 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           .maybeSingle()
       : Promise.resolve({ data: null }),
     supabasePublic.from("user_trophies").select("trophy_key", { count: "exact", head: true }).eq("user_id", profile.id),
+    viewer && !isMe
+      ? supabase
+          .from("user_blocks")
+          .select("blocked_id")
+          .eq("blocker_id", viewer.id)
+          .eq("blocked_id", profile.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   let card = ((Array.isArray(cardData) ? cardData[0] : cardData) ?? null) as SocietyCard | null;
@@ -345,13 +355,20 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           {tab === "awards" && <AwardsTab profileId={profile.id} name={displayName} isMe={isMe} />}
         </div>
 
-        <div className="mt-16 border-t border-ocean-800/40 pt-6">
+        <div className="mt-16 flex flex-wrap items-start gap-6 border-t border-ocean-800/40 pt-6">
           <ReportButton
             targetType="profile"
             targetId={profile.id}
             targetLabel={displayName}
             targetUrl={base}
           />
+          {viewer && !isMe && (
+            <BlockButton
+              userId={profile.id}
+              name={displayName.split(" ")[0]}
+              initialBlocked={Boolean(viewerBlock.data)}
+            />
+          )}
         </div>
       </div>
     </main>

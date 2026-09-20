@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Download, ShieldCheck, FileText } from "lucide-react";
+import { Download, ShieldCheck, FileText, Ban } from "lucide-react";
+import BlockedList from "@/components/BlockedList";
 import { createClient } from "@/lib/supabase/server";
 import DeleteAccountSection from "./DeleteAccountSection";
 
@@ -52,6 +53,20 @@ export default async function AccountPage() {
         </section>
 
         {/* Privacy */}
+        <section className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-6 mb-5">
+          <div className="flex items-start gap-4">
+            <Ban className="mt-0.5 h-5 w-5 shrink-0 text-ocean-400" />
+            <div className="min-w-0 flex-1">
+              <h2 className="font-medium text-white">Blocked accounts</h2>
+              <p className="mt-1 mb-3 text-sm text-ocean-400">
+                People you&apos;ve blocked can&apos;t message you, comment on your posts or follow
+                you, and you won&apos;t see each other in the feed. They aren&apos;t told.
+              </p>
+              <BlockedList />
+            </div>
+          </div>
+        </section>
+
         <section className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-6">
           <div className="flex items-start gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ocean-800/60 text-ocean-300">

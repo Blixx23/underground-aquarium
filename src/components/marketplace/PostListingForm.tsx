@@ -862,6 +862,14 @@ export default function PostListingForm({
         </div>
       </fieldset>
 
+      <p className="text-xs text-ocean-500">
+        By posting you confirm this listing follows our{" "}
+        <Link href="/rules" target="_blank" className="text-ocean-300 underline">
+          listing rules
+        </Link>
+        : nothing endangered, protected or illegal in your state.
+      </p>
+
       <div className="flex flex-wrap items-center gap-4">
         <button
           type="submit"

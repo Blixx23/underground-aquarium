@@ -162,7 +162,7 @@ export default async function ThreadPage({ params }: Params) {
     const name = n?.username ? (
       <Link
         href={`/u/${n.username}`}
-        className={isSoc ? "text-amber-100 hover:underline" : "text-ocean-200 hover:underline"}
+        className={"text-ocean-200 hover:underline"}
       >
         {label}
       </Link>

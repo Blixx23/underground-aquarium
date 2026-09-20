@@ -91,11 +91,7 @@ export default function Composer({
 
   return (
     <div
-      className={`rounded-2xl border p-3 sm:p-4 ${
-        society
-          ? "border-amber-500/25 bg-gradient-to-b from-amber-500/[0.05] to-ocean-900/40"
-          : "border-ocean-800/60 bg-ocean-900/40"
-      }`}
+      className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-3 sm:p-4"
     >
       <div className="flex gap-3">
         <Avatar name={name} src={avatar} society={society} size={40} />
@@ -160,11 +156,7 @@ export default function Composer({
               type="button"
               onClick={post}
               disabled={!canPost}
-              className={`inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
-                society
-                  ? "bg-amber-400 text-ocean-950 hover:bg-amber-300"
-                  : "bg-ocean-500 text-white hover:bg-ocean-400"
-              }`}
+              className={`inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-40 bg-ocean-500 text-white hover:bg-ocean-400`}
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Post

@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
 import SocietySeal from "@/components/society/SocietySeal";
 import ReportButton from "@/components/ReportButton";
+import BlockButton from "@/components/BlockButton";
 import Comments from "@/components/feed/Comments";
 import { formatPrice } from "@/lib/marketplace/listings";
 import { categoryLabel } from "@/lib/marketplace/categories";
@@ -29,8 +30,8 @@ const ACTIVITY: Record<
 > = {
   tank: { icon: Fish, verb: "shared a tank", tone: "text-emerald-300" },
   listing: { icon: Tag, verb: "listed", tone: "text-sky-300" },
-  spawn: { icon: Egg, verb: "had a spawn approved", tone: "text-amber-300" },
-  badge: { icon: Award, verb: "earned a trophy", tone: "text-amber-300" },
+  spawn: { icon: Egg, verb: "had a spawn approved", tone: "text-emerald-300" },
+  badge: { icon: Award, verb: "earned a trophy", tone: "text-sky-300" },
   thread: { icon: MessagesSquare, verb: "started a discussion", tone: "text-sky-300" },
 };
 
@@ -114,7 +115,7 @@ export default function FeedCard({
           <Link
             href={profileHref}
             className={`truncate text-[15px] font-semibold hover:underline ${
-              item.author_society ? "text-amber-100" : "text-white"
+              "text-white"
             }`}
           >
             {item.author_name}
@@ -171,6 +172,15 @@ export default function FeedCard({
                   <Trash2 className="h-4 w-4" /> Delete post
                 </button>
               )}
+              {!isMine && viewerId && (
+                <div className="px-3 py-2">
+                  <BlockButton
+                    userId={item.user_id}
+                    name={item.author_name.split(" ")[0]}
+                    onBlocked={() => onRemoved?.(item.id)}
+                  />
+                </div>
+              )}
               {!isMine && (
                 <div className="px-3 py-2">
                   <ReportButton
@@ -194,13 +204,7 @@ export default function FeedCard({
   );
 
   return (
-    <article
-      className={`rounded-2xl border ${
-        item.author_society
-          ? "border-amber-500/20 bg-gradient-to-b from-amber-500/[0.04] to-ocean-900/40"
-          : "border-ocean-800/60 bg-ocean-900/40"
-      }`}
-    >
+    <article className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40">
       <div className="p-4 sm:p-5">
         {header}
 

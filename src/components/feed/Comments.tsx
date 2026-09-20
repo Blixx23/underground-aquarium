@@ -78,7 +78,7 @@ export default function Comments({
                   <div className="flex items-baseline gap-2">
                     <Link
                       href={href}
-                      className={`truncate text-sm font-medium hover:underline ${c.author_society ? "text-amber-200" : "text-white"}`}
+                      className={`truncate text-sm font-medium hover:underline text-white`}
                     >
                       {c.author_name}
                     </Link>

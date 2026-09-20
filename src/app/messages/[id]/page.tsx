@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BlockButton from "@/components/BlockButton";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -182,6 +183,10 @@ export default async function ThreadPage({
           threadId={thread.id}
           placeholder={`Reply to ${otherName}…`}
         />
+
+        <div className="mt-4">
+          <BlockButton userId={otherId} name={otherName} />
+        </div>
 
         <p className="text-xs text-ocean-600 mt-6 leading-relaxed">
           Keep the conversation on the site until you agree to meet. Underground

@@ -194,7 +194,11 @@ export default function TermsPage() {
               permits, and nothing here should be read as telling you a
               particular sale is legal. If you are not certain about a species,
               check with your state wildlife or agriculture agency before you
-              post it.
+              post it. Our{" "}
+              <Link href="/rules" className="text-white underline">
+                listing rules
+              </Link>{" "}
+              list what is never allowed.
             </p>
             <p>
               Never release aquarium livestock or plants into a waterway, storm

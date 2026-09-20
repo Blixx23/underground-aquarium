@@ -170,7 +170,7 @@ export default async function TankPage({ params }: Params) {
             <span className="text-ocean-400">
               {isOwner ? "Your tank" : "Kept by"}{" "}
               {!isOwner && (
-                <span className={ownerIsSociety ? "text-amber-100" : "text-white"}>{owner.name}</span>
+                <span className={"text-white"}>{owner.name}</span>
               )}
             </span>
             {ownerIsSociety && <SocietySeal size={16} className="h-4 w-4" />}

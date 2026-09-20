@@ -248,7 +248,7 @@ export default async function ListingPage({
                   <Link
                     href={`/u/${seller.username}`}
                     className={`transition-colors ${
-                      sellerIsSociety ? "text-amber-100 hover:text-amber-50" : "text-white hover:text-ocean-200"
+                      "text-white hover:text-ocean-200"
                     }`}
                   >
                     {sellerName}
@@ -364,7 +364,11 @@ export default async function ListingPage({
             <p className="text-xs text-ocean-600 leading-relaxed">
               Underground Aquarium doesn&apos;t handle payment or shipping for
               classified ads. Meet somewhere public, inspect livestock before you
-              pay, and never wire money to someone you haven&apos;t met.
+              pay, and never wire money to someone you haven&apos;t met. See the{" "}
+              <Link href="/rules" className="underline hover:text-ocean-300">
+                listing rules
+              </Link>
+              .
             </p>
 
             {!isOwner && (
