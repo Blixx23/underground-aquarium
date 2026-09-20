@@ -110,6 +110,7 @@ export default async function ProfilePage({
           ? [{ href: `/u/${profile.username}`, label: "Public profile", Icon: ExternalLink }]
           : []),
         { href: "/my/listings", label: "My listings", Icon: Store },
+        { href: "/my/shops", label: "My shops", Icon: Store },
         { href: "#tanks", label: "My tanks", Icon: Fish },
         { href: "/trophies", label: "Trophies", Icon: Trophy },
         ...(inSociety ? [{ href: "/society/certificates", label: "Certificates", Icon: ScrollText }] : []),

@@ -16,6 +16,11 @@ import EditStore from "../EditStore";
 import StoreReviews from "../StoreReviews";
 import StorePosts from "../StorePosts";
 import StoreFavoriteButton from "@/components/StoreFavoriteButton";
+import StoreTracker from "@/components/stores/StoreTracker";
+import TrackedLink from "@/components/stores/TrackedLink";
+import StoreStock, { type StockItem } from "@/components/stores/StoreStock";
+import StorePhotos, { type StorePhoto } from "@/components/stores/StorePhotos";
+import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpecialHours";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +57,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const store = await getStore(slug);
   if (!store) return { title: "Store not found" };
+
   const place = [store.city, store.state].filter(Boolean).join(", ");
   return {
     title: place ? `${store.name} — ${place}` : store.name,
@@ -180,6 +186,30 @@ export default async function StoreDetailPage({ params }: Params) {
     createdAt: p.created_at,
   }));
 
+  // The shop's own extras: what's in today, photos, and any odd hours coming up.
+  const [{ data: stockRows }, { data: photoRows }, { data: specialRows }] = await Promise.all([
+    supabasePublic
+      .from("store_stock")
+      .select("id, name, note, created_at")
+      .eq("store_id", store.id)
+      .order("created_at", { ascending: false }),
+    supabasePublic
+      .from("store_photos")
+      .select("id, url, caption")
+      .eq("store_id", store.id)
+      .order("sort")
+      .order("created_at"),
+    supabasePublic
+      .from("store_special_hours")
+      .select("id, day, closed, note")
+      .eq("store_id", store.id)
+      .gte("day", new Date().toISOString().slice(0, 10))
+      .order("day"),
+  ]);
+  const stock = (stockRows ?? []) as StockItem[];
+  const photos = (photoRows ?? []) as StorePhoto[];
+  const specialDays = (specialRows ?? []) as SpecialDay[];
+
   const place = [store.city, store.state].filter(Boolean).join(", ");
   const fullAddress = [store.address, place].filter(Boolean).join(", ");
   const directionsQuery = encodeURIComponent(
@@ -203,6 +233,7 @@ export default async function StoreDetailPage({ params }: Params) {
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
       <div className="max-w-2xl mx-auto">
+        <StoreTracker storeId={store.id} />
         <div className="mb-6">
           <Link
             href="/stores"
@@ -269,17 +300,21 @@ export default async function StoreDetailPage({ params }: Params) {
             </div>
           )}
           {phoneHref && (
-            <Link
+            <TrackedLink
               href={phoneHref}
+              storeId={store.id}
+              kind="phone"
               className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-emerald-500/40 transition-colors"
             >
               <Phone className="w-4 h-4 text-ocean-400 shrink-0" />
               <span className="text-ocean-200 text-sm">{store.phone}</span>
-            </Link>
+            </TrackedLink>
           )}
           {websiteHref && (
-            <Link
+            <TrackedLink
               href={websiteHref}
+              storeId={store.id}
+              kind="website"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-emerald-500/40 transition-colors"
@@ -288,25 +323,56 @@ export default async function StoreDetailPage({ params }: Params) {
               <span className="text-ocean-200 text-sm truncate">
                 {websiteLabel}
               </span>
-            </Link>
+            </TrackedLink>
           )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Link
+          <TrackedLink
             href={directionsUrl}
+            storeId={store.id}
+            kind="directions"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-5 py-3 text-sm font-medium hover:bg-emerald-500/25 transition-colors"
           >
             <Navigation className="w-4 h-4" /> Get directions
-          </Link>
+          </TrackedLink>
           <StoreFavoriteButton
             storeId={store.id}
             initialFavorited={isFavorited}
             initialCount={favoriteCount ?? 0}
           />
         </div>
+
+        <StoreSpecialHours storeId={store.id} initial={specialDays} isOwner={isOwner} />
+
+        <StoreStock storeId={store.id} initial={stock} isOwner={isOwner} />
+
+        <StorePhotos storeId={store.id} userId={user?.id ?? null} initial={photos} isOwner={isOwner} />
+
+        {isOwner && (
+          <div className="mt-10 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-5">
+            <p className="font-medium text-white">You manage this shop</p>
+            <p className="mt-1 text-sm text-ocean-300">
+              See how many people found you, and print a window sign with your QR code.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                href="/my/shops"
+                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
+              >
+                Your shop dashboard
+              </Link>
+              <Link
+                href={`/api/stores/${store.slug}/poster`}
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm text-ocean-200 transition-colors hover:bg-white/5"
+              >
+                Print a window sign
+              </Link>
+            </div>
+          </div>
+        )}
 
         <StorePosts
           storeId={store.id}
@@ -315,6 +381,7 @@ export default async function StoreDetailPage({ params }: Params) {
           currentUserId={user?.id ?? null}
         />
 
+        <div id="reviews" />
         <StoreReviews
           storeId={store.id}
           initialReviews={initialReviews}
