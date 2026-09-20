@@ -13,6 +13,13 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import Stars from "@/components/stores/Stars";
+import {
+  queryWords,
+  tokenise,
+  score,
+  highlight,
+  type Token,
+} from "@/lib/stores/search";
 
 type StoreRow = {
   id: string;
@@ -44,21 +51,6 @@ const STATE_NAMES: Record<string, string> = {
 };
 
 const stateName = (code: string) => STATE_NAMES[code] ?? code;
-
-/**
- * Lowercase, "&" as "and", apostrophes dropped, everything else that isn't
- * a letter or digit turned into a space. Applied to both the search and the
- * shop, so "aquarium depot" finds "Aquarium & Reptile Depot" and "daves
- * corals" finds "Dave's Corals".
- */
-function normalise(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/['\u2019]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
 
 /** How many cards to show before asking for more. */
 const PAGE = 48;
@@ -141,35 +133,48 @@ export default function StoreDirectory({
     return [...set].sort();
   }, [stores]);
 
-  const q = normalise(query);
-  const searching = q.length > 0;
-  // Every word has to turn up somewhere, in any order.
-  const words = useMemo(() => (q ? q.split(" ") : []), [q]);
+  const words = useMemo(() => queryWords(query), [query]);
+  const searching = words.length > 0;
 
-  // Built once per store rather than on every keystroke.
-  const haystacks = useMemo(() => {
-    const m = new Map<string, string>();
+  // Each shop broken into searchable words once, not on every keystroke.
+  const tokens = useMemo(() => {
+    const m = new Map<string, Token[]>();
     for (const s of stores) {
-      m.set(
-        s.slug,
-        normalise(
-          [s.name, s.city ?? "", s.state ?? "", stateName(s.state ?? ""), ...(s.tags ?? [])].join(" ")
-        )
-      );
+      m.set(s.slug, [
+        ...tokenise(s.name, "name"),
+        ...tokenise(
+          [s.city ?? "", s.state ?? "", stateName(s.state ?? ""), ...(s.tags ?? [])].join(" "),
+          "place"
+        ),
+      ]);
     }
     return m;
   }, [stores]);
 
-  const filtered = useMemo(() => {
-    return stores.filter((s) => {
+  /**
+   * Exact matches first. Only when there are none do we forgive typos, so a
+   * search spelled right is never padded with near misses.
+   */
+  const { filtered, closeMatches } = useMemo(() => {
+    const pool = stores.filter((s) => {
       if (activeType && !(s.tags ?? []).includes(activeType)) return false;
       // A chosen state doesn't cage a search: searching looks everywhere.
       if (stateCode && !searching && s.state !== stateCode) return false;
-      if (!words.length) return true;
-      const hay = haystacks.get(s.slug) ?? "";
-      return words.every((w) => hay.includes(w));
+      return true;
     });
-  }, [stores, words, haystacks, searching, stateCode, activeType]);
+    if (!searching) return { filtered: pool, closeMatches: false };
+
+    const run = (allowClose: boolean) =>
+      pool
+        .map((s) => ({ s, sc: score(words, tokens.get(s.slug) ?? [], allowClose) }))
+        .filter((x): x is { s: StoreRow; sc: number } => x.sc != null)
+        .sort((a, b) => a.sc - b.sc || a.s.name.localeCompare(b.s.name))
+        .map((x) => x.s);
+
+    const exact = run(false);
+    if (exact.length) return { filtered: exact, closeMatches: false };
+    return { filtered: run(true), closeMatches: true };
+  }, [stores, words, tokens, searching, stateCode, activeType]);
 
   const ranked = useMemo(() => {
     if (!coords) return null;
@@ -214,6 +219,20 @@ export default function StoreDirectory({
     setCoords(null);
   }
 
+  /** Shows which letters the search matched, so a result never looks random. */
+  function lit(text: string) {
+    if (!searching) return text;
+    return highlight(text, words, closeMatches).map((seg, i) =>
+      seg.hit ? (
+        <mark key={i} className="rounded-sm bg-emerald-400/20 px-px text-emerald-200">
+          {seg.text}
+        </mark>
+      ) : (
+        <span key={i}>{seg.text}</span>
+      )
+    );
+  }
+
   function card(s: StoreRow, miles: number | null, showState: boolean) {
     const place = [s.city, showState ? s.state : null].filter(Boolean).join(", ");
     return (
@@ -223,7 +242,7 @@ export default function StoreDirectory({
         className="flex flex-col rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:border-emerald-500/40 hover:bg-white/10"
       >
         <div className="flex items-start gap-2">
-          <h3 className="font-medium leading-snug text-white">{s.name}</h3>
+          <h3 className="font-medium leading-snug text-white">{lit(s.name)}</h3>
           {s.claimed_by && (
             <BadgeCheck
               className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400"
@@ -241,7 +260,7 @@ export default function StoreDirectory({
           {place && (
             <span className="flex items-center gap-1 text-ocean-400">
               <MapPin className="h-3.5 w-3.5" />
-              {place}
+              {lit(place)}
             </span>
           )}
           {miles != null && (
@@ -275,7 +294,11 @@ export default function StoreDirectory({
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ocean-400" />
             <input
-              type="search"
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
+              autoComplete="off"
+              spellCheck={false}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by shop, city or state…"
@@ -341,10 +364,14 @@ export default function StoreDirectory({
               </button>
             )}
             <p className="text-sm text-ocean-400">
+              {searching && closeMatches && filtered.length > 0 && (
+                <span className="text-amber-300">No exact match. </span>
+              )}
               <span className="font-semibold text-white">{filtered.length}</span>{" "}
               {filtered.length === 1 ? "shop" : "shops"}
               {stateCode && !searching && !coords ? ` in ${stateName(stateCode)}` : ""}
-              {searching ? " match your search" : ""}
+              {searching && !closeMatches ? " match your search" : ""}
+              {searching && closeMatches ? " with a close spelling" : ""}
               {coords ? ", nearest first" : ""}
             </p>
           </div>
