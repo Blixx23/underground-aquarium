@@ -89,81 +89,88 @@ export default function Composer({
     }
   }
 
+  const hint = busy
+    ? "Posting…"
+    : body.length > MAX_CHARS
+      ? `${body.length - MAX_CHARS} characters over`
+      : !canPost
+        ? "Write something or add a photo to post"
+        : `Posting to everyone as ${name}`;
+
   return (
-    <div
-      className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-3 sm:p-4"
+    <section
+      aria-label="Create a post"
+      className="rounded-2xl border border-ocean-600/40 bg-gradient-to-b from-ocean-800/50 to-ocean-900/60 p-4 shadow-lg shadow-black/30 sm:p-5"
     >
-      <div className="flex gap-3">
-        <Avatar name={name} src={avatar} society={society} size={40} />
-        <div className="min-w-0 flex-1">
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={body ? 3 : 1}
-            autoFocus={autoFocus}
-            placeholder={`What's happening in your tanks, ${name.split(" ")[0]}?`}
-            style={{ boxShadow: "none" }}
-            className="w-full resize-none border-0 bg-transparent px-0 py-2 text-base leading-snug text-white placeholder-ocean-600 outline-none focus:ring-0 sm:text-[15px]"
-          />
-
-          {drafts.length > 0 && (
-            <div className="mb-3 grid grid-cols-4 gap-2">
-              {drafts.map((d, i) => (
-                <div key={d.preview} className="relative aspect-square overflow-hidden rounded-lg border border-ocean-800/60">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={d.preview} alt="" className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeDraft(i)}
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white hover:bg-black"
-                    aria-label="Remove photo"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {error && <p className="mb-2 text-sm text-coral-300">{error}</p>}
-
-          <div className="mt-1 flex items-center justify-between gap-3 border-t border-ocean-800/50 pt-2">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={busy || drafts.length >= MAX_PHOTOS}
-                className="-ml-2 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-ocean-300 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-40"
-              >
-                <ImagePlus className="h-4 w-4" />
-                Photo
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => addFiles(e.target.files)}
-              />
-              {body.length > MAX_CHARS - 200 && (
-                <span className={`text-xs ${body.length > MAX_CHARS ? "text-coral-300" : "text-ocean-500"}`}>
-                  {MAX_CHARS - body.length}
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={post}
-              disabled={!canPost}
-              className={`inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-40 bg-ocean-500 text-white hover:bg-ocean-400`}
-            >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Post
-            </button>
-          </div>
+      <div className="mb-3 flex items-center gap-3">
+        <Avatar name={name} src={avatar} society={society} size={36} />
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold text-white">Create a post</p>
+          <p className="text-xs text-ocean-400">Share a photo, a question or what&apos;s new in your tanks</p>
         </div>
       </div>
-    </div>
+
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={3}
+        autoFocus={autoFocus}
+        placeholder={`What's happening in your tanks, ${name.split(" ")[0]}?`}
+        className="block w-full resize-none rounded-xl border border-ocean-700/70 bg-ocean-950/70 px-3.5 py-3 text-base leading-relaxed text-white placeholder-ocean-500 outline-none transition-colors focus:border-ocean-400 sm:text-[15px]"
+      />
+
+      {drafts.length > 0 && (
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          {drafts.map((d, i) => (
+            <div key={d.preview} className="relative aspect-square overflow-hidden rounded-lg border border-ocean-700/60">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={d.preview} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => removeDraft(i)}
+                className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white hover:bg-black"
+                aria-label="Remove photo"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="mt-2 text-sm text-coral-300">{error}</p>}
+
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={busy || drafts.length >= MAX_PHOTOS}
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-ocean-600/60 px-3.5 text-sm font-medium text-ocean-100 transition-colors hover:bg-white/5 disabled:opacity-40"
+        >
+          <ImagePlus className="h-4 w-4" />
+          {drafts.length > 0 ? `Photos ${drafts.length}/${MAX_PHOTOS}` : "Add photos"}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => addFiles(e.target.files)}
+        />
+        <span className={`hidden min-w-0 flex-1 truncate text-xs sm:block ${body.length > MAX_CHARS ? "text-coral-300" : "text-ocean-500"}`}>
+          {hint}
+        </span>
+        <button
+          type="button"
+          onClick={post}
+          disabled={!canPost}
+          className="ml-auto inline-flex h-10 items-center gap-2 rounded-xl bg-ocean-500 px-6 text-sm font-semibold text-white transition-colors hover:bg-ocean-400 disabled:cursor-not-allowed disabled:bg-ocean-800 disabled:text-ocean-500"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          Post
+        </button>
+      </div>
+    </section>
   );
 }

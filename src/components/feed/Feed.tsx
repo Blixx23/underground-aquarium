@@ -27,6 +27,7 @@ export default function Feed({
   showComposer = false,
   composeFocus = false,
   emptyText = "Nothing here yet.",
+  between,
 }: {
   scope: FeedScope;
   userId?: string | null;
@@ -35,6 +36,8 @@ export default function Feed({
   showComposer?: boolean;
   composeFocus?: boolean;
   emptyText?: string;
+  /** Shown between the post box and the posts (the feed's heading and tabs). */
+  between?: React.ReactNode;
 }) {
   const [supabase] = useState(() => createClient());
   const [items, setItems] = useState(initialItems);
@@ -91,6 +94,7 @@ export default function Feed({
           autoFocus={composeFocus}
         />
       )}
+      {between}
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ocean-800/60 px-6 py-14 text-center">

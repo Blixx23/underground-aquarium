@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Tag, Plus, Crown, User as UserIcon, PenSquare, Fish, Egg, X } from "lucide-react";
+import { Newspaper, Tag, Plus, Crown, User as UserIcon, PenSquare, Fish, Egg, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
@@ -13,7 +13,7 @@ import { POST_AD_PATH, SOCIETY_PATH } from "@/lib/config";
 const HIDE_ON = [/^\/login/, /^\/register/, /^\/forgot-password/, /^\/auth\//, /^\/messages\/.+/, /^\/admin/];
 
 /**
- * The phone tab bar, like the big social apps: Home (the feed),
+ * The phone tab bar, like the big social apps: the Feed,
  * Classifieds, a centre Post button, the Society and you.
  * Hidden from tablet width up, where the top nav has room for everything.
  */
@@ -121,8 +121,8 @@ export default function BottomNav() {
       >
         <div className="mx-auto flex max-w-lg items-stretch">
           <Link href="/feed" className={tab(is("/feed", "/"))}>
-            <Home className="h-6 w-6" strokeWidth={is("/feed", "/") ? 2.4 : 1.8} />
-            Home
+            <Newspaper className="h-6 w-6" strokeWidth={is("/feed", "/") ? 2.4 : 1.8} />
+            Feed
           </Link>
           <Link href="/marketplace" className={tab(is("/marketplace", "/listings", "/listing"))}>
             <Tag className="h-6 w-6" strokeWidth={is("/marketplace", "/listings", "/listing") ? 2.4 : 1.8} />
