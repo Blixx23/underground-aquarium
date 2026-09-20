@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
   Trophy,
@@ -62,7 +63,12 @@ const PERKS = [
   },
 ];
 
-export default async function SocietyPage() {
+export default async function SocietyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view } = await searchParams;
   const supabase = await createClient();
 
   const { data: society } = await supabase
@@ -97,6 +103,11 @@ export default async function SocietyPage() {
       .maybeSingle();
     isMember = Boolean(me) && me?.status !== "pending";
   }
+
+  // Members don't need the sales pitch: every Society link (nav, footer,
+  // profile strip) takes them straight into the member area. ?view=about
+  // still shows this page if a member wants it.
+  if (isMember && view !== "about") redirect(SOCIETY_HOME_PATH);
 
   const dues = society?.dues_amount_cents ?? 0;
   const familyDues = society?.family_dues_amount_cents ?? null;
