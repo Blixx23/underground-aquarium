@@ -18,7 +18,6 @@ type StoreRow = {
   name: string;
   city: string | null;
   state: string | null;
-  description: string | null;
   tags: string[] | null;
   claimed_by: string | null;
   lat: number | null;

@@ -19,12 +19,38 @@ type StoreRow = {
   name: string;
   city: string | null;
   state: string | null;
-  description: string | null;
   tags: string[] | null;
   claimed_by: string | null;
   lat: number | null;
   lng: number | null;
 };
+
+const PAGE_SIZE = 1000;
+
+/**
+ * Supabase caps a single select at 1000 rows, so a directory bigger than
+ * that quietly loses its tail. Page through until the rows run out.
+ * Only the fields the cards actually draw are fetched, to keep what we
+ * ship to the browser small.
+ */
+async function getAllStores(): Promise<StoreRow[]> {
+  const all: StoreRow[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabasePublic
+      .from("fish_stores")
+      .select("slug, name, city, state, tags, claimed_by, lat, lng")
+      .eq("status", "published")
+      .order("state", { ascending: true })
+      .order("city", { ascending: true })
+      .order("name", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) break;
+    const batch = (data ?? []) as StoreRow[];
+    all.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+  }
+  return all;
+}
 
 export default async function StoresPage({
   searchParams,
@@ -32,15 +58,7 @@ export default async function StoresPage({
   searchParams: Promise<{ near?: string }>;
 }) {
   const { near } = await searchParams;
-  const { data } = await supabasePublic
-    .from("fish_stores")
-    .select("slug, name, city, state, description, tags, claimed_by, lat, lng")
-    .eq("status", "published")
-    .order("state", { ascending: true })
-    .order("city", { ascending: true })
-    .order("name", { ascending: true });
-
-  const stores = (data ?? []) as StoreRow[];
+  const stores = await getAllStores();
 
   // Latest updates across shops, shown under the directory.
   const { data: rawPosts } = await supabasePublic

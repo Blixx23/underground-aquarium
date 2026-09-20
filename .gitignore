@@ -15,3 +15,9 @@
 *.pem
 /coverage
 .vercel
+
+# Overture import tooling
+.venv/
+overture-stores.json
+__pycache__/
+osm-superseded.json
