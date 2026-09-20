@@ -155,7 +155,16 @@ export default async function PublicProfilePage({ params, searchParams }: Params
     supabasePublic.from("user_trophies").select("trophy_key", { count: "exact", head: true }).eq("user_id", profile.id),
   ]);
 
-  const card = ((Array.isArray(cardData) ? cardData[0] : cardData) ?? null) as SocietyCard | null;
+  let card = ((Array.isArray(cardData) ? cardData[0] : cardData) ?? null) as SocietyCard | null;
+  // society_public_card arrives with the feed (step 44). Until it's there,
+  // fall back to the trophy case, which also knows who's a member.
+  if (!card) {
+    const { data: tc } = await supabasePublic.rpc("get_trophy_case", { p_user: profile.id });
+    const first = (tc as { is_member?: boolean }[] | null)?.[0];
+    if (first?.is_member) {
+      card = { is_member: true, member_number: null, joined_at: null, points: 0, title: null };
+    }
+  }
   const society = Boolean(card?.is_member);
   const memberNo =
     card?.member_number !== null && card?.member_number !== undefined
