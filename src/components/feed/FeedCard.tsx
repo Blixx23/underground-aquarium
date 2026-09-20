@@ -12,6 +12,7 @@ import {
   MoreHorizontal,
   Trash2,
   Link2,
+  MessagesSquare,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
@@ -29,7 +30,8 @@ const ACTIVITY: Record<
   tank: { icon: Fish, verb: "shared a tank", tone: "text-emerald-300" },
   listing: { icon: Tag, verb: "listed", tone: "text-sky-300" },
   spawn: { icon: Egg, verb: "had a spawn approved", tone: "text-amber-300" },
-  badge: { icon: Award, verb: "earned a badge", tone: "text-amber-300" },
+  badge: { icon: Award, verb: "earned a trophy", tone: "text-amber-300" },
+  thread: { icon: MessagesSquare, verb: "started a discussion", tone: "text-sky-300" },
 };
 
 /**
@@ -308,7 +310,11 @@ function ActivityBody({ item }: { item: FeedItem }) {
       .filter(Boolean)
       .join(" · ");
   } else if (item.kind === "badge") {
-    sub = (m.detail as string) || "Underground Aquarium Society";
+    sub = (m.detail as string) || (m.description as string) || "";
+  } else if (item.kind === "thread") {
+    sub = [m.category, m.replies ? `${m.replies} repl${Number(m.replies) === 1 ? "y" : "ies"}` : null]
+      .filter(Boolean)
+      .join(" · ");
   }
 
   const inner = (
@@ -323,6 +329,9 @@ function ActivityBody({ item }: { item: FeedItem }) {
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[15px] font-medium text-white">{item.title}</span>
+        {item.kind === "thread" && item.body && (
+          <span className="mt-0.5 line-clamp-2 block text-sm text-ocean-300">{item.body}</span>
+        )}
         {sub && <span className="block truncate text-sm text-ocean-400">{sub}</span>}
       </span>
     </div>

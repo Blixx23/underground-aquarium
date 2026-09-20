@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Courses — Underground Aquarium",
   description:
-    "Free, guided aquarium courses from the Underground Aquarium Society. Learn the hobby the right way, pass the quizzes, and earn a certificate and a profile badge.",
+    "Free, guided aquarium courses from Underground Aquarium. Learn the hobby the right way, pass the quizzes, and earn a certificate and a profile badge.",
 };
 
 type CourseRow = {
@@ -67,7 +67,7 @@ export default async function CoursesPage() {
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-4xl mx-auto">
         <p className="text-xs font-mono uppercase tracking-[0.3em] text-ocean-400 mb-3">
-          Underground Aquarium Society
+          Underground Aquarium
         </p>
         <h1 className="font-display text-4xl sm:text-5xl text-white glow-text mb-4">
           Courses

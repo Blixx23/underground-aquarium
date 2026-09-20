@@ -13,7 +13,6 @@ export default function JoinClubForm({
   clubId,
   defaultName = "",
   dues = 0,
-  familyDues = null,
   lifetimeDues = null,
   society = false,
 }: {
@@ -21,7 +20,6 @@ export default function JoinClubForm({
   clubName?: string;
   defaultName?: string;
   dues?: number;
-  familyDues?: number | null;
   lifetimeDues?: number | null;
   /** Brass styling and Society wording, rather than the generic club form. */
   society?: boolean;
@@ -31,9 +29,6 @@ export default function JoinClubForm({
       value: "individual",
       label: dues > 0 ? `Individual — ${money(dues)}/yr` : "Individual",
     },
-    ...(familyDues && familyDues > 0
-      ? [{ value: "family", label: `Family — ${money(familyDues)}/yr` }]
-      : []),
     ...(lifetimeDues && lifetimeDues > 0
       ? [{ value: "lifetime", label: `Lifetime — ${money(lifetimeDues)} once` }]
       : []),

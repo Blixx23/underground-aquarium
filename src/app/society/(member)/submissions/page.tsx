@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { FileStack, Plus, Clock, Check, X } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
-import { SOCIETY_SLUG } from "@/lib/config";
 import { SOC_EYEBROW, SOC_BTN_PRIMARY } from "@/lib/society/theme";
+
+export const metadata: Metadata = { title: "My submissions" };
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +37,9 @@ export default async function SubmissionsPage() {
     .order("created_at", { ascending: false });
 
   const rows = ((data ?? []) as unknown as Submission[]) ?? [];
-  const submitHref = `/c/${SOCIETY_SLUG}/awards/submit`;
+  const submitHref = "/society/breeder/new";
+  const programLabel = (code: string) =>
+    ({ bap: "Breeder Award Program", hap: "Horticultural" } as Record<string, string>)[code.toLowerCase()] ?? code.toUpperCase();
 
   return (
     <div>
@@ -77,7 +81,7 @@ export default async function SubmissionsPage() {
                     {r.species_name || "Unnamed entry"}
                   </span>
                   <span className="block font-mono text-[10px] uppercase tracking-wider text-ocean-600">
-                    {r.program}
+                    {programLabel(r.program)}
                     {r.event_date &&
                       ` · ${new Date(
                         r.event_date + "T00:00:00"

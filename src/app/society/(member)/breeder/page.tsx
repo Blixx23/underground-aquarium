@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Camera, KeySquare, ShieldCheck, Clock } from "lucide-react";
 import { getSocietyContext, CLASS_LADDER } from "@/lib/society/membership";
@@ -7,6 +8,8 @@ import { SOC_EYEBROW, SOC_CARD, SOC_BTN_PRIMARY } from "@/lib/society/theme";
 import SpeciesBrowser, {
   type AwardSpecies,
 } from "@/components/society/SpeciesBrowser";
+
+export const metadata: Metadata = { title: "Breeder Award Program" };
 
 export const dynamic = "force-dynamic";
 

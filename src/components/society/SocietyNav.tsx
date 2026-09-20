@@ -22,6 +22,7 @@ type Item = {
   Icon: LucideIcon;
   /** Shown as a muted count on the right. */
   badge?: number;
+  soon?: boolean;
 };
 
 /**
@@ -69,7 +70,7 @@ export default function SocietyNav({
     },
     { href: "/society/leaderboard", label: "Leaderboard", Icon: Trophy },
     { href: "/society/certificates", label: "Certificates", Icon: ScrollText },
-    { href: "/society/raffle", label: "Raffle", Icon: Ticket },
+    { href: "/society/raffle", label: "Raffle", Icon: Ticket, soon: true },
   ];
 
   if (isJudge) {
@@ -110,7 +111,7 @@ export default function SocietyNav({
         menu the member has to discover.
       */}
       <ul className="-mx-6 flex gap-1 overflow-x-auto px-6 pb-2 lg:mx-0 lg:block lg:space-y-1 lg:overflow-visible lg:px-0 lg:pb-0">
-        {items.map(({ href, label, Icon, badge }) => {
+        {items.map(({ href, label, Icon, badge, soon }) => {
           const active = isActive(href);
           return (
             <li key={href} className="shrink-0 lg:shrink">
@@ -128,6 +129,11 @@ export default function SocietyNav({
                   }`}
                 />
                 {label}
+                {soon ? (
+                  <span className="ml-auto rounded-full border border-ocean-700/70 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-ocean-500">
+                    Soon
+                  </span>
+                ) : null}
                 {badge ? (
                   <span className="ml-auto hidden rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] text-amber-300 lg:inline">
                     {badge}

@@ -37,8 +37,36 @@ const SOCIETY_LEGACY_AWARDS: Record<string, string> = {
   [`/c/${SOCIETY_SLUG}/awards/review`]: "/society/judge",
 };
 
+// Pages that need an account. Visiting one signed out goes to Log in with
+// ?next= so the person lands back where they were headed afterwards. The
+// pages still check for themselves; this only fixes where login returns to.
+const SIGNED_IN_PATHS = [
+  "/profile",
+  "/trophies",
+  "/notifications",
+  "/messages",
+  "/my/",
+  "/account",
+  "/admin",
+  "/society/",
+];
+
+function hasSession(request: NextRequest): boolean {
+  return request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (
+    SIGNED_IN_PATHS.some((p) => (p.endsWith("/") ? pathname.startsWith(p) : pathname === p || pathname.startsWith(p + "/"))) &&
+    !hasSession(request)
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`;
+    return NextResponse.redirect(url);
+  }
 
   if (
     !PAID_MARKETPLACE_ENABLED &&

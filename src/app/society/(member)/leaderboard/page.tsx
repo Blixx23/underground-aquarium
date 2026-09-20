@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { Trophy, Crown } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import { titleForPoints } from "@/lib/awards/titles";
 import { SOC_EYEBROW } from "@/lib/society/theme";
+
+export const metadata: Metadata = { title: "Leaderboard" };
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +38,19 @@ export default async function LeaderboardPage() {
     .sort((a, b) => b.total_points - a.total_points)) as (Standing & {
     total_points: number;
   })[];
+
+  // Show people by their real names, linked to their profiles.
+  const ids = standings.map((s) => s.user_id);
+  const people = new Map<string, { name: string | null; username: string | null }>();
+  if (ids.length > 0) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, full_name, username")
+      .in("id", ids);
+    for (const p of (profs ?? []) as { id: string; full_name: string | null; username: string | null }[]) {
+      people.set(p.id, { name: p.full_name?.trim() || null, username: p.username });
+    }
+  }
 
   return (
     <div>
@@ -81,7 +98,13 @@ export default async function LeaderboardPage() {
 
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm text-white">
-                    {s.display_name}
+                    {people.get(s.user_id)?.username ? (
+                      <Link href={`/u/${people.get(s.user_id)!.username}`} className="hover:underline">
+                        {people.get(s.user_id)?.name || s.display_name}
+                      </Link>
+                    ) : (
+                      people.get(s.user_id)?.name || s.display_name
+                    )}
                     {isMe && <span className="text-ocean-500"> (you)</span>}
                   </span>
                   {title && (

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -8,6 +9,8 @@ import CourseEditor, {
   type EditorSection,
   type EditorQuestion,
 } from "../CourseEditor";
+
+export const metadata: Metadata = { title: "Admin · Edit course" };
 
 export const dynamic = "force-dynamic";
 

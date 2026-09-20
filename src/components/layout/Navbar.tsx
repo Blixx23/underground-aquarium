@@ -7,12 +7,15 @@ import {
   X,
   Fish,
   ChevronDown,
-  User as UserIcon,
   LogOut,
   MessageCircle,
   ClipboardList,
   Plus,
+  Trophy,
+  Settings,
+  Newspaper,
 } from "lucide-react";
+import Avatar from "@/components/profile/Avatar";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -50,7 +53,6 @@ const nav: NavItem[] = [
       { label: "Fish Species", href: "/species" },
       { label: "Fish Stores", href: "/stores" },
       { label: "Glossary", href: "/glossary" },
-      { label: "Blog", href: "/blog" },
     ],
   },
   {
@@ -58,7 +60,6 @@ const nav: NavItem[] = [
     children: [
       { label: "Feed", href: "/feed" },
       { label: "Trophies", href: "/trophies" },
-      { label: "Community Hub", href: "/community" },
       { label: "Forums", href: "/forums" },
       { label: "Events", href: "/events" },
     ],
@@ -112,10 +113,39 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
+  // The signed-in person's public face: real name, handle and photo.
+  const [me, setMe] = useState<{
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  } | null>(null);
+  useEffect(() => {
+    if (!user) {
+      setMe(null);
+      return;
+    }
+    let live = true;
+    supabase
+      .from("profiles")
+      .select("full_name, username, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (live) setMe(data ?? null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [supabase, user]);
+
   const displayName =
+    me?.full_name?.trim() ||
+    me?.username ||
     (user?.user_metadata?.username as string | undefined) ||
     user?.email?.split("@")[0] ||
     "Account";
+  const firstName = displayName.split(" ")[0];
+  const publicHref = me?.username ? `/u/${me.username}` : "/profile";
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -227,20 +257,72 @@ export default function Navbar() {
                 </Link>
               )}
               <MessageBell />
-              <Link
-                href="/profile"
-                className="flex items-center gap-2 px-4 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
+              <div
+                className="relative"
+                onMouseEnter={() => openDropdown("__account")}
+                onMouseLeave={scheduleClose}
               >
-                <UserIcon className="w-4 h-4" />
-                {displayName}
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign out
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setDropdown(dropdown === "__account" ? null : "__account")}
+                  className="flex items-center gap-2 py-1.5 pl-2 pr-3 text-sm text-ocean-200 hover:text-white transition-colors"
+                  aria-haspopup="menu"
+                  aria-expanded={dropdown === "__account"}
+                >
+                  <Avatar name={displayName} src={me?.avatar_url ?? null} size={28} />
+                  <span className="max-w-[9rem] truncate">{firstName}</span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+                {dropdown === "__account" && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full mt-1 w-60 rounded-xl border border-ocean-800/70 bg-ocean-950/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur"
+                  >
+                    <Link
+                      href={publicHref}
+                      onClick={() => setDropdown(null)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white/5"
+                    >
+                      <Avatar name={displayName} src={me?.avatar_url ?? null} size={36} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-white">{displayName}</span>
+                        <span className="block text-xs text-ocean-400">View your profile</span>
+                      </span>
+                    </Link>
+                    <div className="my-1 h-px bg-ocean-800/70" />
+                    {[
+                      { href: "/profile", label: "Dashboard & settings", Icon: Settings },
+                      { href: "/feed", label: "The Feed", Icon: Newspaper },
+                      { href: "/trophies", label: "Trophies", Icon: Trophy },
+                      ...(MY_LISTINGS_ENABLED
+                        ? [{ href: "/my/listings", label: "My listings", Icon: ClipboardList }]
+                        : []),
+                    ].map(({ href, label, Icon }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setDropdown(null)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ocean-200 hover:bg-white/5 hover:text-white"
+                      >
+                        <Icon className="w-4 h-4 text-ocean-400" />
+                        {label}
+                      </Link>
+                    ))}
+                    <div className="my-1 h-px bg-ocean-800/70" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdown(null);
+                        handleSignOut();
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-ocean-300 hover:bg-white/5 hover:text-white"
+                    >
+                      <LogOut className="w-4 h-4 text-ocean-400" />
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <Link
@@ -344,11 +426,19 @@ export default function Navbar() {
                   </Link>
                 )}
                 <Link
+                  href={publicHref}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center gap-2 py-3 text-ocean-100"
+                >
+                  <Avatar name={displayName} src={me?.avatar_url ?? null} size={24} />
+                  {displayName}
+                </Link>
+                <Link
                   href="/profile"
                   onClick={() => setOpen(false)}
-                  className="text-center py-3 text-ocean-200"
+                  className="text-center py-3 text-ocean-300"
                 >
-                  {displayName}
+                  Dashboard &amp; settings
                 </Link>
                 <button
                   onClick={handleSignOut}

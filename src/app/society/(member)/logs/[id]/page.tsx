@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, KeySquare, Clock, Gavel, Check, X, Flag } from "lucide-react";
@@ -15,6 +16,8 @@ import { SOC_EYEBROW } from "@/lib/society/theme";
 import StageTimeline from "@/components/society/StageTimeline";
 import JudgePanel from "@/components/society/JudgePanel";
 import AppealForm from "@/components/society/AppealForm";
+
+export const metadata: Metadata = { title: "Spawn log" };
 
 export const dynamic = "force-dynamic";
 

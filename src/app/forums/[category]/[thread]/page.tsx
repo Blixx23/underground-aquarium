@@ -8,6 +8,7 @@ import VoteControl from "@/components/forum/VoteControl";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
 import ReplyBox from "@/components/forum/ReplyBox";
 import ReportButton from "@/components/ReportButton";
+import SocietySeal from "@/components/society/SocietySeal";
 
 export const revalidate = 60;
 
@@ -44,10 +45,13 @@ function timeAgo(iso: string | null): string {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
-  if (d < 30) return `${d}d ago`;
-  const mo = Math.floor(d / 30);
-  if (mo < 12) return `${mo}mo ago`;
-  return `${Math.floor(mo / 12)}y ago`;
+  if (d < 7) return d === 1 ? "yesterday" : `${d} days ago`;
+  const date = new Date(iso);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(date.getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}),
+  });
 }
 
 async function getThread(categorySlug: string, threadSlug: string) {
@@ -136,10 +140,45 @@ export default async function ThreadPage({ params }: Params) {
       };
     }
   }
+  // Who among the authors is in the Society (for the seal).
+  const society = new Set<string>();
+  if (authorIds.length > 0) {
+    const { data: members } = await supabasePublic.rpc("society_members_among", {
+      p_users: authorIds,
+    });
+    for (const m of (members ?? []) as (string | { user_id: string })[]) {
+      society.add(typeof m === "string" ? m : m.user_id);
+    }
+  }
   const authorLabel = (id: string | null) => {
     if (!id) return "a member";
     const n = byId[id];
-    return n?.username ? `@${n.username}` : n?.full_name || "a member";
+    return n?.full_name?.trim() || n?.username || "a member";
+  };
+  const Author = ({ id }: { id: string | null }) => {
+    const n = id ? byId[id] : undefined;
+    const label = authorLabel(id);
+    const isSoc = id ? society.has(id) : false;
+    const name = n?.username ? (
+      <Link
+        href={`/u/${n.username}`}
+        className={isSoc ? "text-amber-100 hover:underline" : "text-ocean-200 hover:underline"}
+      >
+        {label}
+      </Link>
+    ) : (
+      <span className="text-ocean-300">{label}</span>
+    );
+    return (
+      <>
+        {name}
+        {isSoc && (
+          <span title="Underground Aquarium Society member" className="ml-1 inline-flex translate-y-[2px]">
+            <SocietySeal size={13} className="h-[13px] w-[13px]" />
+          </span>
+        )}
+      </>
+    );
   };
 
   // comment tree
@@ -172,10 +211,8 @@ export default async function ThreadPage({ params }: Params) {
         <VoteControl postId={c.id} initialScore={c.score ?? 0} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="text-xs text-ocean-500">
-            <span className="text-ocean-300">
-              {authorLabel(c.author_id)}
-            </span>{" "}
-            · {timeAgo(c.created_at)}
+            <Author id={c.author_id} />{" "}
+            · <time dateTime={c.created_at}>{timeAgo(c.created_at)}</time>
           </p>
           <div className="mt-1">
             <Markdown>{c.body ?? ""}</Markdown>
@@ -247,10 +284,8 @@ export default async function ThreadPage({ params }: Params) {
           <div className="min-w-0 flex-1">
             <p className="text-xs text-ocean-500 mb-2">
               Posted by{" "}
-              <span className="text-ocean-300">
-                {authorLabel(op?.author_id ?? null)}
-              </span>{" "}
-              · {timeAgo(op?.created_at ?? null)}
+              <Author id={op?.author_id ?? null} />{" "}
+              · <time dateTime={op?.created_at ?? undefined}>{timeAgo(op?.created_at ?? null)}</time>
             </p>
             <Markdown>{op?.body ?? ""}</Markdown>
             {threadImages.length > 0 && (

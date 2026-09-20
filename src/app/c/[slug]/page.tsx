@@ -1,78 +1,47 @@
-import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  Settings,
-  Trophy,
-  Gavel,
-  Users,
-  ArrowRight,
-  Crown,
-  Clock,
-  CalendarClock,
-  MapPin,
-  Globe,
-} from "lucide-react";
+import { ArrowRight, Clock, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { SOCIETY_SLUG } from "@/lib/config";
-import {
-  SOC_EYEBROW,
-  SOC_CARD,
-  SOC_PILL,
-} from "@/lib/society/theme";
+import { SOCIETY_SLUG, SOCIETY_HOME_PATH, SOCIETY_PATH } from "@/lib/config";
+import { SOC_EYEBROW, SOC_CARD, SOC_BTN_PRIMARY, SOC_BTN_GHOST } from "@/lib/society/theme";
 import SocietySeal from "@/components/society/SocietySeal";
 import MemberCard from "@/components/society/MemberCard";
-import TrophyCase from "@/components/society/TrophyCase";
-import {
-  BADGE_COLUMNS,
-  type EarnedBadge,
-  type SocietyBadge,
-} from "@/lib/society/badges";
 import PayDuesButton from "./PayDuesButton";
 import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
 import JoinClubForm from "./JoinClubForm";
 import MemberSelfEdit from "./MemberSelfEdit";
-import FamilyManager from "./FamilyManager";
-import ClubEventsPreview from "./ClubEventsPreview";
-import { type ClubEvent } from "./ClubEvents";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Join the Society",
+  description:
+    "Apply to join the Underground Aquarium Society: judged breeder awards, a permanent species registry, signed certificates and Society trophies.",
+};
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-type Standing = {
-  user_id: string;
-  display_name: string;
-  total_points: number;
-};
-
-function titleFor(points: number): string | null {
-  if (points >= 300) return "Grand Master Breeder";
-  if (points >= 150) return "Master Breeder";
-  if (points >= 75) return "Advanced Breeder";
-  if (points >= 25) return "Breeder";
-  if (points >= 1) return "Hobbyist Breeder";
-  return null;
-}
-
-export default async function ClubHomePage({
+/**
+ * Joining and paying for the Society.
+ *
+ * This used to be a generic club page. There is one Society now, so it does
+ * one job: get someone from "interested" to "paid member", then hand them to
+ * the member area. Members only land here to pay dues or manage their
+ * membership (?manage=1); otherwise they're sent straight to the member area.
+ */
+export default async function SocietyJoinPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ dues?: string }>;
+  searchParams: Promise<{ dues?: string; manage?: string }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
+  if (slug !== SOCIETY_SLUG) redirect(SOCIETY_PATH);
 
-  // This page is the Society's member area as well as the generic club page.
-  // When it's the Society, it wears the brass theme and drops the word "club"
-  // entirely — nobody joins "a club" here any more, they join the Society.
-  const isSociety = slug === SOCIETY_SLUG;
-  const cardClass = isSociety
-    ? SOC_CARD
-    : "rounded-2xl border border-ocean-800/60 bg-ocean-900/40";
-  const panelClass = isSociety
-    ? `${SOC_CARD} hover:border-amber-400/50`
-    : "rounded-2xl border border-ocean-700/60 bg-ocean-800/40 hover:bg-ocean-800/60";
   const supabase = await createClient();
   const {
     data: { user },
@@ -81,660 +50,251 @@ export default async function ClubHomePage({
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, description, logo_url, city, state, dues_amount_cents, stripe_account_id, payouts_enabled, is_public, contact_name, contact_email, contact_phone, public_url, family_max, family_dues_amount_cents, lifetime_dues_amount_cents"
+      "id, name, description, dues_amount_cents, lifetime_dues_amount_cents, stripe_account_id, payouts_enabled, contact_email"
     )
     .eq("slug", slug)
     .maybeSingle();
   if (!club) notFound();
 
-  let role: string | null = null;
-  let status: string | null = null;
-  let paidThrough: string | null = null;
-  let myName: string | null = null;
-  let myEmail: string | null = null;
-  let myTier: string | null = null;
-  let myFamilyPrimaryId: string | null = null;
-  // Set when the membership lookup itself failed. Distinct from "no row",
-  // because those two must never render the same thing.
+  const here = `/c/${slug}`;
+
+  // Who's asking.
+  let me: {
+    role: string | null;
+    status: string | null;
+    paid_through: string | null;
+    display_name: string | null;
+    email: string | null;
+    tier: string | null;
+  } | null = null;
   let membershipError: string | null = null;
+  if (user) {
+    const { data, error } = await supabase
+      .from("club_members")
+      .select("role, status, paid_through, display_name, email, tier")
+      .eq("club_id", club.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    me = data;
+    membershipError = error?.message ?? null;
+  }
+
+  const isApplicant = me?.status === "pending";
+  const isMember = Boolean(me?.role) && !isApplicant;
+  const today = new Date();
+  const paidThroughDate = me?.paid_through ? new Date(me.paid_through + "T00:00:00") : null;
+  const isPaidCurrent = paidThroughDate ? paidThroughDate >= today : false;
+  const isLifetime = me?.tier === "lifetime";
+  const canCollect = Boolean(club.stripe_account_id) && club.payouts_enabled;
+  const myDuesCents = isLifetime ? club.lifetime_dues_amount_cents ?? 0 : club.dues_amount_cents;
+  const duesDue =
+    isMember && me?.role !== "owner" && canCollect && myDuesCents > 0 && !isPaidCurrent;
+
+  // A member in good standing has nothing to do here unless they asked to
+  // manage their membership or just came back from paying.
+  if (isMember && !duesDue && sp.manage !== "1" && sp.dues !== "success") {
+    redirect(SOCIETY_HOME_PATH);
+  }
+
+  // Public headcount (the roster itself is private).
+  const { data: countData } = await supabase.rpc("society_member_count");
+  const memberCount = Number(countData ?? 0);
+
   let myNumber: number | null = null;
   let myJoinedAt: string | null = null;
-  if (user) {
-    const { data: me, error: meError } = await supabase
-      .from("club_members")
-      .select(
-        "role, status, paid_through, display_name, email, tier, family_primary_id"
-      )
-      .eq("club_id", club.id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    role = me?.role ?? null;
-    status = me?.status ?? null;
-    paidThrough = me?.paid_through ?? null;
-    myName = me?.display_name ?? null;
-    myEmail = me?.email ?? null;
-    myTier = me?.tier ?? null;
-    myFamilyPrimaryId = me?.family_primary_id ?? null;
-    membershipError = meError?.message ?? null;
-  }
-
-  const isApplicant = status === "pending";
-  const isMember = role !== null && !isApplicant;
-
-  // Member number and join date get their own query on purpose. They were added
-  // later, so if that migration hasn't run this fails alone and costs the card a
-  // number — rather than failing the membership lookup and silently demoting a
-  // member to a stranger.
+  let myTitle: string | null = null;
   if (user && isMember) {
-    const { data: extra } = await supabase
-      .from("club_members")
-      .select("member_number, joined_at")
-      .eq("club_id", club.id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    myNumber = extra?.member_number ?? null;
-    myJoinedAt = extra?.joined_at ?? null;
-  }
-  const isOfficer = role === "owner" || role === "admin" || role === "officer";
-  const isFamilyMain = myTier === "family" && !myFamilyPrimaryId;
-
-  const { count } = await supabase
-    .from("club_members")
-    .select("id", { count: "exact", head: true })
-    .eq("club_id", club.id)
-    .eq("status", "active");
-  const memberCount = count ?? 0;
-
-  // Leadership: owner + officers/admins, shown publicly so visitors and members
-  // can see who runs the club. Titles (officer_title) override the generic role.
-  const roleRank: Record<string, number> = { owner: 0, admin: 1, officer: 2 };
-  const { data: leaderRows } = await supabase
-    .from("club_members")
-    .select("user_id, role, officer_title, display_name")
-    .eq("club_id", club.id)
-    .in("role", ["owner", "admin", "officer"])
-    .neq("status", "pending");
-  const leaderIds = (leaderRows ?? [])
-    .map((r) => r.user_id)
-    .filter((id): id is string => Boolean(id));
-  let leaderUsernames: Record<string, string> = {};
-  if (leaderIds.length) {
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("id, username")
-      .in("id", leaderIds);
-    leaderUsernames = Object.fromEntries(
-      (profs ?? []).map((p) => [p.id, p.username as string])
-    );
-  }
-  const leaders = (leaderRows ?? [])
-    .map((r) => {
-      const username = r.user_id ? leaderUsernames[r.user_id] ?? null : null;
-      return {
-        name: r.display_name || username || "Member",
-        username,
-        title:
-          r.officer_title ||
-          (r.role === "owner" ? "Organizer" : r.role === "admin" ? "Admin" : "Officer"),
-        role: r.role,
-      };
-    })
-    .sort((a, b) => (roleRank[a.role] ?? 9) - (roleRank[b.role] ?? 9));
-
-  let standings: Standing[] = [];
-  if (isMember) {
-    const { data: sData } = await supabase.rpc("club_award_standings", {
-      p_club_id: club.id,
-    });
-    standings = ((sData as Standing[] | null) ?? []).map((s) => ({
-      user_id: s.user_id,
-      display_name: s.display_name,
-      total_points: Number(s.total_points),
-    }));
+    const { data: card } = await supabase.rpc("society_public_card", { p_user: user.id });
+    const c = (Array.isArray(card) ? card[0] : card) as {
+      member_number?: number | null;
+      joined_at?: string | null;
+      title?: string | null;
+    } | null;
+    myNumber = c?.member_number ?? null;
+    myJoinedAt = c?.joined_at ?? null;
+    myTitle = c?.title ?? null;
   }
 
-  const canCollect = Boolean(club.stripe_account_id) && club.payouts_enabled;
-  const today = new Date();
-  const paidThroughDate = paidThrough
-    ? new Date(paidThrough + "T00:00:00")
-    : null;
-  const isPaidCurrent = paidThroughDate ? paidThroughDate >= today : false;
-
-  // What this member pays depends on their plan.
-  const isLifetimeViewer = myTier === "lifetime";
-  const myDuesCents = isLifetimeViewer
-    ? club.lifetime_dues_amount_cents ?? 0
-    : isFamilyMain
-    ? club.family_dues_amount_cents ?? club.dues_amount_cents
-    : club.dues_amount_cents;
-
-  const duesDue =
-    isMember &&
-    role !== "owner" &&
-    !myFamilyPrimaryId && // family members are covered by their main member
-    canCollect &&
-    myDuesCents > 0 &&
-    !isPaidCurrent;
-
-  const payHeading = isLifetimeViewer ? "Lifetime membership" : "Membership dues";
-  const payDesc = isLifetimeViewer
-    ? `Pay ${money(myDuesCents)} once — lifetime membership, no renewals.`
-    : `Pay ${money(myDuesCents)} to ${
-        paidThrough ? "renew your membership" : "activate your membership"
-      }.`;
-  const payLabel = isLifetimeViewer
-    ? `Pay ${money(myDuesCents)} lifetime`
-    : isFamilyMain
-    ? `Pay ${money(myDuesCents)} family dues`
-    : `Pay ${money(myDuesCents)} dues`;
-
-  // Badges. sync_member_badges recomputes the ones that are pure functions of
-  // membership facts (milestone from the member number, longevity from the join
-  // date) and inserts any that are missing. Idempotent, so calling it on every
-  // page load costs one cheap round trip and saves running a cron.
-  let badgeCatalogue: SocietyBadge[] = [];
-  let myBadges: EarnedBadge[] = [];
-  if (isSociety) {
-    if (user && isMember) {
-      await supabase.rpc("sync_member_badges", {
-        p_user_id: user.id,
-        p_club_id: club.id,
-      });
-    }
-
-    const [{ data: cat }, { data: mine }] = await Promise.all([
-      supabase.from("society_badges").select(BADGE_COLUMNS).order("sort_order"),
-      user
-        ? supabase
-            .from("member_badges")
-            .select(`earned_at, detail, society_badges(${BADGE_COLUMNS})`)
-            .eq("user_id", user.id)
-            .eq("club_id", club.id)
-        : Promise.resolve({ data: [] }),
-    ]);
-
-    badgeCatalogue = (cat ?? []) as unknown as SocietyBadge[];
-    myBadges = ((mine ?? []) as unknown as {
-      earned_at: string;
-      detail: string | null;
-      society_badges: SocietyBadge | null;
-    }[])
-      .filter((r) => r.society_badges)
-      .map((r) => ({
-        ...(r.society_badges as SocietyBadge),
-        earned_at: r.earned_at,
-        detail: r.detail,
-      }));
-  }
-
-  const eventCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-  let eventsQuery = supabase
-    .from("events")
-    .select(
-      "id, slug, title, description, starts_at, venue_name, city, state, is_online, online_url, show_in_directory, event_type, cover_image"
-    )
-    .eq("host_club_id", club.id)
-    .eq("status", "published")
-    .gte("starts_at", eventCutoff);
-  // The public and non-members only see events the club chose to make public.
-  // Members and officers see everything, including club-only meetings.
-  if (!isMember) {
-    eventsQuery = eventsQuery.or(
-      "show_in_directory.is.null,show_in_directory.eq.true"
-    );
-  }
-  const { data: clubEventsData } = await eventsQuery.order("starts_at", {
-    ascending: true,
-  });
-  const clubEvents = (clubEventsData ?? []) as ClubEvent[];
-
-  // The soonest upcoming meeting visible to this viewer.
-  const nextMeeting =
-    clubEvents.find((e) => e.event_type === "meeting") ?? null;
-  const nextMeetingPlace = nextMeeting
-    ? nextMeeting.is_online
-      ? "Online"
-      : [
-          nextMeeting.venue_name,
-          [nextMeeting.city, nextMeeting.state].filter(Boolean).join(", "),
-        ]
-          .filter(Boolean)
-          .join(" · ")
-    : "";
-  const formatMeetingWhen = (iso: string) =>
-    new Date(iso).toLocaleString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+  const tiers = [
+    club.dues_amount_cents > 0 && { label: "Individual", price: money(club.dues_amount_cents), note: "per year" },
+    (club.lifetime_dues_amount_cents ?? 0) > 0 && {
+      label: "Lifetime",
+      price: money(club.lifetime_dues_amount_cents as number),
+      note: "once · never renews",
+    },
+  ].filter(Boolean) as { label: string; price: string; note: string }[];
 
   return (
-    <main className="min-h-screen pt-28 pb-20 px-6">
-      <div className="max-w-3xl mx-auto">
-        {sp?.dues === "success" && <DuesSuccessBanner />}
+    <main className="min-h-screen px-4 pb-24 pt-28 sm:px-6">
+      <div className="mx-auto max-w-2xl">
+        {sp.dues === "success" && <DuesSuccessBanner />}
 
-        <div className="flex items-center gap-4 mb-2">
-          {isSociety && !club.logo_url ? (
-            <SocietySeal size={64} className="h-16 w-16 shrink-0" />
-          ) : club.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={club.logo_url}
-              alt={club.name}
-              className="w-14 h-14 rounded-xl object-cover border border-ocean-800/60"
+        <div className="mb-8 text-center">
+          <SocietySeal size={96} className="mx-auto mb-5 h-24 w-24" />
+          <p className={`${SOC_EYEBROW} mb-2`}>
+            {isMember ? "Your membership" : "Membership"}
+          </p>
+          <h1 className="font-display text-3xl text-white sm:text-4xl">{club.name}</h1>
+          {!isMember && club.description && (
+            <p className="mx-auto mt-3 max-w-lg text-amber-100/65">{club.description}</p>
+          )}
+          {memberCount > 0 && !isMember && (
+            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-amber-500/60">
+              {memberCount.toLocaleString()} member{memberCount === 1 ? "" : "s"} and counting
+            </p>
+          )}
+        </div>
+
+        {/* ---------- Members: pay dues, manage, leave ---------- */}
+        {isMember && (
+          <>
+            <MemberCard
+              className="mb-6"
+              name={me?.display_name || "Member"}
+              memberNumber={myNumber}
+              joinedAt={myJoinedAt}
+              title={myTitle}
+              tier={me?.tier ?? null}
+              paidThrough={me?.paid_through ?? null}
             />
-          ) : (
-            <div className="w-14 h-14 rounded-xl bg-ocean-800/60 flex items-center justify-center">
-              <Users className="w-7 h-7 text-ocean-400" />
-            </div>
-          )}
-          <div>
-            {isSociety && (
-              <p className={`${SOC_EYEBROW} mb-1`}>Member area</p>
-            )}
-            <h1 className="font-display text-3xl text-white leading-tight">
-              {club.name}
-            </h1>
-            {(club.city || club.state) && (
-              <p className="text-sm text-ocean-400">
-                {[club.city, club.state].filter(Boolean).join(", ")}
-              </p>
-            )}
-          </div>
-        </div>
 
-        {club.description && (
-          <p className="text-ocean-300 mb-6 mt-2">{club.description}</p>
-        )}
-
-        <div className="flex flex-wrap items-center gap-3 mb-8 text-sm text-ocean-400">
-          <span className="inline-flex items-center gap-1.5">
-            <Users className="w-4 h-4" /> {memberCount} member
-            {memberCount === 1 ? "" : "s"}
-          </span>
-          {club.dues_amount_cents > 0 && (
-            <span>· Dues {money(club.dues_amount_cents)}</span>
-          )}
-          {isSociety && isMember && (
-            <span className={SOC_PILL}>Member</span>
-          )}
-          {isMember && role && (
-            <span className="inline-flex items-center gap-1.5 capitalize">
-              · {role === "owner" && <Crown className="w-4 h-4 text-amber-300" />}
-              You&apos;re {role === "owner" ? "the owner" : `a ${role}`}
-            </span>
-          )}
-          {isPaidCurrent && paidThroughDate && (
-            <span className="text-emerald-300">
-              · Paid through {paidThroughDate.toLocaleDateString()}
-            </span>
-          )}
-        </div>
-
-        {isSociety && isMember && (
-          <MemberCard
-            className="mb-6"
-            name={myName || club.name}
-            memberNumber={myNumber}
-            joinedAt={myJoinedAt}
-            title={titleFor(
-              standings.find((st) => st.user_id === user?.id)?.total_points ?? 0
-            )}
-            tier={myTier}
-            paidThrough={paidThrough}
-          />
-        )}
-
-        {nextMeeting && (
-          <Link
-            href={`/events/${nextMeeting.slug}`}
-            className="group block rounded-2xl border border-ocean-700/60 bg-ocean-800/40 px-6 py-5 mb-6 hover:bg-ocean-800/60 transition-colors"
-          >
-            <span className="flex items-center gap-2 text-xs uppercase tracking-widest text-ocean-500 mb-1.5">
-              <CalendarClock className="w-4 h-4" /> Next meeting
-            </span>
-            <p className="text-sm font-medium text-emerald-300">
-              {formatMeetingWhen(nextMeeting.starts_at)}
-            </p>
-            <p className="mt-0.5 text-lg font-medium text-white group-hover:text-emerald-300 transition-colors">
-              {nextMeeting.title}
-            </p>
-            {nextMeetingPlace && (
-              <p className="mt-1 flex items-center gap-1.5 text-sm text-ocean-400">
-                {nextMeeting.is_online ? (
-                  <Globe className="w-4 h-4 shrink-0" />
-                ) : (
-                  <MapPin className="w-4 h-4 shrink-0" />
-                )}
-                {nextMeetingPlace}
-              </p>
-            )}
-          </Link>
-        )}
-
-        {duesDue && (
-          <div
-            className={`${
-              isSociety
-                ? "rounded-2xl border border-amber-500/40 bg-amber-500/[0.08]"
-                : "rounded-2xl border border-emerald-700/40 bg-emerald-900/10"
-            } px-6 py-5 mb-6`}
-          >
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-white font-medium">{payHeading}</p>
-                <p className="text-sm text-ocean-400">{payDesc}</p>
+            {duesDue && (
+              <div className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-500/[0.08] px-6 py-5">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-white">
+                      {isLifetime ? "Lifetime membership" : paidThroughDate ? "Renew your membership" : "Activate your membership"}
+                    </p>
+                    <p className="text-sm text-amber-100/60">
+                      {isLifetime
+                        ? `${money(myDuesCents)} once. No renewals, ever.`
+                        : `${money(myDuesCents)} for a year. Your member area, trophies and records unlock again the moment it clears.`}
+                    </p>
+                  </div>
+                  <PayDuesButton
+                    clubId={club.id}
+                    label={isLifetime ? `Pay ${money(myDuesCents)}` : `Pay ${money(myDuesCents)} dues`}
+                  />
+                </div>
               </div>
-              <PayDuesButton clubId={club.id} label={payLabel} />
-            </div>
-          </div>
-        )}
+            )}
 
-        {isOfficer && (
-          <Link
-            href={`/c/${slug}/admin`}
-            className={`flex items-center justify-between gap-4 ${panelClass} px-6 py-5 mb-6 transition-colors group`}
-          >
-            <span className="flex items-center gap-3">
-              <Settings className="w-6 h-6 text-ocean-200" />
+            <Link
+              href={SOCIETY_HOME_PATH}
+              className={`${SOC_CARD} mb-6 flex items-center justify-between gap-4 px-6 py-5 transition-colors hover:border-amber-400/50`}
+            >
               <span>
-                <span className="block text-white font-medium">Admin console</span>
-                <span className="block text-sm text-ocean-400">
-                  Manage members, dues, and {isSociety ? "Society" : "club"}{" "}
-                  settings
+                <span className="block font-medium text-white">Go to the member area</span>
+                <span className="block text-sm text-amber-100/55">
+                  Breeder program, spawn logs, certificates and your Society trophies.
                 </span>
               </span>
-            </span>
-            <ArrowRight className="w-5 h-5 text-ocean-400 group-hover:translate-x-1 transition-transform" />
-          </Link>
+              <ArrowRight className="h-5 w-5 text-amber-400" />
+            </Link>
+
+            <MemberSelfEdit clubId={club.id} initialName={me?.display_name ?? null} initialEmail={me?.email ?? null} />
+
+            {me?.role !== "owner" && (
+              <div className="mt-10 border-t border-ocean-900/60 pt-6">
+                <LeaveClubButton clubId={club.id} clubName={club.name} label="Leave the Society" />
+              </div>
+            )}
+          </>
         )}
 
-        <ClubEventsPreview
-          clubSlug={slug}
-          isOfficer={isOfficer}
-          events={clubEvents}
-        />
+        {/* ---------- Applicants ---------- */}
+        {isApplicant && (
+          <div className={`${SOC_CARD} px-6 py-8 text-center`}>
+            <Clock className="mx-auto mb-3 h-8 w-8 text-amber-300/80" />
+            <p className="mb-1 font-medium text-white">Application received</p>
+            <p className="mb-4 text-sm text-amber-100/60">
+              We&apos;re reviewing it now. You&apos;ll get a notification the moment you&apos;re approved, and
+              then you can pay dues and step into the member area.
+            </p>
+            <LeaveClubButton clubId={club.id} clubName={club.name} label="Withdraw application" />
+          </div>
+        )}
 
-        {leaders.length > 0 && (
-          <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-6">
-            <h2 className="font-display text-lg text-white mb-3">Leadership</h2>
-            <ul className="space-y-2.5">
-              {leaders.map((l, i) => (
-                <li
-                  key={`${l.username ?? l.name}-${i}`}
-                  className="flex items-center justify-between gap-3 text-sm"
-                >
-                  <span className="flex items-center gap-2 text-ocean-100">
-                    {l.role === "owner" && (
-                      <Crown className="w-4 h-4 text-amber-300 shrink-0" />
-                    )}
-                    {l.username ? (
-                      <a
-                        href={`/u/${l.username}`}
-                        className="hover:text-white transition-colors"
-                      >
-                        {l.name}
-                      </a>
-                    ) : (
-                      <span>{l.name}</span>
-                    )}
-                  </span>
-                  <span className="text-ocean-400 shrink-0">{l.title}</span>
+        {membershipError && (
+          <div className="rounded-2xl border border-coral-500/40 bg-coral-500/10 px-6 py-8 text-center">
+            <p className="font-medium text-white">Couldn&apos;t load your membership</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-ocean-300">
+              Something went wrong reading the roster. Nothing about your membership has changed. Try again
+              in a minute.
+            </p>
+          </div>
+        )}
+
+        {/* ---------- Everyone else: the pitch and the form ---------- */}
+        {!isMember && !isApplicant && !membershipError && (
+          <>
+            {tiers.length > 0 && (
+              <div className={`mb-6 grid gap-3 ${tiers.length > 1 ? "sm:grid-cols-2" : ""}`}>
+                {tiers.map((t) => (
+                  <div key={t.label} className={`${SOC_CARD} p-5 text-center`}>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-400/80">{t.label}</p>
+                    <p className="mt-2 font-display text-3xl text-white">{t.price}</p>
+                    <p className="text-sm text-amber-100/55">{t.note}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <ul className="mb-8 grid gap-2 text-sm text-amber-100/70 sm:grid-cols-2">
+              {[
+                "Judged Breeder Award Program",
+                "A permanent member number",
+                "Signed, verifiable certificates",
+                "Society trophies on your profile",
+                "The Species Registry",
+                "Your classifieds and tools stay free",
+              ].map((b) => (
+                <li key={b} className="flex items-center gap-2">
+                  <Check className="h-4 w-4 shrink-0 text-amber-400" />
+                  {b}
                 </li>
               ))}
             </ul>
-          </div>
-        )}
 
-        {(club.contact_name ||
-          club.contact_email ||
-          club.contact_phone ||
-          club.public_url) && (
-          <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-6">
-            <h2 className="font-display text-lg text-white mb-3">Contact</h2>
-            <dl className="space-y-2 text-sm">
-              {club.contact_name && (
-                <div className="flex gap-3">
-                  <dt className="text-ocean-500 w-20 shrink-0">Organizer</dt>
-                  <dd className="text-ocean-200">{club.contact_name}</dd>
-                </div>
-              )}
-              {club.contact_email && (
-                <div className="flex gap-3">
-                  <dt className="text-ocean-500 w-20 shrink-0">Email</dt>
-                  <dd>
-                    <a
-                      href={`mailto:${club.contact_email}`}
-                      className="text-ocean-300 hover:text-white transition-colors break-all"
-                    >
-                      {club.contact_email}
-                    </a>
-                  </dd>
-                </div>
-              )}
-              {club.contact_phone && (
-                <div className="flex gap-3">
-                  <dt className="text-ocean-500 w-20 shrink-0">Phone</dt>
-                  <dd className="text-ocean-200">{club.contact_phone}</dd>
-                </div>
-              )}
-              {club.public_url && (
-                <div className="flex gap-3">
-                  <dt className="text-ocean-500 w-20 shrink-0">Website</dt>
-                  <dd>
-                    <a
-                      href={club.public_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-ocean-300 hover:text-white transition-colors break-all"
-                    >
-                      {club.public_url}
-                    </a>
-                  </dd>
-                </div>
-              )}
-            </dl>
-          </div>
-        )}
-
-        {isMember ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Link
-                href={`/c/${slug}/awards`}
-                className="rounded-2xl border border-ocean-700/60 bg-ocean-800/40 px-6 py-5 hover:bg-ocean-800/60 transition-colors"
-              >
-                <Trophy className="w-6 h-6 text-amber-300 mb-3" />
-                <p className="text-white font-medium">BAP / HAP</p>
-                <p className="text-sm text-ocean-400">
-                  Breeder &amp; plant awards — submit entries and climb the
-                  leaderboard.
+            {user ? (
+              <div className={`${SOC_CARD} px-6 py-8 text-center`}>
+                <p className="mb-4 text-amber-100/70">
+                  Apply below. Once you&apos;re approved you pay dues and you&apos;re in.
                 </p>
-              </Link>
-              <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-5 opacity-60">
-                <Gavel className="w-6 h-6 text-ocean-200 mb-3" />
-                <p className="text-white font-medium">Auctions</p>
-                <p className="text-sm text-ocean-400">
-                  Member auctions — coming soon.
-                </p>
+                <JoinClubForm
+                  clubId={club.id}
+                  clubName={club.name}
+                  defaultName={(user.user_metadata?.username as string) || ""}
+                  dues={club.dues_amount_cents}
+                  lifetimeDues={club.lifetime_dues_amount_cents}
+                  society
+                />
               </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-display text-lg text-white flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-amber-300" /> Standings
-                </h2>
-                <Link
-                  href={`/c/${slug}/awards`}
-                  className="inline-flex items-center gap-1 text-sm text-ocean-300 hover:text-white transition-colors"
-                >
-                  Full awards <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-              {standings.length === 0 ? (
-                <p className="text-sm text-ocean-400">
-                  No approved entries yet — submit one to get on the board.
+            ) : (
+              <div className={`${SOC_CARD} px-6 py-8 text-center`}>
+                <p className="mb-5 text-amber-100/70">
+                  You&apos;ll need a free Underground Aquarium account to apply.
                 </p>
-              ) : (
-                <div className="space-y-2">
-                  {standings.slice(0, 5).map((s, i) => {
-                    const isMe = s.user_id === user?.id;
-                    const title = titleFor(s.total_points);
-                    return (
-                      <div
-                        key={s.user_id}
-                        className={`flex items-center gap-3 rounded-lg px-2 py-1.5 ${
-                          isMe ? "bg-ocean-800/40" : ""
-                        }`}
-                      >
-                        <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-                            i === 0
-                              ? "bg-amber-400/20 text-amber-300"
-                              : "bg-ocean-800/60 text-ocean-300"
-                          }`}
-                        >
-                          {i + 1}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-white text-sm">
-                            {s.display_name}
-                            {isMe && (
-                              <span className="text-ocean-500"> (you)</span>
-                            )}
-                          </p>
-                          {title && (
-                            <p className="text-xs text-amber-300/80">{title}</p>
-                          )}
-                        </div>
-                        <span className="shrink-0 text-sm font-semibold text-white">
-                          {s.total_points}
-                          <span className="text-xs font-normal text-ocean-500">
-                            {" "}
-                            pts
-                          </span>
-                        </span>
-                      </div>
-                    );
-                  })}
+                <div className="flex flex-col justify-center gap-3 sm:flex-row">
+                  <Link href={`/register?next=${encodeURIComponent(here)}`} className={`${SOC_BTN_PRIMARY} px-8`}>
+                    Create an account
+                  </Link>
+                  <Link href={`/login?next=${encodeURIComponent(here)}`} className={`${SOC_BTN_GHOST} px-8`}>
+                    Log in
+                  </Link>
                 </div>
-              )}
-            </div>
-
-            {isSociety && (
-              <TrophyCase
-                catalogue={badgeCatalogue}
-                earned={myBadges}
-                showLocked
-                heading="Your trophy case"
-              />
+              </div>
             )}
 
-            <MemberSelfEdit
-              clubId={club.id}
-              initialName={myName}
-              initialEmail={myEmail}
-            />
-
-            {isFamilyMain && (
-              <FamilyManager
-                clubId={club.id}
-                familyMax={club.family_max ?? 5}
-              />
+            {club.contact_email && (
+              <p className="mt-8 text-center text-sm text-ocean-500">
+                Questions?{" "}
+                <a href={`mailto:${club.contact_email}`} className="text-amber-300/80 hover:text-amber-300">
+                  {club.contact_email}
+                </a>
+              </p>
             )}
           </>
-        ) : isApplicant ? (
-          <div className="rounded-2xl border border-amber-700/40 bg-amber-900/10 px-6 py-8 text-center">
-            <Clock className="w-8 h-8 text-amber-300/80 mx-auto mb-3" />
-            <p className="text-white font-medium mb-1">Request pending</p>
-            <p className="text-sm text-ocean-400 mb-4">
-              Your request to join {club.name} is waiting for an officer to
-              approve it. You&apos;ll get a notification when you&apos;re in.
-            </p>
-            <LeaveClubButton
-              clubId={club.id}
-              clubName={club.name}
-              label="Withdraw request"
-            />
-          </div>
-        ) : membershipError ? (
-          <div className="rounded-2xl border border-coral-500/40 bg-coral-500/10 px-6 py-8 text-center">
-            <p className="font-medium text-white">
-              Couldn&apos;t load your membership
-            </p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-ocean-300">
-              Something went wrong reading the roster, so we can&apos;t tell
-              whether you&apos;re a member. This is our problem, not yours —
-              nothing about your membership has changed. Try again in a minute.
-            </p>
-            <p className="mt-3 font-mono text-xs text-ocean-500">
-              {membershipError}
-            </p>
-          </div>
-        ) : user ? (
-          club.is_public ? (
-            <div className={`${cardClass} px-6 py-8 text-center`}>
-              {isSociety ? (
-                <SocietySeal size={72} className="mx-auto mb-4 h-[72px] w-[72px]" />
-              ) : (
-                <Users className="w-8 h-8 text-ocean-500 mx-auto mb-3" />
-              )}
-              <p className="text-ocean-300 mb-4">
-                Apply to join {club.name}
-                {club.dues_amount_cents > 0
-                  ? ` — dues are ${money(club.dues_amount_cents)} once approved.`
-                  : "."}
-              </p>
-              <JoinClubForm
-                clubId={club.id}
-                clubName={club.name}
-                defaultName={(user.user_metadata?.username as string) || ""}
-                dues={club.dues_amount_cents}
-                familyDues={club.family_dues_amount_cents}
-                lifetimeDues={club.lifetime_dues_amount_cents}
-                society={isSociety}
-              />
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-6 py-8 text-center">
-              <Users className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
-              <p className="text-ocean-300">
-                {club.name} is invite-only — ask an officer for an invite.
-              </p>
-            </div>
-          )
-        ) : (
-          <div className={`${cardClass} px-6 py-8 text-center`}>
-            {isSociety ? (
-              <SocietySeal size={72} className="mx-auto mb-4 h-[72px] w-[72px]" />
-            ) : (
-              <Users className="w-8 h-8 text-ocean-600 mx-auto mb-3" />
-            )}
-            <p className="text-ocean-300 mb-4">You&apos;re viewing {club.name}.</p>
-            <Link
-              href="/login"
-              className={
-                isSociety
-                  ? "inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-medium text-ocean-950 hover:bg-amber-300 transition-colors"
-                  : "inline-flex items-center gap-2 rounded-full bg-ocean-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
-              }
-            >
-              Sign in to join
-            </Link>
-          </div>
-        )}
-
-        {isMember && role !== "owner" && (
-          <div className="mt-10 pt-6 border-t border-ocean-900/60">
-            <LeaveClubButton
-              clubId={club.id}
-              clubName={club.name}
-              label={isSociety ? "Leave the Society" : "Leave this club"}
-            />
-          </div>
         )}
       </div>
     </main>

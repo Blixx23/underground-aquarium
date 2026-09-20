@@ -291,7 +291,14 @@ function SeriesCard({ s, isSelf, isMember }: { s: TrophySeries; isSelf: boolean;
         <div className="mt-3">
           <div className="flex items-baseline justify-between gap-2 text-xs">
             <span className="truncate text-ocean-500">
-              Next: <span className="text-ocean-300">{next.name}</span>
+              {/* An unearned card is already titled with its first step, so don't repeat it. */}
+              {earned || next.name !== title ? (
+                <>
+                  Next: <span className="text-ocean-300">{next.name}</span>
+                </>
+              ) : pct !== null ? (
+                "Progress"
+              ) : null}
             </span>
             {pct !== null && next.threshold && (
               <span className="shrink-0 font-mono text-ocean-400">

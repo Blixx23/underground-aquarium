@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { nextFromLocation } from "@/lib/safeNext";
+import { useCarrySearch } from "@/lib/hooks/useCarrySearch";
 import { MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -10,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 const TERMS_VERSION = "2026-06-20";
 
 export default function RegisterPage() {
+  const carry = useCarrySearch();
   const router = useRouter();
   const supabase = createClient();
 
@@ -69,7 +72,7 @@ export default function RegisterPage() {
     }
 
     router.refresh();
-    router.push("/profile");
+    router.push(nextFromLocation("/profile"));
   }
 
   return (
@@ -90,7 +93,7 @@ export default function RegisterPage() {
               Don&apos;t see it within a minute or two? Check your spam folder.
             </p>
             <Link
-              href="/login"
+              href={`/login${carry}`}
               className="inline-block w-full rounded-lg bg-ocean-500 px-4 py-2 font-medium text-white transition hover:bg-ocean-400"
             >
               Go to log in
@@ -195,7 +198,7 @@ export default function RegisterPage() {
 
             <p className="mt-6 text-sm text-ocean-400">
               Already have an account?{" "}
-              <Link href="/login" className="font-medium text-white hover:underline">
+              <Link href={`/login${carry}`} className="font-medium text-white hover:underline">
                 Log in
               </Link>
             </p>

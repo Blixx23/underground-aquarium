@@ -74,7 +74,7 @@ export default async function SocietyPage({
   const { data: society } = await supabase
     .from("clubs")
     .select(
-      "id, name, description, dues_amount_cents, family_dues_amount_cents, lifetime_dues_amount_cents, contact_email"
+      "id, name, description, dues_amount_cents, lifetime_dues_amount_cents, contact_email"
     )
     .eq("slug", SOCIETY_SLUG)
     .maybeSingle();
@@ -110,9 +110,8 @@ export default async function SocietyPage({
   if (isMember && view !== "about") redirect(SOCIETY_HOME_PATH);
 
   const dues = society?.dues_amount_cents ?? 0;
-  const familyDues = society?.family_dues_amount_cents ?? null;
   const lifetimeDues = society?.lifetime_dues_amount_cents ?? null;
-  const hasTiers = dues > 0 || Boolean(familyDues) || Boolean(lifetimeDues);
+  const hasTiers = dues > 0 || Boolean(lifetimeDues);
 
   // Members go to their area. Everyone else goes to the club page, which is
   // where the join form lives (and which asks signed-out visitors to sign in).
@@ -130,13 +129,6 @@ export default async function SocietyPage({
       label: "Individual",
       price: money(dues),
       note: "per year",
-      featured: false,
-    },
-    familyDues && {
-      key: "family",
-      label: "Family",
-      price: money(familyDues),
-      note: "per year · one household",
       featured: false,
     },
     lifetimeDues && {
@@ -257,8 +249,8 @@ export default async function SocietyPage({
           </h2>
           <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-amber-100/60">
             The classifieds, the tools and the forums cost nothing and never
-            will. Dues pay for the award programs, the events, and keeping the
-            lights on. Nothing is skimmed off anybody else.
+            will. Dues pay for judging, certificates, the species registry and
+            keeping the lights on. Nothing is skimmed off anybody else.
           </p>
 
           {hasTiers && (

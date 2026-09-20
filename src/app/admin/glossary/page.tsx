@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import GlossaryQueue, { type PendingTerm } from "./GlossaryQueue";
+
+export const metadata: Metadata = { title: "Admin · Glossary suggestions" };
 
 export const dynamic = "force-dynamic";
 

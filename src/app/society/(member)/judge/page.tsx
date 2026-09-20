@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Gavel, ArrowRight, AlertTriangle } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import { SOC_EYEBROW } from "@/lib/society/theme";
+
+export const metadata: Metadata = { title: "Judge's desk" };
 
 export const dynamic = "force-dynamic";
 

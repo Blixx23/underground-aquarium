@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Download, ShieldCheck, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import DeleteAccountSection from "./DeleteAccountSection";
+
+export const metadata: Metadata = { title: "Account & data" };
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +37,9 @@ export default async function AccountPage() {
               <h2 className="font-medium text-white">Download your data</h2>
               <p className="mt-1 text-sm text-ocean-400">
                 Get a copy of the personal information we hold about your
-                account — your profile, tanks, listings, orders, and Society
-                memberships — as a JSON file.
+                account (profile, tanks, listings, posts, messages, spawn logs,
+                certificates, trophies and Society
+                memberships) as a JSON file.
               </p>
               <a
                 href="/api/account/export"

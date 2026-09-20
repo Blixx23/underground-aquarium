@@ -325,7 +325,7 @@ export default function StoreReviews({
         </p>
       ) : isOwner ? (
         <p className="text-sm text-ocean-400">
-          You manage this listing, so you can&apos;t review it yourself — but
+          You manage this store, so you can&apos;t review it yourself — but
           you can respond to reviews above.
         </p>
       ) : myReview ? (

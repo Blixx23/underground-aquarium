@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, KeySquare, Check, AlertTriangle, Minus } from "lucide-react";
@@ -5,6 +6,8 @@ import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import { SOC_EYEBROW } from "@/lib/society/theme";
 import ReviewForm from "@/components/society/ReviewForm";
+
+export const metadata: Metadata = { title: "Review" };
 
 export const dynamic = "force-dynamic";
 

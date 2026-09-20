@@ -60,7 +60,7 @@ export default function ClaimStore({
     return (
       <div className="mt-10 border-t border-white/10 pt-6 flex items-center gap-2 text-sm text-emerald-300">
         <BadgeCheck className="w-4 h-4" />
-        This listing is managed by its owner.
+        This store is managed by its owner.
       </div>
     );
   }
@@ -85,7 +85,7 @@ export default function ClaimStore({
         <div>
           <p className="text-white font-medium">Own this store?</p>
           <p className="text-ocean-400 text-sm">
-            Claim {storeName} to manage its listing.
+            Claim {storeName} to manage its page.
           </p>
         </div>
         <button

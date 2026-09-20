@@ -21,7 +21,7 @@ import { SOC_EYEBROW, SOC_CARD, SOC_RULE, SOC_GLOW } from "@/lib/society/theme";
 export const metadata: Metadata = {
   title: "Certificate Registry | Underground Aquarium",
   description:
-    "Verify any certificate issued by Underground Aquarium: memberships, breeder and horticulture titles, courses and professional certifications.",
+    "Verify any certificate issued by Underground Aquarium: memberships, breeder titles, courses and professional certifications.",
 };
 
 const PROGRAM_ICON: Record<string, typeof Fish> = {
@@ -106,7 +106,7 @@ export default function RegistryPage() {
                 tag="B"
                 tone="text-amber-300"
                 title="The program"
-                body="What was earned: membership, breeding, horticulture, a course, and so on."
+                body="What was earned: membership, breeding, a course, and so on."
               />
               <Part
                 tag="•••"

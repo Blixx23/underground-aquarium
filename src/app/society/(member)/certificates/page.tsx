@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ScrollText, Download, Lock, ShieldCheck } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
@@ -5,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { titleForPoints } from "@/lib/awards/titles";
 import { SOC_EYEBROW, SOC_CARD } from "@/lib/society/theme";
 import SocietySeal from "@/components/society/SocietySeal";
+
+export const metadata: Metadata = { title: "Certificates" };
 
 export const dynamic = "force-dynamic";
 

@@ -4,9 +4,12 @@ import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { nextFromLocation } from '@/lib/safeNext'
+import { useCarrySearch } from '@/lib/hooks/useCarrySearch'
 
 export default function LoginPage() {
   const router = useRouter()
+  const carry = useCarrySearch()
   const supabase = createClient()
 
   const [email, setEmail] = useState('')
@@ -42,8 +45,9 @@ export default function LoginPage() {
       }
     }
 
+    // Back to wherever sent them here (Trophies, the member area...).
     router.refresh()
-    router.push('/profile')
+    router.push(nextFromLocation('/profile'))
   }
 
   return (
@@ -96,7 +100,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-sm text-ocean-400">
           No account?{' '}
-          <Link href="/register" className="font-medium text-white hover:underline">
+          <Link href={`/register${carry}`} className="font-medium text-white hover:underline">
             Register
           </Link>
         </p>

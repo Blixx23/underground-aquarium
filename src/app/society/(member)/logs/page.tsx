@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { FileStack, Plus, ArrowRight } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
@@ -9,6 +10,8 @@ import {
   type SpawnLog,
 } from "@/lib/society/spawnLogs";
 import { SOC_EYEBROW, SOC_BTN_PRIMARY } from "@/lib/society/theme";
+
+export const metadata: Metadata = { title: "Spawn logs" };
 
 export const dynamic = "force-dynamic";
 

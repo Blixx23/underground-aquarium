@@ -4,7 +4,7 @@
  * from public.get_feed, which applies the rules; this file only types it.
  */
 
-export type FeedKind = "post" | "tank" | "listing" | "spawn" | "badge";
+export type FeedKind = "post" | "tank" | "listing" | "spawn" | "badge" | "thread";
 export type FeedScope = "everyone" | "following" | "user";
 
 export type FeedItem = {

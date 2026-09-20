@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import AdminCoursesList, { type AdminCourse } from "./AdminCoursesList";
+
+export const metadata: Metadata = { title: "Admin · Courses" };
 
 export const dynamic = "force-dynamic";
 

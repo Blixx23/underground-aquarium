@@ -22,6 +22,7 @@ import {
 } from "@/lib/marketplace/listings";
 import ListingGallery from "@/components/marketplace/ListingGallery";
 import ReportButton from "@/components/ReportButton";
+import SocietySeal from "@/components/society/SocietySeal";
 import { MESSAGING_ENABLED, MY_LISTINGS_ENABLED } from "@/lib/config";
 
 type ListingRow = {
@@ -124,7 +125,7 @@ export default async function ListingPage({
   const isOwner = !!user && user.id === listing.user_id;
   if (listing.status !== "active" && !isOwner) notFound();
 
-  const [{ data: sellerData }, { data: regionData }] = await Promise.all([
+  const [{ data: sellerData }, { data: regionData }, { data: sealData }] = await Promise.all([
     supabasePublic
       .from("profiles")
       .select("username, full_name")
@@ -136,7 +137,9 @@ export default async function ListingPage({
       .eq("state_code", listing.state_code)
       .eq("slug", listing.region_slug)
       .maybeSingle(),
+    supabasePublic.rpc("society_members_among", { p_users: [listing.user_id] }),
   ]);
+  const sellerIsSociety = Array.isArray(sealData) && sealData.length > 0;
 
   const seller = sellerData as { username: string | null; full_name: string | null } | null;
   const region = regionData as { name: string; state_name: string } | null;
@@ -144,7 +147,7 @@ export default async function ListingPage({
   const images = listing.images ?? [];
   const condition = conditionLabel(listing.condition);
   const regionUrl = `/marketplace/${listing.state_code.toLowerCase()}/${listing.region_slug}`;
-  const sellerName = seller?.username ?? "A hobbyist";
+  const sellerName = seller?.full_name?.trim() || seller?.username || "A hobbyist";
 
   // The three ways a buyer can reach this poster, worked out once so the
   // owner preview and the buyer view can never disagree.
@@ -244,12 +247,22 @@ export default async function ListingPage({
                 {seller?.username ? (
                   <Link
                     href={`/u/${seller.username}`}
-                    className="text-white hover:text-ocean-200 transition-colors"
+                    className={`transition-colors ${
+                      sellerIsSociety ? "text-amber-100 hover:text-amber-50" : "text-white hover:text-ocean-200"
+                    }`}
                   >
-                    {seller.username}
+                    {sellerName}
                   </Link>
                 ) : (
                   <span className="text-white">{sellerName}</span>
+                )}
+                {sellerIsSociety && (
+                  <span
+                    title="Underground Aquarium Society member"
+                    className="ml-1.5 inline-flex translate-y-[3px] items-center"
+                  >
+                    <SocietySeal size={16} className="h-4 w-4" />
+                  </span>
                 )}
               </p>
 
@@ -312,7 +325,7 @@ export default async function ListingPage({
                       className="mt-4 inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-ocean-600 hover:bg-ocean-500 text-white font-medium transition-colors"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      Message {seller?.username ?? "the seller"}
+                      Message {seller ? sellerName.split(" ")[0] : "the seller"}
                     </Link>
                   )}
 
@@ -350,7 +363,7 @@ export default async function ListingPage({
 
             <p className="text-xs text-ocean-600 leading-relaxed">
               Underground Aquarium doesn&apos;t handle payment or shipping for
-              free listings. Meet somewhere public, inspect livestock before you
+              classified ads. Meet somewhere public, inspect livestock before you
               pay, and never wire money to someone you haven&apos;t met.
             </p>
 

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const { data: club } = await supabase
       .from("clubs")
       .select(
-        "id, slug, name, dues_amount_cents, family_dues_amount_cents, lifetime_dues_amount_cents, stripe_account_id, payouts_enabled"
+        "id, slug, name, dues_amount_cents, lifetime_dues_amount_cents, stripe_account_id, payouts_enabled"
       )
       .eq("id", clubId)
       .maybeSingle();
@@ -30,7 +30,6 @@ export async function POST(request: Request) {
     }
     const hasAnyDues =
       (club.dues_amount_cents ?? 0) > 0 ||
-      (club.family_dues_amount_cents ?? 0) > 0 ||
       (club.lifetime_dues_amount_cents ?? 0) > 0;
     if (!hasAnyDues) {
       return NextResponse.json({ error: "This club has no dues." }, { status: 400 });
@@ -45,28 +44,16 @@ export async function POST(request: Request) {
     // The member's row, so the webhook can advance the right person.
     const { data: me } = await supabase
       .from("club_members")
-      .select("id, tier, family_primary_id")
+      .select("id, tier")
       .eq("club_id", clubId)
       .eq("user_id", user.id)
       .maybeSingle();
 
-    // Family members are covered by the main member's payment — they don't pay.
-    if (me?.family_primary_id) {
-      return NextResponse.json(
-        { error: "Your dues are covered by your family membership." },
-        { status: 400 }
-      );
-    }
-
-    // Charge the right amount for the member's plan.
+    // Charge the right amount for the member's plan. Family plans are
+    // retired: anyone still marked "family" simply pays individual dues.
     //  - lifetime: a one-time payment that covers ~100 years (effectively forever)
-    //  - family (main member): the club's family rate
     //  - everyone else: the standard dues
     const isLifetime = me?.tier === "lifetime";
-    const isFamily =
-      me?.tier === "family" &&
-      !me?.family_primary_id &&
-      (club.family_dues_amount_cents ?? 0) > 0;
 
     let amount: number;
     let coversMonths = "12";
@@ -81,9 +68,6 @@ export async function POST(request: Request) {
       amount = club.lifetime_dues_amount_cents as number;
       coversMonths = "1200"; // ~100 years
       productLabel = "lifetime membership";
-    } else if (isFamily) {
-      amount = club.family_dues_amount_cents as number;
-      productLabel = "family membership dues";
     } else {
       amount = club.dues_amount_cents;
     }

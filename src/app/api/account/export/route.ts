@@ -14,7 +14,7 @@ export async function GET() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, full_name, bio, location, website")
+    .select("id, username, full_name, bio, location, website, avatar_url")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -27,32 +27,36 @@ export async function GET() {
     .from("stores")
     .select("id, name, slug")
     .eq("owner_id", user.id);
-  const storeIds = (stores ?? []).map((s) => (s as { id: string }).id);
 
-  let listings: unknown[] = [];
-  let sales: unknown[] = [];
-  if (storeIds.length > 0) {
-    const { data: products } = await supabase
-      .from("products")
-      .select(
-        "id, name, slug, price, category, stock, is_active, is_draft, archived_at, created_at"
-      )
-      .in("store_id", storeIds);
-    listings = products ?? [];
-
-    const { data: storeOrders } = await supabase
-      .from("orders")
-      .select("id, product_name, amount_total, platform_fee, status, created_at")
-      .in("store_id", storeIds);
-    sales = storeOrders ?? [];
-  }
-
-  const { data: purchases } = await supabase
-    .from("orders")
-    .select(
-      "id, product_name, amount_total, status, created_at, tracking, tracking_carrier"
-    )
-    .eq("buyer_id", user.id);
+  // Everything else you've made, keyed by the column that says it's yours.
+  // A table that isn't readable just comes back empty rather than failing the export.
+  const mine = async (table: string, column: string, select = "*") => {
+    const { data } = await supabase.from(table).select(select).eq(column, user.id);
+    return data ?? [];
+  };
+  const [
+    listings,
+    feedPosts,
+    forumPosts,
+    messagesSent,
+    waterLogs,
+    storeReviews,
+    spawnLogs,
+    certificates,
+    trophies,
+    courses,
+  ] = await Promise.all([
+    mine("listings", "user_id"),
+    mine("feed_posts", "user_id"),
+    mine("forum_posts", "author_id"),
+    mine("listing_messages", "sender_id"),
+    mine("water_logs", "user_id"),
+    mine("store_reviews", "user_id"),
+    mine("spawn_logs", "user_id"),
+    mine("society_certificates", "user_id"),
+    mine("user_trophies", "user_id"),
+    mine("course_completions", "user_id"),
+  ]);
 
   const { data: memberships } = await supabase
     .from("club_members")
@@ -76,9 +80,16 @@ export async function GET() {
     tanks: tanks ?? [],
     stores: stores ?? [],
     listings,
-    purchases: purchases ?? [],
-    sales,
+    feed_posts: feedPosts,
+    forum_posts: forumPosts,
+    messages_sent: messagesSent,
+    water_logs: waterLogs,
+    store_reviews: storeReviews,
+    course_completions: courses,
     club_memberships: memberships ?? [],
+    spawn_logs: spawnLogs,
+    certificates,
+    trophies,
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {

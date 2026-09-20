@@ -149,11 +149,21 @@ export default async function StoreDetailPage({ params }: Params) {
   const currentUserName = user ? nameById.get(user.id) ?? null : null;
 
   // Shop updates
-  const { data: postRows } = await supabasePublic
+  // Photos on updates came later; if that column isn't there, still show the text.
+  const withPhotos = await supabasePublic
     .from("store_posts")
     .select("id,title,body,images,created_at")
     .eq("store_id", store.id)
     .order("created_at", { ascending: false });
+  let postRows: unknown[] | null = withPhotos.data;
+  if (withPhotos.error) {
+    const retry = await supabasePublic
+      .from("store_posts")
+      .select("id,title,body,created_at")
+      .eq("store_id", store.id)
+      .order("created_at", { ascending: false });
+    postRows = (retry.data ?? []).map((r) => ({ ...r, images: null }));
+  }
   const initialPosts = (
     (postRows as {
       id: string;
@@ -166,7 +176,7 @@ export default async function StoreDetailPage({ params }: Params) {
     id: p.id,
     title: p.title,
     body: p.body,
-    images: p.images,
+    images: p.images ?? null,
     createdAt: p.created_at,
   }));
 

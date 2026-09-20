@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,6 +15,8 @@ import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { SOCIETY_NAME, SOCIETY_SLUG, SOCIETY_CLUB_PATH } from "@/lib/config";
+
+export const metadata: Metadata = { title: "Admin" };
 
 type AdminTool = {
   href: string;

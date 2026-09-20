@@ -31,7 +31,8 @@ type Member = {
 
 const ROLES = ["member", "officer", "admin"];
 const STATUSES = ["active", "prospect", "lapsed", "pending"];
-const TIERS = ["individual", "family", "lifetime"];
+// Family plans are retired; existing "family" rows still display.
+const TIERS = ["individual", "lifetime"];
 
 export default function MemberManager({
   clubId,

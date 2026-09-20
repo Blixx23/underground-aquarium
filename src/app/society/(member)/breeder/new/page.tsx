@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
@@ -5,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { SOC_EYEBROW } from "@/lib/society/theme";
 import OpenLogForm from "@/components/society/OpenLogForm";
 import type { AwardSpecies } from "@/components/society/SpeciesBrowser";
+
+export const metadata: Metadata = { title: "Open a spawn log" };
 
 export const dynamic = "force-dynamic";
 

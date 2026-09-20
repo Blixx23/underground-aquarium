@@ -113,16 +113,23 @@ export default async function MarketplacePage() {
         <section className="mb-12">
           <p className="flex items-center gap-2 text-sm text-ocean-400 mb-3">
             <Tag className="w-4 h-4 text-ocean-500" />
-            People post
+            Browse by category, nationwide
           </p>
           <div className="flex flex-wrap gap-2">
+            <Link
+              href="/listings"
+              className="rounded-full border border-ocean-500/50 bg-ocean-600/25 px-3 py-1.5 text-sm text-white transition-colors hover:bg-ocean-600/40"
+            >
+              Everything, everywhere
+            </Link>
             {CATEGORIES.map((c) => (
-              <span
+              <Link
                 key={c.key}
-                className="rounded-full border border-ocean-800/60 bg-ocean-900/40 px-3 py-1.5 text-sm text-ocean-300"
+                href={`/listings?category=${c.key}`}
+                className="rounded-full border border-ocean-800/60 bg-ocean-900/40 px-3 py-1.5 text-sm text-ocean-300 transition-colors hover:border-ocean-600 hover:text-white"
               >
                 {c.label}
-              </span>
+              </Link>
             ))}
           </div>
         </section>

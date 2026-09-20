@@ -112,7 +112,7 @@ export default async function CourseLandingPage({
 
         {/* Hero */}
         <p className="text-xs font-mono uppercase tracking-[0.3em] text-ocean-400 mb-3">
-          Underground Aquarium Society · Free course
+          Underground Aquarium · Free course
         </p>
         <h1 className="font-display text-4xl sm:text-5xl text-white glow-text mb-4">
           {course.title}

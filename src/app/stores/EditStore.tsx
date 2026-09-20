@@ -90,7 +90,7 @@ export default function EditStore({
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-300 px-4 py-2 text-sm font-medium hover:bg-emerald-500/25 transition-colors mb-6"
       >
-        <Pencil className="w-4 h-4" /> Edit listing
+        <Pencil className="w-4 h-4" /> Edit store
       </button>
     );
   }
@@ -101,7 +101,7 @@ export default function EditStore({
   return (
     <div className="rounded-2xl bg-white/5 border border-white/10 p-6 mb-8">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-white font-medium">Edit your listing</p>
+        <p className="text-white font-medium">Edit your store</p>
         <button
           onClick={() => setOpen(false)}
           aria-label="Close"

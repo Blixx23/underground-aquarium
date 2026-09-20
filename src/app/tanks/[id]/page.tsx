@@ -7,6 +7,8 @@ import { supabasePublic } from "@/lib/supabase/public";
 import ReportButton from "@/components/tanks/ReportButton";
 import TankVoteControl from "@/components/tanks/TankVoteControl";
 import TankComments from "@/components/tanks/TankComments";
+import Avatar from "@/components/profile/Avatar";
+import SocietySeal from "@/components/society/SocietySeal";
 
 export const dynamic = "force-dynamic";
 
@@ -91,11 +93,12 @@ export default async function TankPage({ params }: Params) {
 
   const authorIds = new Set(commentList.map((c) => c.user_id));
   if (user) authorIds.add(user.id);
-  let profileById = new Map<string, { username: string | null; name: string }>();
+  authorIds.add(t.user_id);
+  let profileById = new Map<string, { username: string | null; name: string; avatar: string | null }>();
   if (authorIds.size > 0) {
     const { data: profs } = await supabasePublic
       .from("profiles")
-      .select("id,username,full_name")
+      .select("id,username,full_name,avatar_url")
       .in("id", Array.from(authorIds));
     profileById = new Map(
       (
@@ -103,10 +106,11 @@ export default async function TankPage({ params }: Params) {
           id: string;
           username: string | null;
           full_name: string | null;
+          avatar_url: string | null;
         }[]) ?? []
       ).map((p) => [
         p.id,
-        { username: p.username, name: p.full_name || p.username || "Aquarist" },
+        { username: p.username, name: p.full_name || p.username || "Aquarist", avatar: p.avatar_url },
       ])
     );
   }
@@ -122,6 +126,11 @@ export default async function TankPage({ params }: Params) {
       createdAt: c.created_at,
     };
   });
+  const owner = profileById.get(t.user_id);
+  const { data: ownerSeal } = await supabasePublic.rpc("society_members_among", {
+    p_users: [t.user_id],
+  });
+  const ownerIsSociety = Array.isArray(ownerSeal) && ownerSeal.length > 0;
   const currentProfile = user ? profileById.get(user.id) : undefined;
   const currentUserName = currentProfile?.name ?? null;
   const currentUserUsername = currentProfile?.username ?? null;
@@ -147,10 +156,26 @@ export default async function TankPage({ params }: Params) {
         <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
           {t.name}
         </h1>
-        <p className="text-ocean-300 mb-6">
+        <p className="text-ocean-300 mb-4">
           {t.gallons ? `${t.gallons} gallon tank` : "Tank"} ·{" "}
-          {items.length} {items.length === 1 ? "species" : "species"}
+          {items.length} species
         </p>
+
+        {owner && (
+          <Link
+            href={owner.username ? `/u/${owner.username}` : "#"}
+            className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 py-1.5 pl-1.5 pr-4 text-sm transition-colors hover:bg-white/10"
+          >
+            <Avatar name={owner.name} src={owner.avatar} society={ownerIsSociety} size={28} />
+            <span className="text-ocean-400">
+              {isOwner ? "Your tank" : "Kept by"}{" "}
+              {!isOwner && (
+                <span className={ownerIsSociety ? "text-amber-100" : "text-white"}>{owner.name}</span>
+              )}
+            </span>
+            {ownerIsSociety && <SocietySeal size={16} className="h-4 w-4" />}
+          </Link>
+        )}
 
         {/* Photos + like */}
         {images.length > 0 ? (

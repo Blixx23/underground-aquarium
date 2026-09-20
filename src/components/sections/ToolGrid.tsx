@@ -10,6 +10,8 @@ import {
   Library,
   GraduationCap,
   ArrowRight,
+  Newspaper,
+  Trophy,
 } from "lucide-react";
 
 type Tool = {
@@ -38,6 +40,12 @@ const TOOLS: Tool[] = [
     Icon: MessagesSquare,
     wide: true,
     highlight: true,
+  },
+  {
+    href: "/feed",
+    label: "The Feed",
+    desc: "Spawns, new tanks, fresh listings and what everyone's working on, as it happens.",
+    Icon: Newspaper,
   },
   {
     href: "/tank-builder",
@@ -80,6 +88,12 @@ const TOOLS: Tool[] = [
     label: "Courses",
     desc: "Learn the fundamentals properly, from cycling to breeding.",
     Icon: GraduationCap,
+  },
+  {
+    href: "/trophies",
+    label: "Trophies",
+    desc: "140 of them, earned for everything you do here. They show on your profile.",
+    Icon: Trophy,
   },
 ];
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Fish, Trophy, Ticket } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
@@ -7,6 +8,8 @@ import MemberCard from "@/components/society/MemberCard";
 import TrophyCabinet from "@/components/trophies/TrophyCabinet";
 import type { TrophyRow } from "@/lib/trophies";
 import { SOC_EYEBROW, SOC_CARD_LINK } from "@/lib/society/theme";
+
+export const metadata: Metadata = { title: "Member area" };
 
 export const dynamic = "force-dynamic";
 
@@ -142,13 +145,13 @@ export default async function SocietyHome() {
           {
             href: "/society/leaderboard",
             label: "Leaderboard",
-            desc: `${roster ?? 0} member${roster === 1 ? "" : "s"} on the roster.`,
+            desc: `${roster ?? 0} member${roster === 1 ? "" : "s"} in good standing.`,
             Icon: Trophy,
           },
           {
             href: "/society/raffle",
-            label: "Raffle",
-            desc: "Entries you've earned this period.",
+            label: "Raffle · coming soon",
+            desc: "Approved spawns will earn you entries. Draws start soon.",
             Icon: Ticket,
           },
         ].map(({ href, label, desc, Icon }) => (

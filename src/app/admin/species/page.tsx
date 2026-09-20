@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import AdminSpeciesList from "./AdminSpeciesList";
+
+export const metadata: Metadata = { title: "Admin · Species suggestions" };
 
 export const dynamic = "force-dynamic";
 

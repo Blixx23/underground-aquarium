@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
@@ -7,11 +8,13 @@ import {
   Fish,
   Globe,
   Lock,
-  User as UserIcon,
   MapPin,
   ExternalLink,
   ShieldCheck,
   Settings,
+  Newspaper,
+  Trophy,
+  Bell,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
@@ -19,9 +22,11 @@ import BubbleBadge from "@/components/bubbles/BubbleBadge";
 import Certifications, {
   type Certification,
 } from "@/components/profile/Certifications";
-import ClubsAndAwards, {
-  type ClubAward,
-} from "@/components/profile/ClubsAndAwards";
+import AvatarUpload from "@/components/profile/AvatarUpload";
+import SocietySeal from "@/components/society/SocietySeal";
+import { SOCIETY_HOME_PATH, SOCIETY_PATH } from "@/lib/config";
+
+export const metadata: Metadata = { title: "Your profile" };
 
 type SavedTank = {
   id: string;
@@ -43,7 +48,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, full_name, bio, location, website, is_admin, bubble_balance, bubble_tier_seen")
+    .select("username, full_name, bio, location, website, avatar_url, is_admin, bubble_balance, bubble_tier_seen")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -80,18 +85,24 @@ export default async function ProfilePage() {
     })
     .filter((x): x is Certification => x !== null);
 
-  const { data: clubsData } = await supabase.rpc("user_clubs_awards", {
-    p_user_id: user.id,
-    p_public_only: false,
-  });
-  const myClubs = (clubsData ?? []) as ClubAward[];
+  const { data: cardData } = await supabase.rpc("society_public_card", { p_user: user.id });
+  const card = (Array.isArray(cardData) ? cardData[0] : cardData) as
+    | { is_member?: boolean; member_number?: number | null; title?: string | null }
+    | null;
+  const inSociety = Boolean(card?.is_member);
 
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const isAdmin = Boolean(profile?.is_admin);
 
   const actions = [
-    { href: "/my/listings", label: "My listings", Icon: Store },
+    ...(profile?.username
+      ? [{ href: `/u/${profile.username}`, label: "Public profile", Icon: ExternalLink }]
+      : []),
+    { href: "/feed", label: "The Feed", Icon: Newspaper },
+    { href: "/trophies", label: "Trophies", Icon: Trophy },
+    { href: "/notifications", label: "Notifications", Icon: Bell },
     { href: "/messages", label: "Messages", Icon: MessageCircle },
+    { href: "/my/listings", label: "My listings", Icon: Store },
     { href: "/post", label: "Post free ad", Icon: Plus },
     { href: "/tank-builder", label: "Tank Builder", Icon: Fish },
     { href: "/account", label: "Account & data", Icon: Settings },
@@ -106,9 +117,12 @@ export default async function ProfilePage() {
         {/* Identity header */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur">
           <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/10 bg-ocean-800/60">
-              <UserIcon className="h-7 w-7 text-ocean-300" />
-            </div>
+            <AvatarUpload
+              userId={user.id}
+              name={displayName}
+              initialUrl={profile?.avatar_url ?? null}
+              society={inSociety}
+            />
             <div className="min-w-0 flex-1">
               <h1 className="truncate font-display text-2xl text-white sm:text-3xl">
                 {displayName}
@@ -142,6 +156,34 @@ export default async function ProfilePage() {
           </div>
         </div>
 
+        {/* Society */}
+        <Link
+          href={inSociety ? SOCIETY_HOME_PATH : SOCIETY_PATH}
+          className={`mt-6 flex items-center gap-4 rounded-2xl border p-5 transition-colors ${
+            inSociety
+              ? "border-amber-500/35 bg-gradient-to-r from-amber-500/[0.12] to-transparent hover:border-amber-400/60"
+              : "border-white/10 bg-white/5 hover:border-amber-500/40"
+          }`}
+        >
+          <SocietySeal size={48} className="h-12 w-12 shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium text-amber-50">
+              {inSociety ? "Society member area" : "Join the Underground Aquarium Society"}
+            </span>
+            <span className="block text-sm text-amber-100/60">
+              {inSociety
+                ? [
+                    card?.member_number ? `UAS-${String(card.member_number).padStart(4, "0")}` : null,
+                    card?.title,
+                    "Spawn logs, breeder program, certificates",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                : "Judged breeder awards, signed certificates and Society trophies."}
+            </span>
+          </span>
+        </Link>
+
         {/* Quick actions */}
         <div className="mt-8">
           <p className="mb-3 font-mono text-xs uppercase tracking-widest text-ocean-500">
@@ -166,13 +208,6 @@ export default async function ProfilePage() {
           rows={certs}
           heading="Awards & Certifications"
           emptyText="You haven't earned any certifications yet."
-        />
-
-        {/* Society membership and award standing */}
-        <ClubsAndAwards
-          rows={myClubs}
-          heading="Society & awards"
-          emptyText="You're not a member of the Society yet."
         />
 
         {/* Your tanks */}

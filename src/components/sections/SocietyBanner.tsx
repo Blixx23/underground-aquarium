@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Trophy, Sprout, CalendarDays } from "lucide-react";
+import { ArrowRight, Trophy, ScrollText, Medal } from "lucide-react";
 import { SOCIETY_PATH, SOCIETY_CLUB_PATH } from "@/lib/config";
 import SocietySeal from "@/components/society/SocietySeal";
 
@@ -85,8 +85,8 @@ export default function SocietyBanner({
               <ul className="mt-7 flex flex-wrap justify-center gap-x-6 gap-y-3 lg:justify-start">
                 {[
                   { Icon: Trophy, label: "Breeder Award Program" },
-                  { Icon: Sprout, label: "Horticultural Award Program" },
-                  { Icon: CalendarDays, label: "Members-first events" },
+                  { Icon: ScrollText, label: "Signed certificates" },
+                  { Icon: Medal, label: "Society trophies" },
                 ].map(({ Icon, label }) => (
                   <li
                     key={label}

@@ -77,7 +77,7 @@ export default async function CertificatePage({
             <div className="pointer-events-none absolute -top-16 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-amber-300/5 blur-3xl" />
 
             <p className="relative text-[11px] font-mono uppercase tracking-[0.35em] text-ocean-400 mb-8">
-              Underground Aquarium Society
+              Underground Aquarium
             </p>
 
             {/* Seal */}

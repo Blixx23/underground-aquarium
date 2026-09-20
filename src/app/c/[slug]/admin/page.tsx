@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import {
@@ -16,6 +17,8 @@ import ClubSettings from "./ClubSettings";
 import DeleteClubButton from "./DeleteClubButton";
 import ClubRequests from "./ClubRequests";
 import AdminSections, { type AdminSection } from "./AdminSections";
+
+export const metadata: Metadata = { title: "Society admin" };
 
 export default async function ClubAdminPage({
   params,
@@ -291,7 +294,7 @@ export default async function ClubAdminPage({
 
   sections.push({
     key: "awards",
-    title: "Awards (BAP / HAP)",
+    title: "Breeder Award Program",
     subtitle: "Submissions and species point list",
     accent: "amber",
     badge:

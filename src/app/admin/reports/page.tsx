@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import AdminReportsList from "./AdminReportsList";
+
+export const metadata: Metadata = { title: "Admin · Reports" };
 
 export const dynamic = "force-dynamic";
 

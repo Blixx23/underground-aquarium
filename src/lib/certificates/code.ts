@@ -25,7 +25,6 @@ export type CertificateProgram = {
 export const CERTIFICATE_PROGRAMS: CertificateProgram[] = [
   { letter: "M", name: "Membership", description: "Membership in the Underground Aquarium Society." },
   { letter: "B", name: "Breeder Award Program", description: "Titles earned by breeding fish, judged stage by stage." },
-  { letter: "H", name: "Horticulture Award Program", description: "Titles earned by propagating aquatic plants." },
   { letter: "C", name: "Courses", description: "Completion of an Underground Aquarium course." },
   { letter: "P", name: "Professional Certification", description: "Certification for aquarium store staff and professionals." },
   { letter: "A", name: "Honors & Achievements", description: "Special recognition, milestones and honors." },

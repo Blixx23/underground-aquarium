@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import BubbleAwardForm from "./BubbleAwardForm";
+
+export const metadata: Metadata = { title: "Admin · Bubbles" };
 
 export const dynamic = "force-dynamic";
 

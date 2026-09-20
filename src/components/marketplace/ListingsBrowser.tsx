@@ -23,11 +23,14 @@ const SORTS: { key: SortKey; label: string }[] = [
 export default function ListingsBrowser({
   listings,
   regionName,
+  initialCategory = "all",
 }: {
   listings: Listing[];
   regionName: string;
+  /** Pre-select a category, e.g. from ?category= on the nationwide page. */
+  initialCategory?: string;
 }) {
-  const [active, setActive] = useState<string>("all");
+  const [active, setActive] = useState<string>(initialCategory);
   const [sort, setSort] = useState<SortKey>("newest");
   const [query, setQuery] = useState("");
 
