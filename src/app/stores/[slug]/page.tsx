@@ -19,6 +19,7 @@ import StoreTracker from "@/components/stores/StoreTracker";
 import TrackedLink from "@/components/stores/TrackedLink";
 import StorePhotos, { type StorePhoto } from "@/components/stores/StorePhotos";
 import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpecialHours";
+import OsmCredit from "@/components/stores/OsmCredit";
 
 export const dynamic = "force-dynamic";
 
@@ -37,13 +38,14 @@ type StoreRow = {
   description: string | null;
   tags: string[] | null;
   claimed_by: string | null;
+  source: string | null;
 };
 
 async function getStore(slug: string) {
   const { data } = await supabasePublic
     .from("fish_stores")
     .select(
-      "id, slug, name, address, city, state, phone, website, hours, description, tags, claimed_by"
+      "id, slug, name, address, city, state, phone, website, hours, description, tags, claimed_by, source"
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -361,6 +363,8 @@ export default async function StoreDetailPage({ params }: Params) {
           Underground Aquarium is a free directory. Shops don&apos;t sell through this site and we take
           no commission. Call or visit the shop for prices and what&apos;s available.
         </p>
+
+        {store.source === "osm" && <OsmCredit className="mt-4" />}
 
         <ClaimStore
           storeId={store.id}

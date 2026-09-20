@@ -4,6 +4,7 @@ import { Megaphone } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import StoreDirectory from "./StoreDirectory";
 import SuggestStore from "./SuggestStore";
+import OsmCredit from "@/components/stores/OsmCredit";
 
 export const dynamic = "force-dynamic";
 
@@ -144,6 +145,8 @@ export default async function StoresPage({
         <div className="mt-12">
           <SuggestStore />
         </div>
+
+        <OsmCredit className="mt-10" />
       </div>
     </main>
   );
