@@ -43,28 +43,46 @@ export default function Feed({
   const [items, setItems] = useState(initialItems);
   const [more, setMore] = useState(initialItems.length >= FEED_PAGE);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setItems(initialItems);
     setMore(initialItems.length >= FEED_PAGE);
+    setFailed(false);
   }, [initialItems]);
 
   const loadMore = useCallback(async () => {
-    if (loading || !more || items.length === 0) return;
+    if (loading || !more || failed || items.length === 0) return;
     setLoading(true);
-    const { items: next } = await fetchFeed(supabase, {
-      scope,
-      userId,
-      before: items[items.length - 1].created_at,
-    });
-    setItems((cur) => {
-      const seen = new Set(cur.map((i) => `${i.kind}:${i.id}`));
-      return [...cur, ...next.filter((i) => !seen.has(`${i.kind}:${i.id}`))];
-    });
-    setMore(next.length >= FEED_PAGE);
-    setLoading(false);
-  }, [loading, more, items, supabase, scope, userId]);
+    try {
+      const { items: next, error } = await fetchFeed(supabase, {
+        scope,
+        userId,
+        before: items[items.length - 1].created_at,
+      });
+      // A failed request is not the end of the feed. Say so, and offer a retry,
+      // rather than claiming they're caught up when they aren't.
+      if (error) {
+        setFailed(true);
+        return;
+      }
+      let added = 0;
+      setItems((cur) => {
+        const seen = new Set(cur.map((i) => `${i.kind}:${i.id}`));
+        const fresh = next.filter((i) => !seen.has(`${i.kind}:${i.id}`));
+        added = fresh.length;
+        return fresh.length ? [...cur, ...fresh] : cur;
+      });
+      // If a whole page came back as things we already had, the cursor can't
+      // move, so asking again would fetch the same page forever.
+      setMore(next.length >= FEED_PAGE && added > 0);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, more, failed, items, supabase, scope, userId]);
 
   useEffect(() => {
     const el = sentinel.current;
@@ -77,9 +95,15 @@ export default function Feed({
   }, [loadMore]);
 
   async function refresh() {
-    const { items: fresh } = await fetchFeed(supabase, { scope, userId });
+    const { items: fresh, error } = await fetchFeed(supabase, { scope, userId });
+    if (error) return;
     setItems(fresh);
     setMore(fresh.length >= FEED_PAGE);
+    setFailed(false);
+  }
+
+  function retry() {
+    setFailed(false);
   }
 
   return (
@@ -119,7 +143,19 @@ export default function Feed({
           <Loader2 className="h-4 w-4 animate-spin" /> Loading more…
         </p>
       )}
-      {!more && items.length > 0 && (
+      {failed && (
+        <div className="py-6 text-center">
+          <p className="text-sm text-ocean-400">Couldn&apos;t load more posts.</p>
+          <button
+            type="button"
+            onClick={retry}
+            className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition-colors hover:bg-white/10"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+      {!more && !failed && items.length > 0 && (
         <p className="py-6 text-center text-xs text-ocean-600">You&apos;re all caught up.</p>
       )}
     </div>
