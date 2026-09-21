@@ -255,7 +255,7 @@ export default async function ProfilePage({
         {/* Certifications */}
         <Certifications
           rows={certs}
-          heading="Awards & Certifications"
+          heading="Certifications"
           emptyText="You haven't earned any certifications yet."
         />
 

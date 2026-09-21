@@ -46,7 +46,7 @@ export default async function TrophiesPage() {
           </div>
           {profile?.username && (
             <Link
-              href={`/u/${profile.username}?tab=awards`}
+              href={`/u/${profile.username}?tab=trophies`}
               className="inline-flex items-center gap-1.5 text-sm text-ocean-300 hover:text-white"
             >
               How others see it <ArrowRight className="h-4 w-4" />

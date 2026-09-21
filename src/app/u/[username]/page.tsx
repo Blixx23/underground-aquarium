@@ -82,7 +82,7 @@ const TABS = [
   { key: "feed", label: "Feed" },
   { key: "tanks", label: "Tanks" },
   { key: "listings", label: "Listings" },
-  { key: "awards", label: "Awards" },
+  { key: "trophies", label: "Trophies" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -108,7 +108,9 @@ function normalizeUrl(url: string) {
 export default async function PublicProfilePage({ params, searchParams }: Params) {
   const { username } = await params;
   const { tab: rawTab } = await searchParams;
-  const tab: TabKey = (TABS.find((t) => t.key === rawTab)?.key ?? "feed") as TabKey;
+  // ?tab=awards was this tab's old name; keep old links working.
+  const wanted = rawTab === "awards" ? "trophies" : rawTab;
+  const tab: TabKey = (TABS.find((t) => t.key === wanted)?.key ?? "feed") as TabKey;
 
   const { data: profileData } = await supabasePublic
     .from("profiles")
@@ -307,7 +309,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
             <Link href={`${base}/following`} className="text-ocean-400 hover:text-white">
               <span className="font-semibold text-white">{following ?? 0}</span> following
             </Link>
-            <Link href={`${base}?tab=awards`} className="text-ocean-400 hover:text-white">
+            <Link href={`${base}?tab=trophies`} className="text-ocean-400 hover:text-white">
               <span className="font-semibold text-amber-300">{trophyCount ?? 0}</span> trophies
             </Link>
           </div>
@@ -354,7 +356,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           )}
           {tab === "tanks" && <TanksTab profileId={profile.id} name={displayName} />}
           {tab === "listings" && <ListingsTab profileId={profile.id} name={displayName} />}
-          {tab === "awards" && <AwardsTab profileId={profile.id} name={displayName} isMe={isMe} />}
+          {tab === "trophies" && <TrophiesTab profileId={profile.id} name={displayName} isMe={isMe} />}
         </div>
 
         <div className="mt-16 flex flex-wrap items-start gap-6 border-t border-ocean-800/40 pt-6">
@@ -440,7 +442,7 @@ async function Sidebar({
               </div>
             )}
           </dl>
-          <Link href={`${base}?tab=awards`} className="mt-4 inline-block text-sm text-amber-300 hover:text-amber-200">
+          <Link href={`${base}?tab=trophies`} className="mt-4 inline-block text-sm text-amber-300 hover:text-amber-200">
             Trophy case →
           </Link>
         </div>
@@ -555,7 +557,7 @@ async function ListingsTab({ profileId, name }: { profileId: string; name: strin
   );
 }
 
-async function AwardsTab({ profileId, name, isMe }: { profileId: string; name: string; isMe: boolean }) {
+async function TrophiesTab({ profileId, name, isMe }: { profileId: string; name: string; isMe: boolean }) {
   const { supabase } = await getViewer();
   const [{ data: trophyRows }, { data: certData }] = await Promise.all([
     supabase.rpc("get_trophy_case", { p_user: profileId }),
