@@ -28,6 +28,7 @@ import { fetchFeed } from "@/lib/feed";
 import { getViewer } from "@/lib/feedViewer";
 import { SOCIETY_PATH } from "@/lib/config";
 import TankTile from "@/components/tanks/TankTile";
+import ProfileHighlights from "@/components/profile/ProfileHighlights";
 
 export const dynamic = "force-dynamic";
 
@@ -347,6 +348,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           {tab === "feed" && (
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
               <div className="min-w-0">
+                <ProfileHighlights profileId={profile.id} base={base} />
                 <ProfileFeed profileId={profile.id} isMe={isMe} name={displayName} />
               </div>
               <aside className="hidden lg:block">
