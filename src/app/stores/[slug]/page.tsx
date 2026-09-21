@@ -34,6 +34,9 @@ type StoreRow = {
   address: string | null;
   city: string | null;
   state: string | null;
+  postal_code?: string | null;
+  lat?: number | null;
+  lng?: number | null;
   phone: string | null;
   website: string | null;
   hours: string | null;
@@ -43,12 +46,21 @@ type StoreRow = {
   source: string | null;
 };
 
+const STORE_COLS =
+  "id, slug, name, address, city, state, phone, website, hours, description, tags, claimed_by, source, lat, lng";
+
 async function getStore(slug: string) {
+  // postal_code only exists on some schemas; fall back without it.
+  const withZip = await supabasePublic
+    .from("fish_stores")
+    .select(`${STORE_COLS}, postal_code`)
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+  if (!withZip.error) return (withZip.data as StoreRow | null) ?? null;
   const { data } = await supabasePublic
     .from("fish_stores")
-    .select(
-      "id, slug, name, address, city, state, phone, website, hours, description, tags, claimed_by, source"
-    )
+    .select(STORE_COLS)
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
@@ -61,11 +73,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!store) return { title: "Store not found" };
 
   const place = [store.city, store.state].filter(Boolean).join(", ");
+  const title = place ? `${store.name} — ${place}` : store.name;
+  const description =
+    store.description ??
+    `${store.name} is a local fish store${place ? ` in ${place}` : ""}. ` +
+      `Hours, phone number, directions and reviews from other aquarium keepers.`;
   return {
-    title: place ? `${store.name} — ${place}` : store.name,
-    description:
-      store.description ??
-      `Visit ${store.name}, a local aquarium store${place ? ` in ${place}` : ""}.`,
+    title,
+    description,
+    alternates: { canonical: `/stores/${store.slug}` },
+    openGraph: { title, description, url: `/stores/${store.slug}`, type: "website" },
   };
 }
 
@@ -234,8 +251,70 @@ export default async function StoreDetailPage({ params }: Params) {
   const rowClass =
     "flex items-start gap-3 rounded-xl px-3.5 py-3 text-sm transition-colors";
 
+  const siteUrl = "https://www.undergroundaquarium.com";
+  const pageUrl = `${siteUrl}/stores/${store.slug}`;
+
+  /**
+   * A shop is a place in the world, not just a web page. Telling search
+   * engines that — with its address, phone, hours and rating — is what puts
+   * it in local results and map packs.
+   */
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "PetStore",
+    "@id": pageUrl,
+    name: store.name,
+    url: pageUrl,
+    ...(store.description ? { description: store.description } : {}),
+    ...(store.phone ? { telephone: store.phone } : {}),
+    ...(websiteHref ? { sameAs: [websiteHref] } : {}),
+    ...(store.hours ? { openingHours: store.hours } : {}),
+    address: {
+      "@type": "PostalAddress",
+      ...(store.address ? { streetAddress: store.address } : {}),
+      ...(store.city ? { addressLocality: store.city } : {}),
+      ...(store.state ? { addressRegion: store.state } : {}),
+      ...(store.postal_code ? { postalCode: store.postal_code } : {}),
+      addressCountry: "US",
+    },
+    ...(store.lat != null && store.lng != null
+      ? { geo: { "@type": "GeoCoordinates", latitude: store.lat, longitude: store.lng } }
+      : {}),
+    ...(ratingCount > 0 && ratingAvg != null
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: Number(ratingAvg.toFixed(1)),
+            reviewCount: ratingCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Fish stores", item: `${siteUrl}/stores` },
+      ...(store.state
+        ? [{ "@type": "ListItem", position: 2, name: store.state, item: `${siteUrl}/stores` }]
+        : []),
+      { "@type": "ListItem", position: store.state ? 3 : 2, name: store.name, item: pageUrl },
+    ],
+  };
+
   return (
     <main className="min-h-screen px-6 pb-20 pt-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       <div className="mx-auto max-w-6xl">
         <StoreTracker storeId={store.id} />
 

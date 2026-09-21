@@ -6,202 +6,186 @@ const baseUrl = "https://www.undergroundaquarium.com";
 
 export const revalidate = 3600;
 
+type Entry = MetadataRoute.Sitemap[number];
+type Freq = NonNullable<Entry["changeFrequency"]>;
+
+/**
+ * Supabase hands back at most 1000 rows per request, so anything that can
+ * outgrow that — shops, listings, species — has to be paged through or the
+ * sitemap quietly stops at a thousand. The caller builds its own query and
+ * we just keep asking for the next slice.
+ */
+type Page = PromiseLike<{ data: unknown[] | null; error: unknown }>;
+
+async function all<T>(query: (from: number, to: number) => Page): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await query(from, from + 999);
+    if (error || !data) break;
+    out.push(...(data as unknown as T[]));
+    if (data.length < 1000) break;
+  }
+  return out;
+}
+
+/** A real date beats a made-up one: Google learns to distrust "everything changed today". */
+function when(value: unknown): Date | undefined {
+  if (typeof value !== "string") return undefined;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
+const entry = (path: string, priority: number, changeFrequency: Freq, lastModified?: Date): Entry => ({
+  url: `${baseUrl}${path}`,
+  lastModified: lastModified ?? new Date(),
+  changeFrequency,
+  priority,
+});
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = [
-    "",
-    "/marketplace",
-    "/post",
-    "/glossary",
-    "/species",
-    "/tank-builder",
-    "/water-check",
-    "/stores",
-    "/feed",
-    "/events",
-    "/verify",
-    "/about",
-    "/rules",
-    "/courses",
-    SOCIETY_PATH,
-    "/forums",
-  ];
-
-  const { data: terms } = await supabasePublic
-    .from("glossary_terms")
-    .select("slug");
-
-  const { data: species } = await supabasePublic
-    .from("species")
-    .select("slug");
-
-  const { data: stores } = await supabasePublic
-    .from("fish_stores")
-    .select("slug")
-    .eq("status", "published");
-
-  // Published events. Past events still have live, indexable pages, so we
-  // include everything published rather than only upcoming ones.
-  const { data: events } = await supabasePublic
-    .from("events")
-    .select("slug")
-    .eq("status", "published");
-
-  // Every state and metro-area page — these are the pages that actually
-  // rank for "aquarium classifieds <city>".
-  const { data: regions } = await supabasePublic
-    .from("market_regions")
-    .select("state_code, slug");
-
-  // Live classified listings only, so we never list a URL that would 404.
-  const { data: listings } = await supabasePublic
-    .from("listings")
-    .select("slug")
-    .eq("status", "active")
-    .gt("expires_at", new Date().toISOString());
-
-  // Published courses — each has a public landing page.
-  const { data: courses } = await supabasePublic
-    .from("courses")
-    .select("slug")
-    .eq("is_published", true);
-
-  // Forum categories + threads. Mirror the pages' own index rules so the
-  // sitemap only lists URLs we allow to be indexed: a thread is indexable if
-  // it's seeded or has at least one reply; a category page is indexable once
-  // it holds 3+ such threads. (RLS already hides hidden threads.)
-  const { data: forumCats } = await supabasePublic
-    .from("forum_categories")
-    .select("id, slug")
-    .eq("is_public", true);
-
-  const { data: forumThreads } = await supabasePublic
-    .from("forum_threads")
-    .select("slug, category_id, is_seeded, reply_count");
-
-  const catSlugById = new Map<string, string>();
-  for (const c of forumCats ?? []) {
-    catSlugById.set(c.id as string, c.slug as string);
-  }
-
-  const indexableThreads = (forumThreads ?? []).filter(
-    (t) => t.is_seeded || (t.reply_count as number) >= 1
-  );
-
-  const indexableCountByCat = new Map<string, number>();
-  for (const t of indexableThreads) {
-    const k = t.category_id as string;
-    indexableCountByCat.set(k, (indexableCountByCat.get(k) ?? 0) + 1);
-  }
-
-  const staticEntries = staticRoutes.map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: route === "" ? 1 : 0.7,
-  }));
-
-  const termEntries = (terms ?? []).map((t) => ({
-    url: `${baseUrl}/glossary/${t.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.5,
-  }));
-
-  const speciesEntries = (species ?? []).map((s) => ({
-    url: `${baseUrl}/species/${s.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.6,
-  }));
-
-  const storeEntries = (stores ?? []).map((s) => ({
-    url: `${baseUrl}/stores/${s.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.6,
-  }));
-
-  const eventEntries = (events ?? []).map((e) => ({
-    url: `${baseUrl}/events/${e.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
-
-  const stateCodes = [
-    ...new Set(
-      ((regions ?? []) as unknown as { state_code: string }[]).map((r) =>
-        r.state_code.toLowerCase()
-      )
+  const [
+    terms,
+    species,
+    stores,
+    events,
+    regions,
+    listings,
+    courses,
+    forumCats,
+    forumThreads,
+    breedingGuides,
+    tanks,
+    profiles,
+    clubs,
+  ] = await Promise.all([
+    all<{ slug: string }>((a, b) => supabasePublic.from("glossary_terms").select("slug").range(a, b)),
+    all<{ slug: string; updated_at?: string }>((a, b) =>
+      supabasePublic.from("species").select("slug, updated_at").range(a, b)
     ),
+    all<{ slug: string; updated_at?: string }>((a, b) =>
+      supabasePublic
+        .from("fish_stores")
+        .select("slug, updated_at")
+        .eq("status", "published")
+        .range(a, b)
+    ),
+    all<{ slug: string }>((a, b) =>
+      supabasePublic.from("events").select("slug").eq("status", "published").range(a, b)
+    ),
+    all<{ state_code: string; slug: string }>((a, b) =>
+      supabasePublic.from("market_regions").select("state_code, slug").range(a, b)
+    ),
+    all<{ slug: string; updated_at?: string }>((a, b) =>
+      supabasePublic
+        .from("listings")
+        .select("slug, updated_at")
+        .eq("status", "active")
+        .gt("expires_at", new Date().toISOString())
+        .range(a, b)
+    ),
+    all<{ slug: string }>((a, b) =>
+      supabasePublic.from("courses").select("slug").eq("is_published", true).range(a, b)
+    ),
+    all<{ id: string; slug: string }>((a, b) =>
+      supabasePublic.from("forum_categories").select("id, slug").eq("is_public", true).range(a, b)
+    ),
+    all<{
+      slug: string;
+      category_id: string;
+      is_seeded: boolean;
+      reply_count: number;
+      last_post_at?: string;
+    }>((a, b) =>
+      supabasePublic
+        .from("forum_threads")
+        .select("slug, category_id, is_seeded, reply_count, last_post_at")
+        .range(a, b)
+    ),
+    all<{ species_slug: string }>((a, b) =>
+      supabasePublic.from("public_breeding_guides").select("species_slug").range(a, b)
+    ),
+    all<{ id: string; updated_at?: string }>((a, b) =>
+      supabasePublic.from("tanks").select("id, updated_at").eq("is_public", true).range(a, b)
+    ),
+    all<{ username: string | null }>((a, b) =>
+      supabasePublic.from("profiles").select("username").not("username", "is", null).range(a, b)
+    ),
+    all<{ slug: string }>((a, b) => supabasePublic.from("clubs").select("slug").range(a, b)),
+  ]);
+
+  // ---- Hand-written pages -------------------------------------------
+  const hubs: [string, number, Freq][] = [
+    ["", 1, "daily"],
+    ["/marketplace", 0.9, "daily"],
+    ["/stores", 0.9, "daily"],
+    ["/species", 0.8, "weekly"],
+    ["/breeding", 0.8, "weekly"],
+    ["/forums", 0.8, "daily"],
+    ["/feed", 0.7, "daily"],
+    ["/courses", 0.7, "weekly"],
+    ["/events", 0.7, "weekly"],
+    [SOCIETY_PATH, 0.7, "weekly"],
+    ["/glossary", 0.6, "weekly"],
+    ["/tank-builder", 0.6, "monthly"],
+    ["/water-check", 0.6, "monthly"],
+    ["/post", 0.6, "monthly"],
+    ["/about", 0.5, "monthly"],
+    ["/rules", 0.5, "monthly"],
+    ["/verify", 0.4, "monthly"],
+    ["/privacy", 0.2, "yearly"],
+    ["/terms", 0.2, "yearly"],
   ];
 
-  const stateEntries = stateCodes.map((code) => ({
-    url: `${baseUrl}/marketplace/${code}`,
-    lastModified: new Date(),
-    changeFrequency: "daily" as const,
-    priority: 0.7,
-  }));
+  const out: Entry[] = hubs.map(([p, pr, f]) => entry(p, pr, f));
 
-  const regionEntries = ((regions ?? []) as unknown as {
-    state_code: string;
-    slug: string;
-  }[]).map((r) => ({
-    url: `${baseUrl}/marketplace/${r.state_code.toLowerCase()}/${r.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "daily" as const,
-    priority: 0.7,
-  }));
+  // ---- The shop directory: its biggest body of pages ----------------
+  for (const s of stores) out.push(entry(`/stores/${s.slug}`, 0.7, "monthly", when(s.updated_at)));
 
-  const listingEntries = ((listings ?? []) as unknown as { slug: string }[]).map(
-    (l) => ({
-      url: `${baseUrl}/listing/${l.slug}`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.6,
-    })
-  );
+  // ---- Classifieds --------------------------------------------------
+  const stateCodes = [...new Set(regions.map((r) => r.state_code.toLowerCase()))];
+  for (const code of stateCodes) out.push(entry(`/marketplace/${code}`, 0.7, "daily"));
+  for (const r of regions) {
+    out.push(entry(`/marketplace/${r.state_code.toLowerCase()}/${r.slug}`, 0.7, "daily"));
+  }
+  for (const l of listings) out.push(entry(`/listing/${l.slug}`, 0.6, "daily", when(l.updated_at)));
 
-  const courseEntries = (courses ?? []).map((c) => ({
-    url: `${baseUrl}/courses/${c.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.7,
-  }));
+  // ---- Reference ----------------------------------------------------
+  for (const s of species) out.push(entry(`/species/${s.slug}`, 0.7, "monthly", when(s.updated_at)));
+  for (const t of terms) out.push(entry(`/glossary/${t.slug}`, 0.5, "monthly"));
+  for (const c of courses) out.push(entry(`/courses/${c.slug}`, 0.7, "monthly"));
+  for (const e of events) out.push(entry(`/events/${e.slug}`, 0.6, "weekly"));
 
-  const forumCategoryEntries = (forumCats ?? [])
-    .filter((c) => (indexableCountByCat.get(c.id as string) ?? 0) >= 3)
-    .map((c) => ({
-      url: `${baseUrl}/forums/${c.slug}`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.6,
-    }));
+  // One guide page per species, however many logs feed it.
+  const guideSlugs = new Set<string>();
+  for (const g of breedingGuides) {
+    if (g.species_slug) guideSlugs.add(g.species_slug);
+  }
+  for (const slug of guideSlugs) out.push(entry(`/breeding/${slug}`, 0.7, "monthly"));
 
-  const forumThreadEntries = indexableThreads
-    .map((t) => {
-      const catSlug = catSlugById.get(t.category_id as string);
-      if (!catSlug) return null;
-      return {
-        url: `${baseUrl}/forums/${catSlug}/${t.slug}`,
-        lastModified: new Date(),
-        changeFrequency: "weekly" as const,
-        priority: 0.6,
-      };
-    })
-    .filter((e): e is NonNullable<typeof e> => e !== null);
+  // ---- Forums: mirror the pages' own indexing rules -------------------
+  const catSlugById = new Map(forumCats.map((c) => [c.id, c.slug]));
+  const indexable = forumThreads.filter((t) => t.is_seeded || (t.reply_count ?? 0) >= 1);
+  const countByCat = new Map<string, number>();
+  for (const t of indexable) countByCat.set(t.category_id, (countByCat.get(t.category_id) ?? 0) + 1);
 
-  return [
-    ...staticEntries,
-    ...termEntries,
-    ...speciesEntries,
-    ...storeEntries,
-    ...eventEntries,
-    ...stateEntries,
-    ...regionEntries,
-    ...listingEntries,
-    ...courseEntries,
-    ...forumCategoryEntries,
-    ...forumThreadEntries,
-  ];
+  for (const c of forumCats) {
+    if ((countByCat.get(c.id) ?? 0) >= 3) out.push(entry(`/forums/${c.slug}`, 0.6, "daily"));
+  }
+  for (const t of indexable) {
+    const cat = catSlugById.get(t.category_id);
+    if (cat) out.push(entry(`/forums/${cat}/${t.slug}`, 0.6, "weekly", when(t.last_post_at)));
+  }
+
+  // The Society's own join page, which is a sales page and should rank.
+  for (const c of clubs) out.push(entry(`/c/${c.slug}`, 0.7, "weekly"));
+
+  // ---- Members' own pages -------------------------------------------
+  for (const t of tanks) out.push(entry(`/tanks/${t.id}`, 0.5, "monthly", when(t.updated_at)));
+  for (const p of profiles) {
+    if (p.username) out.push(entry(`/u/${p.username}`, 0.4, "weekly"));
+  }
+
+  // One URL each, whatever happened above.
+  const seen = new Set<string>();
+  return out.filter((e) => (seen.has(e.url) ? false : (seen.add(e.url), true)));
 }
