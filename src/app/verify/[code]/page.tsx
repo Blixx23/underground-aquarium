@@ -78,7 +78,7 @@ export default async function RecordPage({
   return (
     <main className="relative overflow-hidden px-6 pb-24 pt-28 sm:pt-32">
       <div
-        className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[900px] -translate-x-1/2"
+        className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[900px] max-w-full -translate-x-1/2"
         style={SOC_GLOW}
       />
       <div className="relative mx-auto max-w-2xl">
@@ -201,10 +201,12 @@ function Found({ record, checkedAt }: { record: CertRecord; checkedAt: string })
       <article className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-b from-[#1a1408] via-ocean-950 to-ocean-950 p-1 shadow-2xl shadow-black/50">
         <div className="relative rounded-xl border border-amber-500/15 px-6 py-8 sm:px-10 sm:py-10">
           {/* Watermark */}
-          <SocietySeal
-            size={320}
-            className="pointer-events-none absolute -right-16 -top-10 h-80 w-80 opacity-[0.06]"
-          />
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl" aria-hidden="true">
+            <SocietySeal
+              size={320}
+              className="absolute -right-16 -top-10 h-80 w-80 max-w-none opacity-[0.06]"
+            />
+          </div>
           {/* Corner marks */}
           {["left-3 top-3", "right-3 top-3", "left-3 bottom-3", "right-3 bottom-3"].map((pos) => (
             <span

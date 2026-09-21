@@ -48,7 +48,7 @@ export default function RegistryPage() {
       {/* Hero */}
       <section className="relative px-6 pb-16 pt-28 sm:pt-36">
         <div
-          className="pointer-events-none absolute left-1/2 top-10 h-[520px] w-[900px] -translate-x-1/2"
+          className="pointer-events-none absolute left-1/2 top-10 h-[520px] w-[900px] max-w-full -translate-x-1/2"
           style={SOC_GLOW}
         />
         <div className="relative mx-auto max-w-2xl text-center">
