@@ -47,8 +47,16 @@ async function compressImage(file: File): Promise<Blob> {
   return blob;
 }
 
-export default function NewThreadForm({ category }: { category: string }) {
+export default function NewThreadForm({
+  category: initialCategory = "",
+  choices,
+}: {
+  category?: string;
+  /** When given, the poster picks the section here instead of arriving from one. */
+  choices?: { slug: string; name: string }[];
+}) {
   const router = useRouter();
+  const [category, setCategory] = useState(initialCategory);
   const supabase = createClient();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -139,6 +147,10 @@ export default function NewThreadForm({ category }: { category: string }) {
       setError("Give your post a title (at least 3 characters).");
       return;
     }
+    if (!category) {
+      setError("Pick a section for your post.");
+      return;
+    }
     if (!body.trim() && images.length === 0) {
       setError("Write something, or add a photo.");
       return;
@@ -178,6 +190,29 @@ export default function NewThreadForm({ category }: { category: string }) {
         <p className="text-sm text-coral-300 mb-4 rounded-lg border border-coral-500/30 bg-coral-500/10 px-4 py-2">
           {error}
         </p>
+      )}
+
+      {choices && choices.length > 0 && (
+        <div className="mb-5">
+          <p className="mb-2 text-xs text-ocean-400">Section</p>
+          <div className="flex flex-wrap gap-2">
+            {choices.map((c) => (
+              <button
+                key={c.slug}
+                type="button"
+                onClick={() => setCategory(c.slug)}
+                aria-pressed={category === c.slug}
+                className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                  category === c.slug
+                    ? "border-ocean-400 bg-ocean-600 text-white"
+                    : "border-ocean-800/70 bg-ocean-900/50 text-ocean-300 hover:border-ocean-600 hover:text-white"
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       <label className="block text-xs text-ocean-400 mb-1">Title</label>
@@ -258,7 +293,7 @@ export default function NewThreadForm({ category }: { category: string }) {
           Post
         </button>
         <Link
-          href={`/forums/${category}`}
+          href={category && !choices ? `/forums/${category}` : "/forums"}
           className="text-sm text-ocean-500 hover:text-ocean-300 transition-colors"
         >
           Cancel

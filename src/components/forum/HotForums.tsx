@@ -98,7 +98,7 @@ export default async function HotForums() {
       <div className="-mx-3 flex snap-x gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
         {/* Like "Create story": the way in comes first. */}
         <Link
-          href="/forums"
+          href="/forums/new"
           className={`${card} flex flex-col items-center justify-center gap-2 border-ocean-700/70 bg-ocean-900/60 text-center transition-colors hover:border-ocean-500`}
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-ocean-500 text-white">
