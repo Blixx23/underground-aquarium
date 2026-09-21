@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MessagesSquare, ChevronRight } from "lucide-react";
+import { MessagesSquare, ChevronRight, MessageSquareDashed } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
 
@@ -26,6 +26,12 @@ export default async function ForumsIndex() {
     .select("id, category_id, title, slug, last_activity_at")
     .order("last_activity_at", { ascending: false });
 
+  const { count: unanswered } = await supabasePublic
+    .from("forum_threads")
+    .select("id", { count: "exact", head: true })
+    .eq("reply_count", 0)
+    .eq("is_seeded", false);
+
   const cats = categories ?? [];
   const allThreads = threads ?? [];
 
@@ -45,9 +51,23 @@ export default async function ForumsIndex() {
           Ask questions, share builds, and talk shop with other aquarists.
         </p>
 
-        <div className="mb-8">
+        <div className="mb-3">
           <ForumSearchBar />
         </div>
+
+        <Link
+          href="/forums/unanswered"
+          className="mb-8 flex items-center justify-between gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-4 py-2.5 text-sm transition-colors hover:border-amber-400/50"
+        >
+          <span className="flex items-center gap-2 text-amber-100">
+            <MessageSquareDashed className="h-4 w-4 text-amber-300" />
+            Unanswered topics
+          </span>
+          <span className="flex items-center gap-1 text-amber-300">
+            {unanswered ?? 0}
+            <ChevronRight className="h-4 w-4" />
+          </span>
+        </Link>
 
         <div className="space-y-3">
           {cats.map((c) => {

@@ -77,7 +77,9 @@ export default async function CategoryPage({ params, searchParams }: Params) {
     )
     .eq("category_id", cat.id)
     .order("is_pinned", { ascending: false });
-  if (sort === "new") {
+  if (sort === "unanswered") {
+    query = query.eq("reply_count", 0).order("created_at", { ascending: false });
+  } else if (sort === "new") {
     query = query.order("created_at", { ascending: false });
   } else if (sort === "top") {
     query = query
@@ -175,11 +177,14 @@ export default async function CategoryPage({ params, searchParams }: Params) {
           {tab("active", "Active")}
           {tab("new", "New")}
           {tab("top", "Top")}
+          {tab("unanswered", "Unanswered")}
         </div>
 
         {threads.length === 0 ? (
           <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-10 text-center text-ocean-400">
-            No threads here yet — start the first one.
+            {sort === "unanswered"
+              ? "Nothing waiting on a reply here."
+              : "No threads here yet. Start the first one."}
           </div>
         ) : (
           <div className="space-y-3">
