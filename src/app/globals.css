@@ -10,8 +10,17 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 * { box-sizing: border-box; padding: 0; margin: 0; }
-html { scroll-behavior: smooth; }
-body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 18px; line-height: 1.7; overflow-x: hidden; }
+/*
+ * overflow-x must be `clip`, never `hidden`.
+ *
+ * On iOS Safari, `overflow: hidden` on the body turns the body into a
+ * scroll container, and `position: fixed` then anchors to the body instead
+ * of the screen — so the bottom tab bar sits at the end of the document and
+ * scrolls away with the page. `clip` cuts off sideways overflow the same
+ * way without creating a scroll container, so fixed bars stay put.
+ */
+html { scroll-behavior: smooth; overflow-x: clip; }
+body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 18px; line-height: 1.7; overflow-x: clip; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #020b18; }
 ::-webkit-scrollbar-thumb { background: #1264a0; border-radius: 3px; }
