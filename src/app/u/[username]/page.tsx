@@ -29,6 +29,7 @@ import { getViewer } from "@/lib/feedViewer";
 import { SOCIETY_PATH } from "@/lib/config";
 import TankTile from "@/components/tanks/TankTile";
 import ProfileHighlights from "@/components/profile/ProfileHighlights";
+import BreederCerts, { getBreederCerts } from "@/components/profile/BreederCerts";
 
 export const dynamic = "force-dynamic";
 
@@ -410,13 +411,16 @@ async function Sidebar({
   card: SocietyCard | null;
   memberNo: string | null;
 }) {
-  const { data } = await supabasePublic
-    .from("tanks")
-    .select("id, name, images")
-    .eq("user_id", profileId)
-    .eq("is_public", true)
-    .order("updated_at", { ascending: false })
-    .limit(6);
+  const [{ data }, certs] = await Promise.all([
+    supabasePublic
+      .from("tanks")
+      .select("id, name, images")
+      .eq("user_id", profileId)
+      .eq("is_public", true)
+      .order("updated_at", { ascending: false })
+      .limit(6),
+    getBreederCerts(profileId),
+  ]);
   const tanks = (data ?? []) as Pick<Tank, "id" | "name" | "images">[];
 
   return (
@@ -444,9 +448,20 @@ async function Sidebar({
               </div>
             )}
           </dl>
-          <Link href={`${base}?tab=trophies`} className="mt-4 inline-block text-sm text-amber-300 hover:text-amber-200">
+          <BreederCerts
+            certs={certs}
+            limit={5}
+            moreHref={`${base}?tab=trophies`}
+            className="relative mt-4 border-t border-amber-500/20 pt-3"
+          />
+          <Link href={`${base}?tab=trophies`} className="relative mt-3 inline-block text-sm text-amber-300 hover:text-amber-200">
             Trophy case →
           </Link>
+        </div>
+      )}
+      {!(society && card) && certs.length > 0 && (
+        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] p-4">
+          <BreederCerts certs={certs} limit={5} moreHref={`${base}?tab=trophies`} />
         </div>
       )}
 
@@ -561,13 +576,14 @@ async function ListingsTab({ profileId, name }: { profileId: string; name: strin
 
 async function TrophiesTab({ profileId, name, isMe }: { profileId: string; name: string; isMe: boolean }) {
   const { supabase } = await getViewer();
-  const [{ data: trophyRows }, { data: certData }] = await Promise.all([
+  const [{ data: trophyRows }, { data: certData }, breederCerts] = await Promise.all([
     supabase.rpc("get_trophy_case", { p_user: profileId }),
     supabasePublic
       .from("course_completions")
       .select("completed_at, courses(slug, title, badge_title, is_published)")
       .eq("user_id", profileId)
       .order("completed_at", { ascending: false }),
+    getBreederCerts(profileId),
   ]);
 
   type Row = {
@@ -596,8 +612,13 @@ async function TrophiesTab({ profileId, name, isMe }: { profileId: string; name:
           to see everything you can earn and how close you are.
         </p>
       )}
+      {breederCerts.length > 0 && (
+        <div className="mb-8 max-w-md rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] p-4">
+          <BreederCerts certs={breederCerts} />
+        </div>
+      )}
       <TrophyCabinet rows={(trophyRows ?? []) as TrophyRow[]} isSelf={false} earnedOnly />
-      {certs.length === 0 && !trophyRows?.length && (
+      {certs.length === 0 && breederCerts.length === 0 && !trophyRows?.length && (
         <p className="text-sm text-ocean-400">{name} hasn&apos;t earned anything yet.</p>
       )}
       <div className="-mt-2">

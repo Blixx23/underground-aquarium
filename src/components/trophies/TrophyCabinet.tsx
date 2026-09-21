@@ -95,13 +95,13 @@ export default function TrophyCabinet({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/30 bg-gradient-to-b from-amber-400/20 to-transparent">
-            <Trophy className="h-6 w-6 text-amber-300" />
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400/30 bg-gradient-to-b from-amber-400/20 to-transparent">
+            <Trophy className="h-5 w-5 text-amber-300" />
           </span>
           <div>
-            <p className="font-display text-2xl text-white">
+            <p className="font-display text-xl leading-tight text-white">
               {totals.earned}
               <span className="text-ocean-500"> / {totals.total}</span>
             </p>
@@ -134,7 +134,7 @@ export default function TrophyCabinet({
         )}
       </div>
 
-      <div className="mb-8 h-1.5 overflow-hidden rounded-full bg-ocean-900">
+      <div className="mb-6 h-1 overflow-hidden rounded-full bg-ocean-900">
         <div
           className="h-full rounded-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-200"
           style={{ width: `${totals.total ? (totals.earned / totals.total) * 100 : 0}%` }}
@@ -149,7 +149,7 @@ export default function TrophyCabinet({
           </p>
         </div>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-7">
           {categories.map((cat) => {
             const list = shown.filter((s) => s.category === cat);
             const Icon = ICON[cat] ?? Trophy;
@@ -157,19 +157,23 @@ export default function TrophyCabinet({
             return (
               <section key={cat}>
                 <h3
-                  className={`mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] ${
+                  className={`mb-2 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] ${
                     society ? "text-amber-300/80" : "text-ocean-400"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
                   {CATEGORY_LABEL[cat] ?? cat}
+                  <span className="text-ocean-600">
+                    {list.reduce((n, s) => n + s.earnedCount, 0)}/
+                    {list.reduce((n, s) => n + (s.exclusive ? 1 : s.steps.length), 0)}
+                  </span>
                   {society && !isMember && (
                     <span className="ml-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] tracking-[0.15em] text-amber-300">
                       Members only
                     </span>
                   )}
                 </h3>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {list.map((s) => (
                     <SeriesCard key={s.id} s={s} isSelf={isSelf} isMember={isMember} />
                   ))}
@@ -222,9 +226,12 @@ function SeriesCard({ s, isSelf, isMember }: { s: TrophySeries; isSelf: boolean;
       ? Math.min(100, (Number(next.progress) / next.threshold) * 100)
       : null;
 
+  const earnedSteps = s.steps.filter((x) => x.earned_at).length;
+
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border p-4 ${
+      title={desc}
+      className={`relative overflow-hidden rounded-xl border p-3 ${
         earned
           ? `${style.ring} bg-gradient-to-br ${style.bg} to-ocean-950/60`
           : locked
@@ -232,46 +239,54 @@ function SeriesCard({ s, isSelf, isMember }: { s: TrophySeries; isSelf: boolean;
           : "border-ocean-800/60 bg-ocean-900/30"
       }`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2.5">
         <span
-          className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${
             earned ? `${style.ring} bg-black/30` : "border-ocean-800/70 bg-ocean-950/60"
           }`}
         >
           {locked ? (
-            <Lock className="h-5 w-5 text-amber-500/60" />
+            <Lock className="h-4 w-4 text-amber-500/60" />
           ) : (
-            <Icon className={`h-5 w-5 ${earned ? style.text : "text-ocean-700"}`} />
+            <Icon className={`h-4 w-4 ${earned ? style.text : "text-ocean-700"}`} />
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <p className={`truncate text-[15px] font-semibold ${earned ? "text-white" : "text-ocean-300"}`}>
+          <p className={`truncate text-sm font-semibold leading-tight ${earned ? "text-white" : "text-ocean-300"}`}>
             {title}
           </p>
-          <p className={`text-xs ${earned ? style.text : "text-ocean-600"}`}>
-            {earned ? style.label : locked ? "Society members only" : "Not yet earned"}
+          <p className={`truncate text-[11px] leading-tight ${earned ? style.text : "text-ocean-600"}`}>
+            {earned ? style.label : locked ? "Members only" : "Not yet earned"}
             {earned && shown.earned_at && (
               <span className="text-ocean-500">
                 {" · "}
                 {new Date(shown.earned_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
               </span>
             )}
+            {s.steps.length > 1 && !s.exclusive && (
+              <span className="text-ocean-500">
+                {" · "}
+                {earnedSteps}/{s.steps.length}
+              </span>
+            )}
           </p>
         </div>
-        {society && <SocietySeal size={18} className={`h-[18px] w-[18px] shrink-0 ${earned ? "" : "opacity-40"}`} />}
+        {society && <SocietySeal size={16} className={`h-4 w-4 shrink-0 ${earned ? "" : "opacity-40"}`} />}
       </div>
 
-      <p className="mt-3 text-sm leading-snug text-ocean-400">{desc}</p>
-      {shown.detail && earned && <p className="mt-1 text-xs italic text-ocean-500">{shown.detail}</p>}
+      <p className="mt-1.5 line-clamp-1 text-xs text-ocean-400">
+        {shown.detail && earned ? <span className="italic text-ocean-300">{shown.detail} · </span> : null}
+        {desc}
+      </p>
 
-      {/* Tier pips for a series */}
+      {/* One pip per step, colored by the tier it earned */}
       {s.steps.length > 1 && !s.exclusive && (
-        <div className="mt-3 flex items-center gap-1.5">
+        <div className={`mt-2 flex items-center ${s.steps.length > 5 ? "gap-0.5" : "gap-1"}`}>
           {s.steps.map((step) => (
             <span
               key={step.key}
               title={`${step.name}: ${step.description}`}
-              className={`h-2 flex-1 rounded-full ${
+              className={`h-1 flex-1 rounded-full ${
                 step.earned_at
                   ? step.tier === "platinum"
                     ? "bg-cyan-200"
@@ -287,18 +302,17 @@ function SeriesCard({ s, isSelf, isMember }: { s: TrophySeries; isSelf: boolean;
         </div>
       )}
 
-      {next && !locked && isSelf && (
-        <div className="mt-3">
-          <div className="flex items-baseline justify-between gap-2 text-xs">
+      {next && !locked && isSelf && (earned || pct !== null) && (
+        <div className="mt-2">
+          <div className="flex items-baseline justify-between gap-2 text-[11px] leading-tight">
             <span className="truncate text-ocean-500">
-              {/* An unearned card is already titled with its first step, so don't repeat it. */}
               {earned || next.name !== title ? (
                 <>
                   Next: <span className="text-ocean-300">{next.name}</span>
                 </>
-              ) : pct !== null ? (
+              ) : (
                 "Progress"
-              ) : null}
+              )}
             </span>
             {pct !== null && next.threshold && (
               <span className="shrink-0 font-mono text-ocean-400">
@@ -307,12 +321,9 @@ function SeriesCard({ s, isSelf, isMember }: { s: TrophySeries; isSelf: boolean;
             )}
           </div>
           {pct !== null && (
-            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-ocean-900">
+            <div className="mt-1 h-0.5 overflow-hidden rounded-full bg-ocean-900">
               <div className="h-full rounded-full bg-ocean-400" style={{ width: `${pct}%` }} />
             </div>
-          )}
-          {!earned && isSelf && next.description !== desc && (
-            <p className="mt-1 text-xs text-ocean-600">{next.description}</p>
           )}
         </div>
       )}
