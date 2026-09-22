@@ -4,6 +4,8 @@ import Link from "next/link";
 import { cityPath, statePath, stateName } from "@/lib/stores/places";
 import { getNearbyStores } from "@/lib/stores/nearby";
 import PlaceStoreCard from "@/components/stores/PlaceStoreCard";
+import StoreSightings, { type Sighting } from "@/components/stores/StoreSightings";
+import SuggestFix from "@/components/stores/SuggestFix";
 import {
   MapPin,
   Phone,
@@ -175,6 +177,35 @@ export default async function StoreDetailPage({ params }: Params) {
     response: respByReview.get(r.id) ?? null,
   }));
   const currentUserName = user ? nameById.get(user.id) ?? null : null;
+
+  // What shoppers spotted in stock, last 60 days. Missing table = empty list.
+  const { data: sightRows } = await supabasePublic
+    .from("store_sightings")
+    .select("id, user_id, body, created_at")
+    .eq("store_id", store.id)
+    .is("hidden_at", null)
+    .gt("created_at", new Date(Date.now() - 60 * 86400000).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const sightList = (sightRows ?? []) as { id: string; user_id: string; body: string; created_at: string }[];
+  const sightAuthors = new Map<string, { name: string; username: string | null }>();
+  if (sightList.length) {
+    const { data: sp } = await supabasePublic
+      .from("profiles")
+      .select("id, username, full_name")
+      .in("id", [...new Set(sightList.map((x) => x.user_id))]);
+    for (const p of (sp ?? []) as { id: string; username: string | null; full_name: string | null }[]) {
+      sightAuthors.set(p.id, { name: p.full_name || p.username || "Aquarist", username: p.username });
+    }
+  }
+  const sightings: Sighting[] = sightList.map((x) => ({
+    id: x.id,
+    userId: x.user_id,
+    author: sightAuthors.get(x.user_id)?.name ?? "Aquarist",
+    username: sightAuthors.get(x.user_id)?.username ?? null,
+    body: x.body,
+    createdAt: x.created_at,
+  }));
 
   // Shop updates
   // Photos on updates came later; if that column isn't there, still show the text.
@@ -403,6 +434,14 @@ export default async function StoreDetailPage({ params }: Params) {
               </div>
             )}
 
+            <StoreSightings
+              storeId={store.id}
+              storeName={store.name}
+              initial={sightings}
+              currentUserId={user?.id ?? null}
+              currentUserName={currentUserName}
+            />
+
             <StorePhotos
               storeId={store.id}
               userId={user?.id ?? null}
@@ -504,6 +543,8 @@ export default async function StoreDetailPage({ params }: Params) {
               </div>
 
               <StoreSpecialHours storeId={store.id} initial={specialDays} isOwner={false} />
+
+              <SuggestFix storeId={store.id} currentUserId={user?.id ?? null} />
 
               <ClaimStore
                 storeId={store.id}

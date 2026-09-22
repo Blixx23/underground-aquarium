@@ -11,6 +11,7 @@ import {
   Droplets,
   BookOpen,
   Store,
+  Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -85,6 +86,12 @@ export default async function AdminHubPage() {
     .eq("status", "pending");
   const pendingGlossary = glossaryCount ?? 0;
 
+  const { count: fixCount } = await supabaseAdmin
+    .from("store_edit_suggestions")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "open");
+  const openFixes = fixCount ?? 0;
+
   // User reports that haven't been actioned yet.
   const { count: reportCount } = await supabaseAdmin
     .from("reports")
@@ -130,6 +137,13 @@ export default async function AdminHubPage() {
       description: "Approve shop owners asking to manage their listing",
       Icon: Store,
       pending: pendingClaims,
+    },
+    {
+      href: "/admin/store-fixes",
+      label: "Shop fixes",
+      description: "Wrong hours, moved or closed shops, flagged by shoppers",
+      Icon: Wrench,
+      pending: openFixes,
     },
     {
       href: "/admin/reports",
