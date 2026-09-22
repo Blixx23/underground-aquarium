@@ -7,6 +7,7 @@ const links = {
   Classifieds: [
     { label: "Browse by area", href: "/marketplace" },
     { label: "Post a free ad", href: POST_AD_PATH },
+    { label: "Where to sell fish", href: "/where-to-sell-aquarium-fish" },
     { label: "My listings", href: "/my/listings" },
     { label: "Messages", href: "/messages" },
   ],

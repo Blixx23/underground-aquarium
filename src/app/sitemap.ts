@@ -117,6 +117,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const hubs: [string, number, Freq][] = [
     ["", 1, "daily"],
     ["/marketplace", 0.9, "daily"],
+    ["/where-to-sell-aquarium-fish", 0.8, "monthly"],
     ["/stores", 0.9, "daily"],
     ["/species", 0.8, "weekly"],
     ["/breeding", 0.8, "weekly"],

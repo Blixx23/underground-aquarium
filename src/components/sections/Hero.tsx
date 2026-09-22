@@ -151,6 +151,12 @@ export default function Hero({
             ? `${liveListings.toLocaleString()} live ${liveListings === 1 ? "listing" : "listings"} · 413 metro areas`
             : "413 metro areas · free to post, always"}
         </p>
+        <Link
+          href="/where-to-sell-aquarium-fish"
+          className="mt-2 inline-flex items-center gap-1 text-sm text-emerald-300/90 hover:text-emerald-200"
+        >
+          First time selling fish? Here&apos;s how <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </section>
   );
