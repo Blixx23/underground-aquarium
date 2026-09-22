@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Mail, Store, Wrench, Flag, Fish, BookOpen,
+  LayoutDashboard, Mail, Megaphone, Store, Wrench, Flag, Fish, BookOpen,
   GraduationCap, Droplets, MessageSquare, Users,
 } from "lucide-react";
 import { SOCIETY_CLUB_PATH } from "@/lib/config";
@@ -11,6 +11,7 @@ import { SOCIETY_CLUB_PATH } from "@/lib/config";
 const LINKS = [
   { href: "/admin", label: "Dashboard", sub: "Everything waiting on you", Icon: LayoutDashboard, exact: true },
   { href: "/admin/email", label: "Email", sub: "Queue, health and delivery", Icon: Mail },
+  { href: "/admin/campaigns", label: "Campaigns", sub: "Sequences and who is in them", Icon: Megaphone },
   { href: "/admin/stores", label: "Store claims", sub: "Owners claiming a shop", Icon: Store },
   { href: "/admin/store-fixes", label: "Shop fixes", sub: "Wrong hours, moved, closed", Icon: Wrench },
   { href: "/admin/reports", label: "Reports", sub: "Flagged posts and members", Icon: Flag },

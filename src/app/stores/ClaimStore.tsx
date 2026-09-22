@@ -24,6 +24,12 @@ export default function ClaimStore({
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Outreach emails link to /stores/<slug>#claim, so the form should
+  // already be open when someone follows one.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#claim") setOpen(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     supabase.auth.getUser().then(({ data }) => {
@@ -81,7 +87,7 @@ export default function ClaimStore({
 
   if (!open) {
     return (
-      <div className="mt-10 border-t border-white/10 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div id="claim" className="mt-10 border-t border-white/10 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <p className="text-white font-medium">Own this store?</p>
           <p className="text-ocean-400 text-sm">
@@ -115,7 +121,7 @@ export default function ClaimStore({
   }
 
   return (
-    <div className="mt-10 border-t border-white/10 pt-6">
+    <div id="claim" className="mt-10 border-t border-white/10 pt-6">
       <div className="rounded-2xl bg-white/5 border border-white/10 p-6">
         <p className="text-white font-medium mb-1">Claim {storeName}</p>
         <p className="text-ocean-400 text-sm mb-4">
