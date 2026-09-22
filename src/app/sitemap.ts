@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { supabasePublic } from "@/lib/supabase/public";
 import { SOCIETY_PATH } from "@/lib/config";
+import { placeSlug, STATE_NAMES } from "@/lib/stores/places";
 
 const baseUrl = "https://www.undergroundaquarium.com";
 
@@ -62,10 +63,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     all<{ slug: string; updated_at?: string }>((a, b) =>
       supabasePublic.from("species").select("slug, updated_at").range(a, b)
     ),
-    all<{ slug: string; updated_at?: string }>((a, b) =>
+    all<{ slug: string; updated_at?: string; city: string | null; state: string | null }>((a, b) =>
       supabasePublic
         .from("fish_stores")
-        .select("slug, updated_at")
+        .select("slug, updated_at, city, state")
         .eq("status", "published")
         .range(a, b)
     ),
@@ -141,6 +142,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ---- The shop directory: its biggest body of pages ----------------
   for (const s of stores) out.push(entry(`/stores/${s.slug}`, 0.7, "monthly", when(s.updated_at)));
+
+  // City and state pages: what people actually search ("aquarium store sacramento").
+  out.push(entry("/aquarium-stores", 0.9, "weekly"));
+  const placeStates = new Set<string>();
+  const placeCities = new Set<string>();
+  for (const s of stores) {
+    const st = s.state?.toUpperCase();
+    if (!st || !STATE_NAMES[st]) continue;
+    placeStates.add(st);
+    const c = s.city?.trim() ? placeSlug(s.city) : "";
+    if (c) placeCities.add(`${st.toLowerCase()}/${c}`);
+  }
+  for (const st of placeStates) out.push(entry(`/aquarium-stores/${st.toLowerCase()}`, 0.8, "weekly"));
+  for (const c of placeCities) out.push(entry(`/aquarium-stores/${c}`, 0.8, "weekly"));
 
   // ---- Classifieds --------------------------------------------------
   const stateCodes = [...new Set(regions.map((r) => r.state_code.toLowerCase()))];

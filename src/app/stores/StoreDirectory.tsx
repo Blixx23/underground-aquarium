@@ -69,11 +69,13 @@ function milesBetween(lat1: number, lng1: number, lat2: number, lng2: number) {
 export default function StoreDirectory({
   stores,
   autoLocate = false,
+  initialQuery = "",
 }: {
   stores: StoreRow[];
   autoLocate?: boolean;
+  initialQuery?: string;
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [stateCode, setStateCode] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<string | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);

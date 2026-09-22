@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { cityPath, statePath, stateName } from "@/lib/stores/places";
 import {
   MapPin,
   Phone,
@@ -299,9 +300,17 @@ export default async function StoreDetailPage({ params }: Params) {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Fish stores", item: `${siteUrl}/stores` },
       ...(store.state
-        ? [{ "@type": "ListItem", position: 2, name: store.state, item: `${siteUrl}/stores` }]
+        ? [{ "@type": "ListItem", position: 2, name: stateName(store.state), item: `${siteUrl}${statePath(store.state)}` }]
         : []),
-      { "@type": "ListItem", position: store.state ? 3 : 2, name: store.name, item: pageUrl },
+      ...(store.state && store.city
+        ? [{ "@type": "ListItem", position: 3, name: store.city, item: `${siteUrl}${cityPath(store.state, store.city)}` }]
+        : []),
+      {
+        "@type": "ListItem",
+        position: 2 + (store.state ? 1 : 0) + (store.state && store.city ? 1 : 0),
+        name: store.name,
+        item: pageUrl,
+      },
     ],
   };
 
@@ -319,10 +328,11 @@ export default async function StoreDetailPage({ params }: Params) {
         <StoreTracker storeId={store.id} />
 
         <Link
-          href="/stores"
+          href={store.state && store.city ? cityPath(store.state, store.city) : "/stores"}
           className="inline-flex items-center gap-2 text-sm text-ocean-300 transition-colors hover:text-white"
         >
-          <ArrowLeft className="h-4 w-4" /> All fish stores
+          <ArrowLeft className="h-4 w-4" />{" "}
+          {store.state && store.city ? `More fish stores in ${store.city}` : "All fish stores"}
         </Link>
 
         {/* Name, place and standing — everything you need to decide, before any scrolling. */}

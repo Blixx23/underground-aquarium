@@ -28,8 +28,9 @@ export default function robots(): MetadataRoute.Robots {
         "/c/*/awards",
         "/c/*/events",
         "/forums/search",
-        "/forums/*/new",
-        "/listing/*/edit",
+        "/forums/*/new$", // the "new post" form only; "$" so threads whose slug starts with "new" stay crawlable
+        "/forums/new$",
+        "/listing/*/edit$",
         "/listings/",
         "/events/submit",
         "/*?*edit=", // edit views of otherwise public pages

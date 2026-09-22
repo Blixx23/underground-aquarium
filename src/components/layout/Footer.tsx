@@ -15,7 +15,7 @@ const links = {
     { label: "Fish Species", href: "/species" },
     { label: "Tank Builder", href: "/tank-builder" },
     { label: "Glossary", href: "/glossary" },
-    { label: "Local fish stores", href: "/stores" },
+    { label: "Find a fish store", href: "/aquarium-stores" },
   ],
   Community: [
     { label: "Feed", href: "/feed" },

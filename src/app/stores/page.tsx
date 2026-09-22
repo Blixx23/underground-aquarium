@@ -77,9 +77,9 @@ async function getAllStores(): Promise<StoreRow[]> {
 export default async function StoresPage({
   searchParams,
 }: {
-  searchParams: Promise<{ near?: string }>;
+  searchParams: Promise<{ near?: string; q?: string }>;
 }) {
-  const { near } = await searchParams;
+  const { near, q } = await searchParams;
   const stores = await getAllStores();
 
   // Latest updates across shops, shown under the directory.
@@ -148,7 +148,7 @@ export default async function StoresPage({
             </p>
           </div>
         ) : (
-          <StoreDirectory stores={stores} autoLocate={near === "1"} />
+          <StoreDirectory stores={stores} autoLocate={near === "1"} initialQuery={q ?? ""} />
         )}
 
         {latest.length > 0 && (
