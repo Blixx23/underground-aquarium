@@ -138,7 +138,8 @@ export default function Navbar() {
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handler);
+    handler(); // a page restored mid-scroll starts in the right state
+    window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
@@ -198,9 +199,11 @@ export default function Navbar() {
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+        // Always a solid backing, so page content never shows through the
+        // nav. It only tightens up once you start scrolling.
         scrolled
           ? "bg-ocean-950/95 backdrop-blur-xl border-b border-ocean-800/50 py-3"
-          : "bg-transparent py-5"
+          : "bg-ocean-950/90 backdrop-blur-xl border-b border-transparent py-5"
       )}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
