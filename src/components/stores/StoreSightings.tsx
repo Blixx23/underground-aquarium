@@ -90,13 +90,13 @@ export default function StoreSightings({
       </p>
 
       {currentUserId ? (
-        <div className="mb-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-3">
+        <div className="mb-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-3 transition-colors focus-within:border-cyan-400/50">
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value.slice(0, 280))}
             rows={2}
             placeholder="Been here recently? e.g. “Big batch of cherry shrimp, $4 each. Nice dwarf sag too.”"
-            className="w-full resize-none bg-transparent text-sm text-white placeholder-ocean-500 outline-none"
+            className="block w-full resize-none border-0 bg-transparent p-1 text-[15px] leading-relaxed text-white placeholder-ocean-500 shadow-none outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0"
           />
           <div className="mt-2 flex items-center justify-between gap-3">
             <span className="text-xs text-ocean-500">{body.length}/280</span>
@@ -104,7 +104,7 @@ export default function StoreSightings({
               type="button"
               onClick={post}
               disabled={busy || body.trim().length < 3}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-500 px-4 py-1.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-cyan-400 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-500 px-4 py-1.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-ocean-800 disabled:text-ocean-400"
             >
               {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Share
             </button>
