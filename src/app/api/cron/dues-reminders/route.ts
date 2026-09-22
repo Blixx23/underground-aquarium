@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { emailLayout, emailStats } from "@/lib/email";
+import { emailLayout, emailStats, sendEmail } from "@/lib/email";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.undergroundaquarium.com";
@@ -118,9 +117,6 @@ export async function GET(request: Request) {
   }
 
   const rows = (data ?? []) as unknown as Row[];
-  const resend = process.env.RESEND_API_KEY
-    ? new Resend(process.env.RESEND_API_KEY)
-    : null;
 
   let lapsed = 0;
   let emailed = 0;
@@ -163,7 +159,7 @@ export async function GET(request: Request) {
       const { data: u } = await supabaseAdmin.auth.admin.getUserById(m.user_id);
       to = u?.user?.email ?? null;
     }
-    if (!to || !resend) continue;
+    if (!to) continue;
 
     const amount = (club.dues_amount_cents / 100).toFixed(2);
     const dateLabel = new Date(ptUTC).toLocaleDateString("en-US", {
@@ -175,16 +171,12 @@ export async function GET(request: Request) {
     const link = `${SITE_URL}/c/${club.slug}`;
     const { subject, html } = buildEmail(kind, club.name, amount, dateLabel, link);
 
-    try {
-      await resend.emails.send({
-        from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
-        to,
-        subject,
-        html,
-      });
-    } catch (e) {
-      console.error(`Dues reminder email failed for member ${m.id}:`, e);
-      continue; // don't mark as sent if the email didn't go out
+    // Handed to the queue: sent now, or held while sending is paused.
+    // Either way it's accounted for, so the reminder is marked done.
+    const handed = await sendEmail({ kind: "dues_reminder", to, subject, html });
+    if (!handed) {
+      console.error(`Dues reminder could not be queued for member ${m.id}`);
+      continue; // don't mark it sent if nothing took it
     }
 
     await supabaseAdmin.from("dues_reminders").insert({

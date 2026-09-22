@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { emailLayout } from "@/lib/email";
+import { emailLayout, sendEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -78,29 +78,18 @@ export async function POST(request: Request) {
     const link = `${origin}/c/${club.slug}`;
     const clubName = club.name ?? "your aquarium club";
 
-    let emailed = false;
-    const key = process.env.RESEND_API_KEY;
-    if (key) {
-      try {
-        const { Resend } = await import("resend");
-        const resend = new Resend(key);
-        await resend.emails.send({
-          from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
-          to,
-          subject: `Membership dues for ${clubName}`,
-          html: emailLayout({
-            preheader: `Pay your ${clubName} membership dues`,
-            title: "Membership dues",
-            intro: `Your membership dues for <strong>${clubName}</strong> are ready to pay. You can take care of it in a moment on the club page.`,
-            cta: { label: "Pay your dues", url: link },
-            footerNote: `Or open this link in your browser:<br><a href="${link}" style="color:#0e6e8c;text-decoration:none;word-break:break-all;">${link}</a>`,
-          }),
-        });
-        emailed = true;
-      } catch (e) {
-        console.error("Dues request email failed:", e);
-      }
-    }
+    const emailed = await sendEmail({
+      kind: "dues_request",
+      to,
+      subject: `Membership dues for ${clubName}`,
+      html: emailLayout({
+        preheader: `Pay your ${clubName} membership dues`,
+        title: "Membership dues",
+        intro: `Your membership dues for <strong>${clubName}</strong> are ready to pay. You can take care of it in a moment on the club page.`,
+        cta: { label: "Pay your dues", url: link },
+        footerNote: `Or open this link in your browser:<br><a href="${link}" style="color:#0e6e8c;text-decoration:none;word-break:break-all;">${link}</a>`,
+      }),
+    });
 
     return NextResponse.json({ ok: true, emailed });
   } catch (err) {

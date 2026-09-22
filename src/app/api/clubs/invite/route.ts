@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { emailLayout } from "@/lib/email";
+import { emailLayout, sendEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -40,30 +40,19 @@ export async function POST(request: Request) {
     const link = `${origin}/join/${token}`;
     const clubName = club?.name ?? "an aquarium club";
 
-    // Send the email only if Resend is configured (lazy init avoids build issues).
-    let emailed = false;
-    const key = process.env.RESEND_API_KEY;
-    if (key) {
-      try {
-        const { Resend } = await import("resend");
-        const resend = new Resend(key);
-        await resend.emails.send({
-          from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
-          to: email.trim(),
-          subject: `You're invited to join ${clubName}`,
-          html: emailLayout({
-            preheader: `You're invited to join ${clubName} on Underground Aquarium`,
-            title: "You're invited",
-            intro: `You've been invited to join <strong>${clubName}</strong> on Underground Aquarium.`,
-            cta: { label: "Join the club", url: link },
-            footerNote: `Or paste this link into your browser:<br><a href="${link}" style="color:#0e6e8c;text-decoration:none;word-break:break-all;">${link}</a>`,
-          }),
-        });
-        emailed = true;
-      } catch (e) {
-        console.error("Invite email failed:", e);
-      }
-    }
+    // Through the queue like everything else, so the ledger sees it.
+    const emailed = await sendEmail({
+      kind: "club_invite",
+      to: email.trim(),
+      subject: `You're invited to join ${clubName}`,
+      html: emailLayout({
+        preheader: `You're invited to join ${clubName} on Underground Aquarium`,
+        title: "You're invited",
+        intro: `You've been invited to join <strong>${clubName}</strong> on Underground Aquarium.`,
+        cta: { label: "Join the club", url: link },
+        footerNote: `Or paste this link into your browser:<br><a href="${link}" style="color:#0e6e8c;text-decoration:none;word-break:break-all;">${link}</a>`,
+      }),
+    });
 
     return NextResponse.json({ ok: true, link, emailed });
   } catch (err) {

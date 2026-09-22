@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight, Waves, Heart } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import RelatedGuides from "@/components/discover/RelatedGuides";
+import ListingsStrip from "@/components/discover/ListingsStrip";
+import { listingsMatching, relatedThreads } from "@/lib/discover";
 
 export const revalidate = 3600;
 
@@ -117,6 +120,13 @@ export default async function SpeciesDetailPage({ params }: Params) {
     .is("parent_slug", null)
     .order("common_name")
     .limit(10);
+
+  // A reason to keep going: ads for this fish, and guides that mention it.
+  const nameVariants = [s.common_name as string, (s.common_name as string).replace(/s$/i, "")];
+  const [forSale, guides] = await Promise.all([
+    listingsMatching(nameVariants, 4),
+    relatedThreads({ terms: nameVariants, limit: 4 }),
+  ]);
 
   const { data: speciesTanks } = await supabasePublic.rpc(
     "public_tanks_for_species",
@@ -316,6 +326,16 @@ export default async function SpeciesDetailPage({ params }: Params) {
         {s.body && (
           <p className="text-ocean-300 leading-relaxed mb-10">{s.body}</p>
         )}
+
+        <ListingsStrip
+          listings={forSale}
+          name={s.common_name as string}
+          browseHref="/listings?category=livestock-freshwater"
+        />
+
+        <RelatedGuides guides={guides} title={`Guides about ${s.common_name}`} />
+
+        <div className="h-8" />
 
         {children && children.length > 0 && (
           <div className="border-t border-white/10 pt-8 mb-8">

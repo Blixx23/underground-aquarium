@@ -8,6 +8,7 @@ import ToolGrid from "@/components/sections/ToolGrid";
 import JustPosted from "@/components/sections/JustPosted";
 import SocietyBanner from "@/components/sections/SocietyBanner";
 import CTA from "@/components/sections/CTA";
+import HotForums from "@/components/forum/HotForums";
 
 // The homepage shows live listings, so it can't be fully static, but it
 // doesn't need to be fresh to the second either.
@@ -69,12 +70,16 @@ export default async function HomePage() {
   return (
     <div className="overflow-x-clip">
       <Hero locatable={locatable} liveListings={liveCount ?? 0} />
+      {/* The live stuff first: what's for sale and what people are talking about. */}
+      <JustPosted listings={listings} regionNames={regionNames} />
+      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6">
+        <HotForums />
+      </section>
       <ToolGrid />
       <SocietyBanner
         memberCount={societyMembers}
         duesCents={societyRow?.dues_amount_cents ?? 0}
       />
-      <JustPosted listings={listings} regionNames={regionNames} />
       <CTA />
     </div>
   );

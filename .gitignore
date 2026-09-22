@@ -21,3 +21,6 @@
 overture-stores.json
 __pycache__/
 osm-superseded.json
+
+store-contacts.csv
+store-contacts-progress.json

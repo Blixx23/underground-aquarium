@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import RelatedGuides from "@/components/discover/RelatedGuides";
+import { relatedThreads } from "@/lib/discover";
 
 export const revalidate = 3600;
 
@@ -49,6 +51,8 @@ export default async function TermPage({ params }: Params) {
     .order("term")
     .limit(8);
 
+  const guides = await relatedThreads({ terms: [term.term as string], limit: 4 });
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "DefinedTerm",
@@ -85,6 +89,24 @@ export default async function TermPage({ params }: Params) {
           {term.definition}
         </p>
         <p className="text-ocean-300 leading-relaxed mb-10">{term.body}</p>
+
+        <div className="-mt-6 mb-10 flex flex-wrap gap-2">
+          <Link
+            href="/water-check"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-ocean-600 px-4 py-2 text-sm font-medium text-white hover:bg-ocean-500"
+          >
+            Check your water
+          </Link>
+          <Link
+            href="/forums/new"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-ocean-700/60 px-4 py-2 text-sm text-ocean-200 hover:border-ocean-500 hover:text-white"
+          >
+            Ask the forums
+          </Link>
+        </div>
+
+        <RelatedGuides guides={guides} title={`Guides mentioning ${term.term}`} />
+        <div className="h-8" />
 
         {related && related.length > 0 && (
           <div className="border-t border-white/10 pt-8">

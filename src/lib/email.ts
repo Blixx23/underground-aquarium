@@ -1,26 +1,34 @@
 import { bubbleTier, TIER_COUNT } from "@/lib/bubbles";
 
 // ---------------------------------------------------------------------------
-// Shared, best-effort email sender. Lazy-inits Resend so a missing key never
-// breaks the build, and never throws — callers treat email as fire-and-forget.
+// Every outbound email in the app goes through here, which puts a row in
+// email_queue either way: sent now, or held while the kill switch is on.
+// Nothing calls Resend directly, so the health panel can see all of it.
+// Never throws: callers treat email as fire-and-forget.
 // ---------------------------------------------------------------------------
 export async function sendEmail(opts: {
   to: string | null | undefined;
   subject: string;
   html: string;
+  /** What this email is, so the ledger and the admin panel can group it. */
+  kind?: string;
+  replyTo?: string;
+  /** Admin alerts only: goes out even while the kill switch is on. */
+  ignorePause?: boolean;
 }): Promise<boolean> {
-  const key = process.env.RESEND_API_KEY;
-  if (!key || !opts.to) return false;
+  if (!opts.to) return false;
   try {
-    const { Resend } = await import("resend");
-    const resend = new Resend(key);
-    await resend.emails.send({
-      from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
+    const { dispatchOne } = await import("@/lib/email/queue");
+    const r = await dispatchOne({
+      kind: opts.kind ?? "transactional",
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
+      replyTo: opts.replyTo,
+      ignorePause: opts.ignorePause,
     });
-    return true;
+    // Queued while paused counts as handled: the worker sends it later.
+    return r.sent || r.queued;
   } catch (e) {
     console.error("Email send failed:", e);
     return false;

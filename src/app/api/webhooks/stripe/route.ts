@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { Resend } from "resend";
-import { emailLayout, emailStats } from "@/lib/email";
+import { emailLayout, emailStats, sendEmail } from "@/lib/email";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -193,11 +192,8 @@ export async function POST(request: Request) {
           .eq("user_id", userId);
       }
 
-      // Receipt email to the payer.
-      const resend = process.env.RESEND_API_KEY
-        ? new Resend(process.env.RESEND_API_KEY)
-        : null;
-      if (resend && payerEmail) {
+      // Receipt email to the payer. Through the queue, like everything else.
+      if (payerEmail) {
         const amountStr = (amountTotal / 100).toFixed(2);
         const coversLabel = new Date(
           coversUntilStr + "T00:00:00"
@@ -207,8 +203,8 @@ export async function POST(request: Request) {
           day: "numeric",
         });
         try {
-          await resend.emails.send({
-            from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
+          await sendEmail({
+            kind: "dues_receipt",
             to: payerEmail,
             subject: `Your ${clubName ?? "club"} dues receipt`,
             html: emailLayout({
@@ -349,17 +345,12 @@ export async function POST(request: Request) {
         console.error("Seller sale notification failed:", notifyErr);
       }
 
-      // Create the email client only if a key is configured (keeps builds safe).
-      const resend = process.env.RESEND_API_KEY
-        ? new Resend(process.env.RESEND_API_KEY)
-        : null;
-
       // Email the buyer a receipt.
       try {
         const buyerEmail = session.customer_details?.email;
-        if (resend && buyerEmail) {
-          await resend.emails.send({
-            from: "Underground Aquarium <orders@send.undergroundaquarium.com>",
+        if (buyerEmail) {
+          await sendEmail({
+            kind: "order_receipt",
             to: buyerEmail,
             subject: "Your Underground Aquarium order",
             html: emailLayout({

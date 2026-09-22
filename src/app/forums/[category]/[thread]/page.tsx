@@ -9,6 +9,8 @@ import ForumSearchBar from "@/components/forum/ForumSearchBar";
 import ReplyBox from "@/components/forum/ReplyBox";
 import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
+import RelatedGuides from "@/components/discover/RelatedGuides";
+import { keywords, relatedThreads } from "@/lib/discover";
 
 export const revalidate = 60;
 
@@ -103,6 +105,11 @@ export default async function ThreadPage({ params }: Params) {
   const data = await getThread(category, thread);
   if (!data) notFound();
   const { cat, thread: t } = data;
+  const related = await relatedThreads({
+    terms: keywords(t.title as string),
+    excludeId: t.id as string,
+    fallbackCategoryId: cat.id as string,
+  });
   const locked = Boolean(t.is_locked);
   const threadPath = `/forums/${category}/${thread}`;
   const threadImages = Array.isArray((t as { images?: unknown }).images)
@@ -340,6 +347,8 @@ export default async function ThreadPage({ params }: Params) {
             roots.map((c) => renderComment(c))
           )}
         </div>
+
+        <RelatedGuides guides={related} title="Keep reading" />
       </div>
     </main>
   );
