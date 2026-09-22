@@ -18,15 +18,15 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.undergroundaquarium.com"),
   title: {
-    default: "UndergroundAquarium — The Hobbyist-First Aquarium Marketplace",
+    default: "Buy, Sell & Trade Aquarium Fish Near You | Underground Aquarium",
     template: "%s | UndergroundAquarium",
   },
   description:
-    "Buy, sell, and connect with aquarium enthusiasts. Rare plants, equipment, 3D-printed gear, and a vibrant community — all in one place.",
-  keywords: ["aquarium", "fish", "marketplace", "freshwater", "plants", "aquatic", "hobbyist"],
+    "Free local classifieds for aquarium keepers. Buy, sell and trade live fish, shrimp, snails, plants, coral, tanks and gear with people near you. No fees, no commission.",
+  keywords: ["aquarium classifieds", "buy fish near me", "sell aquarium fish", "aquarium fish for sale", "aquatic plants for sale", "shrimp for sale", "aquarium trade"],
   openGraph: {
-    title: "UndergroundAquarium — The Hobbyist-First Aquarium Marketplace",
-    description: "Buy, sell, and connect with aquarium enthusiasts.",
+    title: "Buy, sell & trade aquarium fish and gear near you",
+    description: "Free local classifieds for aquarium keepers. Live fish welcome.",
     url: "https://www.undergroundaquarium.com",
     siteName: "UndergroundAquarium",
     type: "website",

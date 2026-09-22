@@ -42,8 +42,14 @@ export default function NearMeButton({
   regions,
   className,
   wrapperClassName,
+  label = "Near me",
+  fallbackHref,
 }: {
   regions: LocatableRegion[];
+  /** Button text when idle. */
+  label?: string;
+  /** Where to send people to pick an area by hand if location fails. */
+  fallbackHref?: string;
   /** Replaces the button's classes outright, so a caller can match a button row exactly. */
   className?: string;
   wrapperClassName?: string;
@@ -113,10 +119,22 @@ export default function NearMeButton({
         ) : (
           <Crosshair className="h-4 w-4 shrink-0" />
         )}
-        {busy ? "Finding…" : "Near me"}
+        {busy ? "Finding…" : label}
       </button>
 
-      {error && <p className="mt-3 text-sm text-amber-200">{error}</p>}
+      {error && (
+        <p className="mt-3 text-sm text-amber-200">
+          {fallbackHref ? error.replace(/ Pick your state below( instead)?\./, "") : error}
+          {fallbackHref && (
+            <>
+              {" "}
+              <a href={fallbackHref} className="underline underline-offset-2 hover:text-white">
+                Pick your area
+              </a>
+            </>
+          )}
+        </p>
+      )}
     </div>
   );
 }
