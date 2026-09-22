@@ -13,8 +13,12 @@ export type Campaign = {
   description: string | null;
   audience: string;
   active: boolean;
+  /** Set, and the campaign never ends: it comes back around this often. */
+  repeat_days: number | null;
   reply_to: string | null;
 };
+
+const CAMPAIGN_COLS = "id, key, name, description, audience, active, repeat_days, reply_to";
 
 export type Step = {
   id: string;
@@ -35,6 +39,7 @@ type Enrollment = {
   email: string;
   next_step: number;
   sent_count: number;
+  cycle: number;
 };
 
 type Store = { id: string; slug: string; name: string; city: string | null; state: string | null };
@@ -44,6 +49,7 @@ export type PlanResult = {
   stopped: number;
   queued: number;
   finished: number;
+  recycled: number;
   skipped: number;
   budget: number;
 };
@@ -174,7 +180,7 @@ async function stopTheFinished(campaign: Campaign): Promise<number> {
  *
  * The worker enforces the daily cap when it sends, but if the planner
  * ignored the cap it would pile thousands of rows into the queue and the
- * whole sequence would arrive in the wrong order over months. So the
+ * whole thing would arrive in the wrong order over months. So the
  * planner keeps the queue about one day deep and no more.
  */
 async function todaysBudget(): Promise<number> {
@@ -200,11 +206,16 @@ async function todaysBudget(): Promise<number> {
 }
 
 /**
- * Run one campaign: enrol, stop, then queue whatever is due, newest
- * step first so nobody mid-sequence gets stranded behind a fresh batch.
+ * Run one campaign: enrol, stop, then queue whatever is due.
+ *
+ * A campaign with repeat_days never finishes. When someone reaches the
+ * end of the steps they go back to the start, one cycle higher, due
+ * again in repeat_days. The cycle number is part of the dedup key, so
+ * the same email can go out again in six weeks without the queue
+ * treating it as a duplicate of the last one.
  */
 export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; limit?: number } = {}): Promise<PlanResult> {
-  const out: PlanResult = { enrolled: 0, stopped: 0, queued: 0, finished: 0, skipped: 0, budget: 0 };
+  const out: PlanResult = { enrolled: 0, stopped: 0, queued: 0, finished: 0, recycled: 0, skipped: 0, budget: 0 };
 
   out.enrolled = await enrolAudience(campaign);
   out.stopped = await stopTheFinished(campaign);
@@ -216,7 +227,10 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
     .order("step", { ascending: true });
   const steps = (stepData ?? []) as Step[];
   const byNumber = new Map(steps.map((s) => [s.step, s]));
+  const live = steps.filter((s) => s.active);
   const lastStep = steps.length ? Math.max(...steps.map((s) => s.step)) : 0;
+  const firstLive = live.length ? live[0].step : null;
+  const repeat = campaign.repeat_days && campaign.repeat_days > 0 ? campaign.repeat_days : null;
 
   const budget = opts.limit ?? (await todaysBudget());
   out.budget = budget;
@@ -224,11 +238,11 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
 
   const { data: dueData } = await supabaseAdmin
     .from("email_campaign_enrollments")
-    .select("id, campaign_id, store_id, email, next_step, sent_count")
+    .select("id, campaign_id, store_id, email, next_step, sent_count, cycle")
     .eq("campaign_id", campaign.id)
     .eq("status", "active")
     .lte("next_send_at", new Date().toISOString())
-    .order("next_step", { ascending: false }) // people already in the sequence go first
+    .order("cycle", { ascending: true })      // people who have heard from us least go first
     .order("next_send_at", { ascending: true })
     .limit(budget);
   const due = (dueData ?? []) as Enrollment[];
@@ -241,6 +255,36 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
     .in("id", storeIds);
   const storeById = new Map(((storeData ?? []) as Store[]).map((s) => [s.id, s]));
 
+  /** What happens to an enrolment once its step is dealt with. */
+  function afterStep(e: Enrollment, justSent: boolean): Record<string, unknown> {
+    const now = new Date();
+    const stamps = justSent
+      ? { last_sent_at: now.toISOString(), sent_count: e.sent_count + 1 }
+      : {};
+    const next = byNumber.get(e.next_step + 1);
+
+    if (next) {
+      return {
+        ...stamps,
+        next_step: next.step,
+        // Waiting time runs from this email, not from when they enrolled,
+        // so a slow ramp doesn't bunch everything up at the end.
+        next_send_at: new Date(now.getTime() + next.delay_days * day).toISOString(),
+      };
+    }
+    if (repeat && firstLive !== null) {
+      out.recycled += justSent ? 1 : 0;
+      return {
+        ...stamps,
+        next_step: firstLive,
+        cycle: e.cycle + 1,
+        next_send_at: new Date(now.getTime() + repeat * day).toISOString(),
+      };
+    }
+    out.finished += justSent ? 1 : 0;
+    return { ...stamps, status: "done", next_step: e.next_step + 1, stopped_at: now.toISOString() };
+  }
+
   for (const e of due) {
     const step = byNumber.get(e.next_step);
     const store = e.store_id ? storeById.get(e.store_id) : undefined;
@@ -248,16 +292,20 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
     // A step that was turned off, or a shop that vanished: move past it
     // rather than stalling the enrolment there forever.
     if (!step || !step.active || !store) {
-      const next = e.next_step + 1;
       if (!opts.dry) {
-        await supabaseAdmin
-          .from("email_campaign_enrollments")
-          .update(
-            next > lastStep
-              ? { status: "done", next_step: next, stopped_at: new Date().toISOString() }
-              : { next_step: next }
-          )
-          .eq("id", e.id);
+        if (!step && e.next_step > lastStep && repeat && firstLive !== null) {
+          // Steps were deleted out from under them; start the cycle again.
+          await supabaseAdmin
+            .from("email_campaign_enrollments")
+            .update({
+              next_step: firstLive,
+              cycle: e.cycle + 1,
+              next_send_at: new Date(Date.now() + repeat * day).toISOString(),
+            })
+            .eq("id", e.id);
+        } else {
+          await supabaseAdmin.from("email_campaign_enrollments").update(afterStep(e, false)).eq("id", e.id);
+        }
       }
       out.skipped++;
       continue;
@@ -272,49 +320,24 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
       continue;
     }
 
-    // One row per enrolment per step, forever. Re-running the planner,
-    // twice or a hundred times, can never mail the same step again.
+    // One row per enrolment per step per cycle, forever. Re-running the
+    // planner, twice or a hundred times, can never mail the same thing
+    // twice in the same cycle.
     const { error } = await supabaseAdmin.from("email_queue").insert({
       kind: `campaign:${campaign.key}`,
       bulk: true,
-      dedup_key: dedupKey(["campaign", campaign.id, e.id, step.step]),
+      dedup_key: dedupKey(["campaign", campaign.id, e.id, step.step, e.cycle]),
       to_email: e.email,
       subject,
       html,
       reply_to: campaign.reply_to,
-      context: { campaign: campaign.key, step: step.step, enrollment_id: e.id, store_id: e.store_id },
+      context: { campaign: campaign.key, step: step.step, cycle: e.cycle, enrollment_id: e.id, store_id: e.store_id },
     });
     if (error && error.code !== "23505") throw new Error(error.message);
     if (!error) out.queued++;
     else out.skipped++;
 
-    const nextStep = byNumber.get(e.next_step + 1);
-    const sentAt = new Date();
-    if (!nextStep) {
-      await supabaseAdmin
-        .from("email_campaign_enrollments")
-        .update({
-          status: "done",
-          next_step: e.next_step + 1,
-          last_sent_at: sentAt.toISOString(),
-          sent_count: e.sent_count + 1,
-          stopped_at: sentAt.toISOString(),
-        })
-        .eq("id", e.id);
-      out.finished++;
-    } else {
-      await supabaseAdmin
-        .from("email_campaign_enrollments")
-        .update({
-          next_step: nextStep.step,
-          // Waiting time runs from this email, not from when they enrolled,
-          // so a slow ramp doesn't bunch the whole sequence up at the end.
-          next_send_at: new Date(sentAt.getTime() + nextStep.delay_days * day).toISOString(),
-          last_sent_at: sentAt.toISOString(),
-          sent_count: e.sent_count + 1,
-        })
-        .eq("id", e.id);
-    }
+    await supabaseAdmin.from("email_campaign_enrollments").update(afterStep(e, true)).eq("id", e.id);
   }
 
   return out;
@@ -323,17 +346,14 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
 export async function getCampaign(key: string): Promise<Campaign | null> {
   const { data } = await supabaseAdmin
     .from("email_campaigns")
-    .select("id, key, name, description, audience, active, reply_to")
+    .select(CAMPAIGN_COLS)
     .eq("key", key)
     .maybeSingle();
   return (data as Campaign) ?? null;
 }
 
 export async function runAllCampaigns(opts: { dry?: boolean } = {}): Promise<Record<string, PlanResult>> {
-  const { data } = await supabaseAdmin
-    .from("email_campaigns")
-    .select("id, key, name, description, audience, active, reply_to")
-    .eq("active", true);
+  const { data } = await supabaseAdmin.from("email_campaigns").select(CAMPAIGN_COLS).eq("active", true);
   const out: Record<string, PlanResult> = {};
   for (const c of (data ?? []) as Campaign[]) {
     out[c.key] = await runCampaign(c, opts);

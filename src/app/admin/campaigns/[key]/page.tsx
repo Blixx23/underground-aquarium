@@ -13,12 +13,22 @@ import StopEnrollment from "./StopEnrollment";
 export const metadata: Metadata = { title: "Admin · Campaign" };
 export const dynamic = "force-dynamic";
 
-type Stats = { active: number; done: number; stopped: number; stopped_claimed: number; emails_sent: number; due_now: number; eligible: number };
+type Stats = {
+  active: number; done: number; stopped: number; stopped_claimed: number;
+  emails_sent: number; never_written: number; due_now: number;
+  next_due: string | null; eligible: number;
+};
 
 const AUDIENCE: Record<string, string> = {
   unclaimed_shops:
     "Every shop in the directory with an email address that nobody has claimed. Shops are added automatically as they land in the directory, and drop out the moment they claim their page, unsubscribe or bounce.",
 };
+
+function describeSchedule(repeatDays: number | null, stepCount: number): string {
+  if (!repeatDays) return stepCount === 1 ? "One email, once." : `${stepCount} emails, then it stops.`;
+  if (stepCount <= 1) return `One email, and again every ${repeatDays} days until they claim or opt out.`;
+  return `${stepCount} emails, then back to the first one every ${repeatDays} days.`;
+}
 
 const STOP: Record<string, string> = {
   claimed: "claimed their page",
@@ -104,7 +114,8 @@ export default async function CampaignPage({ params }: { params: Promise<{ key: 
             {campaign.active ? "On" : "Off"}
           </span>
         </div>
-        <p className="mb-5 text-sm text-ocean-400">{AUDIENCE[campaign.audience] ?? campaign.description}</p>
+        <p className="mb-2 text-sm text-ocean-400">{AUDIENCE[campaign.audience] ?? campaign.description}</p>
+        <p className="mb-5 text-sm text-ocean-300">{describeSchedule(campaign.repeat_days, steps.length)}</p>
 
         {bulkPaused && (
           <p className="mb-5 rounded-2xl border border-ocean-700/60 bg-ocean-800/40 px-4 py-3 text-sm text-ocean-200">
@@ -116,26 +127,32 @@ export default async function CampaignPage({ params }: { params: Promise<{ key: 
 
         {stats && (
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <Stat label="In the sequence" value={stats.active} />
+            <Stat label="On the list" value={stats.active} />
             <Stat label="Due now" value={stats.due_now} />
+            <Stat label="Never written to" value={stats.never_written} />
             <Stat label="Emails sent" value={stats.emails_sent} />
-            <Stat label="Finished" value={stats.done} />
             <Stat label="Claimed their shop" value={stats.stopped_claimed} />
             <Stat label="Dropped out" value={stats.stopped} />
-            <Stat label="Shops eligible" value={stats.eligible} />
+            <Stat
+              label="Next one goes"
+              value={stats.next_due ? new Date(stats.next_due).toLocaleDateString() : "—"}
+            />
             <Stat label="Sends per day" value={cap} />
           </div>
         )}
 
         <div className="mb-8">
-          <CampaignControls campaignKey={campaign.key} active={campaign.active} />
+          <CampaignControls campaignKey={campaign.key} active={campaign.active} repeatDays={campaign.repeat_days} />
         </div>
 
         {/* The sequence */}
-        <h2 className="mb-1 font-medium text-white">The emails</h2>
+        <h2 className="mb-1 font-medium text-white">{steps.length === 1 ? "The email" : "The emails"}</h2>
         <p className="mb-4 text-sm text-ocean-400">
-          Edits save straight to the database and take effect on the next run. Nobody is ever sent the same step
-          twice, so fixing a typo now will not re-send an email that already went out.
+          Edits save straight to the database and take effect on the next run. Nobody is ever sent the same thing
+          twice in the same round, so fixing a typo now will not re-send an email that already went out.
+          {campaign.repeat_days
+            ? ` Whatever it says when a shop comes back around in ${campaign.repeat_days} days is what they get.`
+            : ""}
         </p>
 
         <div className="mb-4 rounded-xl border border-ocean-800/60 bg-ocean-950/40 p-4">
@@ -170,6 +187,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ key: 
                 vars={vars}
                 shopName={preview.name}
                 isLast={s.step === lastStepNumber}
+                repeatDays={campaign.repeat_days}
               />
             ))}
           </ul>
@@ -206,9 +224,9 @@ export default async function CampaignPage({ params }: { params: Promise<{ key: 
                       <span className="block truncate text-xs text-ocean-500">
                         {e.email} · {e.sent_count} sent ·{" "}
                         {e.status === "active"
-                          ? `email ${e.next_step} on ${new Date(e.next_send_at).toLocaleDateString()}`
+                          ? `next on ${new Date(e.next_send_at).toLocaleDateString()}`
                           : e.status === "done"
-                            ? "finished the sequence"
+                            ? "finished"
                             : STOP[e.stop_reason ?? ""] ?? "stopped"}
                       </span>
                     </span>

@@ -11,6 +11,7 @@ export const maxDuration = 60;
 type Body = {
   action?: string;
   key?: string;
+  repeatDays?: number;
   stepId?: string;
   step?: number;
   enrollmentId?: string;
@@ -56,6 +57,21 @@ export async function POST(req: Request) {
         const { error } = await supabaseAdmin
           .from("email_campaigns")
           .update({ active: Boolean(body.active), updated_at: new Date().toISOString() })
+          .eq("key", body.key);
+        if (error) throw new Error(error.message);
+        return NextResponse.json({ ok: true });
+      }
+
+      // How often the whole thing comes back around. 0 turns repeating off.
+      case "set-interval": {
+        if (!body.key) return NextResponse.json({ error: "Which campaign?" }, { status: 400 });
+        const n = Math.trunc(Number(body.repeatDays));
+        if (!Number.isFinite(n) || n < 0 || n > 365) {
+          return NextResponse.json({ error: "Repeat between 0 and 365 days." }, { status: 400 });
+        }
+        const { error } = await supabaseAdmin
+          .from("email_campaigns")
+          .update({ repeat_days: n === 0 ? null : n, updated_at: new Date().toISOString() })
           .eq("key", body.key);
         if (error) throw new Error(error.message);
         return NextResponse.json({ ok: true });

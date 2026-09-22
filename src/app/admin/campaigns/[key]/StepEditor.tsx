@@ -39,11 +39,13 @@ export default function StepEditor({
   vars,
   shopName,
   isLast,
+  repeatDays,
 }: {
   data: StepData;
   vars: PreviewVars;
   shopName: string;
   isLast: boolean;
+  repeatDays: number | null;
 }) {
   const router = useRouter();
   const [subject, setSubject] = useState(data.subject);
@@ -91,11 +93,16 @@ export default function StepEditor({
             {data.step}
           </span>
           <div>
-            <p className="text-sm font-medium text-white">Email {data.step}</p>
+            <p className="text-sm font-medium text-white">
+              {repeatDays && isLast && data.step === 1 ? "The email" : `Email ${data.step}`}
+            </p>
             <p className="text-xs text-ocean-500">
               {data.step === 1
-                ? "Goes out when a shop is added to the sequence"
+                ? repeatDays && isLast
+                  ? `Goes out when a shop joins, then again every ${repeatDays} days`
+                  : "Goes out when a shop joins"
                 : `Waits ${data.delay_days} day${data.delay_days === 1 ? "" : "s"} after the previous one`}
+              {repeatDays && isLast && data.step > 1 ? ` · then back to the first one after ${repeatDays} days` : ""}
             </p>
           </div>
         </div>

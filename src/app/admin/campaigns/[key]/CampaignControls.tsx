@@ -16,10 +16,19 @@ async function post(payload: Record<string, unknown>): Promise<Result> {
 }
 
 /** Turn the campaign on, see what a run would do, or force one. */
-export default function CampaignControls({ campaignKey, active }: { campaignKey: string; active: boolean }) {
+export default function CampaignControls({
+  campaignKey,
+  active,
+  repeatDays,
+}: {
+  campaignKey: string;
+  active: boolean;
+  repeatDays: number | null;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{ tone: "ok" | "bad"; text: string } | null>(null);
+  const [every, setEvery] = useState(String(repeatDays ?? 0));
 
   async function run(key: string, payload: Record<string, unknown>, ok: (r: Result) => string) {
     setBusy(key);
@@ -88,6 +97,39 @@ export default function CampaignControls({ campaignKey, active }: { campaignKey:
         >
           <Plus className="h-4 w-4" /> Add another email
         </button>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-ocean-800/60 bg-ocean-950/40 px-4 py-3">
+        <label htmlFor="every" className="text-sm text-ocean-300">
+          Write to each shop every
+        </label>
+        <input
+          id="every"
+          type="number"
+          min={0}
+          max={365}
+          value={every}
+          onChange={(e) => setEvery(e.target.value)}
+          className="w-20 rounded-lg border border-ocean-700 bg-ocean-900 px-3 py-1.5 text-sm text-white"
+        />
+        <span className="text-sm text-ocean-300">days</span>
+        <button
+          type="button"
+          disabled={busy !== null || every === String(repeatDays ?? 0)}
+          onClick={() =>
+            run("interval", { action: "set-interval", key: campaignKey, repeatDays: Number(every) }, () =>
+              Number(every) > 0
+                ? `They'll hear from you every ${Number(every)} days until they claim or opt out.`
+                : "Repeating turned off. Each shop gets it once."
+            )
+          }
+          className="rounded-lg border border-ocean-700 px-3 py-1.5 text-sm text-ocean-200 hover:text-white disabled:opacity-40"
+        >
+          Save
+        </button>
+        <span className="w-full text-[11px] text-ocean-500 sm:w-auto sm:pl-2">
+          0 means send it once and stop.
+        </span>
       </div>
 
       {note && (

@@ -7,7 +7,7 @@ import { readHealth } from "@/lib/email/health";
 export const metadata: Metadata = { title: "Admin · Campaigns" };
 export const dynamic = "force-dynamic";
 
-type Campaign = { key: string; name: string; description: string | null; audience: string; active: boolean };
+type Campaign = { key: string; name: string; description: string | null; audience: string; active: boolean; repeat_days: number | null };
 type Stats = { active: number; done: number; stopped: number; stopped_claimed: number; emails_sent: number; due_now: number; eligible: number };
 
 const AUDIENCE: Record<string, string> = {
@@ -17,7 +17,7 @@ const AUDIENCE: Record<string, string> = {
 export default async function CampaignsPage() {
   const { data } = await supabaseAdmin
     .from("email_campaigns")
-    .select("key, name, description, audience, active")
+    .select("key, name, description, audience, active, repeat_days")
     .order("name", { ascending: true });
   const campaigns = (data ?? []) as Campaign[];
 
@@ -80,10 +80,11 @@ export default async function CampaignsPage() {
                       <span className="mt-1 block text-sm text-ocean-400">{c.description}</span>
                       <span className="mt-2 block text-xs text-ocean-500">
                         {AUDIENCE[c.audience] ?? c.audience}
+                        {c.repeat_days ? ` · every ${c.repeat_days} days` : " · once each"}
                       </span>
                       {s && (
                         <span className="mt-2 block text-xs text-ocean-400">
-                          {s.active} in the sequence · {s.emails_sent} emails sent · {s.stopped_claimed} claimed
+                          {s.active} on the list · {s.emails_sent} emails sent · {s.stopped_claimed} claimed
                           their shop · {s.eligible} shops eligible
                         </span>
                       )}
