@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { cityPath, statePath, stateName } from "@/lib/stores/places";
+import { getNearbyStores } from "@/lib/stores/nearby";
+import PlaceStoreCard from "@/components/stores/PlaceStoreCard";
 import {
   MapPin,
   Phone,
@@ -207,6 +209,8 @@ export default async function StoreDetailPage({ params }: Params) {
   }));
 
   // The shop's own extras: what's in today, photos, and any odd hours coming up.
+  const nearby = await getNearbyStores(store.lat ?? null, store.lng ?? null, store.id);
+
   const [{ data: photoRows }, { data: specialRows }] = await Promise.all([
     supabasePublic
       .from("store_photos")
@@ -421,6 +425,27 @@ export default async function StoreDetailPage({ params }: Params) {
               currentUserName={currentUserName}
               isOwner={isOwner}
             />
+
+            {nearby.length > 0 && (
+              <section className="mt-12 border-t border-white/10 pt-8">
+                <div className="mb-4 flex items-baseline justify-between gap-3">
+                  <h2 className="font-display text-xl text-white">Other fish stores nearby</h2>
+                  {store.state && store.city && (
+                    <Link
+                      href={cityPath(store.state, store.city)}
+                      className="shrink-0 text-sm text-ocean-400 hover:text-white"
+                    >
+                      All in {store.city} →
+                    </Link>
+                  )}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {nearby.map(({ s, d }) => (
+                    <PlaceStoreCard key={s.id} s={s} distance={d} />
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
           {/* ---- Getting there and getting in touch ---- */}
