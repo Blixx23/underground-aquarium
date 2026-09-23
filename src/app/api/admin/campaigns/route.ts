@@ -4,8 +4,6 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchOne } from "@/lib/email/queue";
 import { getCampaign, runCampaign, type Step } from "@/lib/campaigns/planner";
 import { previewLine, renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
-import { letterShell } from "@/lib/email/shell";
-import { unsubscribeUrlFor } from "@/lib/email/queue";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -155,20 +153,20 @@ export async function POST(req: Request) {
         if (!to) return NextResponse.json({ error: "No address on your account." }, { status: 400 });
 
         const vars = varsForStore(store);
+        // Sent as BULK, exactly like the real thing: same from address on
+        // the outreach subdomain, same unsubscribe headers, same shell.
+        // A test that goes out over the transactional domain proves the
+        // wrong path, and you find that out on the first real send.
         await dispatchOne({
           kind: "campaign_test",
           to,
+          bulk: true,
           ignorePause: true,
+          preheader: previewLine(step.body, vars),
           subject: `[test] ${renderSubject(step.subject, vars)}`,
-          // Wrapped exactly as the real one is, so the test shows the
-          // finished article rather than an approximation of it.
-          html: letterShell({
-            preheader: previewLine(step.body, vars),
-            contentHtml:
-              `<p style="margin:0 0 20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#7d8c99;">Test of step ${step.step}, written as if it were going to ${store.name}.</p>` +
-              renderBody(step.body, vars, { label: step.cta_label, url: step.cta_url }),
-            unsubscribeUrl: unsubscribeUrlFor(to),
-          }),
+          html:
+            `<p style="margin:0 0 20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#7d8c99;">Test of step ${step.step}, written as if it were going to ${store.name}.</p>` +
+            renderBody(step.body, vars, { label: step.cta_label, url: step.cta_url }),
           context: { step: step.step, store_id: store.id },
         });
         return NextResponse.json({ ok: true, to, shop: store.name });
