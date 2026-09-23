@@ -7,8 +7,14 @@ import { htmlToText } from "@/lib/email/shell";
  */
 export const FROM_TRANSACTIONAL =
   process.env.RESEND_FROM || "Underground Aquarium <orders@send.undergroundaquarium.com>";
-export const FROM_BULK =
-  process.env.RESEND_FROM_BULK || "Chris at Underground Aquarium <chris@mail.undergroundaquarium.com>";
+/**
+ * Bulk has no fallback on purpose. Guessing an address here would either
+ * send outreach from the transactional domain, putting receipts at risk
+ * of a shop owner's spam complaint, or send from a subdomain nobody
+ * verified, which fails at the provider anyway. Better to refuse and say
+ * so, where the admin panel will show it.
+ */
+export const FROM_BULK = process.env.RESEND_FROM_BULK || "";
 
 export type SendArgs = {
   to: string;
@@ -26,6 +32,9 @@ export type SendArgs = {
 export async function deliver(args: SendArgs): Promise<string | null> {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY is not set");
+  if (args.bulk && !FROM_BULK) {
+    throw new Error("RESEND_FROM_BULK is not set, so bulk email has no address to send from.");
+  }
 
   const { Resend } = await import("resend");
   const resend = new Resend(key);
