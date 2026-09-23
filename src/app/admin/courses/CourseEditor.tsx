@@ -16,6 +16,7 @@ import {
   ExternalLink,
   ListChecks,
 } from "lucide-react";
+import { normaliseVideoUrl, videoHint, isVideoFile } from "@/lib/courses/video";
 import SectionQuestions from "./SectionQuestions";
 
 export type EditorCourse = {
@@ -501,24 +502,64 @@ export default function CourseEditor({
                       />
                       This lesson has a video
                     </label>
-                    {draft.has_video && (
-                      <div>
-                        <label className={label}>Video embed URL</label>
-                        <input
-                          value={draft.video_url}
-                          onChange={(e) =>
-                            setDraft({ ...draft, video_url: e.target.value })
-                          }
-                          placeholder="https://www.youtube.com/embed/…"
-                          className={input}
-                        />
-                        <p className="text-xs text-ocean-600 mt-1.5">
-                          Use the embed URL (e.g. YouTube&apos;s
-                          youtube.com/embed/ID). Leave the box checked with no URL
-                          to show the &ldquo;coming soon&rdquo; placeholder.
-                        </p>
-                      </div>
-                    )}
+                    {draft.has_video && (() => {
+                      const hint = videoHint(draft.video_url);
+                      const resolved = normaliseVideoUrl(draft.video_url);
+                      const changed =
+                        !!resolved && resolved !== draft.video_url.trim();
+                      return (
+                        <div>
+                          <label className={label}>Video link</label>
+                          <input
+                            value={draft.video_url}
+                            onChange={(e) =>
+                              setDraft({ ...draft, video_url: e.target.value })
+                            }
+                            placeholder="Paste any YouTube link, or a direct .mp4 address"
+                            className={input}
+                          />
+                          <p
+                            className={
+                              "text-xs mt-1.5 " +
+                              (hint.ok ? "text-ocean-500" : "text-amber-400")
+                            }
+                          >
+                            {hint.text}
+                          </p>
+
+                          {/* Show what will actually be stored, because a
+                              YouTube watch link silently fails to embed and
+                              there is no way to tell from the page. */}
+                          {changed && (
+                            <p className="text-xs text-ocean-600 mt-1 break-all">
+                              Saved as{" "}
+                              <span className="text-ocean-300">{resolved}</span>
+                            </p>
+                          )}
+
+                          {resolved && hint.ok && (
+                            <div className="mt-3 rounded-xl overflow-hidden border border-ocean-800/60 bg-ocean-950 aspect-video max-w-md">
+                              {isVideoFile(resolved) ? (
+                                <video
+                                  src={resolved}
+                                  className="w-full h-full bg-black"
+                                  controls
+                                  preload="metadata"
+                                />
+                              ) : (
+                                <iframe
+                                  src={resolved}
+                                  title="Preview"
+                                  className="w-full h-full"
+                                  allow="encrypted-media; picture-in-picture"
+                                  allowFullScreen
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => saveSection(s.id)}

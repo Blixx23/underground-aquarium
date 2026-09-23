@@ -15,6 +15,7 @@ import {
   BookOpen,
   BadgeCheck,
 } from "lucide-react";
+import { isVideoFile, normaliseVideoUrl } from "@/lib/courses/video";
 
 type Question = {
   id: string;
@@ -32,12 +33,6 @@ type Section = {
   sort_order: number;
   questions: Question[];
 };
-
-/** A direct video file we host, as opposed to an embeddable page. */
-function isVideoFile(url: string): boolean {
-  const path = url.split("?")[0].split("#")[0].toLowerCase();
-  return /\.(mp4|webm|ogv|ogg|mov|m4v)$/.test(path);
-}
 
 /* ---------- lightweight lesson renderer (**bold**, lists, paragraphs) ---------- */
 function inline(text: string, keyPrefix: string) {
@@ -308,12 +303,12 @@ export default function CoursePlayer({
               <div className="mb-6 rounded-2xl overflow-hidden border border-ocean-800/60 bg-ocean-950">
                 {section.video_url ? (
                   <div className="aspect-video">
-                    {isVideoFile(section.video_url) ? (
+                    {isVideoFile(normaliseVideoUrl(section.video_url) ?? "") ? (
                       // A file we host ourselves. An iframe cannot play one of
                       // these: the browser has nothing to render a bare .mp4
                       // into, which is why it shows a broken document.
                       <video
-                        src={section.video_url}
+                        src={normaliseVideoUrl(section.video_url) ?? undefined}
                         title={section.title}
                         className="w-full h-full bg-black"
                         controls
@@ -324,7 +319,7 @@ export default function CoursePlayer({
                     ) : (
                       // YouTube, Vimeo and anything else that serves a page.
                       <iframe
-                        src={section.video_url}
+                        src={normaliseVideoUrl(section.video_url) ?? undefined}
                         title={section.title}
                         className="w-full h-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

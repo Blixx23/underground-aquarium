@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { normaliseVideoUrl } from "@/lib/courses/video";
 
 const ALLOWED_FIELDS = ["title", "content", "video_url", "has_video", "sort_order"];
 
@@ -76,6 +77,12 @@ export async function POST(req: Request) {
     const update: Record<string, unknown> = {};
     for (const key of ALLOWED_FIELDS) {
       if (key in fields) update[key] = fields[key];
+    }
+    // A YouTube link copied from the address bar cannot be framed, so the
+    // lesson would silently show an empty box. Convert it here rather than
+    // expecting whoever writes the course to know that.
+    if ("video_url" in update) {
+      update.video_url = normaliseVideoUrl(update.video_url as string | null);
     }
     if (Object.keys(update).length === 0) {
       return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
