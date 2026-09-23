@@ -1,10 +1,11 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { dedupKey } from "@/lib/email/queue";
+import { dedupKey, unsubscribeUrlFor } from "@/lib/email/queue";
 import { normaliseEmail } from "@/lib/email/address";
 import { suppressedSet } from "@/lib/email/suppress";
 import { getEmailSettings } from "@/lib/email/settings";
-import { renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
+import { letterShell } from "@/lib/email/shell";
+import { previewLine, renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
 
 export type Campaign = {
   id: string;
@@ -313,7 +314,14 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
 
     const vars = varsForStore(store);
     const subject = renderSubject(step.subject, vars);
-    const html = renderBody(step.body, vars, { label: step.cta_label, url: step.cta_url });
+    // The planner writes the finished document, rather than leaving it to
+    // the queue, so what is stored is exactly what gets delivered and the
+    // admin panel shows the real thing.
+    const html = letterShell({
+      preheader: previewLine(step.body, vars),
+      contentHtml: renderBody(step.body, vars, { label: step.cta_label, url: step.cta_url }),
+      unsubscribeUrl: unsubscribeUrlFor(e.email),
+    });
 
     if (opts.dry) {
       out.queued++;

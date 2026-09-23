@@ -165,16 +165,20 @@ export default function StepEditor({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-ocean-500">Button text</span>
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-ocean-500">
+              Closing link text
+            </span>
             <input
               value={ctaLabel}
               onChange={(e) => setCtaLabel(e.target.value)}
-              placeholder="leave blank for no button"
+              placeholder="usually blank"
               className="w-full rounded-lg border border-ocean-700 bg-ocean-950 px-3 py-2 text-sm text-white placeholder:text-ocean-600"
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-ocean-500">Button link</span>
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-ocean-500">
+              Closing link address
+            </span>
             <input
               value={ctaUrl}
               onChange={(e) => setCtaUrl(e.target.value)}
@@ -182,6 +186,11 @@ export default function StepEditor({
               className="w-full rounded-lg border border-ocean-700 bg-ocean-950 px-3 py-2 font-mono text-[13px] text-white placeholder:text-ocean-600"
             />
           </label>
+          <span className="text-[11px] text-ocean-500 sm:col-span-2">
+            This renders after the last paragraph, so leave it blank when the email ends with your name and put
+            the link in the body instead. It is a plain link, not a filled button, on purpose: a big coloured
+            button is one of the strongest signals Gmail uses to decide something is an advert.
+          </span>
         </div>
       </div>
 
@@ -252,33 +261,43 @@ export default function StepEditor({
       )}
 
       {showPreview && (
-        <div className="mt-4 rounded-xl border border-ocean-800/60 bg-white p-5">
-          <p className="mb-1 text-[11px] uppercase tracking-wider text-[#7d8c99]">
+        <div className="mt-4 rounded-xl border border-ocean-800/60 bg-white p-6">
+          <p className="mb-4 text-[11px] uppercase tracking-wider text-[#7d8c99]">
             As {shopName} would see it
           </p>
-          <p className="mb-4 border-b border-[#e6ecf1] pb-3 font-sans text-[15px] font-semibold text-[#0c2740]">
+
+          <p className="font-serif text-[15px] tracking-[3px] text-[#0c2740]">UNDERGROUND AQUARIUM</p>
+          <div className="mb-5 mt-2.5 h-0.5 w-[38px] bg-[#0e6e8c]" />
+
+          <p className="mb-5 border-b border-[#e6ecf1] pb-3 font-sans text-[15px] font-semibold text-[#0c2740]">
             {fill(subject, vars)}
           </p>
+
           {paragraphs.map((p, i) => (
             <p key={i} className="mb-4 font-sans text-[15px] leading-relaxed text-[#22323f]">
               {p}
             </p>
           ))}
+
           {ctaLabel.trim() && ctaUrl.trim() && (
-            <p className="mt-5">
-              <span className="inline-block rounded-lg bg-[#0e6e8c] px-5 py-3 font-sans text-[15px] font-semibold text-white">
-                {ctaLabel}
-              </span>
-            </p>
+            <>
+              <p className="mt-5 font-sans text-[15px] font-semibold text-[#0e6e8c] underline">
+                {ctaLabel} &rarr;
+              </p>
+              <p className="mt-1 font-sans text-[12px] text-[#7d8c99]">{fill(ctaUrl, vars)}</p>
+            </>
           )}
-          <p className="mt-6 border-t border-[#e6ecf1] pt-3 font-sans text-[12px] leading-relaxed text-[#90a3b4]">
-            Underground Aquarium · 1609 Blanchard Drive, Roseville, CA 95747
+
+          <p className="mt-7 border-t border-[#e6ecf1] pt-4 font-sans text-[12px] leading-[1.7] text-[#7d8c99]">
+            You&apos;re getting this because your shop is listed in our free directory.
             <br />
-            You&apos;re getting this because your shop is listed in our free directory. Unsubscribe and we won&apos;t
-            email you again.
+            <span className="underline">Unsubscribe</span> and I won&apos;t email you again.
+            <br />
+            Underground Aquarium, 1609 Blanchard Drive, Roseville, CA 95747
           </p>
         </div>
       )}
+
     </li>
   );
 }

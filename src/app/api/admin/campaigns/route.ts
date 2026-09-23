@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchOne } from "@/lib/email/queue";
 import { getCampaign, runCampaign, type Step } from "@/lib/campaigns/planner";
-import { renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
+import { previewLine, renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
+import { letterShell } from "@/lib/email/shell";
+import { unsubscribeUrlFor } from "@/lib/email/queue";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -158,9 +160,15 @@ export async function POST(req: Request) {
           to,
           ignorePause: true,
           subject: `[test] ${renderSubject(step.subject, vars)}`,
-          html:
-            `<p style="font-family:Helvetica,Arial;font-size:12px;color:#7d8c99;">Test of step ${step.step}, written as if it were going to ${store.name}.</p>` +
-            renderBody(step.body, vars, { label: step.cta_label, url: step.cta_url }),
+          // Wrapped exactly as the real one is, so the test shows the
+          // finished article rather than an approximation of it.
+          html: letterShell({
+            preheader: previewLine(step.body, vars),
+            contentHtml:
+              `<p style="margin:0 0 20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#7d8c99;">Test of step ${step.step}, written as if it were going to ${store.name}.</p>` +
+              renderBody(step.body, vars, { label: step.cta_label, url: step.cta_url }),
+            unsubscribeUrl: unsubscribeUrlFor(to),
+          }),
           context: { step: step.step, store_id: store.id },
         });
         return NextResponse.json({ ok: true, to, shop: store.name });

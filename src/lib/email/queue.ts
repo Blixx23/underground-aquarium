@@ -6,13 +6,20 @@ import { classify, backoffMs } from "@/lib/email/failure";
 import { deliver } from "@/lib/email/provider";
 import { getEmailSettings } from "@/lib/email/settings";
 import { suppressedSet, suppress } from "@/lib/email/suppress";
+import { letterShell } from "@/lib/email/shell";
 
 export const SITE = "https://www.undergroundaquarium.com";
 export const MAX_ATTEMPTS = 5;
 /** Under this many recipients an interactive send goes out inline. */
 export const INLINE_LIMIT = 50;
 
-export type Recipient = { email: string; subject: string; html: string; context?: Record<string, unknown> };
+export type Recipient = {
+  email: string;
+  subject: string;
+  html: string;
+  preheader?: string;
+  context?: Record<string, unknown>;
+};
 
 export type DispatchResult = {
   queued: number;
@@ -49,12 +56,14 @@ export function validUnsubscribeToken(email: string, token: string): boolean {
   return want.length === got.length && timingSafeEqual(want, got);
 }
 
-function footer(email: string, bulk: boolean): string {
-  if (!bulk) return "";
-  return `<p style="margin:24px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#90a3b4;">
-Underground Aquarium · 1609 Blanchard Drive, Roseville, CA 95747<br>
-You're getting this because your shop is listed in our free directory.
-<a href="${unsubscribeUrlFor(email)}" style="color:#90a3b4;">Unsubscribe</a> and we won't email you again.</p>`;
+/**
+ * Bulk mail is wrapped in the plain letter shell, which carries the
+ * wordmark, the postal address and the opt out. Callers hand in
+ * paragraphs, not a whole document.
+ */
+function wrap(html: string, email: string, bulk: boolean, preheader?: string): string {
+  if (!bulk) return html;
+  return letterShell({ preheader, contentHtml: html, unsubscribeUrl: unsubscribeUrlFor(email) });
 }
 
 /**
@@ -127,6 +136,8 @@ export async function dispatchOne(args: {
   bulk?: boolean;
   replyTo?: string;
   context?: Record<string, unknown>;
+  /** One short line for the inbox preview. Bulk mail only. */
+  preheader?: string;
   /** Alerts to the admin ignore the kill switch, so a freeze can't silence the alarm. */
   ignorePause?: boolean;
 }): Promise<{ sent: boolean; queued: boolean }> {
@@ -140,7 +151,7 @@ export async function dispatchOne(args: {
 
   const settings = await getEmailSettings();
   const held = !args.ignorePause && (settings.paused || (bulk && settings.bulk_paused));
-  const html = args.html + footer(to, bulk);
+  const html = wrap(args.html, to, bulk, args.preheader);
 
   if (held) {
     await enqueue({
@@ -208,7 +219,7 @@ export async function dispatchToEach(args: {
       dedup_key: dedupKey([args.batchKey, args.kind, to]),
       to_email: to,
       subject: r.subject,
-      html: r.html + footer(to, bulk),
+      html: wrap(r.html, to, bulk, r.preheader),
       reply_to: args.replyTo ?? null,
       context: r.context,
     });

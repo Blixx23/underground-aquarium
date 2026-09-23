@@ -1,4 +1,5 @@
 import "server-only";
+import { htmlToText } from "@/lib/email/shell";
 
 /**
  * The only module that talks to Resend. Everything else goes through the
@@ -17,6 +18,8 @@ export type SendArgs = {
   replyTo?: string;
   /** Token for the one-click unsubscribe endpoint. Required for bulk. */
   unsubscribeUrl?: string;
+  /** The plain half. Derived from the HTML when it isn't given. */
+  text?: string;
 };
 
 /** Resolves with the provider's message id, or throws for the classifier. */
@@ -39,6 +42,10 @@ export async function deliver(args: SendArgs): Promise<string | null> {
     to: args.to,
     subject: args.subject,
     html: args.html,
+    // A message with no plain text half is one of the oldest spam
+    // signals there is. Every send gets one, whether the caller
+    // remembered or not.
+    text: args.text ?? htmlToText(args.html),
     replyTo: args.replyTo,
     headers: Object.keys(headers).length ? headers : undefined,
   });
