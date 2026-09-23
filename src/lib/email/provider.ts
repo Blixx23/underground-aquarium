@@ -16,6 +16,35 @@ export const FROM_TRANSACTIONAL =
  */
 export const FROM_BULK = process.env.RESEND_FROM_BULK || "";
 
+/**
+ * The domains this site sends from.
+ *
+ * Resend webhooks are configured per ACCOUNT, not per domain, so one
+ * endpoint receives events for every domain in the account, including
+ * other projects entirely. Anything whose sender isn't one of these is
+ * somebody else's mail and must never touch this database.
+ */
+export function ourSendingDomains(): string[] {
+  const domains = new Set<string>();
+  for (const from of [FROM_TRANSACTIONAL, FROM_BULK, process.env.RESEND_FROM, process.env.RESEND_FROM_BULK]) {
+    const at = String(from ?? "").match(/@([a-z0-9.-]+)/i);
+    if (at?.[1]) domains.add(at[1].toLowerCase());
+  }
+  for (const extra of String(process.env.EMAIL_EXTRA_DOMAINS ?? "").split(",")) {
+    const d = extra.trim().toLowerCase();
+    if (d) domains.add(d);
+  }
+  return [...domains];
+}
+
+/** Is this address one of ours? Subdomains of our domains count. */
+export function isOurSender(from: string | null | undefined): boolean {
+  const at = String(from ?? "").match(/@([a-z0-9.-]+)/i);
+  if (!at?.[1]) return false;
+  const host = at[1].toLowerCase();
+  return ourSendingDomains().some((d) => host === d || host.endsWith("." + d));
+}
+
 export type SendArgs = {
   to: string;
   subject: string;

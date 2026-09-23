@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { suppress } from "@/lib/email/suppress";
 import { normaliseEmail } from "@/lib/email/address";
+import { isOurSender } from "@/lib/email/provider";
 
 export const dynamic = "force-dynamic";
 
@@ -64,14 +65,19 @@ export async function POST(req: Request) {
 
   const d = (event.data ?? {}) as Record<string, unknown>;
   const providerId = typeof d.email_id === "string" ? d.email_id : typeof d.id === "string" ? d.id : null;
-  const to = Array.isArray(d.to) ? String(d.to[0]) : typeof d.to === "string" ? d.to : null;
-  const email = to ? normaliseEmail(to) : null;
-  const detail =
-    typeof (d.bounce as { message?: string } | undefined)?.message === "string"
-      ? ((d.bounce as { message?: string }).message as string)
-      : typeof d.reason === "string"
-        ? d.reason
-        : null;
+
+  // ---------------------------------------------------------------
+  // Whose mail is this?
+  //
+  // A Resend webhook is set up on the ACCOUNT, not on a domain, so this
+  // endpoint is sent events for every domain in the account, including
+  // other people's projects. Storing those would put somebody else's
+  // recipients in this database and let their bounces suppress
+  // addresses here. So: if it wasn't sent from one of our domains, and
+  // it doesn't match a message we have a record of sending, we log
+  // nothing and say fine.
+  // ---------------------------------------------------------------
+  const from = typeof d.from === "string" ? d.from : null;
 
   let queueId: string | null = null;
   if (providerId) {
@@ -82,6 +88,21 @@ export async function POST(req: Request) {
       .maybeSingle();
     queueId = (row as { id: string } | null)?.id ?? null;
   }
+
+  const ours = from ? isOurSender(from) : queueId !== null;
+  if (!ours) {
+    // 200 on purpose: it is a valid event, just not ours. A non-2xx
+    // would have Svix retrying somebody else's mail at us for days.
+    return NextResponse.json({ ok: true, ignored: "not this site" });
+  }
+  const to = Array.isArray(d.to) ? String(d.to[0]) : typeof d.to === "string" ? d.to : null;
+  const email = to ? normaliseEmail(to) : null;
+  const detail =
+    typeof (d.bounce as { message?: string } | undefined)?.message === "string"
+      ? ((d.bounce as { message?: string }).message as string)
+      : typeof d.reason === "string"
+        ? d.reason
+        : null;
 
   const { error } = await supabaseAdmin.from("email_events").insert({
     provider_id: providerId,
