@@ -9,23 +9,39 @@ export type CampaignVars = {
   state: string;
   page_url: string;
   claim_url: string;
+  /** One-press claim, signed, straight from the email. */
+  claim_link: string;
+  /** A true, checkable sentence about THEIR shop. */
+  whats_happening: string;
+  /** What is visibly missing from their page, or nothing. */
+  whats_missing: string;
 };
 
 export const PLACEHOLDERS: { token: string; means: string }[] = [
   { token: "{{shop_name}}", means: "the shop's name" },
+  { token: "{{whats_happening}}", means: "a true sentence about their own shop: views, reviews or sightings" },
+  { token: "{{whats_missing}}", means: "what's visibly missing from their page, or nothing if it's complete" },
+  { token: "{{claim_link}}", means: "one-press claim link, signed, no form to fill in" },
+  { token: "{{page_url}}", means: "a plain link to the shop's page" },
   { token: "{{city}}", means: "the shop's city" },
   { token: "{{state}}", means: "the shop's state" },
-  { token: "{{page_url}}", means: "a link to the shop's page" },
-  { token: "{{claim_url}}", means: "a link that opens the claim form on the shop's page" },
+  { token: "{{claim_url}}", means: "the old link to the claim form on the shop's page" },
 ];
 
-export function varsForStore(s: { name: string; slug: string; city: string | null; state: string | null }): CampaignVars {
+export function varsForStore(
+  s: { id?: string; name: string; slug: string; city: string | null; state: string | null },
+  extra: Partial<CampaignVars> = {}
+): CampaignVars {
   return {
     shop_name: s.name,
     city: s.city ?? "",
     state: s.state ?? "",
     page_url: `${SITE}/stores/${s.slug}`,
     claim_url: `${SITE}/stores/${s.slug}#claim`,
+    claim_link: `${SITE}/stores/${s.slug}#claim`,
+    whats_happening: "",
+    whats_missing: "",
+    ...extra,
   };
 }
 

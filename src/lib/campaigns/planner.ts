@@ -6,6 +6,9 @@ import { suppressedSet } from "@/lib/email/suppress";
 import { getEmailSettings } from "@/lib/email/settings";
 import { letterShell } from "@/lib/email/shell";
 import { previewLine, renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
+import { factsFor, subjectHook, whatsHappening, whatsMissing } from "@/lib/campaigns/facts";
+import { claimToken } from "@/lib/stores/claimToken";
+import { SITE } from "@/lib/email/queue";
 
 export type Campaign = {
   id: string;
@@ -256,6 +259,11 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
     .in("id", storeIds);
   const storeById = new Map(((storeData ?? []) as Store[]).map((s) => [s.id, s]));
 
+  // What is actually true about each of these shops right now. This is
+  // what makes the email worth opening: everything in it can be checked
+  // on their own page in about two seconds.
+  const facts = await factsFor(storeIds);
+
   /** What happens to an enrolment once its step is dealt with. */
   function afterStep(e: Enrollment, justSent: boolean): Record<string, unknown> {
     const now = new Date();
@@ -312,8 +320,21 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
       continue;
     }
 
-    const vars = varsForStore(store);
-    const subject = renderSubject(step.subject, vars);
+    const f = facts.get(store.id);
+    const vars = varsForStore(store, {
+      // One press, no form: the token says this went to the address the
+      // shop itself publishes.
+      claim_link: `${SITE}/claim/${store.slug}?t=${claimToken(store.id)}`,
+      whats_happening: f ? whatsHappening(f, store.name) : "",
+      whats_missing: f ? whatsMissing(f) : "",
+    });
+    const subject = renderSubject(
+      // A bare {{subject_hook}} means "pick the best true one for this shop".
+      step.subject.trim() === "{{subject_hook}}" && f
+        ? subjectHook(f, store.name)
+        : step.subject,
+      vars
+    );
     // The planner writes the finished document, rather than leaving it to
     // the queue, so what is stored is exactly what gets delivered and the
     // admin panel shows the real thing.

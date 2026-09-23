@@ -5,6 +5,9 @@ import { ArrowLeft, Megaphone } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getCampaign, type Step } from "@/lib/campaigns/planner";
 import { PLACEHOLDERS, varsForStore } from "@/lib/campaigns/render";
+import { factsFor, subjectHook, whatsHappening, whatsMissing } from "@/lib/campaigns/facts";
+import { claimToken } from "@/lib/stores/claimToken";
+import { SITE } from "@/lib/email/queue";
 import { readHealth } from "@/lib/email/health";
 import CampaignControls from "./CampaignControls";
 import StepEditor from "./StepEditor";
@@ -84,7 +87,18 @@ export default async function CampaignPage({ params }: { params: Promise<{ key: 
     .limit(1)
     .maybeSingle();
   const preview = previewRow as { id: string; slug: string; name: string; city: string | null; state: string | null } | null;
-  const vars = preview ? (varsForStore(preview) as unknown as Record<string, string>) : {};
+  // Same facts the real send would use, so the preview is the real email.
+  const previewFacts = preview ? (await factsFor([preview.id])).get(preview.id) : undefined;
+  const vars = preview
+    ? ({
+        ...varsForStore(preview, {
+          claim_link: `${SITE}/claim/${preview.slug}?t=${claimToken(preview.id)}`,
+          whats_happening: previewFacts ? whatsHappening(previewFacts, preview.name) : "",
+          whats_missing: previewFacts ? whatsMissing(previewFacts) : "",
+        }),
+        subject_hook: previewFacts ? subjectHook(previewFacts, preview.name) : "",
+      } as unknown as Record<string, string>)
+    : {};
 
   const storeIds = [...new Set(enrollments.map((e) => e.store_id).filter(Boolean))] as string[];
   const { data: storeRows } = storeIds.length
