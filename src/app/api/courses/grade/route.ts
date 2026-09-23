@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   // Verify the section belongs to a published course
   const { data: section } = await supabaseAdmin
     .from("course_sections")
-    .select("id, course_id, courses(is_published)")
+    .select("id, course_id, courses(is_published, pass_percent)")
     .eq("id", sectionId)
     .maybeSingle();
 
@@ -55,8 +55,30 @@ export async function POST(req: Request) {
   for (const q of questions ?? []) {
     if (answers[q.id] !== q.correct_index) wrongQuestionIds.push(q.id);
   }
-  if (wrongQuestionIds.length > 0) {
-    return NextResponse.json({ passed: false, wrongQuestionIds });
+
+  // How much of it you have to get right. Courses default to 100, which
+  // is how every course behaved before this existed, so nothing changes
+  // unless a course deliberately sets a lower mark.
+  const coursesField = (section as { courses?: unknown }).courses;
+  const courseRow = (Array.isArray(coursesField) ? coursesField[0] : coursesField) as
+    | { pass_percent?: number | null }
+    | undefined;
+  const passPercent = Math.min(100, Math.max(1, Number(courseRow?.pass_percent ?? 100)));
+
+  const total = (questions ?? []).length;
+  const correct = total - wrongQuestionIds.length;
+  // No questions on a section means reading it is the whole requirement.
+  const scored = total === 0 ? 100 : Math.round((correct / total) * 100);
+
+  if (scored < passPercent) {
+    return NextResponse.json({
+      passed: false,
+      wrongQuestionIds,
+      correct,
+      total,
+      scored,
+      passPercent,
+    });
   }
 
   // Passed → record section progress
@@ -105,5 +127,16 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ passed: true, courseCompleted, certificateCode });
+  return NextResponse.json({
+    passed: true,
+    courseCompleted,
+    certificateCode,
+    // Passing at 80 can still leave a couple wrong; say which, so the
+    // learner sees what they missed instead of just a green tick.
+    wrongQuestionIds,
+    correct,
+    total,
+    scored,
+    passPercent,
+  });
 }
