@@ -62,8 +62,10 @@ export function normaliseVideoUrl(raw: string | null | undefined): string | null
   const yt = youtubeId(url);
   if (yt) {
     // rel=0 keeps the end screen from advertising other channels' videos,
-    // which is not what you want at the end of a lesson.
-    return `https://www.youtube.com/embed/${yt}?rel=0`;
+    // which is not what you want at the end of a lesson. playsinline stops
+    // iOS Safari hijacking the whole screen the moment someone taps play,
+    // which would hide the lesson text sitting underneath it.
+    return `https://www.youtube.com/embed/${yt}?rel=0&playsinline=1`;
   }
 
   const vi = vimeoId(url);
