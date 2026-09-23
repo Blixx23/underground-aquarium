@@ -33,6 +33,12 @@ type Section = {
   questions: Question[];
 };
 
+/** A direct video file we host, as opposed to an embeddable page. */
+function isVideoFile(url: string): boolean {
+  const path = url.split("?")[0].split("#")[0].toLowerCase();
+  return /\.(mp4|webm|ogv|ogg|mov|m4v)$/.test(path);
+}
+
 /* ---------- lightweight lesson renderer (**bold**, lists, paragraphs) ---------- */
 function inline(text: string, keyPrefix: string) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((p, i) => {
@@ -302,13 +308,29 @@ export default function CoursePlayer({
               <div className="mb-6 rounded-2xl overflow-hidden border border-ocean-800/60 bg-ocean-950">
                 {section.video_url ? (
                   <div className="aspect-video">
-                    <iframe
-                      src={section.video_url}
-                      title={section.title}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                    {isVideoFile(section.video_url) ? (
+                      // A file we host ourselves. An iframe cannot play one of
+                      // these: the browser has nothing to render a bare .mp4
+                      // into, which is why it shows a broken document.
+                      <video
+                        src={section.video_url}
+                        title={section.title}
+                        className="w-full h-full bg-black"
+                        controls
+                        playsInline
+                        preload="metadata"
+                        controlsList="nodownload"
+                      />
+                    ) : (
+                      // YouTube, Vimeo and anything else that serves a page.
+                      <iframe
+                        src={section.video_url}
+                        title={section.title}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="aspect-video flex flex-col items-center justify-center text-center px-6 bg-gradient-to-br from-ocean-900/60 to-ocean-950">
