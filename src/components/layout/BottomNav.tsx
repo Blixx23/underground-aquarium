@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Newspaper, Tag, Plus, MessageCircle, User as UserIcon, PenSquare, Fish, Egg, X } from "lucide-react";
+import { Newspaper, Tag, Plus, MessageCircle, MessagesSquare, User as UserIcon, PenSquare, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
@@ -79,8 +79,7 @@ export default function BottomNav() {
   const postOptions = [
     { href: "/feed?compose=1", label: "Post to the feed", sub: "Photos, a question, what's new in your tanks", Icon: PenSquare },
     { href: POST_AD_PATH, label: "Post a free ad", sub: "Sell or give away fish, plants and gear", Icon: Tag },
-    { href: "/tank-builder", label: "Share a tank", sub: "Build it in Tank Builder and post it", Icon: Fish },
-    { href: "/society/breeder/new", label: "Open a spawn log", sub: "Society members: start a breeder entry", Icon: Egg },
+    { href: "/forums/new", label: "Ask the forums", sub: "A question or a build for the whole community", Icon: MessagesSquare },
   ];
 
   return (
@@ -109,6 +108,7 @@ export default function BottomNav() {
                 <Link
                   key={href}
                   href={href}
+                  onClick={() => setSheet(false)}
                   className="flex items-center gap-3 rounded-2xl px-3 py-3 active:bg-white/5"
                 >
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ocean-800/70">

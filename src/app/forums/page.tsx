@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MessagesSquare, ChevronRight, MessageSquareDashed } from "lucide-react";
+import { MessagesSquare, ChevronRight, MessageSquareDashed, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
 
@@ -46,10 +46,21 @@ export default async function ForumsIndex() {
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="font-display text-3xl text-white mb-1">Forums</h1>
-        <p className="text-ocean-400 mb-6">
-          Ask questions, share builds, and talk shop with other aquarists.
-        </p>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl text-white mb-1">Forums</h1>
+            <p className="text-ocean-400">
+              Ask questions, share builds, and talk shop with other aquarists.
+            </p>
+          </div>
+          <Link
+            href="/forums/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-ocean-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ocean-400"
+          >
+            <PenLine className="h-4 w-4" />
+            Ask the forums
+          </Link>
+        </div>
 
         <div className="mb-3">
           <ForumSearchBar />
