@@ -102,6 +102,14 @@ export default async function SocietyPage({
       .eq("user_id", user.id)
       .maybeSingle();
     isMember = Boolean(me) && me?.status !== "pending";
+    // A member whose dues lapsed goes to the renewal page, not the member area.
+    if (isMember && view !== "about") {
+      const { data: goodStanding } = await supabase.rpc("is_in_good_standing", {
+        p_club_id: society.id,
+        p_user_id: user.id,
+      });
+      if (!goodStanding) redirect(SOCIETY_CLUB_PATH);
+    }
   }
 
   // Members don't need the sales pitch: every Society link (nav, footer,

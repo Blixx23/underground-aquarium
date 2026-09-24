@@ -5,7 +5,7 @@ import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import SocietyNav from "@/components/society/SocietyNav";
 import { titleForPoints } from "@/lib/awards/titles";
-import { SOCIETY_PATH } from "@/lib/config";
+import { SOCIETY_PATH, SOCIETY_CLUB_PATH } from "@/lib/config";
 
 // Everything here depends on who's asking, so none of it can be static.
 export const dynamic = "force-dynamic";
@@ -50,6 +50,15 @@ export default async function SocietyMemberLayout({
   if (!ctx.isMember) redirect(SOCIETY_PATH);
 
   const supabase = await createClient();
+
+  // Dues lapsed: the whole member area waits behind renewal, records and
+  // certificates included. Officers and lifetime members are always in.
+  // (Public certificate verification at /verify is unaffected.)
+  const { data: goodStanding } = await supabase.rpc("is_in_good_standing", {
+    p_club_id: ctx.society.id,
+    p_user_id: ctx.userId,
+  });
+  if (!goodStanding) redirect(SOCIETY_CLUB_PATH);
 
   // Standing drives the title in the nav plate.
   const { data: standingsData } = await supabase.rpc("club_award_standings", {

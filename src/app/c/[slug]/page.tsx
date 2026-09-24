@@ -92,7 +92,17 @@ export default async function SocietyJoinPage({
 
   // A member in good standing has nothing to do here unless they asked to
   // manage their membership or just came back from paying.
-  if (isMember && !duesDue && sp.manage !== "1" && sp.dues !== "success") {
+  // Only someone the member area will actually let in gets sent there,
+  // so a lapsed member can never bounce back and forth.
+  let goodStanding = false;
+  if (user && isMember) {
+    const { data } = await supabase.rpc("is_in_good_standing", {
+      p_club_id: club.id,
+      p_user_id: user.id,
+    });
+    goodStanding = Boolean(data);
+  }
+  if (isMember && goodStanding && !duesDue && sp.manage !== "1" && sp.dues !== "success") {
     redirect(SOCIETY_HOME_PATH);
   }
 
@@ -168,7 +178,7 @@ export default async function SocietyJoinPage({
                     <p className="text-sm text-amber-100/60">
                       {isLifetime
                         ? `${money(myDuesCents)} once. No renewals, ever.`
-                        : `${money(myDuesCents)} for a year. Your member area, trophies and records unlock again the moment it clears.`}
+                        : `${money(myDuesCents)} for a year. Your member area, spawn logs and certificates unlock again the moment it clears.`}
                     </p>
                   </div>
                   <PayDuesButton
@@ -179,6 +189,7 @@ export default async function SocietyJoinPage({
               </div>
             )}
 
+            {goodStanding && (
             <Link
               href={SOCIETY_HOME_PATH}
               className={`${SOC_CARD} mb-6 flex items-center justify-between gap-4 px-6 py-5 transition-colors hover:border-amber-400/50`}
@@ -191,6 +202,7 @@ export default async function SocietyJoinPage({
               </span>
               <ArrowRight className="h-5 w-5 text-amber-400" />
             </Link>
+            )}
 
             <MemberSelfEdit clubId={club.id} initialName={me?.display_name ?? null} initialEmail={me?.email ?? null} />
 
