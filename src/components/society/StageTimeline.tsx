@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -10,6 +10,8 @@ import {
   Clock,
   KeySquare,
   Send,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { prepareImage } from "@/lib/images/prepareImage";
@@ -51,6 +53,36 @@ export default function StageTimeline({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  // Photos picked for the next stage, shown as thumbnails before anything is uploaded.
+  const [picked, setPicked] = useState<{ file: File; url: string }[]>([]);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  // Free the preview URLs when leaving the page.
+  const pickedRef = useRef(picked);
+  pickedRef.current = picked;
+  useEffect(() => {
+    return () => pickedRef.current.forEach((p) => URL.revokeObjectURL(p.url));
+  }, []);
+
+  function addPhotos(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setError(null);
+    const room = MAX_PHOTOS - picked.length;
+    const add = Array.from(files)
+      .slice(0, Math.max(0, room))
+      .map((file) => ({ file, url: URL.createObjectURL(file) }));
+    if (files.length > room) setError(`Up to ${MAX_PHOTOS} photos per stage.`);
+    setPicked((cur) => [...cur, ...add]);
+    if (fileInput.current) fileInput.current.value = "";
+  }
+
+  function removePhoto(i: number) {
+    setPicked((cur) => {
+      const gone = cur[i];
+      if (gone) URL.revokeObjectURL(gone.url);
+      return cur.filter((_, idx) => idx !== i);
+    });
+  }
 
   const byStage = new Map(stages.map((s) => [s.stage, s]));
   const highest = stages.reduce((m, s) => Math.max(m, s.stage), 0);
@@ -63,13 +95,16 @@ export default function StageTimeline({
   const unlock = unlocksAt(prevAt, nextRule?.min_days_after_previous ?? 0);
   const waiting = daysUntil(unlock);
 
-  async function upload(files: FileList | null) {
-    if (!files || files.length === 0 || !nextRule) return;
+  async function upload() {
+    if (picked.length === 0 || !nextRule) {
+      setError("Add at least one photo first.");
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
       const urls: string[] = [];
-      for (const raw of Array.from(files).slice(0, MAX_PHOTOS)) {
+      for (const { file: raw } of picked.slice(0, MAX_PHOTOS)) {
         // Handles HEIC from iPhones and downscales before upload.
         const file = await prepareImage(raw);
         const path = `${userId}/spawn/${logId}/${nextStage}-${Date.now()}-${Math.random()
@@ -94,6 +129,7 @@ export default function StageTimeline({
       if (rpcErr) throw new Error(rpcErr.message);
 
       setNote("");
+      setPicked([]);
       router.refresh();
     } catch (err) {
       setError(describe(err));
@@ -244,10 +280,58 @@ export default function StageTimeline({
                         className="mb-3 w-full rounded-xl border border-ocean-800/60 bg-ocean-900/60 px-3 py-2 text-base text-white placeholder-ocean-600 focus:border-amber-500/50 focus:outline-none sm:text-sm"
                       />
 
-                      <label
-                        className={`inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors ${
+                      {/* Step 1: pick photos (previewed here, nothing uploads yet). */}
+                      <input
+                        ref={fileInput}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        disabled={busy}
+                        onChange={(e) => addPhotos(e.target.files)}
+                        className="sr-only"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      />
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {picked.map((p, i) => (
+                          <div key={p.url} className="relative h-20 w-20 overflow-hidden rounded-xl border border-ocean-800/60">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.url} alt="" className="h-full w-full object-cover" />
+                            {!busy && (
+                              <button
+                                type="button"
+                                onClick={() => removePhoto(i)}
+                                aria-label="Remove photo"
+                                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        {picked.length < MAX_PHOTOS && (
+                          <button
+                            type="button"
+                            onClick={() => fileInput.current?.click()}
+                            disabled={busy}
+                            className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-amber-500/50 bg-amber-500/[0.06] text-xs text-amber-200 transition-colors hover:border-amber-400 disabled:opacity-50"
+                          >
+                            <ImagePlus className="h-5 w-5" />
+                            Add photo
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Step 2: log the stage with the photos above. */}
+                      <button
+                        type="button"
+                        onClick={upload}
+                        disabled={busy || picked.length === 0}
+                        className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors ${
                           busy
                             ? "cursor-wait bg-ocean-800 text-ocean-400"
+                            : picked.length === 0
+                            ? "cursor-not-allowed bg-ocean-800 text-ocean-500"
                             : "bg-amber-400 text-ocean-950 hover:bg-amber-300"
                         }`}
                       >
@@ -257,18 +341,10 @@ export default function StageTimeline({
                           <Upload className="h-4 w-4" />
                         )}
                         {busy ? "Uploading…" : `Log stage ${rule.stage}`}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          disabled={busy}
-                          onChange={(e) => upload(e.target.files)}
-                          className="hidden"
-                        />
-                      </label>
+                      </button>
                       <p className="mt-2 text-xs text-ocean-600">
                         Up to {MAX_PHOTOS} photos. Once logged, a stage
-                        can&apos;t be replaced.
+                        can&apos;t be replaced, so check them first.
                       </p>
                     </div>
                   )}
