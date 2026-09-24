@@ -7,9 +7,8 @@ import { nextFromLocation } from "@/lib/safeNext";
 import { useCarrySearch } from "@/lib/hooks/useCarrySearch";
 import { MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-
-// Bump this when the Terms / Privacy Policy meaningfully change.
-const TERMS_VERSION = "2026-06-20";
+import { TERMS_VERSION } from "@/lib/terms";
+import GoogleButton from "@/components/auth/GoogleButton";
 
 export default function RegisterPage() {
   const carry = useCarrySearch();
@@ -115,6 +114,14 @@ export default function RegisterPage() {
               Join the tank
             </p>
             <h1 className="mb-6 font-display text-3xl text-white">Create account</h1>
+
+            <GoogleButton label="Sign up with Google" />
+
+            <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-widest text-ocean-600">
+              <span className="h-px flex-1 bg-white/10" />
+              or
+              <span className="h-px flex-1 bg-white/10" />
+            </div>
 
             <form onSubmit={handleRegister} className="flex flex-col gap-4">
               <label className="flex flex-col gap-1 text-sm text-ocean-400">

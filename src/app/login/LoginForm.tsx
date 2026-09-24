@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { nextFromLocation } from '@/lib/safeNext'
 import { useCarrySearch } from '@/lib/hooks/useCarrySearch'
+import GoogleButton from '@/components/auth/GoogleButton'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -55,6 +56,14 @@ export default function LoginForm() {
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
         <p className="mb-3 font-mono text-xs uppercase tracking-widest text-ocean-500">Welcome back</p>
         <h1 className="mb-6 font-display text-3xl text-white">Log in</h1>
+
+        <GoogleButton />
+
+        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-widest text-ocean-600">
+          <span className="h-px flex-1 bg-white/10" />
+          or
+          <span className="h-px flex-1 bg-white/10" />
+        </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <label className="flex flex-col gap-1 text-sm text-ocean-400">

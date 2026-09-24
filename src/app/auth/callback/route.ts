@@ -5,9 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/safeNext";
 
 /**
- * Where the sign-up confirmation email lands. Handles both kinds of link
- * Supabase sends (a one-time code, or a token hash), signs the person in,
- * and drops them on the feed.
+ * Where sign-in links land: the sign-up confirmation email (a one-time code
+ * or a token hash) and "Continue with Google" (a code). Signs the person in,
+ * then sends them on. A brand-new Google account has no chosen username yet,
+ * so it goes to /welcome first to pick one and accept the terms.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -18,13 +19,33 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
+  let ok = false;
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) redirect(next);
+    ok = !error;
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) redirect(next);
+    ok = !error;
   }
 
-  redirect("/login?error=That confirmation link didn't work. Try logging in.");
+  if (!ok) {
+    redirect("/login?error=That sign-in link didn't work. Try logging in.");
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("needs_username")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profile?.needs_username) {
+      redirect(`/welcome?next=${encodeURIComponent(next)}`);
+    }
+  }
+
+  redirect(next);
 }
