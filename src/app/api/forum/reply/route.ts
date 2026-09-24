@@ -57,13 +57,17 @@ export async function POST(req: Request) {
     recipient = parent.author_id as string | null;
   }
 
-  const { error } = await supabase.from("forum_posts").insert({
-    thread_id: threadId,
-    author_id: user.id,
-    body: text.slice(0, 10000),
-    is_op: false,
-    parent_id: parentId,
-  });
+  const { data: inserted, error } = await supabase
+    .from("forum_posts")
+    .insert({
+      thread_id: threadId,
+      author_id: user.id,
+      body: text.slice(0, 10000),
+      is_op: false,
+      parent_id: parentId,
+    })
+    .select("id")
+    .single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -76,8 +80,10 @@ export async function POST(req: Request) {
         .select("slug")
         .eq("id", thread.category_id)
         .maybeSingle();
+      // Straight to the new comment, not just the top of the thread.
+      const anchor = inserted?.id ? `#post-${inserted.id}` : "";
       const link = cat?.slug
-        ? `/forums/${cat.slug}/${thread.slug}`
+        ? `/forums/${cat.slug}/${thread.slug}${anchor}`
         : "/notifications";
       await supabaseAdmin.from("notifications").insert({
         user_id: recipient,

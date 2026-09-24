@@ -11,6 +11,7 @@ import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
 import RelatedGuides from "@/components/discover/RelatedGuides";
 import { keywords, relatedThreads } from "@/lib/discover";
+import ScrollToComment from "@/components/forum/ScrollToComment";
 
 export const revalidate = 60;
 
@@ -214,7 +215,11 @@ export default async function ThreadPage({ params }: Params) {
   function renderComment(c: Post) {
     const kids = sortKids(childrenByParent.get(c.id) ?? []);
     return (
-      <div key={c.id} className="flex gap-2">
+      <div
+        key={c.id}
+        id={`post-${c.id}`}
+        className="-mx-2 flex scroll-mt-28 gap-2 rounded-xl px-2 py-1 transition-colors duration-700"
+      >
         <VoteControl postId={c.id} initialScore={c.score ?? 0} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="text-xs text-ocean-500">
@@ -265,6 +270,7 @@ export default async function ThreadPage({ params }: Params) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <ScrollToComment />
       <div className="max-w-2xl mx-auto">
         <nav className="flex items-center gap-1.5 text-sm text-ocean-400 mb-6">
           <Link href="/forums" className="hover:text-white transition-colors">
