@@ -176,9 +176,12 @@ export default function Navbar() {
     username: string | null;
     avatar_url: string | null;
   } | null>(null);
+  // Society members in good standing wear the gold ring here too.
+  const [inSociety, setInSociety] = useState(false);
   useEffect(() => {
     if (!user) {
       setMe(null);
+      setInSociety(false);
       return;
     }
     let live = true;
@@ -190,6 +193,9 @@ export default function Navbar() {
       .then(({ data }) => {
         if (live) setMe(data ?? null);
       });
+    supabase.rpc("society_members_among", { p_users: [user.id] }).then(({ data }) => {
+      if (live) setInSociety(Array.isArray(data) && data.length > 0);
+    });
     return () => {
       live = false;
     };
@@ -357,7 +363,7 @@ export default function Navbar() {
                   aria-haspopup="menu"
                   aria-expanded={dropdown === "__account"}
                 >
-                  <Avatar name={displayName} src={me?.avatar_url ?? null} size={28} />
+                  <Avatar name={displayName} src={me?.avatar_url ?? null} society={inSociety} size={28} />
                   <span className="max-w-[9rem] truncate">{firstName}</span>
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
@@ -371,7 +377,7 @@ export default function Navbar() {
                       onClick={() => setDropdown(null)}
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white/5"
                     >
-                      <Avatar name={displayName} src={me?.avatar_url ?? null} size={36} />
+                      <Avatar name={displayName} src={me?.avatar_url ?? null} society={inSociety} size={36} />
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium text-white">{displayName}</span>
                         <span className="block text-xs text-ocean-400">View your profile</span>

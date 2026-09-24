@@ -24,6 +24,7 @@ export default function BottomNav() {
   const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<{ name: string; avatar: string | null } | null>(null);
+  const [inSociety, setInSociety] = useState(false);
   const [sheet, setSheet] = useState(false);
   const unread = useUnreadMessages();
 
@@ -51,6 +52,10 @@ export default function BottomNav() {
           avatar: data?.avatar_url ?? null,
         });
       });
+    // Society members in good standing wear the gold ring on the Me tab too.
+    supabase.rpc("society_members_among", { p_users: [user.id] }).then(({ data }) => {
+      if (live) setInSociety(Array.isArray(data) && data.length > 0);
+    });
     return () => {
       live = false;
     };
@@ -169,7 +174,7 @@ export default function BottomNav() {
               <span
                 className={`rounded-full ${is("/profile", "/trophies", "/account") ? "ring-2 ring-white" : ""}`}
               >
-                <Avatar name={me.name} src={me.avatar} size={24} />
+                <Avatar name={me.name} src={me.avatar} society={inSociety} size={24} />
               </span>
             ) : (
               <UserIcon className="h-6 w-6" strokeWidth={1.8} />
