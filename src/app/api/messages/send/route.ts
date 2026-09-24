@@ -248,15 +248,9 @@ export async function POST(request: Request) {
     const listingTitle = (listingRow?.title as string) ?? "your listing";
     const threadLink = `/messages/${threadId}`;
 
-    await supabaseAdmin.from("notifications").insert({
-      user_id: recipientId,
-      type: "message",
-      title: `New message from ${senderName}`,
-      body: isDirect
-        ? "Tap to read and reply."
-        : `About "${listingTitle}" — tap to read and reply.`,
-      link: threadLink,
-    });
+    // No bell notification: new messages show on the Messages icon's
+    // unread badge and in the inbox, where they belong. The email below
+    // still goes out.
 
     try {
       const { data: recipientAuth } =
