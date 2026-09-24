@@ -254,14 +254,15 @@ export default async function SocietyPage({
           </p>
 
           {hasTiers && (
-            <div className="mx-auto mb-10 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+            // Centred however many tiers there are, so dropping one never leaves a gap.
+            <div className="mx-auto mb-10 flex max-w-2xl flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
               {tiers.map((t) => (
                 <div
                   key={t.key}
                   className={
                     t.featured
-                      ? "rounded-2xl border border-amber-400/60 bg-amber-400/10 p-5 shadow-lg shadow-amber-500/10"
-                      : `${SOC_CARD} p-5`
+                      ? "rounded-2xl border border-amber-400/60 bg-amber-400/10 p-5 shadow-lg shadow-amber-500/10 sm:w-56"
+                      : `${SOC_CARD} p-5 sm:w-56`
                   }
                 >
                   <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-300/70">
