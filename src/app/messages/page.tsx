@@ -141,93 +141,113 @@ export default async function MessagesPage() {
 
   const now = Date.now();
 
+  const rows = threads.map((t) => {
+    const isBuyer = t.buyer_id === user.id;
+    const otherId = isBuyer ? t.seller_id : t.buyer_id;
+    const myRead = isBuyer ? t.buyer_last_read_at : t.seller_last_read_at;
+    const theirRead = isBuyer ? t.seller_last_read_at : t.buyer_last_read_at;
+    const last = new Date(t.last_message_at).getTime();
+    const preview = latest.get(t.id);
+    const mineLast = preview?.sender_id === user.id;
+    // Unread = something newer than when you last opened it, that you didn't send.
+    const unread = !mineLast && (!myRead || last > new Date(myRead).getTime());
+    const seen = mineLast && !!theirRead && new Date(theirRead).getTime() >= last;
+    return { t, otherId, unread, seen, mineLast, preview };
+  });
+  const unreadCount = rows.filter((r) => r.unread).length;
+  const groups = [
+    { title: "Unread", items: rows.filter((r) => r.unread) },
+    { title: unreadCount > 0 ? "Read" : "", items: rows.filter((r) => !r.unread) },
+  ].filter((g) => g.items.length > 0);
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="font-display text-4xl text-white mb-8">Messages</h1>
-
-        <div className="space-y-2">
-          {threads.map((t) => {
-            const isBuyer = t.buyer_id === user.id;
-            const otherId = isBuyer ? t.seller_id : t.buyer_id;
-            const lastRead = isBuyer
-              ? t.buyer_last_read_at
-              : t.seller_last_read_at;
-            const unread =
-              !lastRead ||
-              new Date(t.last_message_at).getTime() >
-                new Date(lastRead).getTime();
-
-            const direct = !t.listing_id;
-            const listing = t.listing_id ? listings.get(t.listing_id) : undefined;
-            const preview = latest.get(t.id);
-            const image = listing?.images?.[0];
-            const other = people.get(otherId);
-            const otherName = other?.full_name?.trim() || other?.username || "A hobbyist";
-
-            return (
-              <Link
-                key={t.id}
-                href={`/messages/${t.id}`}
-                className={`flex items-start gap-4 rounded-2xl border px-4 py-4 transition-colors ${
-                  unread
-                    ? "bg-ocean-900/70 border-ocean-700/70 hover:border-ocean-500"
-                    : "bg-ocean-900/40 border-ocean-800/60 hover:border-ocean-600/70"
-                }`}
-              >
-                {direct ? (
-                  <Avatar name={otherName} src={other?.avatar_url ?? null} size={56} />
-                ) : (
-                <div className="shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-ocean-950 border border-ocean-800/60 flex items-center justify-center">
-                  {image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={image}
-                      alt=""
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Fish className="w-6 h-6 text-ocean-700" />
-                  )}
-                </div>
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p
-                      className={`truncate ${
-                        unread ? "text-white font-medium" : "text-ocean-200"
-                      }`}
-                    >
-                      {otherName}
-                    </p>
-                    <span className="shrink-0 text-xs text-ocean-500">
-                      {timeAgo(t.last_message_at, now)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-ocean-500 truncate mb-1">
-                    {direct ? "Direct message" : listing?.title ?? "Listing removed"}
-                  </p>
-                  {preview && (
-                    <p
-                      className={`text-sm truncate ${
-                        unread ? "text-ocean-200" : "text-ocean-600"
-                      }`}
-                    >
-                      {preview.sender_id === user.id ? "You: " : ""}
-                      {preview.body}
-                    </p>
-                  )}
-                </div>
-
-                {unread && (
-                  <span className="shrink-0 mt-2 w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                )}
-              </Link>
-            );
-          })}
+        <div className="mb-8 flex items-center gap-3">
+          <h1 className="font-display text-4xl text-white">Messages</h1>
+          {unreadCount > 0 && (
+            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-sm font-medium text-emerald-300 ring-1 ring-emerald-400/40">
+              {unreadCount} unread
+            </span>
+          )}
         </div>
+
+        {groups.map((g) => (
+          <section key={g.title || "all"} className="mb-8">
+            {g.title && (
+              <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.22em] text-ocean-500">
+                {g.title}
+              </h2>
+            )}
+            <div className="space-y-2">
+              {g.items.map(({ t, otherId, unread, seen, mineLast, preview }) => {
+                const direct = !t.listing_id;
+                const listing = t.listing_id ? listings.get(t.listing_id) : undefined;
+                const image = listing?.images?.[0];
+                const other = people.get(otherId);
+                const otherName = other?.full_name?.trim() || other?.username || "A hobbyist";
+
+                return (
+                  <Link
+                    key={t.id}
+                    href={`/messages/${t.id}`}
+                    className={`relative flex items-start gap-4 overflow-hidden rounded-2xl border px-4 py-4 transition-colors ${
+                      unread
+                        ? "border-emerald-500/40 bg-ocean-800/60 hover:border-emerald-400/70"
+                        : "border-ocean-800/50 bg-ocean-950/40 hover:border-ocean-700"
+                    }`}
+                  >
+                    {unread && <span className="absolute inset-y-0 left-0 w-1 bg-emerald-400" aria-hidden="true" />}
+
+                    <div className={unread ? "" : "opacity-70"}>
+                      {direct ? (
+                        <Avatar name={otherName} src={other?.avatar_url ?? null} size={56} />
+                      ) : (
+                        <div className="shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-ocean-950 border border-ocean-800/60 flex items-center justify-center">
+                          {image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={image} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          ) : (
+                            <Fish className="w-6 h-6 text-ocean-700" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className={`truncate ${unread ? "font-semibold text-white" : "text-ocean-300"}`}>
+                          {otherName}
+                        </p>
+                        <span className={`shrink-0 text-xs ${unread ? "font-medium text-emerald-300" : "text-ocean-600"}`}>
+                          {timeAgo(t.last_message_at, now)}
+                        </span>
+                      </div>
+                      <p className={`mb-1 truncate text-sm ${unread ? "text-ocean-300" : "text-ocean-600"}`}>
+                        {direct ? "Direct message" : listing?.title ?? "Listing removed"}
+                      </p>
+                      {preview && (
+                        <div className="flex items-center gap-2">
+                          <p className={`min-w-0 flex-1 truncate text-sm ${unread ? "font-medium text-white" : "text-ocean-500"}`}>
+                            {mineLast ? "You: " : ""}
+                            {preview.body}
+                          </p>
+                          {unread ? (
+                            <span className="shrink-0 rounded-full bg-emerald-400 px-2 py-0.5 text-[11px] font-semibold text-ocean-950">
+                              New
+                            </span>
+                          ) : mineLast ? (
+                            <span className="shrink-0 text-[11px] text-ocean-600">{seen ? "Seen" : "Sent"}</span>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </main>
   );
