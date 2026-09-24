@@ -264,7 +264,7 @@ export default async function SocietyJoinPage({
                 <JoinClubForm
                   clubId={club.id}
                   clubName={club.name}
-                  defaultName={(user.user_metadata?.username as string) || ""}
+                  defaultName={(user.user_metadata?.full_name as string) || ""}
                   dues={club.dues_amount_cents}
                   lifetimeDues={club.lifetime_dues_amount_cents}
                   society

@@ -15,6 +15,8 @@ type Request = {
   experience?: string | null;
   interests?: string | null;
   note?: string | null;
+  address?: string | null;
+  heard_about?: string | null;
 };
 
 export default function ClubRequests({ requests }: { requests: Request[] }) {
@@ -103,10 +105,12 @@ export default function ClubRequests({ requests }: { requests: Request[] }) {
               <div className="mt-2 space-y-0.5 text-xs text-ocean-400">
                 {r.email && <p>Email: {r.email}</p>}
                 {r.phone && <p>Phone: {r.phone}</p>}
+                {r.address && <p>Address: {r.address}</p>}
                 {r.experience && (
                   <p className="capitalize">Experience: {r.experience}</p>
                 )}
                 {r.interests && <p>Interests: {r.interests}</p>}
+                {r.heard_about && <p>Heard about us: {r.heard_about}</p>}
                 {r.note && (
                   <p className="text-ocean-300 italic mt-1">
                     &ldquo;{r.note}&rdquo;

@@ -7,6 +7,24 @@ import { createClient } from "@/lib/supabase/client";
 
 const LEVELS = ["beginner", "intermediate", "advanced"];
 
+const STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME",
+  "MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI",
+  "SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+];
+
+const HEARD = [
+  "A friend or fellow hobbyist",
+  "A local fish store",
+  "Facebook",
+  "Instagram",
+  "Reddit",
+  "YouTube",
+  "Google search",
+  "A fish club or show",
+  "Other",
+];
+
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
 export default function JoinClubForm({
@@ -38,6 +56,12 @@ export default function JoinClubForm({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(defaultName);
   const [phone, setPhone] = useState("");
+  const [line1, setLine1] = useState("");
+  const [line2, setLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zip, setZip] = useState("");
+  const [heard, setHeard] = useState("");
   const [tier, setTier] = useState("individual");
   const [experience, setExperience] = useState("");
   const [interests, setInterests] = useState("");
@@ -59,6 +83,14 @@ export default function JoinClubForm({
       );
       return;
     }
+    if (!line1.trim() || !city.trim() || !state || !zip.trim()) {
+      setError("Please add your full mailing address.");
+      return;
+    }
+    if (!/^\d{5}(-\d{4})?$/.test(zip.trim())) {
+      setError("Please enter a 5-digit ZIP code.");
+      return;
+    }
     setSubmitting(true);
     try {
       const { error: e } = await supabase.rpc("join_club", {
@@ -69,6 +101,12 @@ export default function JoinClubForm({
         p_experience: experience || null,
         p_interests: interests.trim() || null,
         p_note: note.trim() || null,
+        p_address_line1: line1.trim(),
+        p_address_line2: line2.trim() || null,
+        p_city: city.trim(),
+        p_state: state,
+        p_postal_code: zip.trim(),
+        p_heard_about: heard || null,
       });
       if (e) throw e;
       router.refresh();
@@ -121,6 +159,56 @@ export default function JoinClubForm({
           className={inputClass}
         />
       </div>
+      <div>
+        <label className={labelClass}>Mailing address</label>
+        <input
+          value={line1}
+          onChange={(e) => setLine1(e.target.value)}
+          placeholder="Street address"
+          autoComplete="address-line1"
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <input
+          value={line2}
+          onChange={(e) => setLine2(e.target.value)}
+          placeholder="Apt, suite, unit (optional)"
+          autoComplete="address-line2"
+          className={inputClass}
+        />
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_7rem] gap-3">
+        <input
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder="City"
+          autoComplete="address-level2"
+          className={inputClass}
+        />
+        <select
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          autoComplete="address-level1"
+          className={inputClass}
+          aria-label="State"
+        >
+          <option value="">State</option>
+          {STATES.map((st) => (
+            <option key={st} value={st}>
+              {st}
+            </option>
+          ))}
+        </select>
+        <input
+          value={zip}
+          onChange={(e) => setZip(e.target.value)}
+          placeholder="ZIP"
+          inputMode="numeric"
+          autoComplete="postal-code"
+          className={inputClass}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Membership</label>
@@ -160,6 +248,21 @@ export default function JoinClubForm({
           placeholder="e.g. cichlids, planted tanks, breeding"
           className={inputClass}
         />
+      </div>
+      <div>
+        <label className={labelClass}>How did you hear about us? (optional)</label>
+        <select
+          value={heard}
+          onChange={(e) => setHeard(e.target.value)}
+          className={inputClass}
+        >
+          <option value="">Choose one</option>
+          {HEARD.map((h) => (
+            <option key={h} value={h}>
+              {h}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <label className={labelClass}>

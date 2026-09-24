@@ -109,12 +109,16 @@ export default async function ClubAdminPage({
       experience: string | null;
       interests: string | null;
       note: string | null;
+      address: string | null;
+      heard_about: string | null;
     }
   > = {};
   if (enriched.length > 0) {
     const { data: details } = await supabase
       .from("club_member_details")
-      .select("member_id, phone, experience, interests, note")
+      .select(
+        "member_id, phone, experience, interests, note, address_line1, address_line2, city, state, postal_code, heard_about"
+      )
       .in(
         "member_id",
         enriched.map((m) => m.id)
@@ -125,6 +129,13 @@ export default async function ClubAdminPage({
         experience: d.experience ?? null,
         interests: d.interests ?? null,
         note: d.note ?? null,
+        address: d.address_line1
+          ? [
+              [d.address_line1, d.address_line2].filter(Boolean).join(", "),
+              [d.city, [d.state, d.postal_code].filter(Boolean).join(" ")].filter(Boolean).join(", "),
+            ].join(", ")
+          : null,
+        heard_about: d.heard_about ?? null,
       };
     }
   }
@@ -134,6 +145,8 @@ export default async function ClubAdminPage({
     experience: dById[m.id]?.experience ?? null,
     interests: dById[m.id]?.interests ?? null,
     note: dById[m.id]?.note ?? null,
+    address: dById[m.id]?.address ?? null,
+    heard_about: dById[m.id]?.heard_about ?? null,
   }));
   const pendingDetailed = withDetails.filter((m) => m.status === "pending");
   const roster = withDetails.filter((m) => m.status !== "pending");
