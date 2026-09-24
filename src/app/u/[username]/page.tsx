@@ -10,6 +10,7 @@ import {
   Pencil,
   Tag,
   ChevronRight,
+  MessageCircle,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
@@ -254,7 +255,15 @@ export default async function PublicProfilePage({ params, searchParams }: Params
                 <Pencil className="h-4 w-4" /> Edit profile
               </Link>
             ) : (
-              <FollowButton targetUserId={profile.id} initialFollowing={Boolean(viewerFollow.data)} />
+              <>
+                <FollowButton targetUserId={profile.id} initialFollowing={Boolean(viewerFollow.data)} />
+                <Link
+                  href={`/messages/new?to=${encodeURIComponent(handle)}`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-ocean-200 transition-colors hover:border-white/25 hover:text-white"
+                >
+                  <MessageCircle className="h-4 w-4" /> Message
+                </Link>
+              </>
             )}
           </div>
         </div>

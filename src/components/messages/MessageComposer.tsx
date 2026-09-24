@@ -7,6 +7,7 @@ import { Loader2, Send } from "lucide-react";
 export default function MessageComposer({
   threadId,
   listingSlug,
+  toUserId,
   placeholder,
   autoFocus,
   submitLabel,
@@ -15,6 +16,8 @@ export default function MessageComposer({
   threadId?: string;
   /** Starting a new conversation about a listing. */
   listingSlug?: string;
+  /** Starting a direct conversation with a member. */
+  toUserId?: string;
   placeholder?: string;
   autoFocus?: boolean;
   submitLabel?: string;
@@ -34,7 +37,7 @@ export default function MessageComposer({
       const res = await fetch("/api/messages/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ threadId, listingSlug, body: trimmed }),
+        body: JSON.stringify({ threadId, listingSlug, toUserId, body: trimmed }),
       });
       const data = (await res.json()) as { threadId?: string; error?: string };
 

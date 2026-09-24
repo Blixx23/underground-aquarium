@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Fish, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/marketplace/listings";
+import Avatar from "@/components/profile/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 
 type ThreadRow = {
   id: string;
-  listing_id: string;
+  listing_id: string | null;
   buyer_id: string;
   seller_id: string;
   last_message_at: string;
@@ -66,8 +67,8 @@ export default async function MessagesPage() {
             <MessageCircle className="w-10 h-10 text-ocean-700 mx-auto mb-4" />
             <p className="text-ocean-200 text-lg mb-1">No conversations yet</p>
             <p className="text-ocean-500 text-sm max-w-sm mx-auto">
-              When someone messages you about a listing, or you message them, it
-              shows up here.
+              When someone messages you, or you message them from a listing or
+              a profile, it shows up here.
             </p>
             <Link
               href="/marketplace"
@@ -81,7 +82,9 @@ export default async function MessagesPage() {
     );
   }
 
-  const listingIds = [...new Set(threads.map((t) => t.listing_id))];
+  const listingIds = [
+    ...new Set(threads.map((t) => t.listing_id).filter((x): x is string => Boolean(x))),
+  ];
   const otherIds = [
     ...new Set(
       threads.map((t) => (t.buyer_id === user.id ? t.seller_id : t.buyer_id))
@@ -91,11 +94,10 @@ export default async function MessagesPage() {
 
   const [{ data: listingData }, { data: profileData }, { data: messageData }] =
     await Promise.all([
-      supabase
-        .from("listings")
-        .select("id, title, slug, images")
-        .in("id", listingIds),
-      supabase.from("profiles").select("id, username").in("id", otherIds),
+      listingIds.length
+        ? supabase.from("listings").select("id, title, slug, images").in("id", listingIds)
+        : Promise.resolve({ data: [] }),
+      supabase.from("profiles").select("id, username, full_name, avatar_url").in("id", otherIds),
       supabase
         .from("listing_messages")
         .select("thread_id, body, sender_id, created_at")
@@ -113,10 +115,15 @@ export default async function MessagesPage() {
     }[]).map((l) => [l.id, l])
   );
 
-  const usernames = new Map(
-    ((profileData ?? []) as unknown as { id: string; username: string | null }[]).map(
-      (p) => [p.id, p.username]
-    )
+  const people = new Map(
+    (
+      (profileData ?? []) as unknown as {
+        id: string;
+        username: string | null;
+        full_name: string | null;
+        avatar_url: string | null;
+      }[]
+    ).map((p) => [p.id, p])
   );
 
   // The query came back newest first, so the first row we see for a thread
@@ -151,9 +158,12 @@ export default async function MessagesPage() {
               new Date(t.last_message_at).getTime() >
                 new Date(lastRead).getTime();
 
-            const listing = listings.get(t.listing_id);
+            const direct = !t.listing_id;
+            const listing = t.listing_id ? listings.get(t.listing_id) : undefined;
             const preview = latest.get(t.id);
             const image = listing?.images?.[0];
+            const other = people.get(otherId);
+            const otherName = other?.full_name?.trim() || other?.username || "A hobbyist";
 
             return (
               <Link
@@ -165,6 +175,9 @@ export default async function MessagesPage() {
                     : "bg-ocean-900/40 border-ocean-800/60 hover:border-ocean-600/70"
                 }`}
               >
+                {direct ? (
+                  <Avatar name={otherName} src={other?.avatar_url ?? null} size={56} />
+                ) : (
                 <div className="shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-ocean-950 border border-ocean-800/60 flex items-center justify-center">
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -178,6 +191,7 @@ export default async function MessagesPage() {
                     <Fish className="w-6 h-6 text-ocean-700" />
                   )}
                 </div>
+                )}
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-3">
@@ -186,14 +200,14 @@ export default async function MessagesPage() {
                         unread ? "text-white font-medium" : "text-ocean-200"
                       }`}
                     >
-                      {usernames.get(otherId) ?? "A hobbyist"}
+                      {otherName}
                     </p>
                     <span className="shrink-0 text-xs text-ocean-500">
                       {timeAgo(t.last_message_at, now)}
                     </span>
                   </div>
                   <p className="text-sm text-ocean-500 truncate mb-1">
-                    {listing?.title ?? "Listing removed"}
+                    {direct ? "Direct message" : listing?.title ?? "Listing removed"}
                   </p>
                   {preview && (
                     <p

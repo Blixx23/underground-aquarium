@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatPrice, timeAgo } from "@/lib/marketplace/listings";
 import MessageComposer from "@/components/messages/MessageComposer";
 import MarkThreadRead from "@/components/messages/MarkThreadRead";
+import Avatar from "@/components/profile/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,7 @@ export default async function ThreadPage({
   if (!threadData) notFound();
   const thread = threadData as unknown as {
     id: string;
-    listing_id: string;
+    listing_id: string | null;
     buyer_id: string;
     seller_id: string;
   };
@@ -71,12 +72,18 @@ export default async function ThreadPage({
         .eq("thread_id", thread.id)
         .order("created_at", { ascending: true })
         .limit(500),
+      thread.listing_id
+        ? supabase
+            .from("listings")
+            .select("title, slug, images, price_cents, is_wanted, status")
+            .eq("id", thread.listing_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
       supabase
-        .from("listings")
-        .select("title, slug, images, price_cents, is_wanted, status")
-        .eq("id", thread.listing_id)
+        .from("profiles")
+        .select("username, full_name, avatar_url")
+        .eq("id", otherId)
         .maybeSingle(),
-      supabase.from("profiles").select("username").eq("id", otherId).maybeSingle(),
     ]);
 
   const messages = (messageData ?? []) as unknown as {
@@ -95,8 +102,13 @@ export default async function ThreadPage({
     status: string;
   } | null;
 
-  const otherName =
-    ((otherData as { username: string | null } | null)?.username) ?? "A hobbyist";
+  const other = otherData as {
+    username: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  const direct = !thread.listing_id;
+  const otherName = (direct ? other?.full_name?.trim() : null) || other?.username || "A hobbyist";
 
   const now = Date.now();
   const image = listing?.images?.[0];
@@ -114,7 +126,26 @@ export default async function ThreadPage({
           All messages
         </Link>
 
-        {/* What this conversation is about */}
+        {/* What this conversation is about: a person, or a listing */}
+        {direct ? (
+          <div className="flex items-center gap-4 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-4 py-4 mb-8">
+            <Avatar name={otherName} src={other?.avatar_url ?? null} size={56} />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-ocean-500 mb-0.5">Direct message</p>
+              {other?.username ? (
+                <Link
+                  href={`/u/${other.username}`}
+                  className="block truncate text-white hover:text-ocean-200 transition-colors"
+                >
+                  {otherName}
+                </Link>
+              ) : (
+                <p className="truncate text-white">{otherName}</p>
+              )}
+              {other?.username && <p className="text-sm text-ocean-500">@{other.username}</p>}
+            </div>
+          </div>
+        ) : (
         <div className="flex items-center gap-4 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-4 py-4 mb-8">
           <div className="shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-ocean-950 border border-ocean-800/60 flex items-center justify-center">
             {image ? (
@@ -146,6 +177,7 @@ export default async function ThreadPage({
             )}
           </div>
         </div>
+        )}
 
         {/* Messages */}
         <div className="space-y-3 mb-8">

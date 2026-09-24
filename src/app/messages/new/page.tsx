@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
 import { formatPrice } from "@/lib/marketplace/listings";
 import MessageComposer from "@/components/messages/MessageComposer";
+import Avatar from "@/components/profile/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +18,10 @@ export const metadata: Metadata = {
 export default async function NewMessagePage({
   searchParams,
 }: {
-  searchParams: Promise<{ listing?: string }>;
+  searchParams: Promise<{ listing?: string; to?: string }>;
 }) {
-  const { listing: listingSlug } = await searchParams;
+  const { listing: listingSlug, to } = await searchParams;
+  if (!listingSlug && to) return <DirectMessage username={to} />;
   if (!listingSlug) return redirect("/marketplace");
 
   const { data } = await supabasePublic
@@ -148,6 +150,73 @@ export default async function NewMessagePage({
         <p className="text-xs text-ocean-600 mt-6 leading-relaxed">
           Your email stays private. {sellerName} will see your username and get
           a notification with your message.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+
+/** A message straight to a member, from the Message button on their profile. */
+async function DirectMessage({ username }: { username: string }) {
+  const { data: target } = await supabasePublic
+    .from("profiles")
+    .select("id, username, full_name, avatar_url")
+    .eq("username", username)
+    .maybeSingle();
+  if (!target) return redirect("/messages");
+
+  const name = (target.full_name as string | null)?.trim() || (target.username as string);
+  const here = `/messages/new?to=${encodeURIComponent(target.username as string)}`;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return redirect(`/login?next=${encodeURIComponent(here)}`);
+  if (user.id === target.id) return redirect("/messages");
+
+  // Already talking? Go straight to that conversation.
+  const { data: existing } = await supabase
+    .from("listing_threads")
+    .select("id")
+    .is("listing_id", null)
+    .or(
+      `and(buyer_id.eq.${user.id},seller_id.eq.${target.id}),and(buyer_id.eq.${target.id},seller_id.eq.${user.id})`
+    )
+    .maybeSingle();
+  if (existing) return redirect(`/messages/${(existing as { id: string }).id}`);
+
+  return (
+    <main className="min-h-screen pt-28 pb-20 px-6">
+      <div className="max-w-2xl mx-auto">
+        <Link
+          href={`/u/${target.username}`}
+          className="inline-flex items-center gap-2 text-sm text-ocean-400 hover:text-white transition-colors mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to {name}
+        </Link>
+
+        <div className="mb-6 flex items-center gap-4">
+          <Avatar name={name} src={(target.avatar_url as string | null) ?? null} size={56} />
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-3xl text-white">Message {name}</h1>
+            <p className="text-sm text-ocean-400">@{target.username as string}</p>
+          </div>
+        </div>
+
+        <MessageComposer
+          toUserId={target.id as string}
+          autoFocus
+          submitLabel="Send message"
+          placeholder={`Say hi to ${name}…`}
+        />
+
+        <p className="text-xs text-ocean-600 mt-6 leading-relaxed">
+          Your email stays private. {name} will see your username and get a
+          notification with your message.
         </p>
       </div>
     </main>

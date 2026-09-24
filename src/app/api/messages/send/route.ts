@@ -44,6 +44,8 @@ export async function POST(request: Request) {
     const payload = (await request.json()) as {
       listingSlug?: string;
       threadId?: string;
+      /** Starting a direct conversation with a person (no listing). */
+      toUserId?: string;
       body?: string;
     };
 
@@ -76,7 +78,7 @@ export async function POST(request: Request) {
 
     let threadId: string;
     let recipientId: string;
-    let listingId: string;
+    let listingId: string | null;
 
     if (payload.threadId) {
       // Replying in an existing conversation.
@@ -93,7 +95,7 @@ export async function POST(request: Request) {
       }
 
       threadId = thread.id as string;
-      listingId = thread.listing_id as string;
+      listingId = (thread.listing_id as string | null) ?? null;
       recipientId =
         thread.buyer_id === user.id
           ? (thread.seller_id as string)
@@ -149,6 +151,55 @@ export async function POST(request: Request) {
         if (threadError) throw new Error(threadError.message);
         threadId = created.id as string;
       }
+    } else if (payload.toUserId) {
+      // A direct message to a person. Anyone signed in can start one;
+      // blocks are enforced by the database.
+      if (payload.toUserId === user.id) {
+        return NextResponse.json({ error: "That's you." }, { status: 400 });
+      }
+      const { data: target } = await supabaseAdmin
+        .from("profiles")
+        .select("id, deleted_at")
+        .eq("id", payload.toUserId)
+        .maybeSingle();
+      if (!target || target.deleted_at) {
+        return NextResponse.json({ error: "That member isn't available." }, { status: 404 });
+      }
+
+      listingId = null;
+      recipientId = target.id as string;
+
+      // One direct conversation per pair of people, whoever started it.
+      const findPair = async () => {
+        const { data } = await supabaseAdmin
+          .from("listing_threads")
+          .select("id")
+          .is("listing_id", null)
+          .or(
+            `and(buyer_id.eq.${user.id},seller_id.eq.${recipientId}),and(buyer_id.eq.${recipientId},seller_id.eq.${user.id})`
+          )
+          .maybeSingle();
+        return (data?.id as string | undefined) ?? null;
+      };
+
+      const existingId = await findPair();
+      if (existingId) {
+        threadId = existingId;
+      } else {
+        const { data: created, error: threadError } = await supabaseAdmin
+          .from("listing_threads")
+          .insert({ listing_id: null, buyer_id: user.id, seller_id: recipientId })
+          .select("id")
+          .single();
+        if (threadError) {
+          // Two sends at once: the other one made the conversation first.
+          const again = threadError.code === "23505" ? await findPair() : null;
+          if (!again) throw new Error(threadError.message);
+          threadId = again;
+        } else {
+          threadId = created.id as string;
+        }
+      }
     } else {
       return NextResponse.json(
         { error: "Nothing to reply to." },
@@ -179,11 +230,9 @@ export async function POST(request: Request) {
 
     // --- Notify the other person. Best effort, never blocks the send. ---
     const [{ data: listingRow }, { data: senderProfile }] = await Promise.all([
-      supabaseAdmin
-        .from("listings")
-        .select("title, slug")
-        .eq("id", listingId)
-        .maybeSingle(),
+      listingId
+        ? supabaseAdmin.from("listings").select("title, slug").eq("id", listingId).maybeSingle()
+        : Promise.resolve({ data: null }),
       supabaseAdmin
         .from("profiles")
         .select("username, full_name")
@@ -195,6 +244,7 @@ export async function POST(request: Request) {
       (senderProfile?.username as string) ||
       (senderProfile?.full_name as string) ||
       "Someone";
+    const isDirect = !listingId;
     const listingTitle = (listingRow?.title as string) ?? "your listing";
     const threadLink = `/messages/${threadId}`;
 
@@ -202,7 +252,9 @@ export async function POST(request: Request) {
       user_id: recipientId,
       type: "message",
       title: `New message from ${senderName}`,
-      body: `About "${listingTitle}" — tap to read and reply.`,
+      body: isDirect
+        ? "Tap to read and reply."
+        : `About "${listingTitle}" — tap to read and reply.`,
       link: threadLink,
     });
 
@@ -215,15 +267,20 @@ export async function POST(request: Request) {
           body.length > 300 ? `${body.slice(0, 297)}…` : body;
         await sendEmail({
           to,
-          subject: `${senderName} messaged you about "${listingTitle}"`,
+          subject: isDirect
+            ? `${senderName} sent you a message`
+            : `${senderName} messaged you about "${listingTitle}"`,
           html: emailLayout({
             preheader: preview,
             title: `New message from ${senderName}`,
-            intro: `About your listing <strong>${escapeHtml(listingTitle)}</strong>.`,
+            intro: isDirect
+              ? "They messaged you on Underground Aquarium."
+              : `About your listing <strong>${escapeHtml(listingTitle)}</strong>.`,
             bodyHtml: `<p style="margin:0;padding:16px 18px;background:#f3f7fa;border:1px solid #e6ecf1;border-radius:12px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#0c2740;white-space:pre-wrap;">${escapeHtml(preview)}</p>`,
             cta: { label: "Read and reply", url: `${SITE}${threadLink}` },
-            footerNote:
-              "You're receiving this because someone replied to a listing you posted on Underground Aquarium.",
+            footerNote: isDirect
+              ? "You're receiving this because another member messaged you on Underground Aquarium."
+              : "You're receiving this because someone replied to a listing you posted on Underground Aquarium.",
           }),
         });
       }
