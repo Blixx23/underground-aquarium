@@ -142,8 +142,25 @@ export default async function ProfilePage({
     <main className="min-h-screen px-4 pt-28 pb-20">
       <div className="mx-auto w-full max-w-4xl">
         {/* Identity header */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur">
-          <div className="flex items-start gap-4">
+        <div
+          className={`relative overflow-hidden rounded-2xl border p-6 backdrop-blur sm:p-8 ${
+            inSociety ? "border-amber-500/35 bg-gradient-to-br from-[#2a1e08] via-[#120d04] to-ocean-950" : "border-white/10 bg-white/5"
+          }`}
+        >
+          {/* Society members get the same gold cover as their public profile. */}
+          {inSociety && (
+            <>
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{ background: "radial-gradient(ellipse at 80% 0%, rgba(217,160,60,0.28) 0%, transparent 60%)" }}
+              />
+              <SocietySeal
+                size={260}
+                className="pointer-events-none absolute -right-12 -top-14 h-[260px] w-[260px] opacity-[0.10]"
+              />
+            </>
+          )}
+          <div className="relative flex items-start gap-4">
             <AvatarUpload
               userId={user.id}
               name={displayName}
@@ -151,7 +168,7 @@ export default async function ProfilePage({
               society={inSociety}
             />
             <div className="min-w-0 flex-1">
-              <h1 className="truncate font-display text-2xl text-white sm:text-3xl">
+              <h1 className={`truncate font-display text-2xl sm:text-3xl ${inSociety ? "text-amber-50" : "text-white"}`}>
                 {displayName}
               </h1>
               {profile?.username && (
@@ -196,7 +213,7 @@ export default async function ProfilePage({
 
           {/* Editing happens right here, under your name, not at the bottom of the page. */}
           {editing && (
-            <div className="mt-6 border-t border-white/10 pt-6">
+            <div className="relative mt-6 border-t border-white/10 pt-6">
               <ProfileForm userId={user.id} profile={profile} />
             </div>
           )}
