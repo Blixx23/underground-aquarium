@@ -33,6 +33,13 @@ export default function ClubRequests({ requests }: { requests: Request[] }) {
         p_member: id,
       });
       if (e) throw e;
+      // Email them the good news and a pay link. Best effort: approval
+      // already happened, so an email hiccup shouldn't look like a failure.
+      await fetch("/api/clubs/member-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: id, kind: "approved" }),
+      }).catch(() => null);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't approve.");

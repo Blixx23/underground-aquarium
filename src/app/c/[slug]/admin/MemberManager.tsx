@@ -183,6 +183,7 @@ export default function MemberManager({
           p_member: inserted.id,
         });
         if (honErr) throw honErr;
+        await sendHonoraryEmail(inserted.id);
       }
 
       // Record the pre-platform paid-through date (one-time, at add only).
@@ -228,6 +229,14 @@ export default function MemberManager({
     }
   }
 
+  async function sendHonoraryEmail(memberId: string) {
+    await fetch("/api/clubs/member-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberId, kind: "honorary" }),
+    }).catch(() => null);
+  }
+
   async function makeHonorary(m: Member) {
     const who = m.display_name || m.account_name || m.email || "this member";
     if (!window.confirm(`Make ${who} an honorary lifetime member? They'll never owe dues.`)) return;
@@ -236,7 +245,8 @@ export default function MemberManager({
     try {
       const { error: e } = await supabase.rpc("grant_honorary_lifetime", { p_member: m.id });
       if (e) throw e;
-      setNotice(`${who} is now an honorary lifetime member.`);
+      await sendHonoraryEmail(m.id);
+      setNotice(`${who} is now an honorary lifetime member. We've emailed them.`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't make them honorary.");
