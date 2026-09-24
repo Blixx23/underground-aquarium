@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { notificationHref } from "@/lib/notificationLink";
 import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Notification = {
   id: string;
+  type?: string | null;
   title: string;
   body: string | null;
   link: string | null;
@@ -104,7 +106,7 @@ export default function NotificationBell({
         const [{ data: recent }, { count: c }] = await Promise.all([
           supabase
             .from("notifications")
-            .select("id, title, body, link, read, created_at")
+            .select("id, type, title, body, link, read, created_at")
             .order("created_at", { ascending: false })
             .limit(8),
           supabase
@@ -194,7 +196,8 @@ export default function NotificationBell({
       setCount((c) => Math.max(0, c - 1));
       await supabase.from("notifications").update({ read: true }).eq("id", n.id);
     }
-    if (n.link) router.push(n.link);
+    const href = notificationHref(n);
+    if (href) router.push(href);
   }
 
   if (!signedIn) return null;

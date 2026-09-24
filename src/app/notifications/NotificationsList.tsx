@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Check, Trash2, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { notificationHref } from "@/lib/notificationLink";
 
 type Notification = {
   id: string;
@@ -46,7 +47,8 @@ export default function NotificationsList({
       );
       await supabase.from("notifications").update({ read: true }).eq("id", n.id);
     }
-    if (n.link) router.push(n.link);
+    const href = notificationHref(n);
+    if (href) router.push(href);
   }
 
   async function markAll() {

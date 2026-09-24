@@ -47,7 +47,8 @@ export async function awardBubbles(
       .maybeSingle();
     const afterBal = (after?.bubble_balance as number) ?? beforeBal + amount;
     const uname = (before?.username as string | null) ?? null;
-    const link = uname ? `/u/${uname}` : null;
+    // Your own profile, where the bubble badge lives. Not /u/username, which breaks on a rename.
+    const link = "/profile";
 
     // In-app notice for meaningful earns.
     if (amount >= NOTIFY_MIN) {
