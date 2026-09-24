@@ -69,11 +69,18 @@ export default async function HotForums() {
 
   const authorIds = [...new Set(threads.map((t) => t.author_id).filter((x): x is string => Boolean(x)))];
   const people = new Map<string, { name: string; avatar: string | null }>();
+  const society = new Set<string>();
   if (authorIds.length) {
-    const { data: profs } = await supabasePublic
-      .from("profiles")
-      .select("id, username, full_name, avatar_url")
-      .in("id", authorIds);
+    const [{ data: profs }, { data: members }] = await Promise.all([
+      supabasePublic
+        .from("profiles")
+        .select("id, username, full_name, avatar_url")
+        .in("id", authorIds),
+      supabasePublic.rpc("society_members_among", { p_users: authorIds }),
+    ]);
+    for (const m of (members ?? []) as (string | { user_id: string })[]) {
+      society.add(typeof m === "string" ? m : m.user_id);
+    }
     for (const p of profs ?? []) {
       people.set(p.id as string, {
         name: (p.username as string) || (p.full_name as string) || "member",
@@ -112,6 +119,7 @@ export default async function HotForums() {
           const look = LOOK[cat.slug as string] ?? DEFAULT_LOOK;
           const photo = Array.isArray(t.images) ? t.images[0] : undefined;
           const who = t.author_id ? people.get(t.author_id) : undefined;
+          const gold = t.author_id ? society.has(t.author_id) : false;
           return (
             <Link
               key={t.id}
@@ -133,8 +141,13 @@ export default async function HotForums() {
               )}
               <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
 
-              {/* Author, ringed like a story */}
-              <span className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-ocean-800 text-xs font-semibold uppercase text-white ring-2 ring-ocean-400">
+              {/* Author, ringed like a story. Society members get the gold ring, same as everywhere else. */}
+              <span
+                className={`absolute left-2 top-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-ocean-800 text-xs font-semibold uppercase text-white ring-2 ${
+                  gold ? "ring-amber-400 shadow-[0_0_12px_rgba(217,160,60,0.35)]" : "ring-ocean-400"
+                }`}
+                title={gold && who ? `${who.name} · Society member` : who?.name}
+              >
                 {who?.avatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={who.avatar} alt="" className="h-full w-full object-cover" />
