@@ -18,6 +18,7 @@ type Member = {
   role: string;
   status: string;
   tier: string;
+  honorary?: boolean | null;
   officer_title?: string | null;
   family_primary_id?: string | null;
   display_name: string | null;
@@ -156,7 +157,8 @@ export default function MemberManager({
       setError("Enter at least a name or an email.");
       return;
     }
-    const migratedDate = clubHasDues && paidThrough ? paidThrough : null;
+    const honorary = tier === "honorary";
+    const migratedDate = !honorary && clubHasDues && paidThrough ? paidThrough : null;
     setAdding(true);
     try {
       const { data: inserted, error: insErr } = await supabase
@@ -166,14 +168,22 @@ export default function MemberManager({
           display_name: name.trim() || null,
           email: email.trim() || null,
           role,
-          tier,
+          tier: honorary ? "lifetime" : tier,
           // A member with an "already paid through" date comes in active;
           // otherwise they're a prospect who owes until they pay online.
-          status: migratedDate || !clubHasDues ? "active" : "prospect",
+          // Honorary members are active and never owe anything.
+          status: honorary || migratedDate || !clubHasDues ? "active" : "prospect",
         })
         .select("id")
         .single();
       if (insErr) throw insErr;
+
+      if (honorary && inserted?.id) {
+        const { error: honErr } = await supabase.rpc("grant_honorary_lifetime", {
+          p_member: inserted.id,
+        });
+        if (honErr) throw honErr;
+      }
 
       // Record the pre-platform paid-through date (one-time, at add only).
       if (migratedDate && inserted?.id) {
@@ -213,6 +223,23 @@ export default function MemberManager({
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't update.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function makeHonorary(m: Member) {
+    const who = m.display_name || m.account_name || m.email || "this member";
+    if (!window.confirm(`Make ${who} an honorary lifetime member? They'll never owe dues.`)) return;
+    setError(null);
+    setBusyId(m.id);
+    try {
+      const { error: e } = await supabase.rpc("grant_honorary_lifetime", { p_member: m.id });
+      if (e) throw e;
+      setNotice(`${who} is now an honorary lifetime member.`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't make them honorary.");
     } finally {
       setBusyId(null);
     }
@@ -294,6 +321,7 @@ export default function MemberManager({
     const muted = "text-ocean-400 border-ocean-700/50 bg-ocean-800/40";
     if (!clubHasDues) return { label: "No dues", cls: muted };
     if (m.family_primary_id) return { label: "Covered", cls: good };
+    if (m.honorary) return { label: "Honorary", cls: "text-amber-200 border-amber-400/40 bg-amber-400/10" };
     const pt = m.paid_through
       ? Date.parse(`${m.paid_through}T00:00:00Z`)
       : null;
@@ -481,21 +509,33 @@ export default function MemberManager({
                         >
                           family
                         </span>
+                      ) : m.honorary ? (
+                        <span className="whitespace-nowrap text-amber-200">Honorary lifetime</span>
                       ) : (
-                        <select
-                          value={m.tier}
-                          disabled={busy}
-                          onChange={(e) =>
-                            updateField(m.id, "tier", e.target.value)
-                          }
-                          className={fieldClass}
-                        >
-                          {TIERS.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex flex-col items-start gap-1">
+                          <select
+                            value={m.tier}
+                            disabled={busy}
+                            onChange={(e) =>
+                              updateField(m.id, "tier", e.target.value)
+                            }
+                            className={fieldClass}
+                          >
+                            {TIERS.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => makeHonorary(m)}
+                            disabled={busy}
+                            className="text-[11px] text-amber-300/80 hover:text-amber-200 disabled:opacity-50"
+                          >
+                            Make honorary
+                          </button>
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -629,6 +669,7 @@ export default function MemberManager({
                 {t}
               </option>
             ))}
+            <option value="honorary">Honorary lifetime (free)</option>
           </select>
           <button
             onClick={addMember}
