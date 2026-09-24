@@ -109,6 +109,23 @@ export default function Navbar() {
     return pathname === base || pathname.startsWith(base + "/");
   }
   const [open, setOpen] = useState(false);
+
+  // Only one phone menu at a time: opening this one closes the bottom bar's
+  // Create sheet, and tapping anything on the bottom bar closes this one.
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener("ua:close-top-menu", close);
+    return () => window.removeEventListener("ua:close-top-menu", close);
+  }, []);
+
+  // A new page always starts with the menu shut.
+  useEffect(() => setOpen(false), [pathname]);
+
+  function toggleMenu() {
+    if (!open) window.dispatchEvent(new Event("ua:close-bottom-sheet"));
+    setOpen(!open);
+  }
+
   const [dropdown, setDropdown] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -417,7 +434,7 @@ export default function Navbar() {
           <NotificationBell variant="link" onNavigate={() => setOpen(false)} />
           <button
             className="p-2 text-ocean-300 hover:text-white"
-            onClick={() => setOpen(!open)}
+            onClick={toggleMenu}
           >
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -426,7 +443,7 @@ export default function Navbar() {
 
       {/* Mobile menu: just the site's sections. Your own stuff lives on the Me tab. */}
       {open && (
-        <div className="md:hidden bg-ocean-950/98 backdrop-blur-xl border-t border-ocean-800/50 px-4 pt-3 pb-[calc(6rem_+_env(safe-area-inset-bottom))] max-h-[calc(100dvh_-_5rem)] overflow-y-auto">
+        <div className="md:hidden bg-ocean-950/98 backdrop-blur-xl border-t border-ocean-800/50 px-4 pt-3 pb-[calc(6rem_+_env(safe-area-inset-bottom))] h-[calc(100dvh_-_5rem)] overflow-y-auto">
           {/* The Society's home on phones, now it's off the bottom bar. */}
           <Link
             href={SOCIETY_PATH}

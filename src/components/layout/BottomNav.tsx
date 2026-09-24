@@ -59,6 +59,13 @@ export default function BottomNav() {
   // Close the post sheet whenever the page changes.
   useEffect(() => setSheet(false), [pathname]);
 
+  // Only one phone menu at a time: the top menu closes this sheet when it opens.
+  useEffect(() => {
+    const close = () => setSheet(false);
+    window.addEventListener("ua:close-bottom-sheet", close);
+    return () => window.removeEventListener("ua:close-bottom-sheet", close);
+  }, []);
+
   if (HIDE_ON.some((r) => r.test(pathname))) return null;
 
   const is = (...prefixes: string[]) =>
@@ -120,6 +127,7 @@ export default function BottomNav() {
 
       <nav
         aria-label="Main"
+        onClickCapture={() => window.dispatchEvent(new Event("ua:close-top-menu"))}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-ocean-800/60 bg-ocean-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
       >
         <div className="mx-auto flex max-w-lg items-stretch">
