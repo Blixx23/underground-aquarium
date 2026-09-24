@@ -9,7 +9,12 @@ import PeopleList, { type Person } from "@/components/PeopleList";
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ username: string }> };
-type Prof = { id: string; username: string | null; full_name: string | null };
+type Prof = {
+  id: string;
+  username: string | null;
+  full_name: string | null;
+  avatar_url?: string | null;
+};
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { username } = await params;
@@ -47,8 +52,18 @@ export default async function FollowersPage({ params }: Params) {
   if (ids.length > 0) {
     const { data: profs } = await supabasePublic
       .from("profiles")
-      .select("id, username, full_name")
+      .select("id, username, full_name, avatar_url")
       .in("id", ids);
+
+    // Society members get the gold ring here too, same as everywhere else.
+    const { data: members } = await supabasePublic.rpc("society_members_among", {
+      p_users: ids,
+    });
+    const society = new Set<string>(
+      ((members ?? []) as (string | { user_id: string })[]).map((m) =>
+        typeof m === "string" ? m : m.user_id
+      )
+    );
 
     let viewerFollows = new Set<string>();
     if (user) {
@@ -70,6 +85,8 @@ export default async function FollowersPage({ params }: Params) {
         id: p.id,
         username: p.username,
         full_name: p.full_name,
+        avatar_url: p.avatar_url ?? null,
+        society: society.has(p.id),
         initialFollowing: viewerFollows.has(p.id),
         isSelf: !!user && user.id === p.id,
       }));

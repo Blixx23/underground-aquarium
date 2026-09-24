@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { User } from "lucide-react";
 import FollowButton from "@/components/FollowButton";
+import Avatar from "@/components/profile/Avatar";
 
 export type Person = {
   id: string;
   username: string | null;
   full_name: string | null;
+  avatar_url: string | null;
+  society: boolean;
   initialFollowing: boolean;
   isSelf: boolean;
 };
@@ -35,9 +38,7 @@ export default function PeopleList({
             key={p.id}
             className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3"
           >
-            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-              <User className="w-5 h-5 text-ocean-400" />
-            </div>
+            <Avatar name={name} src={p.avatar_url} society={p.society} size={40} />
             <div className="min-w-0 flex-1">
               {p.username ? (
                 <Link
