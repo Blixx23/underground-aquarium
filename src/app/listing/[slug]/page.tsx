@@ -10,7 +10,10 @@ import {
   Phone,
   MessageCircle,
   Pencil,
+  MessageSquareText,
 } from "lucide-react";
+import { formatPhone, smsHref, telHref } from "@/lib/phone";
+import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
 import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
@@ -294,13 +297,17 @@ export default async function ListingPage({
                           {listing.contact_phone && (
                             <li className="flex items-center gap-2 text-ocean-200">
                               <Phone className="w-4 h-4 shrink-0 text-ocean-500" />
-                              {listing.contact_phone}
+                              {formatPhone(listing.contact_phone)}
                             </li>
                           )}
                         </ul>
                       </>
                     )}
                   </div>
+
+                  {listing.status === "active" && (
+                    <MarkSoldButton listingId={listing.id} isWanted={listing.is_wanted} />
+                  )}
 
                   {MY_LISTINGS_ENABLED ? (
                     <Link
@@ -341,13 +348,29 @@ export default async function ListingPage({
                         </a>
                       )}
                       {listing.contact_phone && (
-                        <a
-                          href={`tel:${listing.contact_phone.replace(/[^\d+]/g, "")}`}
-                          className="flex items-center gap-2 text-ocean-300 hover:text-white transition-colors"
-                        >
-                          <Phone className="w-4 h-4 shrink-0 text-ocean-600" />
-                          {listing.contact_phone}
-                        </a>
+                        <div className="rounded-xl border border-ocean-800/60 bg-ocean-950/50 p-3">
+                          <p className="mb-2.5 flex items-center gap-2 text-ocean-200">
+                            <Phone className="w-4 h-4 shrink-0 text-ocean-500" />
+                            <span className="font-medium tracking-wide">{formatPhone(listing.contact_phone)}</span>
+                          </p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <a
+                              href={telHref(listing.contact_phone)}
+                              className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500/15 px-3 py-2.5 font-medium text-emerald-200 ring-1 ring-emerald-400/30 transition-colors hover:bg-emerald-500/25"
+                            >
+                              <Phone className="w-4 h-4" /> Call
+                            </a>
+                            <a
+                              href={smsHref(
+                                listing.contact_phone,
+                                `Hi, is your "${listing.title}" on Underground Aquarium still available?`
+                              )}
+                              className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-500/15 px-3 py-2.5 font-medium text-sky-200 ring-1 ring-sky-400/30 transition-colors hover:bg-sky-500/25"
+                            >
+                              <MessageSquareText className="w-4 h-4" /> Text
+                            </a>
+                          </div>
+                        </div>
                       )}
                     </div>
                   ) : null}
