@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Crosshair, Fish, Flower2, Gift, MapPin, Package, Plus, Search, Snail, Sprout } from "lucide-react";
+import { ArrowRight, Fish, Flower2, Gift, LocateFixed, MapPin, Package, Plus, Search, Snail, Sprout } from "lucide-react";
 import { POST_AD_PATH } from "@/lib/config";
+import { supabasePublic } from "@/lib/supabase/public";
 import type { LocatableRegion } from "@/components/marketplace/NearMeButton";
 
 /** The classifieds, as one quiet row under the shop finder. */
@@ -13,98 +14,148 @@ const CHIPS = [
   { label: "Free stuff", href: "/listings?category=free", Icon: Gift },
 ];
 
+/** Shop count and the cities with the most shops, straight from the directory. */
+async function storeStats() {
+  const { data } = await supabasePublic
+    .from("fish_stores")
+    .select("city, state")
+    .eq("status", "published")
+    .limit(5000);
+  const rows = (data ?? []) as { city: string | null; state: string | null }[];
+  const byCity = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.city) continue;
+    byCity.set(r.city, (byCity.get(r.city) ?? 0) + 1);
+  }
+  const topCities = [...byCity.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([city]) => city);
+  return { total: rows.length, topCities };
+}
+
 /**
  * The front door leads with finding a local fish store, since that's what
  * most people arrive looking for. The search is a plain form, so it works
  * the instant the page loads, before any JavaScript.
  */
-export default function Hero({
+export default async function Hero({
   liveListings,
 }: {
   locatable?: LocatableRegion[];
   liveListings: number;
 }) {
+  const { total, topCities } = await storeStats();
+
   return (
-    <section className="relative pt-24 pb-14 sm:pt-32 sm:pb-20">
+    <section className="relative overflow-hidden pt-28 pb-16 font-sans sm:pt-36 sm:pb-24">
+      {/* Soft light from above */}
       <div
-        className="pointer-events-none absolute left-1/2 top-1/3 h-[440px] w-[760px] max-w-full -translate-x-1/2 -translate-y-1/2"
-        style={{ background: "radial-gradient(ellipse, rgba(18,100,160,0.25) 0%, transparent 70%)" }}
+        className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] max-w-[140%] -translate-x-1/2"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(56,189,248,0.18), rgba(18,100,160,0.10) 45%, transparent 75%)",
+        }}
       />
 
       <div className="relative z-10 mx-auto w-full max-w-3xl px-5 text-center sm:px-6">
-        <h1 className="glow-text mb-4 font-display text-[clamp(2rem,6vw,3.5rem)] leading-[1.08] text-white">
-          Find your nearest
+        {total > 0 && (
+          <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[13px] font-medium text-ocean-200 backdrop-blur">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
+            {total.toLocaleString()} independent fish stores
+          </p>
+        )}
+
+        <h1 className="text-[clamp(2.4rem,7vw,4.5rem)] font-bold leading-[1.02] tracking-[-0.035em] text-white">
+          Find your local
           <br />
-          <span className="text-ocean-300">fish store</span>
+          <span className="bg-gradient-to-r from-sky-300 via-cyan-200 to-emerald-200 bg-clip-text text-transparent">
+            fish store.
+          </span>
         </h1>
 
-        <p className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-ocean-300/85 sm:text-lg">
-          Local aquarium shops, what they carry, and how to get there.
+        <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-ocean-300 sm:text-lg">
+          Hours, what they stock, reviews, and directions. No chains.
         </p>
 
         {/* The shop finder */}
-        <form action="/stores" method="get" role="search" className="mx-auto max-w-2xl">
+        <form action="/stores" method="get" role="search" className="mx-auto mt-9 max-w-xl">
           <label htmlFor="hero-store-search" className="sr-only">
             Search fish stores by city, state or name
           </label>
-          <div className="flex items-center gap-2 rounded-2xl border border-ocean-600/60 bg-ocean-900/80 p-2 shadow-2xl shadow-ocean-950/60 ring-1 ring-white/5 backdrop-blur transition-colors focus-within:border-ocean-400">
-            <MapPin className="ml-2 h-5 w-5 shrink-0 text-ocean-400" />
-            <input
-              id="hero-store-search"
-              name="q"
-              type="search"
-              autoComplete="off"
-              enterKeyHint="search"
-              placeholder="City, state or shop name"
-              className="min-w-0 flex-1 bg-transparent py-3 text-base text-white placeholder-ocean-500 outline-none sm:text-lg"
-            />
-            <button
-              type="submit"
-              className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-ocean-500 px-4 font-medium text-white shadow-lg shadow-ocean-500/25 transition-colors hover:bg-ocean-400 sm:px-6"
-            >
-              <Search className="h-4 w-4" />
-              <span className="hidden sm:inline">Find shops</span>
-            </button>
+          <div className="rounded-2xl bg-gradient-to-r from-sky-400/40 via-cyan-300/20 to-emerald-300/40 p-px shadow-[0_20px_60px_-15px_rgba(14,165,233,0.35)] transition-shadow focus-within:shadow-[0_20px_70px_-10px_rgba(14,165,233,0.55)]">
+            <div className="flex items-center gap-2 rounded-[15px] bg-ocean-950/95 p-1.5 backdrop-blur-xl">
+              <Search className="ml-3 h-5 w-5 shrink-0 text-ocean-400" />
+              <input
+                id="hero-store-search"
+                name="q"
+                type="search"
+                autoComplete="off"
+                enterKeyHint="search"
+                placeholder="City, state or shop name"
+                className="min-w-0 flex-1 appearance-none border-0 bg-transparent px-1 py-3 text-[16px] text-white shadow-none outline-none ring-0 placeholder:text-ocean-500 focus:ring-0 sm:text-[17px]"
+              />
+              <button
+                type="submit"
+                className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-b from-sky-400 to-sky-600 px-4 text-[15px] font-semibold text-white shadow-lg shadow-sky-900/40 transition hover:from-sky-300 hover:to-sky-500 active:scale-[0.98] sm:px-5"
+              >
+                <span>Search</span>
+                <ArrowRight className="hidden h-4 w-4 sm:block" />
+              </button>
+            </div>
           </div>
         </form>
 
-        <Link
-          href="/stores?near=1"
-          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-ocean-300 transition-colors hover:text-white"
-        >
-          <Crosshair className="h-4 w-4" /> Use my location
-        </Link>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <Link
+            href="/stores?near=1"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-[13px] font-semibold text-ocean-950 transition hover:bg-sky-100"
+          >
+            <LocateFixed className="h-3.5 w-3.5" /> Near me
+          </Link>
+          {topCities.map((city) => (
+            <Link
+              key={city}
+              href={`/stores?q=${encodeURIComponent(city)}`}
+              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[13px] text-ocean-200 transition hover:border-white/25 hover:text-white"
+            >
+              <MapPin className="h-3 w-3 text-ocean-400" />
+              {city}
+            </Link>
+          ))}
+        </div>
 
         {/* The classifieds, second */}
-        <div className="mx-auto mt-14 max-w-2xl border-t border-ocean-800/50 pt-8">
-          <p className="mb-4 text-sm text-ocean-400">
-            Or buy and sell locally in the free classifieds
-            {liveListings > 0 && (
-              <span className="text-ocean-500">
-                {" "}
-                · {liveListings.toLocaleString()} live {liveListings === 1 ? "listing" : "listings"}
-              </span>
-            )}
-          </p>
+        <div className="mx-auto mt-20 max-w-2xl">
+          <div className="mb-5 flex items-center gap-4">
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
+            <p className="text-[13px] font-medium uppercase tracking-[0.18em] text-ocean-400">
+              Free local classifieds
+            </p>
+            <span className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+          </div>
           <div className="flex flex-wrap justify-center gap-2">
             {CHIPS.map(({ label, href, Icon }) => (
               <Link
                 key={href}
                 href={href}
-                className="inline-flex items-center gap-1.5 rounded-full border border-ocean-800/70 bg-ocean-900/40 px-3.5 py-2 text-sm text-ocean-200 transition-colors hover:border-ocean-500 hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-sm text-ocean-100 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-white"
               >
-                <Icon className="h-4 w-4 text-ocean-400" />
+                <Icon className="h-4 w-4 text-sky-300/80" />
                 {label}
               </Link>
             ))}
           </div>
           <div className="mt-5 flex items-center justify-center gap-5 text-sm">
-            <Link href={POST_AD_PATH} className="inline-flex items-center gap-1.5 text-ocean-300 hover:text-white">
+            <Link href={POST_AD_PATH} className="inline-flex items-center gap-1.5 font-medium text-ocean-200 hover:text-white">
               <Plus className="h-4 w-4" /> Sell something
             </Link>
-            <Link href="/listings" className="group inline-flex items-center gap-1.5 text-ocean-300 hover:text-white">
-              Browse all
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <Link href="/listings" className="group inline-flex items-center gap-1.5 font-medium text-ocean-200 hover:text-white">
+              Browse all{liveListings > 0 ? ` ${liveListings.toLocaleString()}` : ""}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
         </div>
