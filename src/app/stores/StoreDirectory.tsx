@@ -70,10 +70,13 @@ export default function StoreDirectory({
   stores,
   autoLocate = false,
   initialQuery = "",
+  approx = null,
 }: {
   stores: StoreRow[];
   autoLocate?: boolean;
   initialQuery?: string;
+  /** Rough location from the visitor's connection, for when the browser won't share one. */
+  approx?: { lat: number; lng: number; city: string | null } | null;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [stateCode, setStateCode] = useState<string | null>(null);
@@ -81,6 +84,7 @@ export default function StoreDirectory({
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
+  const [locNote, setLocNote] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE);
 
   const asked = useRef(false);
@@ -95,10 +99,25 @@ export default function StoreDirectory({
   // Any change of filter starts the list over from the top.
   useEffect(() => setLimit(PAGE), [query, stateCode, activeType, coords]);
 
+  /** Precise location refused or unavailable: fall back to the rough one, or explain. */
+  function fallBackToApprox() {
+    if (approx) {
+      setCoords({ lat: approx.lat, lng: approx.lng });
+      setStateCode(null);
+      setLocError(null);
+      setLocNote(
+        `Showing shops near ${approx.city ?? "your area"} (approximate). Allow location in your browser for exact distances, or search your city above.`
+      );
+    } else {
+      setLocError("Couldn't get your location. Type your city in the search box above instead.");
+    }
+  }
+
   function findMe() {
     if (locating) return;
+    setLocNote(null);
     if (!("geolocation" in navigator)) {
-      setLocError("Your browser doesn't support location.");
+      fallBackToApprox();
       return;
     }
     setLocating(true);
@@ -110,10 +129,10 @@ export default function StoreDirectory({
         setLocating(false);
       },
       () => {
-        setLocError("Couldn't get your location. Check your browser permissions.");
+        fallBackToApprox();
         setLocating(false);
       },
-      { enableHighAccuracy: false, timeout: 10000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
     );
   }
 
@@ -317,7 +336,14 @@ export default function StoreDirectory({
             )}
           </div>
           <button
-            onClick={coords ? () => setCoords(null) : findMe}
+            onClick={
+              coords
+                ? () => {
+                    setCoords(null);
+                    setLocNote(null);
+                  }
+                : findMe
+            }
             disabled={locating}
             className={
               "inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-50 " +
@@ -331,6 +357,7 @@ export default function StoreDirectory({
           </button>
         </div>
         {locError && <p className="mt-2 text-xs text-coral-300">{locError}</p>}
+        {locNote && coords && <p className="mt-2 text-xs text-ocean-400">{locNote}</p>}
       </div>
 
       {/* Specialty filters, only once there's a list worth narrowing. */}

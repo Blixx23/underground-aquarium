@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { Megaphone } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
@@ -82,6 +83,23 @@ export default async function StoresPage({
   const { near, q } = await searchParams;
   const stores = await getAllStores();
 
+  // Rough location from the visitor's connection (Vercel adds these). Used
+  // when the browser won't share a precise location, so "Near me" still works.
+  const h = await headers();
+  const ipLat = Number(h.get("x-vercel-ip-latitude"));
+  const ipLng = Number(h.get("x-vercel-ip-longitude"));
+  const ipCityRaw = h.get("x-vercel-ip-city");
+  let ipCity: string | null = null;
+  try {
+    ipCity = ipCityRaw ? decodeURIComponent(ipCityRaw) : null;
+  } catch {
+    ipCity = ipCityRaw;
+  }
+  const approx =
+    Number.isFinite(ipLat) && Number.isFinite(ipLng) && (ipLat !== 0 || ipLng !== 0) && h.get("x-vercel-ip-latitude")
+      ? { lat: ipLat, lng: ipLng, city: ipCity }
+      : null;
+
   // Latest updates across shops, shown under the directory.
   const { data: rawPosts } = await supabasePublic
     .from("store_posts")
@@ -148,7 +166,7 @@ export default async function StoresPage({
             </p>
           </div>
         ) : (
-          <StoreDirectory stores={stores} autoLocate={near === "1"} initialQuery={q ?? ""} />
+          <StoreDirectory stores={stores} autoLocate={near === "1"} initialQuery={q ?? ""} approx={approx} />
         )}
 
         {latest.length > 0 && (
