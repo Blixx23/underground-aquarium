@@ -55,13 +55,13 @@ type NavItem = {
 
 const nav: NavItem[] = [
   { label: "Feed", href: "/feed" },
+  { label: "Forums", href: "/forums" },
   { label: "Classifieds", href: "/marketplace" },
   { label: "Shops Near Me", href: "/stores?near=1" },
   { label: "The Society", href: SOCIETY_PATH, society: true },
   {
     label: "More",
     children: [
-      { label: "Forums", href: "/forums", group: "Community" },
       { label: "Events", href: "/events", group: "Community" },
       { label: "Trophies", href: "/trophies", group: "Community" },
       { label: "Fish Species", href: "/species", group: "Learn" },
@@ -76,8 +76,8 @@ const nav: NavItem[] = [
 
 /** The phone menu: places on the site, not things about you. */
 const EXPLORE = [
-  { href: "/stores?near=1", label: "Shops Near Me", Icon: MapPin },
   { href: "/forums", label: "Forums", Icon: MessagesSquare },
+  { href: "/stores?near=1", label: "Shops Near Me", Icon: MapPin },
   { href: "/species", label: "Fish Species", Icon: Fish },
   { href: "/events", label: "Events", Icon: CalendarDays },
   { href: "/courses", label: "Courses", Icon: GraduationCap },
