@@ -19,7 +19,8 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.undergroundaquarium.com"),
   title: {
     default: "Buy, Sell & Trade Aquarium Fish Near You | Underground Aquarium",
-    template: "%s | UndergroundAquarium",
+    // Two words, the way people search for us.
+    template: "%s | Underground Aquarium",
   },
   description:
     "Free local classifieds for aquarium keepers. Buy, sell and trade live fish, shrimp, snails, plants, coral, tanks and gear with people near you. No fees, no commission.",
@@ -28,14 +29,14 @@ export const metadata: Metadata = {
     title: "Buy, sell & trade aquarium fish and gear near you",
     description: "Free local classifieds for aquarium keepers. Live fish welcome.",
     url: "https://www.undergroundaquarium.com",
-    siteName: "UndergroundAquarium",
+    siteName: "Underground Aquarium",
     type: "website",
     images: [
       {
         url: "/og-default.png",
         width: 1200,
         height: 630,
-        alt: "UndergroundAquarium — The Hobbyist-First Aquarium Marketplace",
+        alt: "Underground Aquarium, the hobbyist-first aquarium marketplace",
       },
     ],
   },
@@ -45,6 +46,27 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
 };
+
+// Tells Google who we are, so a search for "underground aquarium" finds us
+// and the result shows our name instead of the bare domain.
+const SITE_JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://www.undergroundaquarium.com/#website",
+    name: "Underground Aquarium",
+    alternateName: ["UndergroundAquarium", "UndergroundAquarium.com"],
+    url: "https://www.undergroundaquarium.com/",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://www.undergroundaquarium.com/#organization",
+    name: "Underground Aquarium",
+    url: "https://www.undergroundaquarium.com/",
+    logo: "https://www.undergroundaquarium.com/icon-512.png",
+  },
+];
 
 export default function RootLayout({
   children,
@@ -62,11 +84,15 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
+        />
         <Bubbles />
         <DailyHeartbeat />
         <TrophySync />
         <Navbar />
-        <main>{children}</main>
+        <div id="content">{children}</div>
         <Footer />
         <BottomNav />
         <Analytics />

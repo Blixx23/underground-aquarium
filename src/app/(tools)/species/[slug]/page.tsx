@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { matchSpeciesSlug } from "@/lib/species/match";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight, Waves, Heart } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
@@ -88,7 +89,12 @@ export default async function SpeciesDetailPage({ params }: Params) {
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!s) notFound();
+  if (!s) {
+    // An old or renamed species link: send it to the species it meant.
+    const alt = await matchSpeciesSlug(slug);
+    if (alt) permanentRedirect(`/species/${alt}`);
+    notFound();
+  }
 
   const range = (
     a: number | null,
