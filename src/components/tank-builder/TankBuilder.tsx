@@ -284,18 +284,34 @@ export default function TankBuilder({
     [supabase]
   );
 
+  // Who's signed in. getUser() alone can come back empty when another part of
+  // the page (the navbar) is refreshing the session at the same moment, which
+  // showed signed-in people a "Sign in" prompt. So fall back to the stored
+  // session, and keep listening for auth changes the way the navbar does.
+  const lastUid = useRef<string | null>(null);
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(({ data }) => {
+    const apply = (u: { id: string } | null | undefined) => {
       if (!active) return;
-      if (data.user) {
-        setUser({ id: data.user.id });
-        refreshTanks(data.user.id);
+      const id = u?.id ?? null;
+      if (id !== lastUid.current) {
+        lastUid.current = id;
+        setUser(id ? { id } : null);
+        if (id) refreshTanks(id);
+        else setSavedTanks([]);
       }
       setAuthChecked(true);
+    };
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) apply(data.user);
+      else supabase.auth.getSession().then(({ data: s }) => apply(s.session?.user ?? null));
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user || _event === "SIGNED_OUT") apply(session?.user ?? null);
     });
     return () => {
       active = false;
+      sub.subscription.unsubscribe();
     };
   }, [supabase, refreshTanks]);
 
