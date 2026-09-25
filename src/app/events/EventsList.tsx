@@ -173,7 +173,9 @@ export default function EventsList({ events }: { events: EventCard[] }) {
                   src={ev.cover_image || DEFAULT_EVENT_IMAGE}
                   alt=""
                   loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  className={`absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] ${
+                    ev.cover_image ? "object-center" : "object-left"
+                  }`}
                 />
               </div>
               <div className="p-5 min-w-0 flex-1">
