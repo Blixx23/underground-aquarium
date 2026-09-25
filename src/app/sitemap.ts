@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { supabasePublic } from "@/lib/supabase/public";
 import { SOCIETY_PATH } from "@/lib/config";
 import { placeSlug, STATE_NAMES } from "@/lib/stores/places";
+import { TANK_SIZES } from "@/lib/tankBuilder/sizes";
 
 const baseUrl = "https://www.undergroundaquarium.com";
 
@@ -131,7 +132,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/events", 0.7, "weekly"],
     [SOCIETY_PATH, 0.7, "weekly"],
     ["/glossary", 0.6, "weekly"],
-    ["/tank-builder", 0.6, "monthly"],
+    ["/tank-builder", 0.8, "monthly"],
+    // One guide per common tank size ("29 gallon tank stocking ideas").
+    ...TANK_SIZES.map((t): [string, number, Freq] => [`/tank-builder/${t.slug}`, 0.7, "monthly"]),
     ["/water-check", 0.6, "monthly"],
     ["/post", 0.6, "monthly"],
     ["/about", 0.5, "monthly"],
