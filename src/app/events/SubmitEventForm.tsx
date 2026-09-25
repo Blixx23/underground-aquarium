@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { NO_LINKS_MESSAGE, containsLink } from "@/lib/noLinks";
 import EventCoverUpload from "./EventCoverUpload";
 
 type Store = { id: string; name: string };
@@ -45,6 +46,10 @@ export default function SubmitEventForm({
     if (busy) return;
     if (!title.trim() || !startsAt) {
       setError("A title and start date/time are required.");
+      return;
+    }
+    if (containsLink(description) || containsLink(title)) {
+      setError(NO_LINKS_MESSAGE);
       return;
     }
     setBusy(true);
@@ -174,6 +179,9 @@ export default function SubmitEventForm({
           placeholder="What's happening, who should come, what to bring..."
           className={inputClass}
         />
+        <p className="mt-1.5 text-xs text-ocean-500">
+          Everything people need goes right here: times, prices, what to bring. Links aren&apos;t allowed.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

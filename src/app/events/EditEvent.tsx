@@ -11,6 +11,7 @@ import {
   isoToZonedInput,
   zonedInputToIso,
 } from "@/lib/eventTime";
+import { NO_LINKS_MESSAGE, containsLink } from "@/lib/noLinks";
 import EventCoverUpload from "./EventCoverUpload";
 
 type EventData = {
@@ -74,6 +75,10 @@ export default function EditEvent({ event }: { event: EventData }) {
     if (busy) return;
     if (!title.trim() || !startsAt) {
       setError("Title and start time are required.");
+      return;
+    }
+    if (containsLink(description) || containsLink(title)) {
+      setError(NO_LINKS_MESSAGE);
       return;
     }
     const startIso = zonedInputToIso(startsAt, timezone);
@@ -226,6 +231,9 @@ export default function EditEvent({ event }: { event: EventData }) {
             rows={6}
             className={inputClass}
           />
+          <p className="mt-1.5 text-xs text-ocean-500">
+            Everything people need goes right here. Links aren&apos;t allowed.
+          </p>
         </div>
       </div>
 
