@@ -11,6 +11,8 @@ import {
   MessageCircle,
   Pencil,
   MessageSquareText,
+  ChevronRight,
+  Fish,
 } from "lucide-react";
 import { formatPhone, smsHref, telHref } from "@/lib/phone";
 import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
@@ -22,7 +24,16 @@ import {
   conditionLabel,
   timeAgo,
   LISTING_COLUMNS,
+  listingHref,
+  type Listing,
 } from "@/lib/marketplace/listings";
+import {
+  breadcrumbJsonLd,
+  ldJson,
+  listingProductJsonLd,
+  listingSeoDescription,
+  listingSeoTitle,
+} from "@/lib/marketplace/seo";
 import ListingGallery from "@/components/marketplace/ListingGallery";
 import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
@@ -65,38 +76,40 @@ export async function generateMetadata({
 
   const { data } = await supabasePublic
     .from("listings")
-    .select("title, description, images, price_cents, is_wanted, city")
+    .select(`${LISTING_COLUMNS}, expires_at`)
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();
 
-  if (!data) return { title: "Listing not found" };
+  if (!data) return { title: "Listing not found", robots: { index: false } };
 
-  const l = data as unknown as {
-    title: string;
-    description: string | null;
-    images: string[] | null;
-    price_cents: number | null;
-    is_wanted: boolean;
-    city: string | null;
-  };
+  const l = data as unknown as Listing & { expires_at: string | null };
+  const { data: regionRow } = await supabasePublic
+    .from("market_regions")
+    .select("name")
+    .eq("state_code", l.state_code)
+    .eq("slug", l.region_slug)
+    .maybeSingle();
+  const regionName = (regionRow?.name as string | undefined) ?? null;
 
-  const priceStr = l.is_wanted ? "Wanted" : formatPrice(l.price_cents);
-  const raw = (l.description ?? "").replace(/\s+/g, " ").trim();
-  const description = raw
-    ? raw.length > 200
-      ? `${raw.slice(0, 197)}…`
-      : raw
-    : `${l.title} — ${priceStr}${l.city ? ` in ${l.city}` : ""} on Underground Aquarium.`;
+  const title = listingSeoTitle(l, regionName);
+  const description = listingSeoDescription(l, regionName);
 
   return {
-    title: `${l.title} — ${priceStr}`,
+    title,
     description,
     alternates: { canonical: `/listing/${slug}` },
     openGraph: {
-      title: l.title,
+      title,
       description,
       url: `/listing/${slug}`,
+      type: "website",
+      images: [l.images?.[0] ?? "/og-default.png"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
       images: [l.images?.[0] ?? "/og-default.png"],
     },
   };
@@ -128,7 +141,8 @@ export default async function ListingPage({
   const isOwner = !!user && user.id === listing.user_id;
   if (listing.status !== "active" && !isOwner) notFound();
 
-  const [{ data: sellerData }, { data: regionData }, { data: sealData }] = await Promise.all([
+  const nowIso = new Date().toISOString();
+  const [{ data: sellerData }, { data: regionData }, { data: sealData }, { data: nearbyData }, { data: stateData }] = await Promise.all([
     supabasePublic
       .from("profiles")
       .select("username, full_name")
@@ -141,6 +155,27 @@ export default async function ListingPage({
       .eq("slug", listing.region_slug)
       .maybeSingle(),
     supabasePublic.rpc("society_members_among", { p_users: [listing.user_id] }),
+    // More of the same nearby: the best internal links a listing can have.
+    supabasePublic
+      .from("listings")
+      .select(LISTING_COLUMNS)
+      .eq("state_code", listing.state_code)
+      .eq("region_slug", listing.region_slug)
+      .eq("status", "active")
+      .gt("expires_at", nowIso)
+      .neq("id", listing.id)
+      .order("bumped_at", { ascending: false })
+      .limit(12),
+    supabasePublic
+      .from("listings")
+      .select(LISTING_COLUMNS)
+      .eq("state_code", listing.state_code)
+      .eq("category", listing.category)
+      .eq("status", "active")
+      .gt("expires_at", nowIso)
+      .neq("id", listing.id)
+      .order("bumped_at", { ascending: false })
+      .limit(6),
   ]);
   const sellerIsSociety = Array.isArray(sealData) && sealData.length > 0;
 
@@ -152,6 +187,31 @@ export default async function ListingPage({
   const regionUrl = `/marketplace/${listing.state_code.toLowerCase()}/${listing.region_slug}`;
   const sellerName = seller?.full_name?.trim() || seller?.username || "A hobbyist";
 
+  // Same category nearby first, then anything nearby, then same category in the state.
+  const nearby = (nearbyData ?? []) as unknown as Listing[];
+  const sameState = (stateData ?? []) as unknown as Listing[];
+  const seen = new Set<string>();
+  const related: Listing[] = [];
+  for (const l of [
+    ...nearby.filter((n) => n.category === listing.category),
+    ...nearby,
+    ...sameState,
+  ]) {
+    if (related.length >= 6 || seen.has(l.id)) continue;
+    seen.add(l.id);
+    related.push(l);
+  }
+
+  const stateUrl = `/marketplace/${listing.state_code.toLowerCase()}`;
+  const crumbs = [
+    { name: "Marketplace", path: "/marketplace" },
+    { name: region?.state_name ?? listing.state_code.toUpperCase(), path: stateUrl },
+    ...(region ? [{ name: region.name, path: regionUrl }] : []),
+    { name: listing.title, path: `/listing/${listing.slug}` },
+  ];
+  const productLd =
+    listing.status === "active" ? listingProductJsonLd(listing, region?.name ?? null) : null;
+
   // The three ways a buyer can reach this poster, worked out once so the
   // owner preview and the buyer view can never disagree.
   const messagingOn = MESSAGING_ENABLED;
@@ -162,13 +222,29 @@ export default async function ListingPage({
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-5xl mx-auto">
-        <Link
-          href={regionUrl}
-          className="inline-flex items-center gap-2 text-sm text-ocean-400 hover:text-white transition-colors mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {region ? `Back to ${region.name}` : "Back to the marketplace"}
-        </Link>
+        {productLd && (
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(productLd) }} />
+        )}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(breadcrumbJsonLd(crumbs)) }} />
+
+        <nav aria-label="Breadcrumb" className="mb-8">
+          <ol className="flex flex-wrap items-center gap-1.5 text-sm text-ocean-500">
+            <li>
+              <Link href={regionUrl} className="inline-flex items-center gap-1.5 text-ocean-400 hover:text-white transition-colors sm:hidden">
+                <ArrowLeft className="w-4 h-4" />
+                {region ? region.name : "Marketplace"}
+              </Link>
+            </li>
+            {crumbs.slice(0, -1).map((c, i) => (
+              <li key={c.path} className="hidden sm:inline-flex items-center gap-1.5">
+                {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-ocean-700" />}
+                <Link href={c.path} className="text-ocean-400 hover:text-white transition-colors">
+                  {c.name}
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </nav>
 
         {isOwner && listing.status !== "active" && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4 mb-8">
@@ -413,6 +489,49 @@ export default async function ListingPage({
             <p className="text-ocean-300 leading-relaxed whitespace-pre-wrap">
               {listing.description}
             </p>
+          </section>
+        )}
+
+        {related.length > 0 && (
+          <section className="mt-14 pt-8 border-t border-ocean-900/70">
+            <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
+              <h2 className="font-display text-xl text-white">
+                More {categoryLabel(listing.category).toLowerCase()} near {region?.name ?? "you"}
+              </h2>
+              <Link href={regionUrl} className="text-sm text-ocean-400 hover:text-white transition-colors">
+                See all in {region?.name ?? "this area"} →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {related.map((r) => (
+                <Link
+                  key={r.id}
+                  href={listingHref(r.slug)}
+                  className="group block overflow-hidden rounded-xl border border-ocean-800/60 bg-ocean-900/50 hover:border-ocean-600/70 transition-colors"
+                >
+                  <div className="relative aspect-[4/3] bg-gradient-to-br from-ocean-800 to-ocean-950 flex items-center justify-center overflow-hidden">
+                    {r.images?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={r.images[0]}
+                        alt={r.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <Fish className="w-8 h-8 text-ocean-700" />
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm text-white leading-snug line-clamp-2">{r.title}</p>
+                    <p className="mt-1 text-xs text-ocean-400">
+                      {r.is_wanted ? "Wanted" : formatPrice(r.price_cents)}
+                      {r.city ? ` · ${r.city}` : ""}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </section>
         )}
       </div>

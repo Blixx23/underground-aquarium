@@ -76,10 +76,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     all<{ state_code: string; slug: string }>((a, b) =>
       supabasePublic.from("market_regions").select("state_code, slug").range(a, b)
     ),
-    all<{ slug: string; updated_at?: string }>((a, b) =>
+    all<{ slug: string; updated_at?: string; state_code: string; region_slug: string }>((a, b) =>
       supabasePublic
         .from("listings")
-        .select("slug, updated_at")
+        .select("slug, updated_at, state_code, region_slug")
         .eq("status", "active")
         .gt("expires_at", new Date().toISOString())
         .range(a, b)
@@ -158,12 +158,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const c of placeCities) out.push(entry(`/aquarium-stores/${c}`, 0.8, "weekly"));
 
   // ---- Classifieds --------------------------------------------------
-  const stateCodes = [...new Set(regions.map((r) => r.state_code.toLowerCase()))];
-  for (const code of stateCodes) out.push(entry(`/marketplace/${code}`, 0.7, "daily"));
-  for (const r of regions) {
-    out.push(entry(`/marketplace/${r.state_code.toLowerCase()}/${r.slug}`, 0.7, "daily"));
+  // Only areas with live ads: empty ones are noindexed thin pages, and
+  // listing them here would just teach Google to ignore the sitemap.
+  const liveAreas = new Map<string, Date | undefined>();
+  const liveStates = new Map<string, Date | undefined>();
+  for (const l of listings) {
+    const d = when(l.updated_at);
+    const area = `${l.state_code.toLowerCase()}/${l.region_slug}`;
+    const st = l.state_code.toLowerCase();
+    if (!liveAreas.has(area) || (d && (!liveAreas.get(area) || d > liveAreas.get(area)!))) liveAreas.set(area, d);
+    if (!liveStates.has(st) || (d && (!liveStates.get(st) || d > liveStates.get(st)!))) liveStates.set(st, d);
   }
-  for (const l of listings) out.push(entry(`/listing/${l.slug}`, 0.6, "daily", when(l.updated_at)));
+  const knownAreas = new Set(regions.map((r) => `${r.state_code.toLowerCase()}/${r.slug}`));
+  for (const [st, d] of liveStates) out.push(entry(`/marketplace/${st}`, 0.8, "daily", d));
+  for (const [area, d] of liveAreas) {
+    if (knownAreas.has(area)) out.push(entry(`/marketplace/${area}`, 0.8, "daily", d));
+  }
+  for (const l of listings) out.push(entry(`/listing/${l.slug}`, 0.7, "daily", when(l.updated_at)));
 
   // ---- Reference ----------------------------------------------------
   for (const s of species) out.push(entry(`/species/${s.slug}`, 0.7, "monthly", when(s.updated_at)));

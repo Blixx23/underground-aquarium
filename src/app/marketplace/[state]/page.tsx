@@ -21,9 +21,10 @@ export async function generateMetadata({
   if (!group) return { title: "Area not found" };
 
   return {
-    title: `${group.name} Aquarium Classifieds — Free Local Listings`,
-    description: `Free aquarium classifieds across ${group.name}. Browse fish, plants, coral, tanks and gear by metro area, or post your own listing for free.`,
+    title: `Aquarium Fish for Sale in ${group.name} | ${group.listingCount > 0 ? `${group.listingCount} Local Listing${group.listingCount === 1 ? "" : "s"}` : "Free Classifieds"}`,
+    description: `${group.listingCount > 0 ? `${group.listingCount} aquarium ${group.listingCount === 1 ? "listing" : "listings"} across ${group.name} right now. ` : ""}Buy, sell and trade fish, shrimp, coral, plants, tanks and gear with hobbyists in ${group.name}, by metro area. Free to post.`,
     alternates: { canonical: `/marketplace/${group.code.toLowerCase()}` },
+    ...(group.listingCount === 0 ? { robots: { index: false, follow: true } } : {}),
   };
 }
 

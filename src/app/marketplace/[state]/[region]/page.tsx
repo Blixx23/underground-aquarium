@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Plus } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
-import { getRegion, getStateGroup, regionHref } from "@/lib/marketplace/regions";
+import { countFor, getRegion, getRegionCounts, getStateGroup, regionHref } from "@/lib/marketplace/regions";
+import { breadcrumbJsonLd, itemListJsonLd, ldJson } from "@/lib/marketplace/seo";
 import { LISTING_COLUMNS, type Listing } from "@/lib/marketplace/listings";
 import ListingsBrowser from "@/components/marketplace/ListingsBrowser";
 import { POST_AD_PATH } from "@/lib/config";
@@ -19,10 +20,15 @@ export async function generateMetadata({
   const r = await getRegion(state, region);
   if (!r) return { title: "Area not found" };
 
+  const counts = await getRegionCounts();
+  const n = countFor(counts, r);
+
   return {
-    title: `${r.name} Aquarium Classifieds — Free Fish, Plants & Gear`,
-    description: `Free local aquarium classifieds in ${r.name}, ${r.state_name}. Buy, sell and give away fish, coral, plants, tanks and equipment with hobbyists nearby.`,
+    title: `Aquarium Fish for Sale in ${r.name}, ${r.state_code} | ${n > 0 ? `${n} Local Listing${n === 1 ? "" : "s"}` : "Free Classifieds"}`,
+    description: `${n > 0 ? `${n} aquarium ${n === 1 ? "listing" : "listings"} near ${r.name} right now. ` : ""}Buy, sell and trade fish, shrimp, coral, plants, tanks and equipment with hobbyists in ${r.name}, ${r.state_name}. Free to post, no fees.`,
     alternates: { canonical: regionHref(r) },
+    // An empty area is a thin page; keep it out of Google until someone posts.
+    ...(n === 0 ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
@@ -57,6 +63,21 @@ export default async function RegionPage({
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: ldJson(
+            breadcrumbJsonLd([
+              { name: "Marketplace", path: "/marketplace" },
+              { name: r.state_name, path: `/marketplace/${r.state_code.toLowerCase()}` },
+              { name: r.name, path: regionHref(r) },
+            ])
+          ),
+        }}
+      />
+      {listings.length > 0 && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(itemListJsonLd(listings)) }} />
+      )}
       <div className="max-w-7xl mx-auto">
         <Link
           href={`/marketplace/${r.state_code.toLowerCase()}`}
@@ -75,7 +96,7 @@ export default async function RegionPage({
               {r.name}
             </h1>
             <p className="text-ocean-400">
-              Free aquarium classifieds. Meet up locally, no fees, no middleman.
+              Aquarium fish, shrimp, coral, plants and gear for sale in {r.name}. Meet up locally, no fees, no middleman.
             </p>
           </div>
           <Link
