@@ -19,6 +19,19 @@ import {
 export const revalidate = 3600;
 
 const site = "https://www.undergroundaquarium.com";
+
+/** Specialty sections: the "saltwater store near me" style searches. */
+const SPECIALTIES: { tag: string; heading: (city: string) => string }[] = [
+  { tag: "saltwater", heading: (c) => `Saltwater fish and coral stores in and near ${c}` },
+  { tag: "freshwater", heading: (c) => `Freshwater tropical fish stores in and near ${c}` },
+  { tag: "plants", heading: (c) => `Where to buy aquarium plants in and near ${c}` },
+  { tag: "shrimp", heading: (c) => `Freshwater shrimp in and near ${c}` },
+  { tag: "pond", heading: (c) => `Pond fish and koi stores in and near ${c}` },
+];
+
+function hasTag(s: PlaceStore, tag: string) {
+  return (s.tags ?? []).some((t) => t.toLowerCase() === tag);
+}
 const NEARBY_MILES = 30;
 
 async function load(stateParam: string, cityParam: string) {
@@ -141,6 +154,65 @@ export default async function CityPage({ params }: { params: Promise<{ state: st
             </div>
           </section>
         )}
+
+        {(() => {
+          const pool: { s: PlaceStore; d: number | null }[] = [
+            ...c.stores.map((s) => ({ s, d: null as number | null })),
+            ...nearbyShops.map(({ s, d: dist }) => ({ s, d: dist as number | null })),
+          ];
+          const groups = SPECIALTIES.map((sp) => ({ sp, shops: pool.filter((x) => hasTag(x.s, sp.tag)) })).filter(
+            (g) => g.shops.length > 0
+          );
+          return (
+            <section className="mt-12">
+              <h2 className="mb-4 font-display text-2xl text-white">Good to know</h2>
+              <dl className="space-y-5 text-sm">
+                <div>
+                  <dt className="font-medium text-white">How many aquarium stores are in {c.name}?</dt>
+                  <dd className="mt-1 text-ocean-300">
+                    We list {n} independent aquarium and tropical fish {n === 1 ? "store" : "stores"} in {c.name}, {st}
+                    {nearbyShops.length > 0
+                      ? `, plus ${nearbyShops.length} more within ${NEARBY_MILES} miles. The closest is ${nearbyShops[0].s.name}${
+                          nearbyShops[0].s.city ? ` in ${nearbyShops[0].s.city}` : ""
+                        }, about ${Math.round(nearbyShops[0].d)} miles away`
+                      : ""}
+                    .
+                  </dd>
+                </div>
+                {groups.map(({ sp, shops }) => (
+                  <div key={sp.tag}>
+                    <dt className="font-medium text-white">{sp.heading(c.name)}</dt>
+                    <dd className="mt-1 text-ocean-300">
+                      {shops.slice(0, 8).map(({ s, d: dist }, i) => (
+                        <span key={s.id}>
+                          {i > 0 ? ", " : ""}
+                          <Link
+                            href={`/stores/${s.slug}`}
+                            className="text-ocean-100 underline decoration-ocean-600 underline-offset-2 hover:text-white"
+                          >
+                            {s.name}
+                          </Link>
+                          {dist != null ? ` (${Math.round(dist)} mi${s.city ? `, ${s.city}` : ""})` : ""}
+                        </span>
+                      ))}
+                      .
+                    </dd>
+                  </div>
+                ))}
+                <div>
+                  <dt className="font-medium text-white">Can I buy fish from hobbyists in {c.name}?</dt>
+                  <dd className="mt-1 text-ocean-300">
+                    Yes. Local keepers sell fry, shrimp, plant trimmings and used tanks on the{" "}
+                    <Link href="/marketplace" className="text-ocean-100 underline decoration-ocean-600 underline-offset-2 hover:text-white">
+                      Underground Aquarium marketplace
+                    </Link>
+                    , free to browse and free to post.
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          );
+        })()}
 
         {/* Buy from a neighbor, not just a shop */}
         <section className="mt-12 overflow-hidden rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 via-ocean-900/50 to-ocean-950 p-5 sm:p-6">

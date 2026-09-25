@@ -27,6 +27,7 @@ import StorePhotos, { type StorePhoto } from "@/components/stores/StorePhotos";
 import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpecialHours";
 import OsmCredit from "@/components/stores/OsmCredit";
 import Stars from "@/components/stores/Stars";
+import { formatPhone } from "@/lib/phone";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,28 @@ type StoreRow = {
 const STORE_COLS =
   "id, slug, name, address, city, state, phone, website, hours, description, tags, claimed_by, source, lat, lng";
 
+/** What each directory tag means in plain words, for the generated copy. */
+const TAG_WORDS: Record<string, string> = {
+  saltwater: "saltwater fish and coral",
+  freshwater: "freshwater tropical fish",
+  pond: "pond fish and koi",
+  plants: "live aquarium plants",
+  shrimp: "freshwater shrimp",
+};
+
+function specialtyPhrase(tags: string[] | null): string | null {
+  const words = (tags ?? [])
+    .map((t) => TAG_WORDS[t.toLowerCase()])
+    .filter((w): w is string => !!w);
+  if (words.length === 0) return null;
+  if (words.length === 1) return words[0];
+  return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
+function milesLabel(d: number): string {
+  return d < 10 ? `${d.toFixed(1)} mi` : `${Math.round(d)} mi`;
+}
+
 async function getStore(slug: string) {
   // postal_code only exists on some schemas; fall back without it.
   const withZip = await supabasePublic
@@ -78,11 +101,18 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!store) return { title: "Store not found" };
 
   const place = [store.city, store.state].filter(Boolean).join(", ");
-  const title = place ? `${store.name} — ${place}` : store.name;
-  const description =
-    store.description ??
-    `${store.name} is a local fish store${place ? ` in ${place}` : ""}. ` +
-      `Hours, phone number, directions and reviews from other aquarium keepers.`;
+  // "Name: Aquarium Store in City, ST" matches both "name + city" searches
+  // and "aquarium store city" searches.
+  const title = place ? `${store.name}: Aquarium Store in ${place}` : `${store.name}: Aquarium Store`;
+  const specialty = specialtyPhrase(store.tags);
+  const built =
+    `${store.name} is an independent aquarium store${place ? ` in ${place}` : ""}` +
+    `${store.address ? ` at ${store.address}` : ""}` +
+    `${specialty ? `, carrying ${specialty}` : ""}. ` +
+    `${store.phone ? `Call ${formatPhone(store.phone)}. ` : ""}` +
+    `Directions, hours, reviews and what's in stock from local fish keepers.`;
+  const raw = store.description?.trim() || built;
+  const description = raw.length > 158 ? `${raw.slice(0, 155).trimEnd()}…` : raw;
   return {
     title,
     description,
@@ -259,6 +289,7 @@ export default async function StoreDetailPage({ params }: Params) {
   const photos = (photoRows ?? []) as StorePhoto[];
   const specialDays = (specialRows ?? []) as SpecialDay[];
 
+  const specialty = specialtyPhrase(store.tags);
   const place = [store.city, store.state].filter(Boolean).join(", ");
   const fullAddress = [store.address, place].filter(Boolean).join(", ");
   const directionsQuery = encodeURIComponent(
@@ -415,8 +446,32 @@ export default async function StoreDetailPage({ params }: Params) {
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* ---- What the shop has to say ---- */}
           <div className="order-2 min-w-0 lg:order-1">
-            {store.description && (
+            {store.description ? (
               <p className="mb-8 leading-relaxed text-ocean-200">{store.description}</p>
+            ) : (
+              // Most listings have no write-up yet. Say what we do know, in
+              // words, so the page is about this shop and not a blank template.
+              <p className="mb-8 leading-relaxed text-ocean-200">
+                {store.name} is an independent aquarium and tropical fish store
+                {store.city ? ` in ${store.city}, ${stateName(store.state ?? "")}` : ""}
+                {store.address ? `, at ${store.address}` : ""}.
+                {specialty ? ` Local fish keepers come here for ${specialty}.` : ""}
+                {store.phone ? ` Call ${formatPhone(store.phone)} to check hours and what's in the tanks before you drive over.` : ""}
+                {nearby.length > 0 && (
+                  <>
+                    {" "}The closest other fish {nearby.length === 1 ? "store is" : "stores are"}{" "}
+                    {nearby.slice(0, 3).map(({ s: n, d }, i, arr) => (
+                      <span key={n.id}>
+                        <Link href={`/stores/${n.slug}`} className="text-ocean-100 underline decoration-ocean-600 underline-offset-2 hover:text-white">
+                          {n.name}
+                        </Link>{" "}
+                        ({milesLabel(d)}){i < arr.length - 2 ? ", " : i === arr.length - 2 ? " and " : ""}
+                      </span>
+                    ))}
+                    .
+                  </>
+                )}
+              </p>
             )}
 
             {isOwner && (
@@ -464,6 +519,57 @@ export default async function StoreDetailPage({ params }: Params) {
               currentUserName={currentUserName}
               isOwner={isOwner}
             />
+
+            {/* Good to know: the questions people type into Google about a shop. */}
+            <section className="mt-12 border-t border-white/10 pt-8">
+              <h2 className="mb-4 font-display text-xl text-white">Good to know about {store.name}</h2>
+              <dl className="space-y-5 text-sm">
+                <div>
+                  <dt className="font-medium text-white">Where is {store.name}?</dt>
+                  <dd className="mt-1 text-ocean-300">
+                    {fullAddress ? `${fullAddress}.` : `In ${place || "the area listed above"}.`}{" "}
+                    <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="text-ocean-100 underline decoration-ocean-600 underline-offset-2 hover:text-white">
+                      Get directions
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-white">What are {store.name}&apos;s hours?</dt>
+                  <dd className="mt-1 text-ocean-300">
+                    {store.hours
+                      ? store.hours
+                      : store.phone
+                      ? `Hours aren't listed yet. Call ${formatPhone(store.phone)} before you go.`
+                      : "Hours aren't listed yet. Check with the shop before you go."}
+                  </dd>
+                </div>
+                {specialty && (
+                  <div>
+                    <dt className="font-medium text-white">What does {store.name} sell?</dt>
+                    <dd className="mt-1 text-ocean-300">
+                      Fish keepers list it for {specialty}. Stock changes fast, so see what shoppers spotted recently above.
+                    </dd>
+                  </div>
+                )}
+                {nearby.length > 0 && (
+                  <div>
+                    <dt className="font-medium text-white">What other aquarium stores are near {store.name}?</dt>
+                    <dd className="mt-1 text-ocean-300">
+                      {nearby.map(({ s: n, d }, i) => (
+                        <span key={n.id}>
+                          {i > 0 ? ", " : ""}
+                          <Link href={`/stores/${n.slug}`} className="text-ocean-100 underline decoration-ocean-600 underline-offset-2 hover:text-white">
+                            {n.name}
+                          </Link>{" "}
+                          ({milesLabel(d)}{n.city && n.city !== store.city ? `, ${n.city}` : ""})
+                        </span>
+                      ))}
+                      .
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </section>
 
             {nearby.length > 0 && (
               <section className="mt-12 border-t border-white/10 pt-8">

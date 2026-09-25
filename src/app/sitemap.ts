@@ -60,8 +60,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     clubs,
   ] = await Promise.all([
     all<{ slug: string }>((a, b) => supabasePublic.from("glossary_terms").select("slug").range(a, b)),
-    all<{ slug: string; updated_at?: string }>((a, b) =>
-      supabasePublic.from("species").select("slug, updated_at").range(a, b)
+    // species has created_at but no updated_at; asking for a missing column
+    // errors the whole query and silently drops every species page.
+    all<{ slug: string; created_at?: string }>((a, b) =>
+      supabasePublic.from("species").select("slug, created_at").range(a, b)
     ),
     all<{ slug: string; updated_at?: string; city: string | null; state: string | null }>((a, b) =>
       supabasePublic
@@ -95,11 +97,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       category_id: string;
       is_seeded: boolean;
       reply_count: number;
-      last_post_at?: string;
+      last_activity_at?: string;
     }>((a, b) =>
       supabasePublic
         .from("forum_threads")
-        .select("slug, category_id, is_seeded, reply_count, last_post_at")
+        .select("slug, category_id, is_seeded, reply_count, last_activity_at")
+        .is("hidden_at", null)
         .range(a, b)
     ),
     all<{ species_slug: string }>((a, b) =>
@@ -177,7 +180,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const l of listings) out.push(entry(`/listing/${l.slug}`, 0.7, "daily", when(l.updated_at)));
 
   // ---- Reference ----------------------------------------------------
-  for (const s of species) out.push(entry(`/species/${s.slug}`, 0.7, "monthly", when(s.updated_at)));
+  for (const s of species) out.push(entry(`/species/${s.slug}`, 0.7, "monthly", when(s.created_at)));
   for (const t of terms) out.push(entry(`/glossary/${t.slug}`, 0.5, "monthly"));
   for (const c of courses) out.push(entry(`/courses/${c.slug}`, 0.7, "monthly"));
   for (const e of events) out.push(entry(`/events/${e.slug}`, 0.6, "weekly"));
@@ -200,7 +203,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
   for (const t of indexable) {
     const cat = catSlugById.get(t.category_id);
-    if (cat) out.push(entry(`/forums/${cat}/${t.slug}`, 0.6, "weekly", when(t.last_post_at)));
+    if (cat) out.push(entry(`/forums/${cat}/${t.slug}`, 0.6, "weekly", when(t.last_activity_at)));
   }
 
   // The Society's own join page, which is a sales page and should rank.
