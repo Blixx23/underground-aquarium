@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Settings2, Loader2, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -11,7 +11,7 @@ const GROUPS: { key: string; label: string; sub: string; types: string[] }[] = [
   { key: "bubbles", label: "Bubbles", sub: "You earn bubbles or reach a new tier", types: ["bubbles"] },
   { key: "store_post", label: "Shop updates", sub: "A shop you follow posts something", types: ["store_post"] },
   { key: "reviews", label: "Shop reviews", sub: "Reviews of a shop you run, and replies to yours", types: ["review", "review_response"] },
-  { key: "society", label: "Society", sub: "Membership applications and dues", types: ["club_application", "club_dues"] },
+  { key: "society", label: "Society", sub: "Membership applications and dues", types: ["club_application", "club_dues", "club_approved", "club_honorary"] },
 ];
 
 export default function NotificationSettings({
@@ -26,6 +26,11 @@ export default function NotificationSettings({
   const [muted, setMuted] = useState<string[]>(initialMuted);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // The gear in the bell links to /notifications#settings: open straight to it.
+  useEffect(() => {
+    if (window.location.hash === "#settings") setOpen(true);
+  }, []);
 
   async function toggle(group: (typeof GROUPS)[number]) {
     setError(null);

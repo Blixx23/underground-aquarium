@@ -1,33 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { notificationHref } from "@/lib/notificationLink";
-import { Bell } from "lucide-react";
+import { Bell, CheckCheck, Settings2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { notificationHref } from "@/lib/notificationLink";
+import { NOTIFICATION_COLUMNS, type Notification } from "@/lib/notifications";
+import NotificationRow from "@/components/notifications/NotificationRow";
+import { markAllRead, markSeen, removeOne, setRead, toggleMuted } from "@/components/notifications/actions";
 
-type Notification = {
-  id: string;
-  type?: string | null;
-  title: string;
-  body: string | null;
-  link: string | null;
-  read: boolean;
-  created_at: string;
-};
-
-function timeAgo(iso: string) {
-  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return "just now";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString();
-}
+const PANEL_SIZE = 20;
 
 export default function NotificationBell({
   variant = "dropdown",
@@ -38,22 +21,25 @@ export default function NotificationBell({
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
-  const [signedIn, setSignedIn] = useState(false);
-  const [count, setCount] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
   const [items, setItems] = useState<Notification[]>([]);
+  const [unread, setUnread] = useState(0);
+  // The badge counts notices that arrived since you last opened the bell
+  // (like Facebook). Unread ones stay bold in the list until you open them.
+  const [unseen, setUnseen] = useState(0);
+  const [muted, setMuted] = useState<string[]>([]);
+  const [tab, setTab] = useState<"all" | "unread">("all");
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<AudioContext | null>(null);
 
-  // Browsers block audio until the user interacts with the page, so we create
-  // the audio context on the first click/keypress and reuse it after that.
+  // Browsers block audio until the person interacts with the page.
   useEffect(() => {
     function init() {
       if (audioRef.current) return;
       const Ctx =
         window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctx) return;
       audioRef.current = new Ctx();
       audioRef.current.resume?.();
@@ -68,7 +54,7 @@ export default function NotificationBell({
     };
   }, []);
 
-  // A soft, quick water "bloop": a sine tone that drops in pitch and fades fast.
+  // A soft water "bloop".
   function playBloop() {
     const ctx = audioRef.current;
     if (!ctx) return;
@@ -86,212 +72,290 @@ export default function NotificationBell({
     osc.stop(now + 0.24);
   }
 
+  const load = useCallback(async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setUserId(null);
+        setItems([]);
+        setUnread(0);
+        setUnseen(0);
+        return null;
+      }
+      setUserId(user.id);
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("notifications_seen_at, muted_notifications")
+        .eq("id", user.id)
+        .maybeSingle();
+      const p = prof as { notifications_seen_at?: string | null; muted_notifications?: string[] | null } | null;
+      const seenAt = p?.notifications_seen_at ?? null;
+      setMuted(p?.muted_notifications ?? []);
+
+      let unseenQ = supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("read", false);
+      if (seenAt) unseenQ = unseenQ.gt("created_at", seenAt);
+
+      const [{ data: recent }, { count: unreadCount }, { count: unseenCount }] = await Promise.all([
+        supabase.from("notifications").select(NOTIFICATION_COLUMNS).order("created_at", { ascending: false }).limit(PANEL_SIZE),
+        supabase.from("notifications").select("id", { count: "exact", head: true }).eq("read", false),
+        unseenQ,
+      ]);
+      setItems((recent ?? []) as Notification[]);
+      setUnread(unreadCount ?? 0);
+      setUnseen(unseenCount ?? 0);
+      return user.id;
+    } catch {
+      // A dropped request; the next focus or tick tries again.
+      return null;
+    }
+  }, [supabase]);
+
   useEffect(() => {
     let active = true;
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    async function load() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!active) return;
-        if (!user) {
-          setSignedIn(false);
-          setItems([]);
-          setCount(0);
-          return;
-        }
-        setSignedIn(true);
-        const [{ data: recent }, { count: c }] = await Promise.all([
-          supabase
-            .from("notifications")
-            .select("id, type, title, body, link, read, created_at")
-            .order("created_at", { ascending: false })
-            .limit(8),
-          supabase
-            .from("notifications")
-            .select("id", { count: "exact", head: true })
-            .eq("read", false),
-        ]);
-        if (!active) return;
-        setItems(recent ?? []);
-        setCount(c ?? 0);
-
-        // Live updates: a new notification for this user appears instantly,
-        // with a soft sound. Set up once.
-        if (!channel) {
-          channel = supabase
-            .channel(`notifications:${user.id}`)
-            .on(
-              "postgres_changes",
-              {
-                event: "INSERT",
-                schema: "public",
-                table: "notifications",
-                filter: `user_id=eq.${user.id}`,
-              },
-              (payload) => {
-                const n = payload.new as Notification;
-                setItems((prev) =>
-                  prev.some((x) => x.id === n.id)
-                    ? prev
-                    : [n, ...prev].slice(0, 8)
-                );
-                if (!n.read) setCount((c) => c + 1);
-                playBloop();
-              }
-            )
-            .subscribe();
-        }
-      } catch {
-        // Transient network/auth hiccup (e.g. a dropped fetch during a dev
-        // reload or a brief connection blip). Skip this cycle quietly and
-        // retry on the next focus/interval instead of surfacing an error.
-      }
+    async function start() {
+      const uid = await load();
+      if (!active || !uid || channel) return;
+      channel = supabase
+        .channel(`notifications:${uid}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
+          (payload) => {
+            const n = payload.new as Notification;
+            setItems((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev].slice(0, PANEL_SIZE)));
+            if (!n.read) {
+              setUnread((c) => c + 1);
+              setUnseen((c) => c + 1);
+            }
+            playBloop();
+          }
+        )
+        .subscribe();
     }
 
-    load();
+    start();
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
-    const id = setInterval(load, 60000);
-
-    // React immediately to sign-in / sign-out instead of waiting for the timer.
-    // Drop any open channel so it re-subscribes for the right user (or stays
-    // gone once signed out), then re-evaluate.
+    const tick = setInterval(load, 60000);
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
       if (channel) {
         supabase.removeChannel(channel);
         channel = null;
       }
-      load();
+      start();
     });
-
     return () => {
       active = false;
       window.removeEventListener("focus", onFocus);
-      clearInterval(id);
+      clearInterval(tick);
       authSub.subscription.unsubscribe();
       if (channel) supabase.removeChannel(channel);
     };
-  }, [supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, load]);
 
-  // Close the panel when clicking outside it.
+  // Click outside or Escape closes the panel.
   useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
-    if (open) document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
+
+  // Other menus close this one, and this one closes them.
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener("ua:close-top-menu", close);
+    return () => window.removeEventListener("ua:close-top-menu", close);
+  }, []);
+
+  function toggleOpen() {
+    const next = !open;
+    if (next) {
+      window.dispatchEvent(new Event("ua:close-top-menu"));
+      setUnseen(0);
+      if (userId) markSeen(supabase, userId);
+    }
+    setOpen(next);
+  }
 
   async function openItem(n: Notification) {
     setOpen(false);
     if (!n.read) {
-      setItems((prev) =>
-        prev.map((x) => (x.id === n.id ? { ...x, read: true } : x))
-      );
-      setCount((c) => Math.max(0, c - 1));
-      await supabase.from("notifications").update({ read: true }).eq("id", n.id);
+      setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+      setUnread((c) => Math.max(0, c - 1));
+      await setRead(supabase, n.id, true);
     }
     const href = notificationHref(n);
     if (href) router.push(href);
   }
 
-  if (!signedIn) return null;
+  async function toggleRead(n: Notification) {
+    setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: !n.read } : x)));
+    setUnread((c) => Math.max(0, c + (n.read ? 1 : -1)));
+    await setRead(supabase, n.id, !n.read);
+  }
 
-  // Mobile / compact: a tappable bell that jumps to the full notifications page.
+  async function remove(n: Notification) {
+    setItems((prev) => prev.filter((x) => x.id !== n.id));
+    if (!n.read) setUnread((c) => Math.max(0, c - 1));
+    await removeOne(supabase, n.id);
+  }
+
+  async function mute(n: Notification) {
+    if (!userId) return;
+    const next = await toggleMuted(supabase, userId, muted, n);
+    if (next) setMuted(next);
+  }
+
+  async function readAll() {
+    setItems((prev) => prev.map((x) => ({ ...x, read: true })));
+    setUnread(0);
+    setUnseen(0);
+    await markAllRead(supabase);
+  }
+
+  if (!userId) return null;
+
+  const badge = unseen > 0 ? (unseen > 9 ? "9+" : String(unseen)) : null;
+
+  // Phones: the bell is a link to the full page.
   if (variant === "link") {
     return (
       <Link
         href="/notifications"
         onClick={onNavigate}
-        aria-label="Notifications"
+        aria-label={`Notifications${unseen ? `, ${unseen} new` : ""}`}
         className="relative p-2 text-ocean-300 hover:text-white transition-colors"
       >
         <Bell className="w-5 h-5" />
-        {count > 0 && (
+        {badge && (
           <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[11px] font-medium flex items-center justify-center">
-            {count > 9 ? "9+" : count}
+            {badge}
           </span>
         )}
       </Link>
     );
   }
 
+  const shown = tab === "unread" ? items.filter((n) => !n.read) : items;
+  const fresh = shown.filter((n) => !n.read);
+  const earlier = shown.filter((n) => n.read);
+
+  const rowProps = {
+    compact: true,
+    onOpen: openItem,
+    onToggleRead: toggleRead,
+    onRemove: remove,
+    onMute: mute,
+  };
+
   return (
     <div className="relative" ref={wrapRef}>
       <button
-        onClick={() => setOpen((o) => !o)}
-        className="relative p-2 text-ocean-300 hover:text-white transition-colors"
-        aria-label="Notifications"
+        onClick={toggleOpen}
+        className={`relative p-2 transition-colors ${open ? "text-white" : "text-ocean-300 hover:text-white"}`}
+        aria-label={`Notifications${unseen ? `, ${unseen} new` : ""}`}
+        aria-expanded={open}
       >
         <Bell className="w-5 h-5" />
-        {count > 0 && (
+        {badge && (
           <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[11px] font-medium flex items-center justify-center">
-            {count > 9 ? "9+" : count}
+            {badge}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-ocean-900/95 backdrop-blur-xl border border-ocean-700/50 rounded-xl shadow-2xl shadow-ocean-950/80 overflow-hidden z-50">
-          <div className="px-4 py-3 border-b border-ocean-800/60 flex items-center justify-between">
-            <span className="text-sm font-medium text-white">Notifications</span>
-            {count > 0 && (
-              <span className="text-xs text-ocean-400">{count} new</span>
-            )}
+        <div className="absolute right-0 mt-2 w-[380px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-ocean-700/50 bg-ocean-950/95 shadow-2xl shadow-black/70 backdrop-blur-xl z-50">
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <span className="font-display text-xl text-white">Notifications</span>
+            <div className="flex items-center gap-1">
+              {unread > 0 && (
+                <button
+                  onClick={readAll}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-ocean-800/60 hover:text-sky-200"
+                >
+                  <CheckCheck className="h-4 w-4" /> Mark all as read
+                </button>
+              )}
+              <Link
+                href="/notifications#settings"
+                onClick={() => setOpen(false)}
+                aria-label="Notification settings"
+                className="rounded-lg p-1.5 text-ocean-400 hover:bg-ocean-800/60 hover:text-white"
+              >
+                <Settings2 className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
 
-          {items.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-ocean-400">
-              You&apos;re all caught up.
-            </div>
-          ) : (
-            <div className="max-h-80 overflow-y-auto divide-y divide-ocean-800/40">
-              {items.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => openItem(n)}
-                  className={`w-full text-left flex items-start gap-2.5 px-4 py-3 hover:bg-ocean-800/50 transition-colors ${
-                    n.read ? "" : "bg-ocean-800/25"
-                  }`}
-                >
-                  <span
-                    className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
-                      n.read ? "bg-transparent" : "bg-coral-400"
-                    }`}
-                  />
-                  <span className="min-w-0">
-                    <span
-                      className={`block text-sm truncate ${
-                        n.read ? "text-ocean-300" : "text-white font-medium"
-                      }`}
-                    >
-                      {n.title}
-                    </span>
-                    {n.body && (
-                      <span className="block text-xs text-ocean-400 mt-0.5 line-clamp-2">
-                        {n.body}
-                      </span>
-                    )}
-                    <span className="block text-xs text-ocean-600 mt-0.5">
-                      {timeAgo(n.created_at)}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex gap-1.5 px-4 pb-2">
+            {(["all", "unread"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  tab === t ? "bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/30" : "text-ocean-300 hover:bg-ocean-800/60"
+                }`}
+              >
+                {t === "all" ? "All" : `Unread${unread ? ` (${unread})` : ""}`}
+              </button>
+            ))}
+          </div>
+
+          <div className="max-h-[min(70vh,560px)] overflow-y-auto px-2 pb-2">
+            {shown.length === 0 ? (
+              <div className="px-4 py-10 text-center">
+                <Bell className="mx-auto mb-2 h-7 w-7 text-ocean-600" />
+                <p className="text-sm text-ocean-300">
+                  {tab === "unread" ? "No unread notifications." : "You're all caught up."}
+                </p>
+              </div>
+            ) : (
+              <>
+                {fresh.length > 0 && (
+                  <>
+                    <p className="px-2 pt-2 pb-1 text-sm font-semibold text-white">New</p>
+                    {fresh.map((n) => (
+                      <NotificationRow key={n.id} n={n} muted={!!n.type && muted.includes(n.type)} {...rowProps} />
+                    ))}
+                  </>
+                )}
+                {earlier.length > 0 && (
+                  <>
+                    <p className="px-2 pt-3 pb-1 text-sm font-semibold text-white">Earlier</p>
+                    {earlier.map((n) => (
+                      <NotificationRow key={n.id} n={n} muted={!!n.type && muted.includes(n.type)} {...rowProps} />
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </div>
 
           <Link
             href="/notifications"
             onClick={() => setOpen(false)}
-            className="block px-4 py-3 text-center text-sm text-ocean-300 hover:text-white hover:bg-ocean-800/40 border-t border-ocean-800/60 transition-colors"
+            className="block border-t border-ocean-800/60 px-4 py-3 text-center text-sm font-medium text-sky-300 hover:bg-ocean-800/40 hover:text-sky-200"
           >
-            View all notifications
+            See all notifications
           </Link>
         </div>
       )}
