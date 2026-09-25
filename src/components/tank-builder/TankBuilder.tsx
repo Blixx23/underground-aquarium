@@ -45,6 +45,7 @@ import { nearestSize } from "@/lib/tankBuilder/sizes";
 import { MAX_TANK_PHOTOS } from "@/lib/tanks/showcase";
 import { checkWater, type WaterReading, type WaterLevel } from "@/lib/waterCheck/engine";
 import TankVisual, { speciesColor } from "@/components/tank-builder/TankVisual";
+import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
 import { RangeChart, ScoreDial } from "@/components/tank-builder/Insights";
 
 const FREE_TANK_LIMIT = 4;
@@ -204,6 +205,8 @@ export default function TankBuilder({
   const [showDims, setShowDims] = useState(false);
   const [dims, setDims] = useState({ l: "", w: "", h: "" });
   const [toast, setToast] = useState<string | null>(null);
+  // A fish that isn't in the library yet: the request form, prefilled.
+  const [requestName, setRequestName] = useState<string | null>(null);
   const searchBox = useRef<HTMLDivElement>(null);
   const searchInput = useRef<HTMLInputElement>(null);
 
@@ -431,6 +434,7 @@ export default function TankBuilder({
       else if (name.startsWith(q)) r = 1;
       else if (name.split(/[\s-]+/).some((w) => w.startsWith(q))) r = 2;
       else if (name.includes(q)) r = 3;
+      else if ((s.also_known_as ?? []).some((a) => a.toLowerCase().includes(q))) r = 3;
       else if (sci.includes(q)) r = 4;
       else if ((s.group_name ?? "").toLowerCase().includes(q)) r = 5;
       if (r >= 0) scored.push({ s, r });
@@ -1085,7 +1089,21 @@ export default function TankBuilder({
                     <p className="px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-ocean-500">Popular picks</p>
                   )}
                   {matches.length === 0 ? (
-                    <p className="px-4 py-4 text-sm text-ocean-300">No species match “{query.trim()}”.</p>
+                    <div className="px-4 py-4">
+                      <p className="text-sm text-ocean-200">
+                        “{query.trim()}” isn&apos;t in our library yet.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRequestName(query.trim());
+                          setSearchOpen(false);
+                        }}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-ocean-950 hover:bg-emerald-400"
+                      >
+                        <Plus className="h-4 w-4" /> Request it and earn bubbles
+                      </button>
+                    </div>
                   ) : (
                     matches.map((sp, i) => {
                       const tooSmall = gallons > 0 && sp.min_tank_gal != null && sp.min_tank_gal > gallons;
@@ -1119,6 +1137,18 @@ export default function TankBuilder({
                         </button>
                       );
                     })
+                  )}
+                  {matches.length > 0 && query.trim().length >= 3 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRequestName(query.trim());
+                        setSearchOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 border-t border-white/10 px-4 py-3 text-left text-sm text-emerald-300 hover:bg-white/[0.05]"
+                    >
+                      <Plus className="h-4 w-4" /> Not the one? Request “{query.trim()}”
+                    </button>
                   )}
                 </div>
               )}
@@ -1675,6 +1705,39 @@ export default function TankBuilder({
           )}
         </div>
       </div>
+
+      {requestName !== null && (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
+          onClick={() => setRequestName(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Request a species"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-t-2xl border border-ocean-700/70 bg-[#06182b] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl shadow-black/80 sm:rounded-2xl"
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-lg font-semibold text-white">Request a fish</p>
+                <p className="text-sm text-ocean-300">
+                  We&apos;ll add it to the library and the Tank Builder. You get bubbles and a trophy when it&apos;s in.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRequestName(null)}
+                aria-label="Close"
+                className="rounded-lg p-1.5 text-ocean-400 hover:bg-white/5 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <SuggestSpecies key={requestName} initialName={requestName} defaultOpen compact />
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className="fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 md:bottom-8" role="status">

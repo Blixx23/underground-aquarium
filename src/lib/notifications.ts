@@ -44,6 +44,7 @@ const KINDS: Record<string, KindMeta> = {
   review: { icon: "review", tone: "amber", category: "shops", label: "shop reviews", mutable: true },
   review_response: { icon: "review", tone: "amber", category: "shops", label: "review replies", mutable: true },
   event: { icon: "event", tone: "coral", category: "other", label: "events" },
+  species_request: { icon: "trophy", tone: "emerald", category: "trophies", label: "species requests" },
   feed_like: { icon: "heart", tone: "coral", category: "feed", label: "likes", mutable: true },
   feed_comment: { icon: "comment", tone: "sky", category: "feed", label: "comments", mutable: true },
   feed_reply: { icon: "comment", tone: "sky", category: "feed", label: "comment replies", mutable: true },

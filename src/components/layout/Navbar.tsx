@@ -121,6 +121,18 @@ export default function Navbar() {
   // A new page always starts with the menu shut.
   useEffect(() => setOpen(false), [pathname]);
 
+  // While the phone menu is open it owns the screen: the page behind it
+  // doesn't scroll, and the menu covers the bottom bar cleanly instead of
+  // the two showing through each other.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   function toggleMenu() {
     if (!open) window.dispatchEvent(new Event("ua:close-bottom-sheet"));
     setOpen(!open);
@@ -226,7 +238,9 @@ export default function Navbar() {
         // nav. It only tightens up once you start scrolling.
         scrolled
           ? "bg-ocean-950/95 backdrop-blur-xl border-b border-ocean-800/50 py-3"
-          : "bg-ocean-950/90 backdrop-blur-xl border-b border-transparent py-5"
+          : "bg-ocean-950/90 backdrop-blur-xl border-b border-transparent py-5",
+        // Phone menu open: fully solid so nothing behind it (page or bottom bar) shows through.
+        open && "!bg-ocean-950"
       )}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
@@ -449,7 +463,7 @@ export default function Navbar() {
 
       {/* Mobile menu: just the site's sections. Your own stuff lives on the Me tab. */}
       {open && (
-        <div className="md:hidden bg-ocean-950/98 backdrop-blur-xl border-t border-ocean-800/50 px-4 pt-3 pb-[calc(6rem_+_env(safe-area-inset-bottom))] h-[calc(100dvh_-_5rem)] overflow-y-auto">
+        <div className="md:hidden bg-ocean-950 border-t border-ocean-800/50 px-4 pt-3 pb-[calc(3rem_+_env(safe-area-inset-bottom))] h-[calc(100dvh_-_4rem)] overflow-y-auto overscroll-contain">
           {/* The Society's home on phones, now it's off the bottom bar. */}
           <Link
             href={SOCIETY_PATH}

@@ -154,7 +154,7 @@ export default async function StoreDetailPage({ params }: Params) {
   // Reviews
   const { data: reviewRows } = await supabasePublic
     .from("store_reviews")
-    .select("id,user_id,rating,body,created_at")
+    .select("id,user_id,rating,body,created_at,edited_at")
     .eq("store_id", store.id)
     .order("created_at", { ascending: false });
   const reviewList = (reviewRows ?? []) as {
@@ -163,6 +163,7 @@ export default async function StoreDetailPage({ params }: Params) {
     rating: number;
     body: string | null;
     created_at: string;
+    edited_at: string | null;
   }[];
 
   const authorIds = new Set(reviewList.map((r) => r.user_id));
@@ -206,6 +207,7 @@ export default async function StoreDetailPage({ params }: Params) {
     rating: r.rating,
     body: r.body,
     createdAt: r.created_at,
+    editedAt: r.edited_at ?? null,
     response: respByReview.get(r.id) ?? null,
   }));
   const currentUserName = user ? nameById.get(user.id) ?? null : null;

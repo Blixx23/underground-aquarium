@@ -197,6 +197,51 @@ export default function StoreDirectory({
     return { filtered: run(true), closeMatches: true };
   }, [stores, words, tokens, searching, stateCode, activeType]);
 
+  // No shop matched? The search is probably a town ("carmichael", even
+  // misspelled). Look the place up and show the nearest shops instead of a
+  // dead end.
+  const [place, setPlace] = useState<{
+    q: string;
+    best: { name: string; state: string; lat: number; lng: number } | null;
+    others: { name: string; state: string; lat: number; lng: number }[];
+  } | null>(null);
+  const noMatch = searching && filtered.length === 0;
+  useEffect(() => {
+    const q = query.trim();
+    if (!noMatch || q.length < 3) {
+      setPlace(null);
+      return;
+    }
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const near = coords ?? approx;
+        const qs = new URLSearchParams({ q });
+        if (near) qs.set("near", `${near.lat.toFixed(1)},${near.lng.toFixed(1)}`);
+        const res = await fetch(`/api/stores/place?${qs}`);
+        const data = await res.json();
+        if (alive) setPlace({ q, best: data.best ?? null, others: data.others ?? [] });
+      } catch {
+        if (alive) setPlace({ q, best: null, others: [] });
+      }
+    }, 300);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [noMatch, query, coords, approx]);
+
+  /** The closest shops to the place they typed, nearest first. */
+  const nearPlace = useMemo(() => {
+    const p = place?.best;
+    if (!p || !noMatch) return null;
+    return stores
+      .filter((s) => s.lat != null && s.lng != null && (!activeType || (s.tags ?? []).includes(activeType)))
+      .map((store) => ({ store, miles: milesBetween(p.lat, p.lng, store.lat as number, store.lng as number) }))
+      .sort((a, b) => a.miles - b.miles)
+      .slice(0, 12);
+  }, [place, noMatch, stores, activeType]);
+
   const ranked = useMemo(() => {
     if (!coords) return null;
     return filtered
@@ -392,6 +437,12 @@ export default function StoreDirectory({
                 <ChevronLeft className="h-4 w-4" /> All states
               </button>
             )}
+            {filtered.length === 0 && nearPlace && nearPlace.length > 0 && place?.best ? (
+              <p className="text-sm text-ocean-400">
+                <span className="font-semibold text-white">{nearPlace.length}</span> shops near{" "}
+                {place.best.name}, {place.best.state}, nearest first
+              </p>
+            ) : (
             <p className="text-sm text-ocean-400">
               {searching && closeMatches && filtered.length > 0 && (
                 <span className="text-amber-300">No exact match. </span>
@@ -403,6 +454,7 @@ export default function StoreDirectory({
               {searching && closeMatches ? " with a close spelling" : ""}
               {coords ? ", nearest first" : ""}
             </p>
+            )}
           </div>
           {hasFilters && (
             <button
@@ -440,19 +492,62 @@ export default function StoreDirectory({
             ))}
           </div>
         </div>
+      ) : filtered.length === 0 && nearPlace && nearPlace.length > 0 && place?.best ? (
+        <div>
+          <div className="mb-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.07] px-4 py-3">
+            <p className="text-sm text-ocean-100">
+              No shop names match “{place.q}”. Here are the closest shops to{" "}
+              <span className="font-semibold text-white">
+                {place.best.name}, {place.best.state}
+              </span>
+              .
+            </p>
+            {place.others.length > 0 && (
+              <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-ocean-300">
+                Meant somewhere else?
+                {place.others.slice(0, 4).map((o) => (
+                  <button
+                    key={`${o.name}-${o.state}`}
+                    type="button"
+                    onClick={() => setPlace((cur) => (cur ? { ...cur, best: o, others: cur.others.filter((x) => x !== o).concat(cur.best ? [cur.best] : []) } : cur))}
+                    className="rounded-full border border-white/15 px-2.5 py-0.5 text-ocean-100 hover:bg-white/10"
+                  >
+                    {o.name}, {o.state}
+                  </button>
+                ))}
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {nearPlace.map(({ store, miles }) => card(store, miles, true))}
+          </div>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center">
           <Store className="mx-auto mb-3 h-8 w-8 text-ocean-600" />
-          <p className="mb-1 font-medium text-white">Nothing matched</p>
-          <p className="text-sm text-ocean-400">
-            Try a shop name, a city, or a state.
+          <p className="mb-1 font-medium text-white">
+            {searching ? `We couldn't find “${query.trim()}”` : "Nothing matched"}
           </p>
-          <button
-            onClick={clearAll}
-            className="mt-4 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition-colors hover:bg-white/10"
-          >
-            Clear filters
-          </button>
+          <p className="text-sm text-ocean-400">
+            Try a shop name, a city, or a state, or let us find the shops closest to you.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => {
+                setQuery("");
+                findMe();
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
+            >
+              <LocateFixed className="h-4 w-4" /> Shops near me
+            </button>
+            <button
+              onClick={clearAll}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition-colors hover:bg-white/10"
+            >
+              Clear filters
+            </button>
+          </div>
         </div>
       ) : ranked ? (
         <>

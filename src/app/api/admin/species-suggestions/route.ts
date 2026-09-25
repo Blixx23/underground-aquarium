@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
 
+/**
+ * Admin decision on a species request. The database does the work (creates
+ * the entry or adds the name, notifies the requester, updates trophies);
+ * this hands out the bubbles, which also handles tier-ups.
+ */
 export async function POST(req: Request) {
-  let body: { id?: string; action?: string };
+  let body: {
+    id?: string;
+    action?: string;
+    species?: Record<string, unknown> | null;
+    existingSlug?: string | null;
+    note?: string | null;
+  };
   try {
     body = await req.json();
   } catch {
@@ -12,57 +22,30 @@ export async function POST(req: Request) {
   }
 
   const { id, action } = body;
-  if (!id || (action !== "add" && action !== "dismiss")) {
-    return NextResponse.json(
-      { error: "Missing suggestion or action." },
-      { status: 400 }
-    );
+  if (!id || !["create", "alias", "dismiss"].includes(action ?? "")) {
+    return NextResponse.json({ error: "Missing request or action." }, { status: 400 });
   }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
+  // resolve_species_request checks the caller is an admin.
+  const { data, error } = await supabase.rpc("resolve_species_request", {
+    p_id: id,
+    p_action: action,
+    p_species: body.species ?? null,
+    p_existing_slug: body.existingSlug ?? null,
+    p_note: body.note ?? null,
+  });
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  const result = (data ?? {}) as { slug?: string | null; suggester_id?: string | null; status?: string };
+  if (result.status === "added" && result.suggester_id) {
+    await awardBubbles(result.suggester_id, "species_approved", `species_sugg_${id}`);
   }
 
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!me?.is_admin) {
-    return NextResponse.json({ error: "Admins only." }, { status: 403 });
-  }
-
-  const status = action === "add" ? "added" : "dismissed";
-
-  const { error } = await supabaseAdmin
-    .from("species_suggestions")
-    .update({
-      status,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by: user.id,
-    })
-    .eq("id", id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  // Reward the suggester when their species is accepted (deduped per suggestion).
-  if (action === "add") {
-    const { data: sugg } = await supabaseAdmin
-      .from("species_suggestions")
-      .select("suggester_id")
-      .eq("id", id)
-      .maybeSingle();
-    const suggesterId = (sugg?.suggester_id as string | null) ?? null;
-    if (suggesterId) {
-      await awardBubbles(suggesterId, "species_approved", `species_sugg_${id}`);
-    }
-  }
-
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, slug: result.slug ?? null });
 }

@@ -44,7 +44,7 @@ function allowance(len: number): number {
  * "aquairum" is a single slip from "aquarium". Bails early once the
  * answer can't come in under the limit.
  */
-function withinDistance(a: string, b: string, limit: number): boolean {
+export function withinDistance(a: string, b: string, limit: number): boolean {
   if (Math.abs(a.length - b.length) > limit) return false;
   const rows = a.length + 1;
   const cols = b.length + 1;

@@ -13,6 +13,8 @@ type Review = {
   body: string | null;
   createdAt: string;
   response: string | null;
+  /** Set when the reviewer changed their stars or words after posting. */
+  editedAt?: string | null;
 };
 
 export default function StoreReviews({
@@ -35,6 +37,13 @@ export default function StoreReviews({
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Editing your own review
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editHover, setEditHover] = useState(0);
+  const [editBody, setEditBody] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
 
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -98,8 +107,38 @@ export default function StoreReviews({
     }
   }
 
+  function startEdit(r: Review) {
+    setEditingId(r.id);
+    setEditRating(r.rating);
+    setEditBody(r.body ?? "");
+    setEditError(null);
+  }
+
+  async function saveEdit(id: string) {
+    if (busy || !currentUserId || editRating < 1) return;
+    setBusy(true);
+    setEditError(null);
+    const text = editBody.trim() || null;
+    const { error: upError } = await supabase
+      .from("store_reviews")
+      .update({ rating: editRating, body: text })
+      .eq("id", id)
+      .eq("user_id", currentUserId);
+    setBusy(false);
+    if (upError) {
+      setEditError("Couldn't save your changes. Please try again.");
+      return;
+    }
+    const now = new Date().toISOString();
+    setReviews((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, rating: editRating, body: text, editedAt: now } : r))
+    );
+    setEditingId(null);
+  }
+
   async function removeReview(id: string) {
     if (busy) return;
+    if (!window.confirm("Delete your review?")) return;
     setBusy(true);
     try {
       const { error: delError } = await supabase
@@ -221,7 +260,17 @@ export default function StoreReviews({
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-ocean-500 text-xs">
                     {new Date(r.createdAt).toLocaleDateString()}
+                    {r.editedAt ? " · Edited" : ""}
                   </span>
+                  {r.userId === currentUserId && editingId !== r.id && (
+                    <button
+                      onClick={() => startEdit(r)}
+                      aria-label="Edit review"
+                      className="text-ocean-400 hover:text-white transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   {r.userId === currentUserId && (
                     <button
                       onClick={() => removeReview(r.id)}
@@ -234,10 +283,61 @@ export default function StoreReviews({
                   )}
                 </div>
               </div>
-              {r.body && (
-                <p className="text-ocean-200 text-sm mt-2 whitespace-pre-wrap">
-                  {r.body}
-                </p>
+              {editingId === r.id ? (
+                <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
+                  <div className="mb-2 flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setEditRating(n)}
+                        onMouseEnter={() => setEditHover(n)}
+                        onMouseLeave={() => setEditHover(0)}
+                        aria-label={`${n} star`}
+                        className="p-0.5"
+                      >
+                        <Star
+                          className={
+                            "h-6 w-6 transition-colors " +
+                            ((editHover || editRating) >= n
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-ocean-600 hover:text-ocean-400")
+                          }
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={editBody}
+                    onChange={(e) => setEditBody(e.target.value)}
+                    rows={3}
+                    maxLength={2000}
+                    placeholder="How was your visit? (optional)"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white placeholder:text-ocean-400 focus:border-emerald-500/40 focus:outline-none sm:text-sm"
+                  />
+                  {editError && <p className="mt-2 text-xs text-red-300">{editError}</p>}
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={() => saveEdit(r.id)}
+                      disabled={busy || editRating < 1}
+                      className="rounded-lg bg-emerald-500 px-3.5 py-1.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400 disabled:opacity-50"
+                    >
+                      {busy ? "Saving…" : "Save changes"}
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="rounded-lg border border-white/10 px-3.5 py-1.5 text-sm text-ocean-300 transition-colors hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                r.body && (
+                  <p className="text-ocean-200 text-sm mt-2 whitespace-pre-wrap">
+                    {r.body}
+                  </p>
+                )
               )}
 
               {respondingId === r.id ? (
@@ -330,7 +430,15 @@ export default function StoreReviews({
         </p>
       ) : myReview ? (
         <p className="text-sm text-ocean-400">
-          You&apos;ve reviewed this store. Thanks for sharing!
+          You&apos;ve reviewed this store. Thanks for sharing!{" "}
+          {editingId !== myReview.id && (
+            <button
+              onClick={() => startEdit(myReview)}
+              className="font-medium text-emerald-400 hover:text-emerald-300"
+            >
+              Edit your review
+            </button>
+          )}
         </p>
       ) : (
         <div className="rounded-2xl bg-white/5 border border-white/10 p-5">

@@ -3,6 +3,8 @@ import { popularityRank } from "@/lib/tankBuilder/popular";
 export type Species = {
   slug: string;
   common_name: string;
+  /** Other names people search by ("Weather Loach", "Golden Leopard Dojo"). */
+  also_known_as?: string[] | null;
   scientific_name: string | null;
   group_name: string | null;
   water_type: string | null;
