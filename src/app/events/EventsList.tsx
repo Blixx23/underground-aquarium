@@ -10,6 +10,7 @@ import {
   Users,
   Navigation,
 } from "lucide-react";
+import { DEFAULT_EVENT_IMAGE } from "@/lib/eventTime";
 
 export type EventCard = {
   id: string;
@@ -164,17 +165,18 @@ export default function EventsList({ events }: { events: EventCard[] }) {
             <Link
               key={ev.id}
               href={`/events/${ev.slug}`}
-              className="block rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+              className="group flex flex-col sm:flex-row rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
             >
-              {ev.cover_image && (
-                // eslint-disable-next-line @next/next/no-img-element
+              <div className="relative shrink-0 overflow-hidden bg-ocean-950 aspect-[1200/630] sm:aspect-auto sm:w-64 sm:min-h-[170px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={ev.cover_image}
+                  src={ev.cover_image || DEFAULT_EVENT_IMAGE}
                   alt=""
-                  className="w-full h-40 object-cover"
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                 />
-              )}
-              <div className="p-5">
+              </div>
+              <div className="p-5 min-w-0 flex-1">
                 <p className="text-emerald-400 text-sm font-medium flex items-center gap-1.5">
                   <Calendar className="w-4 h-4" />
                   {formatWhen(ev.starts_at, ev.timezone)}

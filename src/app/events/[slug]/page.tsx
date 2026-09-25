@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import EventRsvp from "../EventRsvp";
 import EditEvent from "../EditEvent";
 import ShareButton from "../ShareButton";
+import { DEFAULT_EVENT_IMAGE, tzLabel } from "@/lib/eventTime";
 
 export const dynamic = "force-dynamic";
 
@@ -64,14 +65,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     (data.description as string | null) ??
     "An aquarium event on Underground Aquarium.";
   const url = `https://www.undergroundaquarium.com/events/${slug}`;
-  const images = data.cover_image ? [data.cover_image as string] : undefined;
+  const images = [
+    (data.cover_image as string | null) ||
+      `https://www.undergroundaquarium.com${DEFAULT_EVENT_IMAGE}`,
+  ];
 
   return {
     title,
     description,
     openGraph: { title, description, url, type: "website", images },
     twitter: {
-      card: images ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
       images,
@@ -219,19 +223,23 @@ export default async function EventDetailPage({ params }: Params) {
                 state: (ev.state as string | null) ?? null,
                 postal_code: (ev.postal_code as string | null) ?? null,
                 capacity: (ev.capacity as number | null) ?? null,
+                timezone: (ev.timezone as string | null) ?? null,
+                event_type: (ev.event_type as string | null) ?? null,
+                is_ticketed: (ev.is_ticketed as boolean | null) ?? null,
+                show_in_directory: (ev.show_in_directory as boolean | null) ?? null,
                 cover_image: (ev.cover_image as string | null) ?? null,
               }}
             />
           ))}
 
-        {ev.cover_image && (
-          // eslint-disable-next-line @next/next/no-img-element
+        <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-ocean-950 aspect-[1200/630]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={ev.cover_image as string}
-            alt=""
-            className="w-full h-56 object-cover rounded-2xl mb-6"
+            src={(ev.cover_image as string | null) || DEFAULT_EVENT_IMAGE}
+            alt={ev.cover_image ? (ev.title as string) : "Underground Aquarium event"}
+            className="absolute inset-0 h-full w-full object-cover"
           />
-        )}
+        </div>
 
         <h1 className="font-display text-3xl sm:text-4xl text-white mb-3">
           {ev.title}
@@ -264,6 +272,9 @@ export default async function EventDetailPage({ params }: Params) {
                     ev.timezone as string | null
                   )}`
                 : ""}
+              {ev.timezone && !ev.is_online ? (
+                <span className="text-ocean-500"> · {tzLabel(ev.timezone as string)} time</span>
+              ) : null}
             </p>
           </div>
 
