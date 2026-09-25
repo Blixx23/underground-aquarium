@@ -74,16 +74,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
 
-  const { data } = await supabasePublic
+  // Session-aware, like the page: an owner can still open their own draft
+  // or sold ad, everyone else gets a real 404. Deciding here, before the page
+  // streams, is what gives search engines a true 404 instead of a soft one.
+  const supabase = await createClient();
+  const { data } = await supabase
     .from("listings")
-    .select(`${LISTING_COLUMNS}, expires_at`)
+    .select(`${LISTING_COLUMNS}, expires_at, status`)
     .eq("slug", slug)
-    .eq("status", "active")
     .maybeSingle();
 
-  if (!data) return { title: "Listing not found", robots: { index: false } };
+  if (!data) notFound();
 
-  const l = data as unknown as Listing & { expires_at: string | null };
+  const l = data as unknown as Listing & { expires_at: string | null; status: string };
+  if (l.status !== "active") return { title: l.title, robots: { index: false, follow: false } };
   const { data: regionRow } = await supabasePublic
     .from("market_regions")
     .select("name")
