@@ -5,7 +5,7 @@
  */
 
 export const DEFAULT_EVENT_TZ = "America/Los_Angeles";
-export const DEFAULT_EVENT_IMAGE = "/event-default.png";
+export const DEFAULT_EVENT_IMAGE = "/event-default.jpg";
 
 export const US_TIMEZONES: { value: string; label: string }[] = [
   { value: "America/New_York", label: "Eastern" },
