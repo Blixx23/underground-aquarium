@@ -283,9 +283,9 @@ export default function NotificationBell({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[380px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-ocean-700/50 bg-ocean-950/95 shadow-2xl shadow-black/70 backdrop-blur-xl z-50">
+        <div className="fixed inset-x-3 top-[4.5rem] z-50 flex max-h-[calc(100dvh-6rem)] flex-col overflow-hidden rounded-2xl border border-ocean-700/70 bg-[#06182b] font-sans shadow-2xl shadow-black/80 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[400px] sm:max-h-[min(80vh,640px)]">
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
-            <span className="font-display text-xl text-white">Notifications</span>
+            <span className="text-xl font-bold text-white">Notifications</span>
             <div className="flex items-center gap-1">
               {unread > 0 && (
                 <button
@@ -312,7 +312,7 @@ export default function NotificationBell({
                 key={t}
                 onClick={() => setTab(t)}
                 className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  tab === t ? "bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/30" : "text-ocean-300 hover:bg-ocean-800/60"
+                  tab === t ? "bg-sky-500/20 text-sky-100 ring-1 ring-sky-400/40" : "text-slate-300 hover:bg-[#0c2640]"
                 }`}
               >
                 {t === "all" ? "All" : `Unread${unread ? ` (${unread})` : ""}`}
@@ -320,7 +320,7 @@ export default function NotificationBell({
             ))}
           </div>
 
-          <div className="max-h-[min(70vh,560px)] overflow-y-auto px-2 pb-2">
+          <div data-scrollbox className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
             {shown.length === 0 ? (
               <div className="px-4 py-10 text-center">
                 <Bell className="mx-auto mb-2 h-7 w-7 text-ocean-600" />

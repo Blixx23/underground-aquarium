@@ -36,7 +36,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!s) return { title: "Species not found" };
+  // Done here as well as in the page: metadata resolves before the page
+  // starts streaming, so search engines get a real 308/404 status instead
+  // of a 200 with a meta refresh.
+  if (!s) {
+    const alt = await matchSpeciesSlug(slug);
+    if (alt) permanentRedirect(`/species/${alt}`);
+    notFound();
+  }
 
   const full = s.scientific_name
     ? `${s.common_name} (${s.scientific_name})`

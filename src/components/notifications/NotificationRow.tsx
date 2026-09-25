@@ -66,6 +66,7 @@ export default function NotificationRow({
   onMute: (n: Notification) => void;
 }) {
   const [menu, setMenu] = useState(false);
+  const [up, setUp] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const kind = kindOf(n.type);
   const Icon = ICONS[kind.icon];
@@ -100,9 +101,9 @@ export default function NotificationRow({
       onKeyDown={(e) => {
         if (e.key === "Enter") onOpen(n);
       }}
-      className={`group relative flex cursor-pointer items-start gap-3 rounded-xl text-left transition-colors hover:bg-ocean-800/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-sky-400/50 ${
-        compact ? "px-3 py-2.5" : "px-4 py-3.5"
-      } ${n.read ? "" : "bg-sky-500/[0.06]"}`}
+      className={`group relative flex cursor-pointer items-start gap-3 rounded-xl text-left font-sans transition-colors hover:bg-[#0c2640] focus:outline-none focus-visible:ring-1 focus-visible:ring-sky-400/50 ${
+        compact ? "px-3 py-3" : "px-4 py-3.5"
+      } ${n.read ? "" : "bg-[#0a2035]"} ${menu ? "z-30" : ""}`}
     >
       <span
         className={`flex shrink-0 items-center justify-center rounded-full ring-1 ${TONES[kind.tone]} ${
@@ -112,22 +113,22 @@ export default function NotificationRow({
         <Icon className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
       </span>
 
-      <span className="min-w-0 flex-1 pr-7">
-        <span className={`block text-sm leading-snug ${n.read ? "text-ocean-300" : "font-semibold text-white"}`}>
+      <span className="min-w-0 flex-1 pr-14">
+        <span className={`block text-[15px] leading-snug ${n.read ? "text-slate-200" : "font-semibold text-white"}`}>
           {n.title}
         </span>
         {n.body && (
-          <span className={`mt-0.5 block text-[13px] leading-snug text-ocean-400 ${compact ? "line-clamp-2" : ""}`}>
+          <span className={`mt-0.5 block text-sm leading-snug text-slate-400 ${compact ? "line-clamp-2" : ""}`}>
             {n.body}
           </span>
         )}
-        <span className={`mt-1 block text-xs ${n.read ? "text-ocean-600" : "font-medium text-sky-400"}`}>
+        <span className={`mt-1 block text-xs ${n.read ? "text-slate-500" : "font-semibold text-sky-400"}`}>
           {timeAgo(n.created_at)}
         </span>
       </span>
 
       {!n.read && (
-        <span className="absolute right-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-sky-400 group-hover:opacity-0" aria-label="Unread" />
+        <span className="absolute right-12 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-sky-400" aria-label="Unread" />
       )}
 
       <div ref={menuRef} className="absolute right-1.5 top-1/2 -translate-y-1/2">
@@ -136,20 +137,25 @@ export default function NotificationRow({
           aria-label="Notification options"
           onClick={(e) => {
             e.stopPropagation();
+            // Near the bottom of the screen or a scroll box, open upward so it isn't cut off.
+            const r = e.currentTarget.getBoundingClientRect();
+            const box = e.currentTarget.closest("[data-scrollbox]")?.getBoundingClientRect();
+            const floor = Math.min(window.innerHeight, box?.bottom ?? Infinity);
+            setUp(floor - r.bottom < 170);
             setMenu((m) => !m);
           }}
-          className={`flex h-8 w-8 items-center justify-center rounded-full bg-ocean-900/90 text-ocean-300 ring-1 ring-ocean-700/60 transition-opacity hover:text-white ${
+          className={`flex h-9 w-9 items-center justify-center rounded-full bg-[#0f2a45] text-slate-200 ring-1 ring-ocean-700/70 transition-opacity hover:bg-[#15375a] hover:text-white ${
             menu ? "opacity-100" : "opacity-0 focus:opacity-100 group-hover:opacity-100"
           } [@media(hover:none)]:opacity-100`}
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>
         {menu && (
-          <div className="absolute right-0 top-9 z-20 w-64 overflow-hidden rounded-xl border border-ocean-700/60 bg-ocean-900 py-1 shadow-2xl shadow-black/60">
+          <div className={`absolute right-0 ${up ? "bottom-10" : "top-10"} z-40 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-ocean-600/60 bg-[#0b2238] py-1 shadow-2xl shadow-black/80`}>
             <button
               type="button"
               onClick={(e) => act(e, () => onToggleRead(n))}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-ocean-100 hover:bg-ocean-800/70"
+              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-white hover:bg-[#15375a]"
             >
               {n.read ? <Circle className="h-4 w-4 text-sky-300" /> : <Check className="h-4 w-4 text-sky-300" />}
               {n.read ? "Mark as unread" : "Mark as read"}
@@ -157,7 +163,7 @@ export default function NotificationRow({
             <button
               type="button"
               onClick={(e) => act(e, () => onRemove(n))}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-ocean-100 hover:bg-ocean-800/70"
+              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-white hover:bg-[#15375a]"
             >
               <Trash2 className="h-4 w-4 text-ocean-400" />
               Remove this notification
@@ -166,7 +172,7 @@ export default function NotificationRow({
               <button
                 type="button"
                 onClick={(e) => act(e, () => onMute(n))}
-                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-ocean-100 hover:bg-ocean-800/70"
+                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-white hover:bg-[#15375a]"
               >
                 {muted ? <Bell className="h-4 w-4 text-ocean-400" /> : <BellOff className="h-4 w-4 text-ocean-400" />}
                 {muted ? `Turn ${kind.label} back on` : `Turn off ${kind.label}`}

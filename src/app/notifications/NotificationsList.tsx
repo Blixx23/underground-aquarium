@@ -118,11 +118,11 @@ export default function NotificationsList({
 
   const chip = (on: boolean) =>
     `rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-      on ? "bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/30" : "text-ocean-300 hover:bg-ocean-800/60 hover:text-white"
+      on ? "bg-sky-500/20 text-sky-100 ring-1 ring-sky-400/40" : "text-slate-300 hover:bg-[#0c2640] hover:text-white"
     }`;
 
   return (
-    <div>
+    <div className="font-sans">
       {/* Tabs and bulk actions */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
@@ -183,7 +183,7 @@ export default function NotificationsList({
           {groups.map((g) => (
             <section key={g.label}>
               <h2 className="mb-1.5 px-1 text-sm font-semibold text-white">{g.label}</h2>
-              <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-1.5">
+              <div className="rounded-2xl border border-ocean-800/70 bg-[#051424] p-1.5">
                 {g.items.map((n) => (
                   <NotificationRow
                     key={n.id}

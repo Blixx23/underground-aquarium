@@ -98,7 +98,9 @@ async function getStore(slug: string) {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const store = await getStore(slug);
-  if (!store) return { title: "Store not found" };
+  // Metadata resolves before the page streams, so this gives search engines
+  // a real 404 instead of a 200 "not found" page.
+  if (!store) notFound();
 
   const place = [store.city, store.state].filter(Boolean).join(", ");
   // "Name: Aquarium Store in City, ST" matches both "name + city" searches

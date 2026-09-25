@@ -10,6 +10,9 @@ export const revalidate = 3600;
 
 type Params = { params: Promise<{ slug: string }> };
 
+type Section = { heading: string; text: string };
+type Faq = { q: string; a: string };
+
 export async function generateStaticParams() {
   const { data } = await supabasePublic.from("glossary_terms").select("slug");
   return (data ?? []).map((t) => ({ slug: t.slug as string }));
@@ -19,15 +22,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const { data: term } = await supabasePublic
     .from("glossary_terms")
-    .select("term, definition")
+    .select("term, definition, seo_title")
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!term) return { title: "Term not found" };
+  // Before the page streams, so a missing term is a real 404 to Google.
+  if (!term) notFound();
 
+  // People search "what is brackish water", so lead with the question.
+  const title = (term.seo_title as string | null) || `What Is ${term.term}? Meaning for Fish Tanks`;
   return {
-    title: term.term,
+    title,
     description: term.definition,
+    openGraph: { title, description: term.definition, url: `/glossary/${slug}`, type: "article" },
     alternates: { canonical: `/glossary/${slug}` },
   };
 }
@@ -37,7 +44,7 @@ export default async function TermPage({ params }: Params) {
 
   const { data: term } = await supabasePublic
     .from("glossary_terms")
-    .select("slug, term, category, definition, body")
+    .select("slug, term, category, definition, body, sections, faq")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -52,6 +59,9 @@ export default async function TermPage({ params }: Params) {
     .limit(8);
 
   const guides = await relatedThreads({ terms: [term.term as string], limit: 4 });
+
+  const sections = (Array.isArray(term.sections) ? term.sections : []) as Section[];
+  const faq = (Array.isArray(term.faq) ? term.faq : []) as Faq[];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -89,6 +99,48 @@ export default async function TermPage({ params }: Params) {
           {term.definition}
         </p>
         <p className="text-ocean-300 leading-relaxed mb-10">{term.body}</p>
+
+        {/* The full write-up, where a term has one. */}
+        {sections.length > 0 && (
+          <div className="mb-10 space-y-8">
+            {sections.map((sec) => (
+              <section key={sec.heading}>
+                <h2 className="font-display text-2xl text-white mb-3">{sec.heading}</h2>
+                {sec.text.split(/\n\n+/).map((para, i) =>
+                  para.trim().startsWith("- ") ? (
+                    <ul key={i} className="mb-3 list-disc space-y-1.5 pl-5 text-ocean-200 leading-relaxed">
+                      {para
+                        .split(/\n/)
+                        .map((l) => l.replace(/^-\s*/, "").trim())
+                        .filter(Boolean)
+                        .map((l, j) => (
+                          <li key={j}>{l}</li>
+                        ))}
+                    </ul>
+                  ) : (
+                    <p key={i} className="mb-3 text-ocean-200 leading-relaxed">
+                      {para}
+                    </p>
+                  )
+                )}
+              </section>
+            ))}
+          </div>
+        )}
+
+        {faq.length > 0 && (
+          <section className="mb-12">
+            <h2 className="font-display text-2xl text-white mb-4">Common questions</h2>
+            <dl className="space-y-5">
+              {faq.map((f) => (
+                <div key={f.q} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5">
+                  <dt className="font-medium text-white">{f.q}</dt>
+                  <dd className="mt-1.5 text-ocean-200 leading-relaxed">{f.a}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
 
         <div className="-mt-6 mb-10 flex flex-wrap gap-2">
           <Link
