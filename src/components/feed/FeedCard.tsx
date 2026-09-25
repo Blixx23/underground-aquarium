@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Heart,
@@ -13,6 +13,9 @@ import {
   Trash2,
   Link2,
   MessagesSquare,
+  Share2,
+  Pencil,
+  Loader2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
@@ -20,9 +23,11 @@ import SocietySeal from "@/components/society/SocietySeal";
 import ReportButton from "@/components/ReportButton";
 import BlockButton from "@/components/BlockButton";
 import Comments from "@/components/feed/Comments";
+import LikersSheet from "@/components/feed/LikersSheet";
+import PhotoViewer from "@/components/feed/PhotoViewer";
 import { formatPrice } from "@/lib/marketplace/listings";
 import { categoryLabel } from "@/lib/marketplace/categories";
-import { timeAgo, type FeedItem } from "@/lib/feed";
+import { canCommentInFeed, feedItemPath, timeAgo, type FeedItem } from "@/lib/feed";
 
 const ACTIVITY: Record<
   Exclude<FeedItem["kind"], "post">,
@@ -36,8 +41,9 @@ const ACTIVITY: Record<
 };
 
 /**
- * One item in the feed. Posts get the full treatment (photos, likes,
- * comments); activity is a compact card that links to the real thing.
+ * One item in the feed. Everything can be liked, shared and (except forum
+ * discussions, which reply in the forum) commented on, the way people expect
+ * from any social feed.
  */
 export default function FeedCard({
   item,
@@ -57,32 +63,103 @@ export default function FeedCard({
   const [likes, setLikes] = useState(item.like_count);
   const [comments, setComments] = useState(item.comment_count);
   const [open, setOpen] = useState(startOpen);
+  const [focusBox, setFocusBox] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showLikers, setShowLikers] = useState(false);
+  const [viewer, setViewer] = useState<number | null>(null);
+  const [burst, setBurst] = useState(false);
+  const [body, setBody] = useState(item.body);
+  const [edited, setEdited] = useState(Boolean(item.meta?.edited));
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(item.body ?? "");
+  const [saving, setSaving] = useState(false);
+  const liking = useRef(false);
 
   const profileHref = item.author_username ? `/u/${item.author_username}` : "#";
   const isPost = item.kind === "post";
   const isMine = viewerId === item.user_id;
+  const commentable = canCommentInFeed(item.kind);
+  const threadReplies = item.kind === "thread" ? Number(item.meta?.replies ?? 0) : 0;
+  const closeLikers = useCallback(() => setShowLikers(false), []);
+  const closeViewer = useCallback(() => setViewer(null), []);
 
-  async function like() {
-    if (!viewerId) {
-      window.location.href = "/login";
-      return;
-    }
+  function flash(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 1600);
+  }
+
+  function needLogin(): boolean {
+    if (viewerId) return false;
+    window.location.href = `/login?next=${encodeURIComponent(feedItemPath(item))}`;
+    return true;
+  }
+
+  async function like(force?: boolean) {
+    if (needLogin() || liking.current) return;
+    // Double-tap only ever likes; it never un-likes.
+    if (force && liked) return;
+    liking.current = true;
+    const was = liked;
+    const wasCount = likes;
     // Optimistic: the heart responds instantly, the database has the final word.
-    setLiked(!liked);
-    setLikes((n) => n + (liked ? -1 : 1));
-    const { data, error: err } = await supabase.rpc("toggle_feed_like", { p_post: item.id });
-    const row = Array.isArray(data) ? data[0] : data;
+    setLiked(!was);
+    setLikes(Math.max(0, wasCount + (was ? -1 : 1)));
+    const { data, error: err } = await supabase.rpc("toggle_feed_reaction", { p_kind: item.kind, p_id: item.id });
+    const row = (Array.isArray(data) ? data[0] : data) as { liked: boolean; like_count: number } | null;
     if (err || !row) {
-      setLiked(liked);
-      setLikes(item.like_count);
+      setLiked(was);
+      setLikes(wasCount);
       setError(err?.message ?? "Couldn't like that.");
-      return;
+    } else {
+      setLiked(row.liked);
+      setLikes(row.like_count);
+      setError(null);
     }
-    setLiked(row.liked);
-    setLikes(row.like_count);
+    liking.current = false;
+  }
+
+  function doubleTapLike() {
+    setBurst(true);
+    setTimeout(() => setBurst(false), 700);
+    like(true);
+  }
+
+  function openComments() {
+    if (!commentable) return;
+    setOpen(true);
+    setFocusBox(true);
+  }
+
+  async function share() {
+    const url = `${window.location.origin}${feedItemPath(item)}`;
+    const title = isPost ? `Post by ${item.author_name}` : item.title ?? "Underground Aquarium";
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch (e) {
+        // They closed the share sheet: nothing to do.
+        if ((e as Error)?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      flash("Link copied");
+    } catch {
+      setError("Couldn't copy the link.");
+    }
+  }
+
+  async function copyLink() {
+    setMenu(false);
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${feedItemPath(item)}`);
+      flash("Link copied");
+    } catch {
+      /* ignore */
+    }
   }
 
   async function remove() {
@@ -94,15 +171,30 @@ export default function FeedCard({
     else window.location.href = "/feed";
   }
 
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/feed/${item.id}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* ignore */
-    }
+  function startEdit() {
     setMenu(false);
+    setDraft(body ?? "");
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    const text = draft.trim();
+    if (saving) return;
+    if (text === (body ?? "").trim()) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    const { error: err } = await supabase.rpc("edit_feed_post", { p_id: item.id, p_body: text });
+    setSaving(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setBody(text);
+    setEdited(true);
+    setEditing(false);
+    setError(null);
   }
 
   const header = (
@@ -112,12 +204,7 @@ export default function FeedCard({
       </Link>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <Link
-            href={profileHref}
-            className={`truncate text-[15px] font-semibold hover:underline ${
-              "text-white"
-            }`}
-          >
+          <Link href={profileHref} className="truncate text-[15px] font-semibold text-white hover:underline">
             {item.author_name}
           </Link>
           {item.author_society && (
@@ -126,7 +213,7 @@ export default function FeedCard({
             </span>
           )}
         </div>
-        <p className="truncate text-xs text-ocean-500">
+        <p className="truncate text-xs text-ocean-400">
           {!isPost && (
             <span className={ACTIVITY[item.kind as Exclude<FeedItem["kind"], "post">].tone}>
               {ACTIVITY[item.kind as Exclude<FeedItem["kind"], "post">].verb}
@@ -141,33 +228,50 @@ export default function FeedCard({
           ) : (
             timeAgo(item.created_at)
           )}
+          {isPost && edited && " · Edited"}
         </p>
       </div>
 
-      {isPost && (
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setMenu((m) => !m)}
-            className="rounded-lg p-1.5 text-ocean-500 transition-colors hover:bg-white/5 hover:text-white"
-            aria-label="Post options"
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </button>
-          {menu && (
-            <div className="absolute right-0 top-9 z-20 w-52 rounded-xl border border-ocean-800/70 bg-ocean-950 p-1.5 shadow-2xl shadow-black/60">
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setMenu((m) => !m)}
+          className="rounded-lg p-1.5 text-ocean-400 transition-colors hover:bg-white/5 hover:text-white"
+          aria-label="More options"
+          aria-expanded={menu}
+        >
+          <MoreHorizontal className="h-5 w-5" />
+        </button>
+        {menu && (
+          <>
+            <button
+              type="button"
+              aria-label="Close menu"
+              className="fixed inset-0 z-10 cursor-default"
+              onClick={() => setMenu(false)}
+            />
+            <div className="absolute right-0 top-9 z-20 w-56 rounded-xl border border-ocean-700/70 bg-[#06182b] p-1.5 shadow-2xl shadow-black/70">
+              {isPost && isMine && (
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-ocean-100 hover:bg-white/5"
+                >
+                  <Pencil className="h-4 w-4" /> Edit post
+                </button>
+              )}
               <button
                 type="button"
                 onClick={copyLink}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ocean-200 hover:bg-white/5"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-ocean-100 hover:bg-white/5"
               >
                 <Link2 className="h-4 w-4" /> Copy link
               </button>
-              {(isMine || viewerIsAdmin) && (
+              {isPost && (isMine || viewerIsAdmin) && (
                 <button
                   type="button"
                   onClick={remove}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-coral-300 hover:bg-white/5"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-coral-300 hover:bg-white/5"
                 >
                   <Trash2 className="h-4 w-4" /> Delete post
                 </button>
@@ -181,7 +285,7 @@ export default function FeedCard({
                   />
                 </div>
               )}
-              {!isMine && (
+              {isPost && !isMine && (
                 <div className="px-3 py-2">
                   <ReportButton
                     targetType="feed_post"
@@ -192,100 +296,225 @@ export default function FeedCard({
                 </div>
               )}
             </div>
-          )}
-          {copied && (
-            <span className="absolute right-0 top-9 rounded-lg bg-ocean-800 px-2 py-1 text-xs text-white">
-              Copied
-            </span>
-          )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 
+  const commentLabel = comments === 1 ? "1 comment" : `${comments} comments`;
+  const showCounts = likes > 0 || (commentable ? comments > 0 : threadReplies > 0);
+
   return (
-    <article className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40">
+    <article className="relative rounded-2xl border border-ocean-800/60 bg-ocean-900/40 font-sans">
       <div className="p-4 sm:p-5">
         {header}
 
         {isPost ? (
-          <>
-            {item.body && (
-              <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ocean-100">
-                {item.body}
-              </p>
-            )}
-          </>
+          editing ? (
+            <div className="mt-3">
+              <textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                maxLength={2000}
+                rows={Math.min(10, Math.max(3, draft.split("\n").length + 1))}
+                autoFocus
+                className="w-full resize-y rounded-xl border border-ocean-700/70 bg-ocean-950/70 px-3.5 py-2.5 text-base leading-relaxed text-white focus:border-ocean-500 focus:outline-none sm:text-[15px]"
+              />
+              <div className="mt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="rounded-lg px-3 py-2 text-sm text-ocean-300 hover:bg-white/5 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveEdit}
+                  disabled={saving || (!draft.trim() && item.images.length === 0)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-ocean-600 px-4 py-2 text-sm font-semibold text-white hover:bg-ocean-500 disabled:opacity-40"
+                >
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            body && (
+              <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ocean-50">{body}</p>
+            )
+          )
         ) : (
           <ActivityBody item={item} />
         )}
       </div>
 
-      {isPost && item.images.length > 0 && <Photos images={item.images} />}
-
-      {isPost && (
-        <>
-          <div className="flex items-center gap-1 px-2 py-1.5 sm:px-3">
-            <button
-              type="button"
-              onClick={like}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5 ${
-                liked ? "text-coral-400" : "text-ocean-400 hover:text-white"
-              }`}
-              aria-pressed={liked}
-            >
-              <Heart className={`h-[18px] w-[18px] ${liked ? "fill-current" : ""}`} />
-              {likes > 0 && likes}
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpen((o) => !o)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-ocean-400 transition-colors hover:bg-white/5 hover:text-white"
-            >
-              <MessageCircle className="h-[18px] w-[18px]" />
-              {comments > 0 ? comments : "Comment"}
-            </button>
-          </div>
-          {error && <p className="px-5 pb-3 text-sm text-coral-300">{error}</p>}
-          {open && (
-            <Comments
-              postId={item.id}
-              postOwnerId={item.user_id}
-              viewerId={viewerId}
-              onCountChange={setComments}
-            />
+      {isPost && item.images.length > 0 && (
+        <div className="relative">
+          <Photos images={item.images} onOpen={setViewer} onDoubleTap={doubleTapLike} />
+          {burst && (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <Heart className="h-24 w-24 animate-ping fill-coral-400 text-coral-400 drop-shadow-2xl" />
+            </span>
           )}
-        </>
+        </div>
       )}
+
+      {showCounts && (
+        <div className="flex items-center justify-between gap-3 px-4 pt-2.5 text-[13px] text-ocean-300 sm:px-5">
+          {likes > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowLikers(true)}
+              className="inline-flex items-center gap-1.5 hover:underline"
+            >
+              <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-coral-500">
+                <Heart className="h-2.5 w-2.5 fill-white text-white" />
+              </span>
+              {likes}
+            </button>
+          ) : (
+            <span />
+          )}
+          {commentable && comments > 0 && (
+            <button type="button" onClick={() => setOpen((o) => !o)} className="hover:underline">
+              {commentLabel}
+            </button>
+          )}
+          {!commentable && threadReplies > 0 && item.href && (
+            <Link href={item.href} className="hover:underline">
+              {threadReplies} {threadReplies === 1 ? "reply" : "replies"}
+            </Link>
+          )}
+        </div>
+      )}
+
+      <div className="mx-3 mt-1.5 grid grid-cols-3 border-t border-ocean-800/50 py-1 sm:mx-4">
+        <button
+          type="button"
+          onClick={() => like()}
+          className={`inline-flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-colors hover:bg-white/5 ${
+            liked ? "text-coral-400" : "text-ocean-300 hover:text-white"
+          }`}
+          aria-pressed={liked}
+        >
+          <Heart className={`h-[18px] w-[18px] transition-transform ${liked ? "scale-110 fill-current" : ""}`} />
+          Like
+        </button>
+        {commentable ? (
+          <button
+            type="button"
+            onClick={() => (open ? setOpen(false) : openComments())}
+            className="inline-flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-ocean-300 transition-colors hover:bg-white/5 hover:text-white"
+            aria-expanded={open}
+          >
+            <MessageCircle className="h-[18px] w-[18px]" />
+            Comment
+          </button>
+        ) : (
+          <Link
+            href={item.href ?? "/forums"}
+            className="inline-flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-ocean-300 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <MessagesSquare className="h-[18px] w-[18px]" />
+            Reply
+          </Link>
+        )}
+        <button
+          type="button"
+          onClick={share}
+          className="inline-flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-ocean-300 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          <Share2 className="h-[18px] w-[18px]" />
+          Share
+        </button>
+      </div>
+
+      {error && <p className="px-5 pb-3 text-sm text-coral-300">{error}</p>}
+
+      {open && commentable && (
+        <Comments
+          kind={item.kind}
+          postId={item.id}
+          postOwnerId={item.user_id}
+          viewerId={viewerId}
+          viewerIsAdmin={viewerIsAdmin}
+          autoFocus={focusBox}
+          onCountChange={setComments}
+        />
+      )}
+
+      {toast && (
+        <span className="pointer-events-none absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-full bg-ocean-700 px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
+          {toast}
+        </span>
+      )}
+
+      {showLikers && <LikersSheet kind={item.kind} id={item.id} onClose={closeLikers} />}
+      {viewer !== null && <PhotoViewer images={item.images} start={viewer} onClose={closeViewer} />}
     </article>
   );
 }
 
-/** One photo full-width; two to four in a fixed-shape grid so nothing jumps as they load. */
-function Photos({ images }: { images: string[] }) {
-  if (images.length === 1) {
+/**
+ * One photo full-width; two to four in a fixed-shape grid so nothing jumps as
+ * they load. Tap opens the viewer, double-tap likes.
+ */
+function Photos({
+  images,
+  onOpen,
+  onDoubleTap,
+}: {
+  images: string[];
+  onOpen: (i: number) => void;
+  onDoubleTap: () => void;
+}) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function tap(i: number) {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+      onDoubleTap();
+      return;
+    }
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      onOpen(i);
+    }, 260);
+  }
+
+  const shown = images.slice(0, 4);
+  const extra = images.length - shown.length;
+
+  if (shown.length === 1) {
     return (
-      <a href={images[0]} target="_blank" rel="noopener noreferrer" className="block bg-ocean-950">
+      <button type="button" onClick={() => tap(0)} className="block w-full bg-ocean-950" aria-label="Open photo">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={images[0]} alt="" loading="lazy" className="max-h-[560px] w-full object-cover" />
-      </a>
+        <img src={shown[0]} alt="" loading="lazy" className="max-h-[560px] w-full object-cover" />
+      </button>
     );
   }
-  const shape =
-    images.length === 2 ? "aspect-[2/1] grid-cols-2" : "aspect-[4/3] grid-cols-2 grid-rows-2";
+  const shape = shown.length === 2 ? "aspect-[2/1] grid-cols-2" : "aspect-[4/3] grid-cols-2 grid-rows-2";
   return (
     <div className={`grid gap-0.5 bg-ocean-950 ${shape}`}>
-      {images.map((src, i) => (
-        <a
+      {shown.map((src, i) => (
+        <button
+          type="button"
           key={src}
-          href={src}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`block min-h-0 overflow-hidden ${images.length === 3 && i === 0 ? "row-span-2" : ""}`}
+          onClick={() => tap(i)}
+          aria-label={`Open photo ${i + 1}`}
+          className={`relative block min-h-0 overflow-hidden ${shown.length === 3 && i === 0 ? "row-span-2" : ""}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
-        </a>
+          {extra > 0 && i === shown.length - 1 && (
+            <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-2xl font-semibold text-white">
+              +{extra}
+            </span>
+          )}
+        </button>
       ))}
     </div>
   );
@@ -307,10 +536,7 @@ function ActivityBody({ item }: { item: FeedItem }) {
     const price = m.is_wanted ? "Wanted" : m.is_free ? "Free" : formatPrice(m.price_cents as number | null);
     sub = [price, m.category ? categoryLabel(String(m.category)) : null, m.city].filter(Boolean).join(" · ");
   } else if (item.kind === "spawn") {
-    sub = [
-      m.points ? `${m.points} points` : null,
-      m.first ? "First in the Society" : null,
-    ]
+    sub = [m.points ? `${m.points} points` : null, m.first ? "First in the Society" : null]
       .filter(Boolean)
       .join(" · ");
   } else if (item.kind === "badge") {

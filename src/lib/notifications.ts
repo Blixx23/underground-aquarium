@@ -16,14 +16,15 @@ export type Notification = {
 export const NOTIFICATION_COLUMNS = "id, type, title, body, link, read, created_at";
 
 export type Tone = "sky" | "amber" | "cyan" | "emerald" | "gold" | "coral" | "violet";
-export type IconKey = "forum" | "trophy" | "bubbles" | "message" | "store" | "review" | "society" | "sale" | "event" | "bell";
+export type IconKey = "forum" | "trophy" | "bubbles" | "message" | "store" | "review" | "society" | "sale" | "event" | "heart" | "comment" | "bell";
 
 type KindMeta = { icon: IconKey; tone: Tone; category: CategoryKey; label: string; mutable?: boolean };
 
-export type CategoryKey = "forums" | "trophies" | "society" | "shops" | "marketplace" | "other";
+export type CategoryKey = "feed" | "forums" | "trophies" | "society" | "shops" | "marketplace" | "other";
 
 /** Filter chips on the notifications page. */
 export const CATEGORIES: { key: CategoryKey; label: string }[] = [
+  { key: "feed", label: "Feed" },
   { key: "forums", label: "Forums" },
   { key: "trophies", label: "Trophies" },
   { key: "society", label: "Society" },
@@ -43,6 +44,10 @@ const KINDS: Record<string, KindMeta> = {
   review: { icon: "review", tone: "amber", category: "shops", label: "shop reviews", mutable: true },
   review_response: { icon: "review", tone: "amber", category: "shops", label: "review replies", mutable: true },
   event: { icon: "event", tone: "coral", category: "other", label: "events" },
+  feed_like: { icon: "heart", tone: "coral", category: "feed", label: "likes", mutable: true },
+  feed_comment: { icon: "comment", tone: "sky", category: "feed", label: "comments", mutable: true },
+  feed_reply: { icon: "comment", tone: "sky", category: "feed", label: "comment replies", mutable: true },
+  feed_comment_like: { icon: "heart", tone: "coral", category: "feed", label: "comment likes", mutable: true },
 };
 
 export function kindOf(type: string | null | undefined): KindMeta {

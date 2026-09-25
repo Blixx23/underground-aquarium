@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 
 /** What people can switch off. Each group covers one or more notification types. */
 const GROUPS: { key: string; label: string; sub: string; types: string[] }[] = [
+  { key: "feed_likes", label: "Feed likes", sub: "Someone likes your post, tank, listing or comment", types: ["feed_like", "feed_comment_like"] },
+  { key: "feed_comments", label: "Feed comments", sub: "Someone comments on your post or replies to your comment", types: ["feed_comment", "feed_reply"] },
   { key: "forum", label: "Forum replies", sub: "Someone replies to your post or comment", types: ["forum"] },
   { key: "trophy", label: "Trophies", sub: "You earn a new trophy", types: ["trophy"] },
   { key: "bubbles", label: "Bubbles", sub: "You earn bubbles or reach a new tier", types: ["bubbles"] },

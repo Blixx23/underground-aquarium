@@ -29,15 +29,48 @@ export type FeedItem = {
 export type FeedComment = {
   id: string;
   user_id: string;
+  parent_id: string | null;
   body: string;
   created_at: string;
   author_username: string | null;
   author_name: string;
   author_avatar: string | null;
   author_society: boolean;
+  like_count: number;
+  liked: boolean;
+};
+
+export type FeedLiker = {
+  user_id: string;
+  username: string | null;
+  name: string;
+  avatar: string | null;
+  society: boolean;
+  liked_at: string;
 };
 
 export const FEED_PAGE = 20;
+
+/** What each kind is called in a sentence ("liked your tank"). */
+export const FEED_NOUN: Record<FeedKind, string> = {
+  post: "post",
+  tank: "tank",
+  listing: "listing",
+  spawn: "spawn",
+  badge: "trophy",
+  thread: "discussion",
+};
+
+/** Kinds people can comment on inside the feed. Discussions reply in the forum. */
+export function canCommentInFeed(kind: FeedKind): boolean {
+  return kind !== "thread";
+}
+
+/** The page a feed item lives on, for sharing. */
+export function feedItemPath(item: Pick<FeedItem, "kind" | "id" | "href">): string {
+  if (item.kind === "post") return `/feed/${item.id}`;
+  return item.href ?? "/feed";
+}
 
 /** Minimal shape both the server and browser Supabase clients share. */
 type RpcClient = {

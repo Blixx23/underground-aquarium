@@ -8,7 +8,9 @@ import {
   CalendarDays,
   Check,
   Droplets,
+  Heart,
   Mail,
+  MessageCircle,
   MessageSquare,
   MoreHorizontal,
   ShoppingBag,
@@ -30,6 +32,8 @@ const ICONS: Record<IconKey, typeof Bell> = {
   society: Award,
   sale: ShoppingBag,
   event: CalendarDays,
+  heart: Heart,
+  comment: MessageCircle,
   bell: Bell,
 };
 

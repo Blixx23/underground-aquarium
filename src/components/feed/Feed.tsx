@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Waves } from "lucide-react";
+import { ArrowUp, Loader2, Waves } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import FeedCard from "@/components/feed/FeedCard";
 import Composer from "@/components/feed/Composer";
@@ -15,9 +15,14 @@ export type Viewer = {
   isAdmin: boolean;
 } | null;
 
+/** How often to check quietly for new posts while the page is open. */
+const POLL_MS = 60_000;
+
 /**
  * A feed that keeps loading as you scroll. The first page arrives from the
- * server with the page; after that it pages by time from the browser.
+ * server with the page; after that it pages by time from the browser. While
+ * it's open it checks for new posts and offers a "New posts" button rather
+ * than shoving the page around under the reader.
  */
 export default function Feed({
   scope,
@@ -44,12 +49,17 @@ export default function Feed({
   const [more, setMore] = useState(initialItems.length >= FEED_PAGE);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [fresh, setFresh] = useState(0);
   const sentinel = useRef<HTMLDivElement>(null);
+  const top = useRef<HTMLDivElement>(null);
+  const newest = useRef<string | null>(initialItems[0]?.created_at ?? null);
 
   useEffect(() => {
     setItems(initialItems);
     setMore(initialItems.length >= FEED_PAGE);
     setFailed(false);
+    setFresh(0);
+    newest.current = initialItems[0]?.created_at ?? null;
   }, [initialItems]);
 
   const loadMore = useCallback(async () => {
@@ -70,9 +80,9 @@ export default function Feed({
       let added = 0;
       setItems((cur) => {
         const seen = new Set(cur.map((i) => `${i.kind}:${i.id}`));
-        const fresh = next.filter((i) => !seen.has(`${i.kind}:${i.id}`));
-        added = fresh.length;
-        return fresh.length ? [...cur, ...fresh] : cur;
+        const add = next.filter((i) => !seen.has(`${i.kind}:${i.id}`));
+        added = add.length;
+        return add.length ? [...cur, ...add] : cur;
       });
       // If a whole page came back as things we already had, the cursor can't
       // move, so asking again would fetch the same page forever.
@@ -94,12 +104,43 @@ export default function Feed({
     return () => io.disconnect();
   }, [loadMore]);
 
+  // Quietly look for anything newer than the top of the list. Only while the
+  // tab is visible, so a forgotten tab doesn't keep asking.
+  useEffect(() => {
+    let alive = true;
+    async function check() {
+      if (document.visibilityState !== "visible") return;
+      const { items: latest, error } = await fetchFeed(supabase, { scope, userId, limit: 10 });
+      if (!alive || error) return;
+      const since = newest.current;
+      const count = latest.filter(
+        (i) => (!since || i.created_at > since) && i.user_id !== viewer?.id
+      ).length;
+      setFresh(count);
+    }
+    const t = setInterval(check, POLL_MS);
+    const onVis = () => document.visibilityState === "visible" && check();
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      alive = false;
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [supabase, scope, userId, viewer?.id]);
+
   async function refresh() {
-    const { items: fresh, error } = await fetchFeed(supabase, { scope, userId });
+    const { items: latest, error } = await fetchFeed(supabase, { scope, userId });
     if (error) return;
-    setItems(fresh);
-    setMore(fresh.length >= FEED_PAGE);
+    setItems(latest);
+    setMore(latest.length >= FEED_PAGE);
     setFailed(false);
+    setFresh(0);
+    newest.current = latest[0]?.created_at ?? null;
+  }
+
+  async function showNew() {
+    await refresh();
+    top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function retry() {
@@ -107,7 +148,20 @@ export default function Feed({
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div ref={top} className="space-y-3 scroll-mt-20 sm:space-y-4">
+      {fresh > 0 && (
+        <div className="pointer-events-none sticky top-20 z-30 flex justify-center">
+          <button
+            type="button"
+            onClick={showNew}
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-ocean-500 px-4 py-2 font-sans text-sm font-semibold text-white shadow-lg shadow-black/50 transition-colors hover:bg-ocean-400"
+          >
+            <ArrowUp className="h-4 w-4" />
+            {fresh === 1 ? "1 new post" : `${fresh}${fresh >= 10 ? "+" : ""} new posts`}
+          </button>
+        </div>
+      )}
+
       {showComposer && viewer && (
         <Composer
           userId={viewer.id}
@@ -132,7 +186,17 @@ export default function Feed({
             item={item}
             viewerId={viewer?.id ?? null}
             viewerIsAdmin={viewer?.isAdmin ?? false}
-            onRemoved={(id) => setItems((cur) => cur.filter((i) => !(i.kind === "post" && i.id === id)))}
+            onRemoved={(id) => {
+              // A deleted post goes; blocking someone hides everything of theirs.
+              const gone = items.find((i) => i.id === id);
+              const deleted =
+                !gone || (gone.kind === "post" && (gone.user_id === viewer?.id || viewer?.isAdmin));
+              setItems((cur) =>
+                cur.filter((i) =>
+                  deleted ? !(i.kind === "post" && i.id === id) : i.user_id !== gone?.user_id
+                )
+              );
+            }}
           />
         ))
       )}
