@@ -7,7 +7,7 @@ import { previewLine, renderBody, renderSubject, varsForStore } from "@/lib/camp
 import { factsFor, subjectHook, whatsHappening, whatsMissing } from "@/lib/campaigns/facts";
 import { claimToken } from "@/lib/stores/claimToken";
 import { SITE } from "@/lib/email/queue";
-import { suppress } from "@/lib/email/suppress";
+import { optOut, parseTarget, restoreShop } from "@/lib/email/optOut";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -22,6 +22,8 @@ type Body = {
   active?: boolean;
   /** An address, or a bare domain for every address at that shop. */
   target?: string;
+  hidePage?: boolean;
+  confirm?: boolean;
   patch?: { subject?: string; body?: string; cta_label?: string; cta_url?: string; delay_days?: number; active?: boolean };
 };
 
@@ -198,79 +200,33 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true, ...result });
       }
 
-      // A shop replied "take me off". One press does everything: never
-      // email the address again, mark the shop's contact as opted out so
-      // no campaign re-enrols it, stop every enrolment, and cancel anything
-      // already waiting in the outbox. The shop's public page is untouched.
+      // A shop replied "take me off". One press does everything; see
+      // lib/email/optOut. The page stays up unless hidePage is ticked.
       case "remove-outreach": {
-        const raw = String(body.target ?? "").trim().toLowerCase().replace(/^mailto:/, "");
-        const isEmail = /^[^\s@]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(raw);
-        const domain = raw.replace(/^@/, "").replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
-        const isDomain = !isEmail && /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domain);
-        if (!isEmail && !isDomain) {
-          return NextResponse.json({ error: "Enter an email address, or a domain like reeflifeaquariums.com." }, { status: 400 });
-        }
-        // A shared mailbox provider is many shops, not one. Removing
-        // "gmail.com" would take every Gmail-using shop off the list.
-        const SHARED = /^(gmail|googlemail|yahoo|ymail|hotmail|outlook|live|msn|aol|icloud|me|mac|comcast|att|sbcglobal|verizon|protonmail|proton|gmx|mail|zoho)\./;
-        if (isDomain && SHARED.test(domain)) {
-          return NextResponse.json({ error: `${domain} is shared by lots of shops. Enter their full email address instead.` }, { status: 400 });
-        }
-        const pattern = isEmail ? raw : `%@${domain}`;
-        const now = new Date().toISOString();
-
-        // Every address we hold for it: shop contacts plus anything enrolled.
-        const [{ data: contacts }, { data: enrolled }] = await Promise.all([
-          supabaseAdmin.from("store_contacts").select("store_id, email").ilike("email", pattern),
-          supabaseAdmin.from("email_campaign_enrollments").select("email").ilike("email", pattern),
-        ]);
-        const emails = new Set<string>();
-        if (isEmail) emails.add(raw);
-        for (const r of [...(contacts ?? []), ...(enrolled ?? [])] as { email: string | null }[]) {
-          if (r.email) emails.add(r.email.trim().toLowerCase());
-        }
-        if (emails.size === 0) {
-          return NextResponse.json({ error: `No shop contact found at ${domain}. Nothing to remove.` }, { status: 404 });
-        }
-        for (const e of emails) await suppress(e, "unsubscribe", "Asked by reply to be removed from outreach");
-
-        const { data: offContacts, error: cErr } = await supabaseAdmin
-          .from("store_contacts")
-          .update({ unsubscribed_at: now })
-          .ilike("email", pattern)
-          .is("unsubscribed_at", null)
-          .select("store_id");
-        if (cErr) throw new Error(cErr.message);
-
-        const { data: stopped, error: eErr } = await supabaseAdmin
-          .from("email_campaign_enrollments")
-          .update({ status: "stopped", stop_reason: "unsubscribed", stopped_at: now })
-          .ilike("email", pattern)
-          .eq("status", "active")
-          .select("id");
-        if (eErr) throw new Error(eErr.message);
-
-        const { data: cancelled, error: qErr } = await supabaseAdmin
-          .from("email_queue")
-          .update({ status: "failed", fail_reason: "other", last_error: "Removed from outreach at their request", locked_at: null })
-          .in("to_email", [...emails])
-          .eq("status", "pending")
-          .select("id");
-        if (qErr) throw new Error(qErr.message);
-
-        const storeIds = [...new Set(((contacts ?? []) as { store_id: string | null }[]).map((c) => c.store_id).filter(Boolean))] as string[];
-        const { data: shops } = storeIds.length
-          ? await supabaseAdmin.from("fish_stores").select("name").in("id", storeIds)
-          : { data: [] };
-
-        return NextResponse.json({
-          ok: true,
-          addresses: [...emails],
-          shops: ((shops ?? []) as { name: string }[]).map((s) => s.name),
-          contacts: offContacts?.length ?? 0,
-          stopped: stopped?.length ?? 0,
-          cancelled: cancelled?.length ?? 0,
+        const t = parseTarget(body.target);
+        if ("error" in t) return NextResponse.json({ error: t.error }, { status: 400 });
+        const r = await optOut({
+          pattern: t.pattern,
+          extraEmail: t.email,
+          hidePage: Boolean(body.hidePage),
+          confirm: body.confirm !== false,
+          why: "Asked by reply to be removed from outreach",
         });
+        if (r.addresses.length === 0) {
+          return NextResponse.json({ error: "No shop contact found for that. Nothing to remove." }, { status: 404 });
+        }
+        return NextResponse.json({ ok: true, ...r });
+      }
+
+      // They changed their mind and want to claim.
+      case "restore-shop": {
+        const t = parseTarget(body.target);
+        if ("error" in t) return NextResponse.json({ error: t.error }, { status: 400 });
+        const r = await restoreShop(t.pattern);
+        if (r.shops.length === 0) {
+          return NextResponse.json({ error: "No shop found for that address." }, { status: 404 });
+        }
+        return NextResponse.json({ ok: true, ...r });
       }
 
       case "stop-enrollment": {

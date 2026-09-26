@@ -73,6 +73,8 @@ export type SendArgs = {
   subject: string;
   html: string;
   bulk?: boolean;
+  /** Send as this address instead of the default for the mail type. */
+  from?: string;
   replyTo?: string;
   /** Token for the one-click unsubscribe endpoint. Required for bulk. */
   unsubscribeUrl?: string;
@@ -101,7 +103,7 @@ export async function deliver(args: SendArgs): Promise<string | null> {
   }
 
   const { data, error } = await resend.emails.send({
-    from: args.bulk ? FROM_BULK : FROM_TRANSACTIONAL,
+    from: args.from || (args.bulk ? FROM_BULK : FROM_TRANSACTIONAL),
     to: args.to,
     subject: args.subject,
     html: args.html,

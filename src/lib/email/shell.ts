@@ -35,11 +35,14 @@ export type ShellArgs = {
   unsubscribeUrl?: string;
   /** Why they are hearing from us. Kept honest and specific. */
   reason?: string;
-  /** The "take it down" offer. Present, but in the footer, not the pitch. */
+  /**
+   * The "take it down" offer. Off by default: shop pages stay in the
+   * directory, so outreach must not promise to remove them.
+   */
   removalNote?: boolean;
 };
 
-export function letterShell({ preheader, contentHtml, unsubscribeUrl, reason, removalNote = true }: ShellArgs): string {
+export function letterShell({ preheader, contentHtml, unsubscribeUrl, reason, removalNote = false }: ShellArgs): string {
   const preview = preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${esc(preheader)}</div>`
     : "";

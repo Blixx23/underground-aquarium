@@ -147,14 +147,23 @@ export async function dispatchOne(args: {
    * throwing, so the email still goes out once the problem clears.
    */
   retryLater?: boolean;
+  /** Send as this address, e.g. the outreach sender for an outreach reply. */
+  from?: string;
+  /**
+   * Only for the one message that confirms an opt out. The address was
+   * just added to the do-not-email list, and this is the reply to that.
+   */
+  confirmingOptOut?: boolean;
 }): Promise<{ sent: boolean; queued: boolean }> {
   const check = checkEmail(args.to);
   if (!check.ok || !check.value) throw new Error(check.reason ?? "No email address.");
   const to = normaliseEmail(check.value);
 
   const bulk = Boolean(args.bulk);
-  const set = await suppressedSet([to]);
-  if (set.has(to)) throw new Error("That address has unsubscribed or bounced.");
+  if (!args.confirmingOptOut) {
+    const set = await suppressedSet([to]);
+    if (set.has(to)) throw new Error("That address has unsubscribed or bounced.");
+  }
 
   const settings = await getEmailSettings();
   const held = !args.ignorePause && (settings.paused || (bulk && settings.bulk_paused));
@@ -170,7 +179,7 @@ export async function dispatchOne(args: {
 
   try {
     const id = await deliver({
-      to, subject: args.subject, html, bulk, replyTo: args.replyTo,
+      to, subject: args.subject, html, bulk, from: args.from, replyTo: args.replyTo,
       unsubscribeUrl: bulk ? unsubscribeUrlFor(to) : undefined,
     });
     await recordDirect({ kind: args.kind, bulk, to, subject: args.subject, html, status: "sent", providerId: id, context: args.context });

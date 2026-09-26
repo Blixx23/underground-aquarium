@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { suppress } from "@/lib/email/suppress";
+import { optOut } from "@/lib/email/optOut";
+import { normaliseEmail } from "@/lib/email/address";
 import { validUnsubscribeToken } from "@/lib/email/queue";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +28,22 @@ async function off(req: Request): Promise<{ ok: boolean; email: string }> {
     }
   }
   if (!email || !validUnsubscribeToken(email, token)) return { ok: false, email };
-  await suppress(email, "unsubscribe");
+  try {
+    // Same as the admin button: off every campaign, nothing waiting in
+    // the outbox, and one friendly confirmation. Only the first click
+    // confirms, so pressing it twice doesn't send two.
+    await optOut({
+      pattern: normaliseEmail(email),
+      extraEmail: email,
+      confirm: true,
+      confirmNewOnly: true,
+      why: "Unsubscribe link",
+    });
+  } catch (err) {
+    // Whatever else went wrong, the address must still come off.
+    console.error("[unsubscribe]", err);
+    await suppress(email, "unsubscribe");
+  }
   return { ok: true, email };
 }
 
@@ -40,7 +57,7 @@ export async function GET(req: Request) {
   const r = await off(req);
   const html = r.ok
     ? `<h1 style="font:600 22px Helvetica,Arial;color:#0c2740;">You're unsubscribed</h1>
-       <p style="font:15px Helvetica,Arial;color:#41566a;">We won't email ${r.email} again. Your shop stays listed in the directory.</p>`
+       <p style="font:15px Helvetica,Arial;color:#41566a;">We won't email ${r.email} again. A short confirmation is on its way. Your shop stays listed in the directory.</p>`
     : `<h1 style="font:600 22px Helvetica,Arial;color:#0c2740;">That link didn't work</h1>
        <p style="font:15px Helvetica,Arial;color:#41566a;">Email hello@undergroundaquarium.com and we'll take you off the list by hand.</p>`;
   return new NextResponse(
