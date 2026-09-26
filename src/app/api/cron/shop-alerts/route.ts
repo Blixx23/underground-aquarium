@@ -128,11 +128,11 @@ export async function GET(req: Request) {
             : weeklyEmail(d as unknown as WeeklyFacts);
 
     try {
-      await dispatchOne({ kind: n.type as string, to, subject: msg.subject, html: msg.html, context: { notification: n.id } });
+      await dispatchOne({ kind: n.type as string, to, subject: msg.subject, html: msg.html, context: { notification: n.id }, retryLater: true });
       sent++;
     } catch {
-      // Unsubscribed or bounced address, or a delivery error already
-      // logged by the email system. The in-app notice still stands.
+      // Unsubscribed or bounced address. Anything temporary was handed
+      // to the queue to retry. The in-app notice still stands.
       failed++;
     }
   }

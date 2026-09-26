@@ -258,7 +258,9 @@ export default async function AdminEmailPage({
                     <span className="mt-0.5 block text-xs text-ocean-500">
                       {r.status === "sent" && `Sent ${when(r.sent_at)}`}
                       {r.status === "pending" &&
-                        (new Date(r.scheduled_at) > new Date()
+                        (r.attempts > 0
+                          ? `Retrying · ${r.attempts} ${r.attempts === 1 ? "try" : "tries"} so far · next ${new Date(r.scheduled_at).toLocaleString()}`
+                          : new Date(r.scheduled_at) > new Date()
                           ? `Waiting until ${new Date(r.scheduled_at).toLocaleString()}`
                           : `Waiting · queued ${when(r.created_at)}`)}
                       {r.status === "failed" &&
@@ -266,7 +268,7 @@ export default async function AdminEmailPage({
                           REASON[r.fail_reason ?? "other"] ?? r.fail_reason
                         }`}
                     </span>
-                    {r.status === "failed" && r.last_error && (
+                    {(r.status === "failed" || (r.status === "pending" && r.attempts > 0)) && r.last_error && (
                       <span className="mt-1 block truncate text-xs text-red-300/80">{r.last_error}</span>
                     )}
                   </span>

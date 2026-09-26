@@ -9,6 +9,7 @@ import { suppressedSet, suppress } from "@/lib/email/suppress";
 import { letterShell } from "@/lib/email/shell";
 
 export const SITE = "https://www.undergroundaquarium.com";
+/** Past this many tries a still-retrying row shows up in the health check. */
 export const MAX_ATTEMPTS = 5;
 /** Under this many recipients an interactive send goes out inline. */
 export const INLINE_LIMIT = 50;
@@ -140,6 +141,12 @@ export async function dispatchOne(args: {
   preheader?: string;
   /** Alerts to the admin ignore the kill switch, so a freeze can't silence the alarm. */
   ignorePause?: boolean;
+  /**
+   * For background senders (crons): if delivery fails for any reason
+   * other than a bad address, hand it to the queue to retry instead of
+   * throwing, so the email still goes out once the problem clears.
+   */
+  retryLater?: boolean;
 }): Promise<{ sent: boolean; queued: boolean }> {
   const check = checkEmail(args.to);
   if (!check.ok || !check.value) throw new Error(check.reason ?? "No email address.");
@@ -170,6 +177,15 @@ export async function dispatchOne(args: {
     return { sent: true, queued: false };
   } catch (err) {
     const c = classify(err);
+    if (args.retryLater && !c.permanent) {
+      await enqueue({
+        kind: args.kind, bulk,
+        dedup_key: dedupKey([args.kind, to, args.subject, JSON.stringify(args.context ?? {})]),
+        to_email: to, subject: args.subject, html, reply_to: args.replyTo ?? null, context: args.context,
+        scheduled_at: new Date(Date.now() + backoffMs(1)).toISOString(),
+      });
+      return { sent: false, queued: true };
+    }
     await recordDirect({
       kind: args.kind, bulk, to, subject: args.subject, html, status: "failed",
       error: c.message, failReason: c.kind, context: args.context,
@@ -346,7 +362,12 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
         } catch (err) {
           const c = classify(err);
           const attempts = row.attempts + 1;
-          const giveUp = c.permanent || attempts >= MAX_ATTEMPTS;
+          // Only a bad recipient address ends a row. Anything on our side
+          // or the provider's (outage, rate limit, a broken setting) keeps
+          // retrying on a growing delay, capped at 6 hours, for as long as
+          // it takes. Nothing that was planned is ever dropped because a
+          // service had a bad afternoon.
+          const giveUp = c.permanent;
           await supabaseAdmin
             .from("email_queue")
             .update({
