@@ -77,7 +77,7 @@ export default function ClaimNow({
         className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3.5 text-base font-semibold text-ocean-950 transition-colors hover:bg-emerald-400 disabled:opacity-50"
       >
         <ShieldCheck className="h-5 w-5" />
-        {busy ? "One moment…" : `Yes, I work at ${storeName}`}
+        {busy ? "One moment…" : `Yes, I own or manage ${storeName}`}
       </button>
       {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
     </div>
