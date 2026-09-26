@@ -14,23 +14,41 @@ const CHIPS = [
   { label: "Free stuff", href: "/listings?category=free", Icon: Gift },
 ];
 
-/** Shop count and the cities with the most shops, straight from the directory. */
+/**
+ * Shop count and the cities with the most shops, straight from the directory.
+ * Supabase returns at most 1000 rows per request no matter what .limit() says,
+ * so the directory is read in pages of 1000 until a short page comes back.
+ */
+const PAGE = 1000;
+
 async function storeStats() {
-  const { data } = await supabasePublic
-    .from("fish_stores")
-    .select("city, state")
-    .eq("status", "published")
-    .limit(5000);
-  const rows = (data ?? []) as { city: string | null; state: string | null }[];
-  const byCity = new Map<string, number>();
-  for (const r of rows) {
-    if (!r.city) continue;
-    byCity.set(r.city, (byCity.get(r.city) ?? 0) + 1);
+  const rows: { city: string | null; state: string | null }[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabasePublic
+      .from("fish_stores")
+      .select("city, state")
+      .eq("status", "published")
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error || !data) break;
+    rows.push(...(data as { city: string | null; state: string | null }[]));
+    if (data.length < PAGE) break;
   }
-  const topCities = [...byCity.entries()]
-    .sort((a, b) => b[1] - a[1])
+
+  // Count by city AND state so two Springfields don't merge into one.
+  const byCity = new Map<string, { city: string; count: number }>();
+  for (const r of rows) {
+    const city = r.city?.trim();
+    if (!city) continue;
+    const key = `${city.toLowerCase()}|${(r.state ?? "").toUpperCase()}`;
+    const entry = byCity.get(key) ?? { city, count: 0 };
+    entry.count += 1;
+    byCity.set(key, entry);
+  }
+  const topCities = [...byCity.values()]
+    .sort((a, b) => b.count - a.count)
     .slice(0, 5)
-    .map(([city]) => city);
+    .map((e) => e.city);
   return { total: rows.length, topCities };
 }
 
