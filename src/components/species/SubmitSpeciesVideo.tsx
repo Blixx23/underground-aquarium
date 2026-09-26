@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Clapperboard, Film, Loader2, Trophy, X } from "lucide-react";
+import { Upload } from "tus-js-client";
 import { createClient } from "@/lib/supabase/client";
 import {
   MAX_VIDEO_BYTES,
@@ -21,6 +22,52 @@ function extFor(file: File) {
   if (file.type === "video/quicktime") return "mov";
   if (file.type === "video/webm") return "webm";
   return "mp4";
+}
+
+/**
+ * Resumable upload straight to storage. Big phone videos go up in 6 MB
+ * pieces, so a dropped connection picks up where it left off instead of
+ * starting over, and the member sees real progress.
+ */
+function uploadResumable(
+  file: File,
+  bucket: string,
+  objectName: string,
+  token: string,
+  onProgress: (pct: number) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const up = new Upload(file, {
+      endpoint: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/upload/resumable`,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      headers: { authorization: `Bearer ${token}`, "x-upsert": "false" },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      chunkSize: 6 * 1024 * 1024,
+      metadata: {
+        bucketName: bucket,
+        objectName,
+        contentType: file.type || "video/mp4",
+        cacheControl: "3600",
+      },
+      onError: (err) => {
+        const body = (err as { originalResponse?: { getBody?: () => string } }).originalResponse?.getBody?.() ?? "";
+        if (/maximum allowed size|too large|413/i.test(body + String(err))) {
+          reject(new Error("That file is too big to upload. Set your camera to 1080p, or trim the clip, and try again."));
+        } else if (/bucket not found/i.test(body)) {
+          reject(new Error("Video uploads aren't switched on yet. Try again later."));
+        } else {
+          reject(new Error("The upload didn't finish. Check your connection and try again."));
+        }
+      },
+      onProgress: (sent, total) => onProgress(total ? Math.round((sent / total) * 100) : 0),
+      onSuccess: () => resolve(),
+    });
+    up.findPreviousUploads().then((prev) => {
+      if (prev.length) up.resumeFromPreviousUpload(prev[0]);
+      up.start();
+    });
+  });
 }
 
 /** How long the clip is, when this browser can read it. HEVC in Chrome often can't; the server checks anyway. */
@@ -69,6 +116,7 @@ export default function SubmitSpeciesVideo({
   const [caption, setCaption] = useState("");
   const [confirm, setConfirm] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -125,7 +173,7 @@ export default function SubmitSpeciesVideo({
     }
     if (f.size > MAX_VIDEO_BYTES) {
       setError(
-        `That file is ${Math.round(f.size / 1024 / 1024)} MB. The limit is 50 MB, about 30 to 45 seconds from most phones. Trim it and try again.`
+        `That file is ${Math.round(f.size / 1024 / 1024)} MB. The limit is 200 MB, which fits 30 seconds of 4K. Trim it and try again.`
       );
       if (fileRef.current) fileRef.current.value = "";
       return;
@@ -174,12 +222,13 @@ export default function SubmitSpeciesVideo({
     }
     setError(null);
     setPhase("uploading");
+    setProgress(0);
     const path = `${userId}/${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${extFor(file)}`;
     try {
-      const { error: upErr } = await supabase.storage
-        .from("video-uploads")
-        .upload(path, file, { contentType: file.type || "video/mp4" });
-      if (upErr) throw new Error(upErr.message);
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Your sign-in expired. Sign in again and retry.");
+      await uploadResumable(file, "video-uploads", path, token, setProgress);
 
       const { data: id, error: rpcErr } = await supabase.rpc("submit_species_video", {
         p_slug: slug,
@@ -321,7 +370,10 @@ export default function SubmitSpeciesVideo({
                 <ul className="list-disc space-y-1 pl-5">
                   <li>Your own fish, filmed by you, in your own tank.</li>
                   <li>Courtship, spawning, eggs or fry, with the fish in focus and the action easy to see.</li>
-                  <li>Up to {MAX_VIDEO_SECONDS} seconds and 50 MB. Hold the phone steady, or rest it on the glass.</li>
+                  <li>
+                    Up to {MAX_VIDEO_SECONDS} seconds. Film in the highest quality your phone has (1080p or 4K, 60 fps
+                    is great). Hold it steady, or rest it on the glass.
+                  </li>
                   <li>No music, text, watermarks, filters or screen recordings.</li>
                 </ul>
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-ocean-400">
@@ -406,6 +458,17 @@ export default function SubmitSpeciesVideo({
                 </span>
               </label>
 
+              {phase === "uploading" && (
+                <div className="mb-3">
+                  <div className="h-2 overflow-hidden rounded-full bg-ocean-900">
+                    <div className="h-full rounded-full bg-sky-400 transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className="mt-1 text-xs text-ocean-400">
+                    Uploading your original. Keep this page open until it reaches 100%.
+                  </p>
+                </div>
+              )}
+
               {error && <p className="mb-3 text-sm text-coral-300">{error}</p>}
 
               <button
@@ -415,7 +478,7 @@ export default function SubmitSpeciesVideo({
                 className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-ocean-950 hover:bg-sky-400 disabled:opacity-50"
               >
                 {phase === "uploading" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                {phase === "uploading" ? "Uploading…" : "Send for review"}
+                {phase === "uploading" ? `Uploading… ${progress}%` : "Send for review"}
               </button>
             </>
           )}

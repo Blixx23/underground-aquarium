@@ -29,6 +29,7 @@ export function isoDuration(seconds: number | null | undefined) {
   return `PT${m ? `${m}M` : ""}${s ? `${s}S` : ""}`;
 }
 
-export const MAX_VIDEO_SECONDS = 60;
-export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const MAX_VIDEO_SECONDS = 30;
+/** A 30-second 4K 60 fps iPhone clip is about 170 MB. */
+export const MAX_VIDEO_BYTES = 200 * 1024 * 1024;
 export const MAX_VIDEOS_PER_SPECIES = 3;

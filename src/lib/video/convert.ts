@@ -11,7 +11,8 @@ import { MAX_VIDEO_SECONDS } from "@/lib/video/stages";
  *
  * Whatever the phone recorded (iPhone HEVC .mov, Android, WebM), what
  * goes on the site is always the same: an H.264/AAC MP4 that plays in
- * every browser, no larger than 1280 on its long side, 30 fps, with the
+ * every browser, full HD (1920 on its long side, never upscaled), up to
+ * 60 fps so fast spawning action stays smooth, with the
  * streaming index at the front so it starts playing straight away, and
  * with every bit of metadata stripped (phones store GPS in videos).
  * A poster frame is cut from it too. The original is then deleted.
@@ -50,21 +51,22 @@ export async function convertSpeciesVideo(id: string): Promise<void> {
       "-map", "0:v:0",
       "-map", "0:a:0?",
       "-t", String(MAX_VIDEO_SECONDS),
-      "-vf", "scale='if(gte(iw,ih),min(1280,iw),-2)':'if(gte(iw,ih),-2,min(1280,ih))',fps=30,format=yuv420p",
+      "-vf", "scale='if(gte(iw,ih),min(1920,iw),-2)':'if(gte(iw,ih),-2,min(1920,ih))':flags=lanczos,format=yuv420p",
+      "-fpsmax", "60",
       "-c:v", "libx264",
       "-profile:v", "high",
       "-preset", "veryfast",
-      "-crf", "26",
-      "-maxrate", "3M",
-      "-bufsize", "6M",
+      "-crf", "22",
+      "-maxrate", "8M",
+      "-bufsize", "16M",
       "-c:a", "aac",
-      "-b:a", "96k",
+      "-b:a", "128k",
       "-ac", "2",
       "-map_metadata", "-1",
       "-map_chapters", "-1",
       "-movflags", "+faststart",
       output,
-    ]);
+    ], 270_000);
 
     const out = await probe(output);
     const dur = out.duration ?? info.duration ?? 0;
