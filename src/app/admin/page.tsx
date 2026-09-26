@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ShieldCheck, Users, ArrowRight, GraduationCap, Fish, Flag, Droplets,
-  BookOpen, Store, Wrench, Mail, Megaphone, MessageSquare, Camera, Clapperboard,
+  BookOpen, Store, Wrench, Mail, Megaphone, MessageSquare, Camera, Clapperboard, BarChart3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SOCIETY_NAME, SOCIETY_CLUB_PATH } from "@/lib/config";
@@ -18,6 +18,7 @@ const CARDS: Card[] = [
   { href: "/admin/email", label: "Email", description: "Queue, delivery and health for everything we send", Icon: Mail, countable: true },
   { href: "/admin/campaigns", label: "Campaigns", description: "Email sequences and the shops walking through them", Icon: Megaphone },
   { href: `${SOCIETY_CLUB_PATH}/admin`, label: "Society", description: `Roster, dues, officers and applications for ${SOCIETY_NAME}`, Icon: Users, countable: true },
+  { href: "/admin/shop-stats", label: "Shop stats", description: "How every shop is doing: top performers, warm leads, cities", Icon: BarChart3 },
   { href: "/admin/stores", label: "Store claims", description: "Shop owners asking to manage their listing", Icon: Store, countable: true },
   { href: "/admin/store-fixes", label: "Shop fixes", description: "Wrong hours, moved or closed shops, flagged by shoppers", Icon: Wrench, countable: true },
   { href: "/admin/reports", label: "Reports", description: "Posts and members flagged by the community", Icon: Flag, countable: true },
