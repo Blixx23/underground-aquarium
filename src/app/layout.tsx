@@ -6,7 +6,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import Bubbles from "@/components/Bubbles";
 import DailyHeartbeat from "@/components/DailyHeartbeat";
 import TrophySync from "@/components/trophies/TrophySync";
-import { Analytics } from "@vercel/analytics/next";
+import SiteAnalytics from "@/components/SiteAnalytics";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -95,7 +95,7 @@ export default function RootLayout({
         <div id="content">{children}</div>
         <Footer />
         <BottomNav />
-        <Analytics />
+        <SiteAnalytics />
       </body>
     </html>
   );
