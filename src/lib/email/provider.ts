@@ -14,7 +14,30 @@ export const FROM_TRANSACTIONAL =
  * verified, which fails at the provider anyway. Better to refuse and say
  * so, where the admin panel will show it.
  */
-export const FROM_BULK = process.env.RESEND_FROM_BULK || "";
+export const FROM_BULK = normalizeFrom(process.env.RESEND_FROM_BULK);
+
+/**
+ * Tidies a sender typed into Vercel by hand. Resend only accepts
+ * `email@example.com` or `Name <email@example.com>`, and the usual slips
+ * (quotes around the whole thing, a stray space, the name with no angle
+ * brackets, a trailing semicolon) all fail with "Invalid from field".
+ * Returns "" when there's no usable address in it at all.
+ */
+export function normalizeFrom(raw: string | null | undefined): string {
+  let s = String(raw ?? "").trim().replace(/;+$/, "").trim();
+  // Strip one layer of wrapping quotes: "Name <a@b.com>" or 'a@b.com'
+  if (/^(["'`]).*\1$/.test(s)) s = s.slice(1, -1).trim();
+  const m = s.match(/([^\s<>"',;]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+)/i);
+  if (!m) return "";
+  const email = m[1];
+  const name = s
+    .replace(m[0], "")
+    .replace(/[<>]/g, "")
+    .replace(/^["'\s]+|["'\s]+$/g, "")
+    .replace(/["<>]/g, "")
+    .trim();
+  return name ? `${name} <${email}>` : email;
+}
 
 /**
  * The domains this site sends from.
@@ -62,7 +85,9 @@ export async function deliver(args: SendArgs): Promise<string | null> {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY is not set");
   if (args.bulk && !FROM_BULK) {
-    throw new Error("RESEND_FROM_BULK is not set, so bulk email has no address to send from.");
+    throw new Error(
+      "RESEND_FROM_BULK is missing or has no email address in it. In Vercel set it to: Your Name <you@your-verified-domain.com>"
+    );
   }
 
   const { Resend } = await import("resend");
