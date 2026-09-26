@@ -11,6 +11,7 @@ import { SITE } from "@/lib/email/queue";
 import { readHealth } from "@/lib/email/health";
 import CampaignControls from "./CampaignControls";
 import StepEditor from "./StepEditor";
+import RemoveFromOutreach from "../RemoveFromOutreach";
 import StopEnrollment from "./StopEnrollment";
 
 export const metadata: Metadata = { title: "Admin · Campaign" };
@@ -157,6 +158,10 @@ export default async function CampaignPage({ params }: { params: Promise<{ key: 
 
         <div className="mb-8">
           <CampaignControls campaignKey={campaign.key} active={campaign.active} repeatDays={campaign.repeat_days} />
+        </div>
+
+        <div className="mb-8">
+          <RemoveFromOutreach />
         </div>
 
         {/* The sequence */}

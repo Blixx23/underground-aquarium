@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Megaphone, ArrowRight } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { readHealth } from "@/lib/email/health";
+import RemoveFromOutreach from "./RemoveFromOutreach";
 
 export const metadata: Metadata = { title: "Admin · Campaigns" };
 export const dynamic = "force-dynamic";
@@ -96,6 +97,9 @@ export default async function CampaignsPage() {
             })}
           </ul>
         )}
+        <div className="mt-8">
+          <RemoveFromOutreach />
+        </div>
       </div>
     </main>
   );
