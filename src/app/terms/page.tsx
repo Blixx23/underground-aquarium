@@ -16,7 +16,7 @@ export default function TermsPage() {
         <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
           Terms of Service
         </h1>
-        <p className="text-ocean-400 text-sm mb-10">Last updated: June 20, 2026</p>
+        <p className="text-ocean-400 text-sm mb-10">Last updated: September 26, 2026</p>
 
         <div className="space-y-8 text-ocean-200 leading-relaxed">
           <section className="space-y-3">
@@ -104,20 +104,113 @@ export default function TermsPage() {
               Content you post
             </h2>
             <p>
-              You keep ownership of the content you post — listings, tanks,
-              reviews, forum posts, photos, Society records, and so on. By
-              posting it, you grant us a non-exclusive, worldwide, royalty-free
-              license to host, store, display, reproduce, and distribute that
-              content as needed to operate and promote the Service. This license
-              ends when you delete the content or your account, except for
-              content others have already shared or that we must keep for legal
-              or record-keeping reasons.
+              &ldquo;Content&rdquo; means anything you put on the Service: photos,
+              videos, listings, tanks, posts, comments, reviews, messages in
+              public areas, Society records, suggestions, and anything else you
+              upload or type.
             </p>
             <p>
-              You are responsible for the content you post and represent that you
-              have the rights to share it. We do not claim ownership of your
-              content, and we are not obligated to monitor it, but we may review
-              and remove content that violates these Terms.
+              By posting Content, you grant Underground Aquarium a perpetual,
+              irrevocable, worldwide, royalty-free, fully paid, transferable and
+              sublicensable license to use, copy, store, edit, crop, trim,
+              compress, convert, translate, adapt, create derivative works from,
+              publicly display and perform, publish, distribute, license, and
+              otherwise use that Content, in any media or format now known or
+              later developed, for any purpose, including commercial,
+              advertising and promotional purposes on our site, our apps, our
+              social media accounts, emails, and printed materials.
+            </p>
+            <p>
+              This license includes the right to show your name, username and
+              profile photo with your Content, and to let others (such as our
+              service providers, partners and anyone who buys or merges with
+              the Service) do the same. It continues after you delete the
+              Content or close your account, although we will generally stop
+              showing Content you delete from public areas of the site within
+              a reasonable time. We may keep copies for backups, records and
+              legal reasons.
+            </p>
+            <p>
+              You will not be paid for Content, and to the extent the law
+              allows, you waive any moral rights (such as the right to be named
+              as the author or to object to edits) in Content you post. We may
+              credit you where we show your Content, but we are not required
+              to. We may review, edit, move, convert or remove any Content at
+              any time for any reason, and we are not required to host any of
+              it. We may also use Content to run, study and improve the
+              Service, including building and training tools such as search,
+              species identification and recommendations.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 id="library-submissions" className="font-display text-2xl text-emerald-400">
+              Library submissions: species photos and breeding videos
+            </h2>
+            <p>
+              Some uploads are made specifically for our species library, such
+              as species photos and breeding videos (courtship, spawning, eggs
+              or fry), and suggestions of species or glossary terms. When we
+              accept one of these for the library, you assign to Underground
+              Aquarium all of your rights, title and interest in it, including
+              the copyright. From then on it belongs to Underground Aquarium,
+              and we can use, change, license, sell or remove it however we
+              choose, without paying you or asking you again.
+            </p>
+            <p>
+              We give you back a personal, non-exclusive right to keep your own
+              original files and share them on your own personal accounts. You
+              may not license or sell a submission to anyone else after we have
+              accepted it. If this assignment is not effective for any reason,
+              you instead grant us an exclusive version of the license in
+              &ldquo;Content you post&rdquo; above. Submissions we turn down are
+              deleted and stay yours.
+            </p>
+            <p>
+              We convert every photo and video to our own format and remove the
+              hidden data phones attach to files, such as location. Once a
+              submission is accepted and live, you cannot withdraw it, although
+              we will consider any request. We may credit you by name where we
+              show it, and we decide how it is shown.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-2xl text-emerald-400">
+              Your promises about Content
+            </h2>
+            <p>
+              For all Content you post, you promise that you created it or have
+              every right needed to grant the rights above; that library photos
+              and videos were taken by you, of your own animals or aquarium;
+              that anyone recognizable in it agreed to be shown; and that it
+              does not break any law or anyone else&rsquo;s rights. You are
+              responsible for your Content. We are not obligated to monitor it,
+              but we may review and remove anything that breaks these Terms.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-2xl text-emerald-400">
+              Feedback and ideas
+            </h2>
+            <p>
+              If you send us ideas, suggestions or feedback about the Service,
+              we may use them freely, without paying you or crediting you, and
+              you give us all rights in them.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-2xl text-emerald-400">
+              Messages from us
+            </h2>
+            <p>
+              You agree that we may contact you by email and in-app
+              notifications about your account, your activity, security, and
+              changes to the Service. You can turn off marketing emails at any
+              time; account and security messages are part of using the
+              Service.
             </p>
           </section>
 
@@ -325,9 +418,11 @@ export default function TermsPage() {
             </h2>
             <p>
               You may stop using the Service and close your account at any time.
-              We may suspend or close accounts that violate these Terms, that
-              create risk for the community, or as needed to comply with law.
-              Some obligations — including those about content licenses,
+              We may suspend or close any account, limit any feature, or stop
+              offering any part of the Service, at any time and for any reason,
+              including violating these Terms, creating risk for the community,
+              or complying with law. Some obligations — including the content
+              licenses and library assignments,
               disclaimers, liability, and governing law — survive the end of your
               account.
             </p>
@@ -398,7 +493,7 @@ export default function TermsPage() {
             <p>
               We may update these Terms from time to time. When we do, we will
               revise the &ldquo;last updated&rdquo; date above and, for material
-              changes, provide additional notice. Continued use of the Service
+              changes, tell you with an in-app notification or email. Continued use of the Service
               after changes take effect means you accept the updated Terms.
             </p>
           </section>

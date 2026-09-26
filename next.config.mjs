@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Video conversion runs the ffmpeg binary from ffmpeg-static. Keep the
+  // package out of the bundle and ship the binary with the two routes
+  // that use it.
+  serverExternalPackages: ["ffmpeg-static"],
+  outputFileTracingIncludes: {
+    "/api/species-videos/process": ["./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/admin/species-videos": ["./node_modules/ffmpeg-static/ffmpeg"],
+  },
   // Old WordPress addresses Google still crawls. Species links (/fish/...)
   // are matched to the right species in src/app/fish/[slug]/route.ts.
   async redirects() {

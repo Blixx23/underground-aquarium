@@ -46,6 +46,8 @@ const KINDS: Record<string, KindMeta> = {
   event: { icon: "event", tone: "coral", category: "other", label: "events" },
   species_request: { icon: "trophy", tone: "emerald", category: "trophies", label: "species requests" },
   species_photo: { icon: "trophy", tone: "emerald", category: "trophies", label: "species photos" },
+  species_video: { icon: "trophy", tone: "emerald", category: "trophies", label: "breeding videos" },
+  site: { icon: "bell", tone: "sky", category: "other", label: "site news" },
   feed_like: { icon: "heart", tone: "coral", category: "feed", label: "likes", mutable: true },
   feed_comment: { icon: "comment", tone: "sky", category: "feed", label: "comments", mutable: true },
   feed_reply: { icon: "comment", tone: "sky", category: "feed", label: "comment replies", mutable: true },

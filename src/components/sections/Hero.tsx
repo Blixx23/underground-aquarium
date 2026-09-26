@@ -53,6 +53,15 @@ async function storeStats() {
 }
 
 /**
+ * The directory keeps growing, so the badge shows a floor with a plus
+ * (1,517 reads "1,500+") instead of an exact number that goes stale.
+ */
+function roundedDown(n: number): string {
+  if (n < 100) return n.toLocaleString();
+  return `${(Math.floor(n / 100) * 100).toLocaleString()}+`;
+}
+
+/**
  * The front door leads with finding a local fish store, since that's what
  * most people arrive looking for. The search is a plain form, so it works
  * the instant the page loads, before any JavaScript.
@@ -83,7 +92,7 @@ export default async function Hero({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            {total.toLocaleString()} independent fish stores
+            {roundedDown(total)} independent fish stores
           </p>
         )}
 

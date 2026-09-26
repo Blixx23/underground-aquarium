@@ -188,6 +188,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const c of courses) out.push(entry(`/courses/${c.slug}`, 0.7, "monthly"));
   for (const e of events) out.push(entry(`/events/${e.slug}`, 0.6, "weekly"));
 
+  // Breeding videos: each has its own watch page, listed with Google's
+  // video details so it can show in video results.
+  const { data: vids } = await supabasePublic
+    .from("species_videos")
+    .select("id, stage, caption, poster_url, video_url, duration_s, reviewed_at, species(slug, common_name)")
+    .eq("status", "approved")
+    .range(0, 4999);
+  for (const v of (vids ?? []) as unknown as {
+    id: string;
+    stage: string;
+    caption: string | null;
+    poster_url: string | null;
+    video_url: string | null;
+    duration_s: number | null;
+    reviewed_at: string | null;
+    species: { slug: string; common_name: string } | null;
+  }[]) {
+    if (!v.species || !v.poster_url || !v.video_url) continue;
+    const title = `${v.species.common_name} ${v.stage} video`;
+    out.push({
+      ...entry(`/species/${v.species.slug}/video/${v.id}`, 0.6, "monthly", when(v.reviewed_at)),
+      videos: [
+        {
+          title,
+          thumbnail_loc: v.poster_url,
+          description: v.caption || `${v.species.common_name} ${v.stage} filmed in a member's home aquarium.`,
+          content_loc: v.video_url,
+          duration: v.duration_s ? Math.max(1, Math.round(Number(v.duration_s))) : undefined,
+          publication_date: v.reviewed_at ?? undefined,
+          family_friendly: "yes",
+        },
+      ],
+    });
+  }
+
   // One guide page per species, however many logs feed it.
   const guideSlugs = new Set<string>();
   for (const g of breedingGuides) {

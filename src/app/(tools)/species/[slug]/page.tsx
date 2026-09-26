@@ -9,6 +9,8 @@ import ListingsStrip from "@/components/discover/ListingsStrip";
 import { listingsMatching, relatedThreads } from "@/lib/discover";
 import SpeciesPhotos, { type SpeciesPhoto } from "@/components/species/SpeciesPhotos";
 import SubmitSpeciesPhoto from "@/components/species/SubmitSpeciesPhoto";
+import SpeciesVideos, { type SpeciesVideo } from "@/components/species/SpeciesVideos";
+import SubmitSpeciesVideo from "@/components/species/SubmitSpeciesVideo";
 
 export const revalidate = 3600;
 
@@ -157,6 +159,9 @@ export default async function SpeciesDetailPage({ params }: Params) {
 
   const { data: photoRows } = await supabasePublic.rpc("public_species_photos", { p_slug: s.slug });
   const photos = (photoRows ?? []) as SpeciesPhoto[];
+
+  const { data: videoRows } = await supabasePublic.rpc("public_species_videos", { p_slug: s.slug });
+  const videos = (videoRows ?? []) as SpeciesVideo[];
 
   const fullName = s.scientific_name
     ? `${s.common_name} (${s.scientific_name})`
@@ -307,6 +312,14 @@ export default async function SpeciesDetailPage({ params }: Params) {
           <Stat label="Suitability" value={s.suitability} />
           <Stat label="Origin" value={s.origin} />
         </dl>
+
+        <SpeciesVideos videos={videos} slug={s.slug as string} name={s.common_name as string} />
+        <SubmitSpeciesVideo
+          speciesId={s.id as string}
+          slug={s.slug as string}
+          name={s.common_name as string}
+          approvedCount={videos.length}
+        />
 
         {speciesTanks && speciesTanks.length > 0 && (
           <div className="border-t border-white/10 pt-8 mb-8">

@@ -327,7 +327,12 @@ export default function SubmitSpeciesPhoto({
               className="mt-0.5 h-4 w-4 accent-emerald-500"
             />
             <span>
-              I took this photo of my own fish, and Underground Aquarium can show it on this page with my name on it.
+              I took this photo of my own fish. I agree to the{" "}
+              <Link href="/terms#library-submissions" target="_blank" className="text-emerald-300 underline underline-offset-2">
+                Terms
+              </Link>
+              , including that if it&apos;s used, Underground Aquarium owns it and can use it anywhere, with my name
+              credited on the site.
             </span>
           </label>
 
