@@ -29,10 +29,20 @@ export function classify(err: unknown): Classified {
   const text = `${name} ${message}`.toLowerCase();
   const status = statusOf(err);
 
+  // Problems on OUR side (sender address, unverified domain, API key)
+  // come back as 4xx too, but they say nothing about the recipient.
+  // Treating them as a bad address once put every recipient of a run on
+  // the suppression list, including the admin's own test address.
+  if (
+    status === 401 ||
+    /`?from`? field|sender|domain is not verified|not verified|verify a domain|api key|api_key|restricted_api_key|missing_api_key|invalid_from/.test(text)
+  ) {
+    return { kind: "provider", permanent: false, message };
+  }
+
   // A bad address is bad forever. Everything else is worth another go.
   if (
     status === 400 ||
-    status === 403 ||
     status === 404 ||
     status === 422 ||
     text.includes("validation_error") ||
