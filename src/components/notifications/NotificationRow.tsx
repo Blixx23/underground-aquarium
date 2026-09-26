@@ -19,6 +19,7 @@ import {
   Trash2,
   Trophy,
   Circle,
+  ArrowRight,
 } from "lucide-react";
 import { kindOf, timeAgo, type IconKey, type Notification, type Tone } from "@/lib/notifications";
 
@@ -47,6 +48,75 @@ const TONES: Record<Tone, string> = {
   violet: "bg-violet-500/15 text-violet-300 ring-violet-400/30",
 };
 
+type ShopData = {
+  slug?: string;
+  name?: string;
+  photo?: string | null;
+  rating?: number;
+  value?: number;
+  metric?: string;
+  cta?: string;
+  week?: Record<string, number>;
+  prev?: Record<string, number>;
+};
+
+/** Up or down against last week, as a small coloured tag. */
+function Trend({ now, before }: { now: number; before: number }) {
+  if (!before) return now > 0 ? <span className="text-emerald-300">new</span> : null;
+  const pct = Math.round(((now - before) / before) * 100);
+  if (pct === 0) return null;
+  return <span className={pct > 0 ? "text-emerald-300" : "text-coral-300"}>{pct > 0 ? `▲${pct}%` : `▼${Math.abs(pct)}%`}</span>;
+}
+
+/**
+ * The extra detail on a shop alert: stars on a review, the week's numbers
+ * on a weekly report, the milestone figure, and the next step.
+ */
+function ShopDetail({ type, d, compact }: { type: string; d: ShopData; compact: boolean }) {
+  const chip = "inline-flex items-center gap-1 rounded-lg bg-white/[0.06] px-2 py-1 text-xs text-slate-200 ring-1 ring-white/10";
+  return (
+    <span className="mt-2 block">
+      {type === "shop_review" && typeof d.rating === "number" && (
+        <span className="mb-1.5 flex gap-0.5" aria-label={`${d.rating} stars`}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Star key={i} className={`h-4 w-4 ${i <= d.rating! ? "fill-amber-300 text-amber-300" : "text-slate-600"}`} />
+          ))}
+        </span>
+      )}
+      {type === "shop_weekly" && d.week && (
+        <span className="mb-1.5 flex flex-wrap gap-1.5">
+          {(
+            [
+              ["view", "views"],
+              ["directions", "directions"],
+              ["phone", "calls"],
+              ["website", "site visits"],
+            ] as const
+          )
+            .filter(([k]) => !compact || k === "view" || (d.week?.[k] ?? 0) > 0)
+            .map(([k, label]) => (
+              <span key={k} className={chip}>
+                <span className="font-semibold text-white">{(d.week?.[k] ?? 0).toLocaleString()}</span> {label}{" "}
+                <Trend now={d.week?.[k] ?? 0} before={d.prev?.[k] ?? 0} />
+              </span>
+            ))}
+        </span>
+      )}
+      {type === "shop_milestone" && typeof d.value === "number" && (
+        <span className="mb-1.5 inline-flex items-baseline gap-1.5 rounded-lg bg-yellow-500/10 px-2.5 py-1 ring-1 ring-yellow-400/30">
+          <span className="font-display text-lg text-yellow-200">{d.value.toLocaleString()}</span>
+          <span className="text-xs text-yellow-200/80">{d.metric === "followers" ? "followers" : "views"}</span>
+        </span>
+      )}
+      {d.cta && (
+        <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-sky-300">
+          {d.cta} <ArrowRight className="h-3.5 w-3.5" />
+        </span>
+      )}
+    </span>
+  );
+}
+
 /**
  * One notification, the way the big apps do it: a kind icon, bold while
  * unread, a blue dot, and a "..." menu to mark read/unread, remove it, or
@@ -74,6 +144,7 @@ export default function NotificationRow({
   const menuRef = useRef<HTMLDivElement>(null);
   const kind = kindOf(n.type);
   const Icon = ICONS[kind.icon];
+  const shop = (n.type ?? "").startsWith("shop_") && n.data && (n.data as ShopData).slug ? (n.data as ShopData) : null;
 
   useEffect(() => {
     if (!menu) return;
@@ -109,13 +180,26 @@ export default function NotificationRow({
         compact ? "px-3 py-3" : "px-4 py-3.5"
       } ${n.read ? "" : "bg-[#0a2035]"} ${menu ? "z-30" : ""}`}
     >
-      <span
-        className={`flex shrink-0 items-center justify-center rounded-full ring-1 ${TONES[kind.tone]} ${
-          compact ? "h-10 w-10" : "h-11 w-11"
-        }`}
-      >
-        <Icon className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
-      </span>
+      {shop?.photo ? (
+        // A shop alert shows the shop itself, with the kind of alert as a badge.
+        <span className={`relative shrink-0 ${compact ? "h-10 w-10" : "h-11 w-11"}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={shop.photo} alt="" className="h-full w-full rounded-xl object-cover ring-1 ring-white/15" />
+          <span
+            className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full ring-2 ring-[#051424] ${TONES[kind.tone]}`}
+          >
+            <Icon className="h-3 w-3" />
+          </span>
+        </span>
+      ) : (
+        <span
+          className={`flex shrink-0 items-center justify-center ${shop ? "rounded-xl" : "rounded-full"} ring-1 ${TONES[kind.tone]} ${
+            compact ? "h-10 w-10" : "h-11 w-11"
+          }`}
+        >
+          <Icon className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
+        </span>
+      )}
 
       <span className="min-w-0 flex-1 pr-14">
         <span className={`block text-[15px] leading-snug ${n.read ? "text-slate-200" : "font-semibold text-white"}`}>
@@ -126,6 +210,7 @@ export default function NotificationRow({
             {n.body}
           </span>
         )}
+        {shop && <ShopDetail type={n.type as string} d={shop} compact={compact} />}
         <span className={`mt-1 block text-xs ${n.read ? "text-slate-500" : "font-semibold text-sky-400"}`}>
           {timeAgo(n.created_at)}
         </span>

@@ -12,7 +12,11 @@ const GROUPS: { key: string; label: string; sub: string; types: string[] }[] = [
   { key: "trophy", label: "Trophies", sub: "You earn a new trophy", types: ["trophy"] },
   { key: "bubbles", label: "Bubbles", sub: "You earn bubbles or reach a new tier", types: ["bubbles"] },
   { key: "store_post", label: "Shop updates", sub: "A shop you follow posts something", types: ["store_post"] },
-  { key: "reviews", label: "Shop reviews", sub: "Reviews of a shop you run, and replies to yours", types: ["review", "review_response"] },
+  { key: "reviews", label: "Review replies", sub: "A shop replies to a review you wrote", types: ["review", "review_response"] },
+  { key: "shop_review", label: "Your shop: new reviews", sub: "Someone reviews a shop you run. In-app and by email", types: ["shop_review"] },
+  { key: "shop_fix", label: "Your shop: listing reports", sub: "A shopper says your hours, address or details are wrong", types: ["shop_fix"] },
+  { key: "shop_milestone", label: "Your shop: milestones", sub: "Your shop passes a views or followers milestone", types: ["shop_milestone"] },
+  { key: "shop_weekly", label: "Your shop: weekly report", sub: "Monday morning: views, calls, directions and a tip", types: ["shop_weekly"] },
   { key: "society", label: "Society", sub: "Membership applications and dues", types: ["club_application", "club_dues", "club_approved", "club_honorary"] },
 ];
 

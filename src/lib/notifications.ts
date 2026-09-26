@@ -11,9 +11,11 @@ export type Notification = {
   link: string | null;
   read: boolean;
   created_at: string;
+  /** Extra detail some notices carry, e.g. a shop's photo and numbers. */
+  data?: Record<string, unknown> | null;
 };
 
-export const NOTIFICATION_COLUMNS = "id, type, title, body, link, read, created_at";
+export const NOTIFICATION_COLUMNS = "id, type, title, body, link, read, created_at, data";
 
 export type Tone = "sky" | "amber" | "cyan" | "emerald" | "gold" | "coral" | "violet";
 export type IconKey = "forum" | "trophy" | "bubbles" | "message" | "store" | "review" | "society" | "sale" | "event" | "heart" | "comment" | "bell";
@@ -46,6 +48,10 @@ const KINDS: Record<string, KindMeta> = {
   event: { icon: "event", tone: "coral", category: "other", label: "events" },
   species_request: { icon: "trophy", tone: "emerald", category: "trophies", label: "species requests" },
   species_photo: { icon: "trophy", tone: "emerald", category: "trophies", label: "species photos" },
+  shop_review: { icon: "review", tone: "amber", category: "shops", label: "your shop's reviews", mutable: true },
+  shop_fix: { icon: "store", tone: "coral", category: "shops", label: "listing fix reports", mutable: true },
+  shop_milestone: { icon: "trophy", tone: "gold", category: "shops", label: "shop milestones", mutable: true },
+  shop_weekly: { icon: "store", tone: "sky", category: "shops", label: "weekly shop reports", mutable: true },
   species_video: { icon: "trophy", tone: "emerald", category: "trophies", label: "breeding videos" },
   site: { icon: "bell", tone: "sky", category: "other", label: "site news" },
   feed_like: { icon: "heart", tone: "coral", category: "feed", label: "likes", mutable: true },
