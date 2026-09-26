@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { awardBubbles } from "@/lib/awardBubbles";
 
@@ -46,6 +47,13 @@ export async function POST(req: Request) {
   if (result.status === "added" && result.suggester_id) {
     await awardBubbles(result.suggester_id, "species_approved", `species_sugg_${id}`);
   }
+
+  // Show the change straight away instead of waiting out the hour-long
+  // page cache: the list, the fish's own page (which may have been cached
+  // as "not found" before it existed) and the Tank Builder.
+  revalidatePath("/species");
+  revalidatePath("/tank-builder");
+  if (result.slug) revalidatePath(`/species/${result.slug}`);
 
   return NextResponse.json({ ok: true, slug: result.slug ?? null });
 }
