@@ -19,8 +19,29 @@
  * scrolls away with the page. `clip` cuts off sideways overflow the same
  * way without creating a scroll container, so fixed bars stay put.
  */
-html { scroll-behavior: smooth; overflow-x: clip; }
-body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 18px; line-height: 1.7; overflow-x: clip; }
+html { scroll-behavior: smooth; overflow-x: clip; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 18px; line-height: 1.7; overflow-x: clip; overflow-wrap: break-word; }
+
+/* ===================================================================
+   MOBILE FIT — keeps every page inside the screen on phones.
+
+   1. No zoom-in on tap. iPhones zoom the page when you tap a text box
+      whose font is under 16px, and never zoom back out, which leaves
+      the page sitting off the edge until you pinch it. Every input,
+      dropdown and text area is at least 16px on touch screens and
+      narrow windows, whatever size class a component gives it, so new
+      forms are covered automatically.
+   2. Nothing wider than the screen. Media, embeds and code blocks can
+      never push past the edge, and long unbroken text (links, emails,
+      handles) wraps instead of stretching the page.
+   =================================================================== */
+@media (pointer: coarse), (max-width: 767px) {
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), select, textarea):not([class*="text-lg"]):not([class*="text-xl"]):not([class*="text-2xl"]):not([class*="text-3xl"]) {
+    font-size: 16px !important;
+  }
+}
+img, video, iframe, canvas, embed, object { max-width: 100%; }
+pre { max-width: 100%; overflow-x: auto; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #020b18; }
 ::-webkit-scrollbar-thumb { background: #1264a0; border-radius: 3px; }
