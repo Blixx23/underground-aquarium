@@ -53,7 +53,11 @@ export async function POST(req: Request) {
 
   let bubbles = 0;
   if (result.status === "approved" && result.user_id) {
-    bubbles = await awardBubbles(result.user_id, "species_photo_used", `species_photo_${id}`);
+    // The photo notice from the database already names the fish, links to
+    // its page and mentions the bubbles, so no second generic notice.
+    bubbles = await awardBubbles(result.user_id, "species_photo_used", `species_photo_${id}`, {
+      notify: false,
+    });
   }
 
   if (result.status === "rejected" && result.storage_path) {

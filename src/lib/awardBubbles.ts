@@ -14,11 +14,17 @@ const NOTIFY_MIN = 10;
  *
  * Pass a dedupeKey for anything that can recur (e.g. `daily_2026_06_22`,
  * `sale_<orderId>`, `posts_10`). Omit it for true once-per-user awards.
+ *
+ * Pass { notify: false } when the caller already sends its own notice that
+ * mentions the bubbles (a species photo, say), so the member gets one
+ * notification that says what it was for, not a second generic one.
+ * Tier-ups still notify either way.
  */
 export async function awardBubbles(
   userId: string | null | undefined,
   source: string,
-  dedupeKey?: string
+  dedupeKey?: string,
+  opts: { notify?: boolean } = {}
 ): Promise<number> {
   if (!userId) return 0;
   try {
@@ -51,7 +57,7 @@ export async function awardBubbles(
     const link = "/profile";
 
     // In-app notice for meaningful earns.
-    if (amount >= NOTIFY_MIN) {
+    if (amount >= NOTIFY_MIN && opts.notify !== false) {
       try {
         await supabaseAdmin.from("notifications").insert({
           user_id: userId,
