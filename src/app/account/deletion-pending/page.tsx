@@ -62,7 +62,8 @@ export default function DeletionPendingPage() {
   async function signOut() {
     setBusy("signout");
     await supabase.auth.signOut();
-    router.push("/");
+    // Full page load so nothing rendered while signed in is reused.
+    window.location.replace("/");
   }
 
   if (loading) {

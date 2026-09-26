@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -163,7 +163,6 @@ export default function Navbar() {
   // --- Auth state ---
   const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<User | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -226,8 +225,11 @@ export default function Navbar() {
     await supabase.auth.signOut();
     setUser(null);
     setOpen(false);
-    router.push("/");
-    router.refresh();
+    // A full page load, not router.push: the in-app router keeps pages it
+    // rendered while you were signed in (including "/" redirecting to your
+    // feed), and would show them again. replace() also keeps the Back button
+    // from returning to a signed-in page.
+    window.location.replace("/");
   }
 
   return (
