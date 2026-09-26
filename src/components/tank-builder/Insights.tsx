@@ -99,7 +99,7 @@ export function RangeChart({
               <span className="relative h-3 flex-1 rounded-full bg-white/[0.06]">
                 <span
                   className="absolute inset-y-0 rounded-full"
-                  style={{ left: pct(a), width: width(a, b), background: speciesColor(it.species.slug, i), opacity: 0.85 }}
+                  style={{ left: pct(a), width: width(a, b), background: speciesColor(it.species, i), opacity: 0.85 }}
                   title={`${fmt(a)}-${fmt(b)}${unit}`}
                 />
               </span>

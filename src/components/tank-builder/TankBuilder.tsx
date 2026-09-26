@@ -849,22 +849,22 @@ export default function TankBuilder({
                       loadTank(t);
                     }}
                     className={
-                      "flex h-[5.5rem] w-44 overflow-hidden rounded-xl border text-left transition-colors " +
+                      "flex h-[5.5rem] w-64 overflow-hidden rounded-xl border text-left transition-colors " +
                       (active ? "border-emerald-500/50 bg-emerald-500/10" : "border-white/10 bg-white/5 hover:border-white/25")
                     }
                   >
                     {t.images?.[0] && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={t.images[0]} alt="" className="h-full w-14 shrink-0 object-cover" />
+                      <img src={t.images[0]} alt="" className="h-full w-20 shrink-0 object-cover" />
                     )}
-                    <span className="flex min-w-0 flex-1 flex-col px-3 py-2.5 pr-7">
-                      <span className="truncate text-sm font-medium text-white">{t.name}</span>
-                      <span className="mt-0.5 text-xs text-ocean-400">
+                    <span className="flex min-w-0 flex-1 flex-col justify-between px-3 py-2.5 pr-8 font-sans leading-tight">
+                      <span className="block truncate text-[14px] font-semibold text-white">{t.name}</span>
+                      <span className="block truncate text-[12px] text-ocean-300">
                         {t.gallons ? `${t.gallons} gal · ` : ""}
                         {t.items?.length ?? 0} species
                       </span>
                       {t.is_public && (
-                        <span className="mt-auto inline-flex w-fit items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300">
+                        <span className="inline-flex w-fit items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-emerald-300">
                           <Globe className="h-2.5 w-2.5" /> Public
                         </span>
                       )}
@@ -1166,7 +1166,7 @@ export default function TankBuilder({
                         hot ? "border-amber-500/30 bg-amber-500/[0.05]" : "border-white/10 bg-white/5"
                       }`}
                     >
-                      <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: speciesColor(sp.slug, i) }} />
+                      <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: speciesColor(sp, i) }} />
                       <div className="min-w-0 flex-1">
                         <Link
                           href={`/species/${sp.slug}`}
