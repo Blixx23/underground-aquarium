@@ -105,7 +105,7 @@ export default function NotificationRow({
       onKeyDown={(e) => {
         if (e.key === "Enter") onOpen(n);
       }}
-      className={`group relative flex cursor-pointer items-start gap-3 rounded-xl text-left font-sans transition-colors hover:bg-[#0c2640] focus:outline-none focus-visible:ring-1 focus-visible:ring-sky-400/50 ${
+      className={`group relative mb-1.5 flex cursor-pointer items-start gap-3 rounded-xl text-left last:mb-0 font-sans transition-colors hover:bg-[#0c2640] focus:outline-none focus-visible:ring-1 focus-visible:ring-sky-400/50 ${
         compact ? "px-3 py-3" : "px-4 py-3.5"
       } ${n.read ? "" : "bg-[#0a2035]"} ${menu ? "z-30" : ""}`}
     >
