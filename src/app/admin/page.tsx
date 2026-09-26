@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ShieldCheck, Users, ArrowRight, GraduationCap, Fish, Flag, Droplets,
-  BookOpen, Store, Wrench, Mail, Megaphone, MessageSquare,
+  BookOpen, Store, Wrench, Mail, Megaphone, MessageSquare, Camera,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SOCIETY_NAME, SOCIETY_CLUB_PATH } from "@/lib/config";
@@ -22,6 +22,7 @@ const CARDS: Card[] = [
   { href: "/admin/store-fixes", label: "Shop fixes", description: "Wrong hours, moved or closed shops, flagged by shoppers", Icon: Wrench, countable: true },
   { href: "/admin/reports", label: "Reports", description: "Posts and members flagged by the community", Icon: Flag, countable: true },
   { href: "/admin/species", label: "Species", description: "Fish and animals the community suggested", Icon: Fish, countable: true },
+  { href: "/admin/species-photos", label: "Species photos", description: "Members' own photos waiting to go on species pages", Icon: Camera, countable: true },
   { href: "/admin/glossary", label: "Glossary", description: "Terms waiting to be approved", Icon: BookOpen, countable: true },
   { href: "/admin/courses", label: "Courses", description: "Lessons, quizzes and drafts still to publish", Icon: GraduationCap, countable: true },
   { href: "/admin/feedback", label: "Feedback", description: "What members have written in about", Icon: MessageSquare, countable: true },

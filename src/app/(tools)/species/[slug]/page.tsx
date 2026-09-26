@@ -7,6 +7,8 @@ import { supabasePublic } from "@/lib/supabase/public";
 import RelatedGuides from "@/components/discover/RelatedGuides";
 import ListingsStrip from "@/components/discover/ListingsStrip";
 import { listingsMatching, relatedThreads } from "@/lib/discover";
+import SpeciesPhotos, { type SpeciesPhoto } from "@/components/species/SpeciesPhotos";
+import SubmitSpeciesPhoto from "@/components/species/SubmitSpeciesPhoto";
 
 export const revalidate = 3600;
 
@@ -56,6 +58,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const ogTitle = `${s.common_name} — Care Guide & Profile`;
   const url = `/species/${slug}`;
 
+  // A member's cover photo, when there is one, is the share image.
+  const { data: photoRows } = await supabasePublic.rpc("public_species_photos", { p_slug: slug });
+  const cover = ((photoRows ?? []) as SpeciesPhoto[])[0] ?? null;
+  const images = cover ? [{ url: cover.url, width: cover.width, height: cover.height, alt: s.common_name }] : undefined;
+
   return {
     title: s.common_name,
     description,
@@ -66,11 +73,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       url,
       type: "article",
       siteName: "UndergroundAquarium",
+      ...(images ? { images } : {}),
     },
     twitter: {
-      card: "summary",
+      card: images ? "summary_large_image" : "summary",
       title: ogTitle,
       description,
+      ...(images ? { images: [images[0].url] } : {}),
     },
   };
 }
@@ -146,6 +155,9 @@ export default async function SpeciesDetailPage({ params }: Params) {
     { p_slug: s.slug }
   );
 
+  const { data: photoRows } = await supabasePublic.rpc("public_species_photos", { p_slug: s.slug });
+  const photos = (photoRows ?? []) as SpeciesPhoto[];
+
   const fullName = s.scientific_name
     ? `${s.common_name} (${s.scientific_name})`
     : s.common_name;
@@ -188,6 +200,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
         name: "UndergroundAquarium",
         url: SITE,
       },
+      ...(photos.length > 0 ? { image: photos.map((p) => p.url) } : {}),
     },
   ];
 
@@ -257,6 +270,16 @@ export default async function SpeciesDetailPage({ params }: Params) {
             </Link>
           </p>
         )}
+
+        <div className="mt-6">
+          <SpeciesPhotos photos={photos} name={s.common_name as string} />
+          <SubmitSpeciesPhoto
+            speciesId={s.id as string}
+            slug={s.slug as string}
+            name={s.common_name as string}
+            approvedCount={photos.length}
+          />
+        </div>
 
         {s.summary && (
           <p className="text-ocean-200 text-lg leading-relaxed mt-6 mb-6">

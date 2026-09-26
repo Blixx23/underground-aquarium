@@ -35,11 +35,12 @@ export const adminPending = cache(async (): Promise<PendingCounts> => {
     .eq("slug", SOCIETY_SLUG)
     .maybeSingle();
 
-  const [members, courses, species, glossary, claims, fixes, reports, feedback, emailFailed] =
+  const [members, courses, species, photos, glossary, claims, fixes, reports, feedback, emailFailed] =
     await Promise.all([
       society ? countWhere("club_members", [["club_id", society.id as string], ["status", "pending"]]) : 0,
       countWhere("courses", [["is_published", false]]),
       countWhere("species_suggestions", [["status", "pending"]]),
+      countWhere("species_photos", [["status", "pending"]]),
       countWhere("glossary_suggestions", [["status", "pending"]]),
       countWhere("store_claims", [["status", "pending"]]),
       countWhere("store_edit_suggestions", [["status", "open"]]),
@@ -52,6 +53,7 @@ export const adminPending = cache(async (): Promise<PendingCounts> => {
     [`${SOCIETY_CLUB_PATH}/admin`]: members,
     "/admin/courses": courses,
     "/admin/species": species,
+    "/admin/species-photos": photos,
     "/admin/glossary": glossary,
     "/admin/stores": claims,
     "/admin/store-fixes": fixes,
