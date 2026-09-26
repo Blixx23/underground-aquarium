@@ -9,10 +9,12 @@ import {
   Megaphone,
   Star,
   Newspaper,
+  BarChart3,
 } from "lucide-react";
 
 const TABS = [
   { seg: "", label: "Overview", Icon: LayoutDashboard },
+  { seg: "insights", label: "Insights", Icon: BarChart3 },
   { seg: "updates", label: "Updates", Icon: Newspaper },
   { seg: "photos", label: "Photos", Icon: ImageIcon },
   { seg: "hours", label: "Hours & details", Icon: CalendarClock },
