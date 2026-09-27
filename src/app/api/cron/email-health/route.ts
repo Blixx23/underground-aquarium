@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { cronAuthorised } from "@/lib/email/cronAuth";
+import { SUPPORT_EMAIL } from "@/lib/email/provider";
 import { dispatchOne } from "@/lib/email/queue";
 import type { EmailHealth } from "@/lib/email/health";
 
@@ -17,7 +18,8 @@ const esc = (s: string) =>
 export async function GET(req: Request) {
   if (!cronAuthorised(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const admin = process.env.ADMIN_ALERT_EMAIL;
+  // Alerts go to the support inbox, never a personal address.
+  const admin = SUPPORT_EMAIL;
   const { data, error } = await supabaseAdmin.rpc("email_health");
   if (error) {
     // The check itself failing is not "ok". Say so, loudly.
@@ -87,7 +89,6 @@ export async function GET(req: Request) {
       <ul style="font:13px Helvetica,Arial;color:#55606b;">${examples}</ul>` : ""}
     <p style="font:14px Helvetica,Arial;"><a href="https://www.undergroundaquarium.com/admin/email">Open the email panel</a></p>`;
 
-  if (!admin) return NextResponse.json({ ok: false, error: "ADMIN_ALERT_EMAIL is not set", health: h }, { status: 500 });
 
   try {
     await dispatchOne({ kind: "email_alert", to: admin, subject, html, ignorePause: true });

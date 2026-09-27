@@ -17,6 +17,13 @@ export const FROM_TRANSACTIONAL =
 export const FROM_BULK = normalizeFrom(process.env.RESEND_FROM_BULK);
 
 /**
+ * The one public inbox. Every email the site sends answers here unless
+ * the caller picked a reply address, and every alert meant for the site
+ * owner is sent here. Nobody outside ever sees a personal address.
+ */
+export const SUPPORT_EMAIL = "support@undergroundaquarium.com";
+
+/**
  * Tidies a sender typed into Vercel by hand. Resend only accepts
  * `email@example.com` or `Name <email@example.com>`, and the usual slips
  * (quotes around the whole thing, a stray space, the name with no angle
@@ -111,7 +118,9 @@ export async function deliver(args: SendArgs): Promise<string | null> {
     // signals there is. Every send gets one, whether the caller
     // remembered or not.
     text: args.text ?? htmlToText(args.html),
-    replyTo: args.replyTo,
+    // Our sending subdomains have no inbox, so a reply with nowhere
+    // to go would vanish. Send it to support unless told otherwise.
+    replyTo: args.replyTo || SUPPORT_EMAIL,
     headers: Object.keys(headers).length ? headers : undefined,
   });
 
