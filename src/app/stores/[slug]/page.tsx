@@ -28,6 +28,7 @@ import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpe
 import OsmCredit from "@/components/stores/OsmCredit";
 import Stars from "@/components/stores/Stars";
 import { formatPhone } from "@/lib/phone";
+import { storeIsStub } from "@/lib/stores/thin";
 
 export const dynamic = "force-dynamic";
 
@@ -115,10 +116,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     `Directions, hours, reviews and what's in stock from local fish keepers.`;
   const raw = store.description?.trim() || built;
   const description = raw.length > 158 ? `${raw.slice(0, 155).trimEnd()}…` : raw;
+  const { count: reviews } = await supabasePublic
+    .from("store_reviews")
+    .select("id", { count: "exact", head: true })
+    .eq("store_id", store.id);
   return {
     title,
     description,
     alternates: { canonical: `/stores/${store.slug}` },
+    robots: { index: !storeIsStub({ ...store, reviews }), follow: true },
     openGraph: { title, description, url: `/stores/${store.slug}`, type: "website" },
   };
 }

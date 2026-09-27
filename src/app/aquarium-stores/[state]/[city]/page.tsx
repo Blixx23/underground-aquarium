@@ -68,10 +68,12 @@ export async function generateMetadata({
   const { state, city } = await params;
   const d = await load(state, city);
   if (!d) return { title: "Aquarium stores" };
-  const { city: c } = d;
+  const { city: c, nearbyShops } = d;
   const n = c.stores.length;
   const names = c.stores.slice(0, 3).map((s) => s.name).join(", ");
   return {
+    // One shop and nothing nearby is just a copy of that shop's page.
+    robots: { index: n > 1 || nearbyShops.length > 0, follow: true },
     title: `Aquarium Stores in ${c.name}, ${c.state} (${n} Fish ${n === 1 ? "Shop" : "Shops"})`,
     description: `${n} aquarium and tropical fish ${n === 1 ? "store" : "stores"} in ${c.name}, ${stateName(
       c.state

@@ -4,12 +4,19 @@ const nextConfig = {
   // package out of the bundle and ship the binary with the two routes
   // that use it.
   serverExternalPackages: ["ffmpeg-static"],
+  // Search engine and link-preview bots get the whole page in one piece,
+  // <head> included, instead of streamed. Googlebot isn't on Next's default
+  // list; adding it means titles, canonicals and robots tags are always in
+  // the <head> where every crawler expects them.
+  htmlLimitedBots:
+    /Googlebot|Google-InspectionTool|Storebot-Google|GoogleOther|Mediapartners-Google|AdsBot-Google|bingbot|BingPreview|Slurp|DuckDuckBot|Baiduspider|YandexBot|Applebot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|redditbot|ia_archiver|GPTBot|ClaudeBot|PerplexityBot/i,
   outputFileTracingIncludes: {
     "/api/species-videos/process": ["./node_modules/ffmpeg-static/ffmpeg"],
     "/api/admin/species-videos": ["./node_modules/ffmpeg-static/ffmpeg"],
   },
   // Old WordPress addresses Google still crawls. Species links (/fish/...)
-  // are matched to the right species in src/app/fish/[slug]/route.ts.
+  // are matched in src/app/fish/[slug]/route.ts, events in
+  // src/app/event/[slug]/route.ts, and old top-level posts in src/app/[legacy].
   async redirects() {
     return [
       { source: "/fish-species", destination: "/species", permanent: true },
@@ -23,6 +30,10 @@ const nextConfig = {
       { source: "/we-just-launched-our-events-feature:rest(.*)", destination: "/events", permanent: true },
       { source: "/blog", destination: "/forums", permanent: true },
       { source: "/blog/:path*", destination: "/forums", permanent: true },
+      // The old forum hub and the old events calendar.
+      { source: "/community", destination: "/forums", permanent: true },
+      { source: "/community/:path*", destination: "/forums", permanent: true },
+      { source: "/event", destination: "/events", permanent: true },
     ];
   },
   images: {

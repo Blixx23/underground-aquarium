@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Fish, Github, Twitter, Mail } from "lucide-react";
+import { Fish, Mail } from "lucide-react";
 import { POST_AD_PATH, SOCIETY_PATH } from "@/lib/config";
 import { BUILD_LABEL } from "@/lib/version";
 
@@ -15,6 +15,8 @@ const links = {
     { label: "Fish Species", href: "/species" },
     { label: "Tank Builder", href: "/tank-builder" },
     { label: "Glossary", href: "/glossary" },
+    { label: "Breeding guides", href: "/breeding" },
+    { label: "Water Check", href: "/water-check" },
     { label: "Find a fish store", href: "/aquarium-stores" },
   ],
   Community: [
@@ -54,8 +56,6 @@ export default function Footer() {
             </p>
             <div className="flex gap-3 mt-6">
               {[
-                { icon: Twitter, href: "#" },
-                { icon: Github, href: "#" },
                 { icon: Mail, href: "mailto:support@undergroundaquarium.com" },
               ].map(({ icon: Icon, href }, i) => (
                 <a

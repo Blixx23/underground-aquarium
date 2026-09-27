@@ -8,9 +8,10 @@ import { getViewer } from "@/lib/feedViewer";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Feed",
+  title: "Community Feed: Tanks, Spawns & Fish Room Updates",
   description:
     "What the Underground Aquarium community is breeding, building and selling right now.",
+  alternates: { canonical: "/feed" },
 };
 
 /**

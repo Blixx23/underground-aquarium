@@ -27,11 +27,13 @@ export async function generateMetadata({
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
-  if (!course) return { title: "Course — Underground Aquarium" };
+  if (!course) return { title: "Course" };
   return {
-    title: `${course.title} — Underground Aquarium`,
+    // The layout adds "| Underground Aquarium"; don't say it twice.
+    title: `${course.title}: Free Aquarium Course`,
     description:
       course.description ?? course.subtitle ?? undefined,
+    alternates: { canonical: `/courses/${slug}` },
   };
 }
 

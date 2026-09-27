@@ -11,6 +11,8 @@ import SpeciesPhotos, { type SpeciesPhoto } from "@/components/species/SpeciesPh
 import SubmitSpeciesPhoto from "@/components/species/SubmitSpeciesPhoto";
 import SpeciesVideos, { type SpeciesVideo } from "@/components/species/SpeciesVideos";
 import SubmitSpeciesVideo from "@/components/species/SubmitSpeciesVideo";
+import { speciesFaq } from "@/lib/species/faq";
+import { ldJson } from "@/lib/jsonLd";
 
 export const revalidate = 3600;
 
@@ -66,7 +68,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const images = cover ? [{ url: cover.url, width: cover.width, height: cover.height, alt: s.common_name }] : undefined;
 
   return {
-    title: s.common_name,
+    // What people search: "cardinal tetra care", "cardinal tetra tank size".
+    title: `${s.common_name} Care Guide: Tank Size, Temperature & Diet`,
     description,
     alternates: { canonical: url },
     openGraph: {
@@ -163,6 +166,14 @@ export default async function SpeciesDetailPage({ params }: Params) {
   const { data: videoRows } = await supabasePublic.rpc("public_species_videos", { p_slug: s.slug });
   const videos = (videoRows ?? []) as SpeciesVideo[];
 
+  // Members' breeding reports for this fish, if any: linked both ways.
+  const { count: breedingReports } = await supabasePublic
+    .from("public_breeding_guides")
+    .select("species_slug", { count: "exact", head: true })
+    .eq("species_slug", s.slug);
+  const hasBreedingGuide = (breedingReports ?? 0) > 0;
+  const faq = speciesFaq(s, { hasBreedingGuide });
+
   const fullName = s.scientific_name
     ? `${s.common_name} (${s.scientific_name})`
     : s.common_name;
@@ -200,20 +211,45 @@ export default async function SpeciesDetailPage({ params }: Params) {
         "@type": "WebPage",
         "@id": `${SITE}/species/${s.slug}`,
       },
+      author: {
+        "@type": "Organization",
+        name: "Underground Aquarium",
+        url: SITE,
+      },
       publisher: {
         "@type": "Organization",
-        name: "UndergroundAquarium",
+        name: "Underground Aquarium",
         url: SITE,
+        logo: { "@type": "ImageObject", url: `${SITE}/icon-512.png` },
+      },
+      ...(s.created_at ? { datePublished: s.created_at } : {}),
+      about: {
+        "@type": "Thing",
+        name: s.common_name,
+        ...(s.scientific_name ? { alternateName: s.scientific_name } : {}),
       },
       ...(photos.length > 0 ? { image: photos.map((p) => p.url) } : {}),
     },
+    ...(faq.length > 0
+      ? [
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faq.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: f.a },
+            })),
+          },
+        ]
+      : []),
   ];
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }}
       />
       <div className="max-w-2xl mx-auto">
         <nav className="flex items-center gap-1.5 text-sm text-ocean-400 mb-8">
@@ -374,6 +410,35 @@ export default async function SpeciesDetailPage({ params }: Params) {
 
         {s.body && (
           <p className="text-ocean-300 leading-relaxed mb-10">{s.body}</p>
+        )}
+
+        {hasBreedingGuide && (
+          <Link
+            href={`/breeding/${s.slug}`}
+            className="mb-10 flex items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-4 py-3.5 text-ocean-100 hover:border-emerald-400/50"
+          >
+            <span>
+              <span className="block font-medium text-white">How to breed {s.common_name}</span>
+              <span className="block text-sm text-ocean-300">
+                {breedingReports} {breedingReports === 1 ? "report" : "reports"} from members who have spawned them
+              </span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-emerald-300" />
+          </Link>
+        )}
+
+        {faq.length > 0 && (
+          <section className="mb-10">
+            <h2 className="font-display text-2xl text-white mb-4">{s.common_name} care questions</h2>
+            <dl className="space-y-3">
+              {faq.map((f) => (
+                <div key={f.q} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5">
+                  <dt className="font-medium text-white">{f.q}</dt>
+                  <dd className="mt-1.5 text-ocean-200 leading-relaxed">{f.a}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
         )}
 
         <ListingsStrip

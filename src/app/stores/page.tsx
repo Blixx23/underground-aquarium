@@ -10,9 +10,10 @@ import OsmCredit from "@/components/stores/OsmCredit";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Local Fish Stores",
+  title: "Local Fish Stores Near You",
   description:
     "Find local aquarium and fish stores near you. Search by name, city, or specialty, see what each shop carries, and get directions.",
+  alternates: { canonical: "/stores" },
 };
 
 type StoreRow = {

@@ -87,18 +87,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // The three below are for good, so they're permanent (308): Google moves
+  // the old page's standing to the new one instead of keeping both.
   const societyTarget = SOCIETY_LEGACY_AWARDS[pathname.replace(/\/$/, "")];
   if (societyTarget) {
     const url = request.nextUrl.clone();
     url.pathname = societyTarget;
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 308);
   }
 
   if (LEGACY_CLUBS_PATH.test(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = SOCIETY_PATH;
     url.search = "";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 308);
   }
 
   const legacy = pathname.match(LEGACY_PRODUCT_PATH);
@@ -106,8 +108,12 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = `/listing/${legacy[1]}`;
     url.search = "";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 308);
   }
+
+  // Signed-out visitors (and every search engine crawler) have no session to
+  // refresh, so skip the round trip to Supabase and serve the page sooner.
+  if (!hasSession(request)) return NextResponse.next();
 
   return await updateSession(request);
 }

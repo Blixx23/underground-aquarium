@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Cinzel_Decorative, Crimson_Pro, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -7,6 +8,29 @@ import Bubbles from "@/components/Bubbles";
 import DailyHeartbeat from "@/components/DailyHeartbeat";
 import TrophySync from "@/components/trophies/TrophySync";
 import SiteAnalytics from "@/components/SiteAnalytics";
+import NavProgress from "@/components/NavProgress";
+
+// Fonts are downloaded at build time and served from our own domain, so the
+// page never waits on Google Fonts before it can show text.
+const display = Cinzel_Decorative({
+  weight: ["400", "700", "900"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-cinzel",
+});
+const body = Crimson_Pro({
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-crimson",
+});
+const mono = JetBrains_Mono({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jetbrains",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -74,20 +98,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${display.variable} ${body.variable} ${mono.variable}`}
+    >
       <body>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
         />
+        <NavProgress />
         <Bubbles />
         <DailyHeartbeat />
         <TrophySync />

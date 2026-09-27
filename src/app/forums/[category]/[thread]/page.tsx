@@ -12,6 +12,8 @@ import SocietySeal from "@/components/society/SocietySeal";
 import RelatedGuides from "@/components/discover/RelatedGuides";
 import { keywords, relatedThreads } from "@/lib/discover";
 import ScrollToComment from "@/components/forum/ScrollToComment";
+import { plainText, threadIndexable } from "@/lib/forum/indexable";
+import { ldJson } from "@/lib/jsonLd";
 
 export const revalidate = 60;
 
@@ -72,6 +74,7 @@ async function getThread(categorySlug: string, threadSlug: string) {
     )
     .eq("category_id", cat.id)
     .eq("slug", threadSlug)
+    .is("hidden_at", null)
     .maybeSingle();
   if (!thread) return null;
 
@@ -91,13 +94,25 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     .eq("is_op", true)
     .maybeSingle();
 
-  const indexable = Boolean(t.is_seeded) || (t.reply_count as number) >= 1;
+  const indexable = threadIndexable({
+    is_seeded: t.is_seeded as boolean,
+    reply_count: t.reply_count as number,
+    opLength: plainText(op?.body as string | null).length,
+  });
 
+  const description = op?.body ? excerpt(op.body as string) : undefined;
   return {
     title: t.title as string,
-    description: op?.body ? excerpt(op.body as string) : undefined,
+    description,
     alternates: { canonical: `/forums/${category}/${thread}` },
     robots: { index: indexable, follow: true },
+    openGraph: {
+      title: t.title as string,
+      description,
+      url: `/forums/${category}/${thread}`,
+      type: "article",
+      ...(Array.isArray(t.images) && t.images[0] ? { images: [t.images[0] as string] } : {}),
+    },
   };
 }
 
@@ -121,6 +136,7 @@ export default async function ThreadPage({ params }: Params) {
     .from("forum_posts")
     .select("id, author_id, body, is_op, parent_id, score, created_at")
     .eq("thread_id", t.id)
+    .is("hidden_at", null)
     .order("created_at", { ascending: true });
 
   const all = (postsData ?? []) as Post[];
@@ -248,27 +264,75 @@ export default async function ThreadPage({ params }: Params) {
     );
   }
 
-  const canonical = `https://www.undergroundaquarium.com/forums/${category}/${thread}`;
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "DiscussionForumPosting",
-    headline: t.title,
-    url: canonical,
-    datePublished: t.created_at,
-    dateModified: t.last_activity_at,
-    author: { "@type": "Person", name: authorLabel(op?.author_id ?? null) },
-    interactionStatistic: {
-      "@type": "InteractionCounter",
-      interactionType: "https://schema.org/CommentAction",
-      userInteractionCount: t.reply_count,
-    },
+  const SITE = "https://www.undergroundaquarium.com";
+  const canonical = `${SITE}/forums/${category}/${thread}`;
+  // Google's Discussion Forum markup: the post itself, who wrote it, and
+  // every reply nested the way it is on the page.
+  const person = (id: string | null) => {
+    const n = id ? byId[id] : undefined;
+    return {
+      "@type": "Person",
+      name: authorLabel(id),
+      ...(n?.username ? { url: `${SITE}/u/${n.username}` } : {}),
+    };
   };
+  const votes = (score: number) => ({
+    "@type": "InteractionCounter",
+    interactionType: "https://schema.org/LikeAction",
+    userInteractionCount: Math.max(0, score ?? 0),
+  });
+  const commentLd = (c: Post): Record<string, unknown> => {
+    const kids = sortKids(childrenByParent.get(c.id) ?? []);
+    return {
+      "@type": "Comment",
+      url: `${canonical}#post-${c.id}`,
+      author: person(c.author_id),
+      datePublished: c.created_at,
+      text: plainText(c.body) || "(photo)",
+      interactionStatistic: votes(c.score),
+      ...(kids.length > 0 ? { comment: kids.map(commentLd) } : {}),
+    };
+  };
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "DiscussionForumPosting",
+      mainEntityOfPage: canonical,
+      headline: t.title,
+      url: canonical,
+      text: plainText(op?.body) || (t.title as string),
+      datePublished: t.created_at,
+      dateModified: t.last_activity_at ?? t.created_at,
+      author: person(op?.author_id ?? null),
+      ...(threadImages.length > 0 ? { image: threadImages } : {}),
+      commentCount: comments.length,
+      interactionStatistic: [
+        {
+          "@type": "InteractionCounter",
+          interactionType: "https://schema.org/CommentAction",
+          userInteractionCount: comments.length,
+        },
+        votes(op?.score ?? 0),
+      ],
+      ...(roots.length > 0 ? { comment: roots.map(commentLd) } : {}),
+      isPartOf: { "@type": "WebPage", name: `${cat.name} forum`, url: `${SITE}/forums/${category}` },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Forums", item: `${SITE}/forums` },
+        { "@type": "ListItem", position: 2, name: cat.name, item: `${SITE}/forums/${category}` },
+        { "@type": "ListItem", position: 3, name: t.title, item: canonical },
+      ],
+    },
+  ];
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }}
       />
       <ScrollToComment />
       <div className="max-w-2xl mx-auto">
@@ -307,12 +371,13 @@ export default async function ThreadPage({ params }: Params) {
                   threadImages.length === 1 ? "grid-cols-1" : "grid-cols-2"
                 }`}
               >
-                {threadImages.map((url) => (
+                {threadImages.map((url, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     key={url}
                     src={url}
-                    alt="Post photo"
+                    alt={threadImages.length > 1 ? `${t.title} (photo ${i + 1})` : (t.title as string)}
+                    loading={i === 0 ? undefined : "lazy"}
                     className="w-full rounded-xl border border-ocean-800/60 object-cover max-h-[28rem]"
                   />
                 ))}

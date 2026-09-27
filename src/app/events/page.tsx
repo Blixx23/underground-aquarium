@@ -7,9 +7,10 @@ import EventsList, { type EventCard } from "./EventsList";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Events",
+  title: "Aquarium Events Near You: Fish Swaps, Auctions & Club Meetings",
   description:
-    "Aquarium society meetups, frag swaps, auctions, and shop events. Find something near you or post your own.",
+    "Aquarium society meetings, fish and frag swaps, auctions, expos and shop events across the US. Find one near you or post your own for free.",
+  alternates: { canonical: "/events" },
 };
 
 type EventRow = {

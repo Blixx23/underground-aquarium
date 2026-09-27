@@ -27,7 +27,7 @@ import LikersSheet from "@/components/feed/LikersSheet";
 import PhotoViewer from "@/components/feed/PhotoViewer";
 import { formatPrice } from "@/lib/marketplace/listings";
 import { categoryLabel } from "@/lib/marketplace/categories";
-import { canCommentInFeed, feedItemPath, timeAgo, type FeedItem } from "@/lib/feed";
+import { canCommentInFeed, feedItemPath, timeAgo, type FeedComment, type FeedItem } from "@/lib/feed";
 
 const ACTIVITY: Record<
   Exclude<FeedItem["kind"], "post">,
@@ -51,12 +51,15 @@ export default function FeedCard({
   viewerIsAdmin = false,
   startOpen = false,
   onRemoved,
+  initialComments,
 }: {
   item: FeedItem;
   viewerId: string | null;
   viewerIsAdmin?: boolean;
   startOpen?: boolean;
   onRemoved?: (id: string) => void;
+  /** Server-rendered comments, on a post's own page. */
+  initialComments?: FeedComment[];
 }) {
   const [supabase] = useState(() => createClient());
   const [liked, setLiked] = useState(item.liked);
@@ -352,7 +355,12 @@ export default function FeedCard({
 
       {isPost && item.images.length > 0 && (
         <div className="relative">
-          <Photos images={item.images} onOpen={setViewer} onDoubleTap={doubleTapLike} />
+          <Photos
+            images={item.images}
+            alt={photoAlt(item)}
+            onOpen={setViewer}
+            onDoubleTap={doubleTapLike}
+          />
           {burst && (
             <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <Heart className="h-24 w-24 animate-ping fill-coral-400 text-coral-400 drop-shadow-2xl" />
@@ -442,6 +450,7 @@ export default function FeedCard({
           viewerIsAdmin={viewerIsAdmin}
           autoFocus={focusBox}
           onCountChange={setComments}
+          initialComments={initialComments}
         />
       )}
 
@@ -463,10 +472,12 @@ export default function FeedCard({
  */
 function Photos({
   images,
+  alt,
   onOpen,
   onDoubleTap,
 }: {
   images: string[];
+  alt: string;
   onOpen: (i: number) => void;
   onDoubleTap: () => void;
 }) {
@@ -492,7 +503,7 @@ function Photos({
     return (
       <button type="button" onClick={() => tap(0)} className="block w-full bg-ocean-950" aria-label="Open photo">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={shown[0]} alt="" loading="lazy" className="max-h-[560px] w-full object-cover" />
+        <img src={shown[0]} alt={alt} loading="lazy" className="max-h-[560px] w-full object-cover" />
       </button>
     );
   }
@@ -508,7 +519,7 @@ function Photos({
           className={`relative block min-h-0 overflow-hidden ${shown.length === 3 && i === 0 ? "row-span-2" : ""}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <img src={src} alt={`${alt} (${i + 1})`} loading="lazy" className="h-full w-full object-cover" />
           {extra > 0 && i === shown.length - 1 && (
             <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-2xl font-semibold text-white">
               +{extra}
@@ -518,6 +529,13 @@ function Photos({
       ))}
     </div>
   );
+}
+
+/** Describes a post's photos for screen readers and image search. */
+function photoAlt(item: FeedItem): string {
+  const words = (item.body ?? "").replace(/\s+/g, " ").trim();
+  const lead = words.length > 90 ? `${words.slice(0, 87).trimEnd()}…` : words;
+  return lead ? `${item.author_name}: ${lead}` : `Photo posted by ${item.author_name}`;
 }
 
 /** The compact card for automatic activity. */
@@ -552,7 +570,7 @@ function ActivityBody({ item }: { item: FeedItem }) {
       <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ocean-950">
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <img src={cover} alt={item.title ?? ""} loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <Icon className={`h-6 w-6 ${a.tone}`} />
         )}

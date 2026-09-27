@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-// The Community Hub and the Feed were two different feeds. There is one now.
+// The old WordPress community hub. Its conversations live in the forums now.
 export default function CommunityPage() {
-  redirect("/feed?tab=everyone");
+  permanentRedirect("/forums");
 }

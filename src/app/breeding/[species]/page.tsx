@@ -87,6 +87,13 @@ export default async function SpeciesGuide({ params }: Params) {
   const name = guides[0].species_name;
   const isPlant = guides[0].program === "hap";
 
+  // The care guide for the same fish, so readers (and Google) can get there.
+  const { data: careGuide } = await supabasePublic
+    .from("species")
+    .select("slug, common_name")
+    .eq("slug", species)
+    .maybeSingle();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -119,10 +126,21 @@ export default async function SpeciesGuide({ params }: Params) {
         <h1 className="font-display text-4xl sm:text-5xl text-white mb-2">
           {name}
         </h1>
-        <p className="text-ocean-300 mb-10">
+        <p className="text-ocean-300 mb-4">
           {guides.length} {guides.length === 1 ? "report" : "reports"} from
           hobbyists who&apos;ve bred {name}.
         </p>
+        {careGuide && (
+          <p className="mb-10">
+            <Link
+              href={`/species/${careGuide.slug}`}
+              className="text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
+            >
+              {careGuide.common_name} care guide: tank size, water and diet
+            </Link>
+          </p>
+        )}
+        {!careGuide && <div className="mb-6" />}
 
         <div className="space-y-6">
           {guides.map((g) => {

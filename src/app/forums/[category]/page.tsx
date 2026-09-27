@@ -48,19 +48,20 @@ export async function generateMetadata({
   const cat = await getCategory(category);
   if (!cat || !cat.is_public) return { title: "Forum" };
 
-  const { data: threads } = await supabasePublic
+  // A category with a few real threads is a useful page on its own.
+  const { count } = await supabasePublic
     .from("forum_threads")
-    .select("is_seeded, reply_count")
-    .eq("category_id", cat.id);
-  const indexable = (threads ?? []).filter(
-    (t) => t.is_seeded || (t.reply_count as number) >= 1
-  ).length;
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", cat.id)
+    .is("hidden_at", null);
 
   return {
-    title: `${cat.name} — Forums`,
-    description: cat.description ?? undefined,
+    title: `${cat.name} Forum: Questions & Answers`,
+    description:
+      (cat.description ? `${cat.description} ` : "") +
+      `Ask a question or browse answers from fellow fish keepers on Underground Aquarium.`,
     alternates: { canonical: `/forums/${category}` },
-    robots: { index: indexable >= 3, follow: true },
+    robots: { index: (count ?? 0) >= 3, follow: true },
   };
 }
 
@@ -76,6 +77,7 @@ export default async function CategoryPage({ params, searchParams }: Params) {
       "id, slug, title, score, reply_count, is_pinned, created_at, last_activity_at, author_id"
     )
     .eq("category_id", cat.id)
+    .is("hidden_at", null)
     .order("is_pinned", { ascending: false });
   if (sort === "unanswered") {
     query = query.eq("reply_count", 0).order("created_at", { ascending: false });

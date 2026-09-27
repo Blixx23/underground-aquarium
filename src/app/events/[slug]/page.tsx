@@ -17,6 +17,7 @@ import EventRsvp from "../EventRsvp";
 import EditEvent from "../EditEvent";
 import ShareButton from "../ShareButton";
 import { DEFAULT_EVENT_IMAGE, tzLabel } from "@/lib/eventTime";
+import { ldJson } from "@/lib/jsonLd";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title,
     description,
+    alternates: { canonical: `/events/${slug}` },
     openGraph: { title, description, url, type: "website", images },
     twitter: {
       card: "summary_large_image",
@@ -179,8 +181,49 @@ export default async function EventDetailPage({ params }: Params) {
     : null;
   const shareUrl = `https://www.undergroundaquarium.com/events/${slug}`;
 
+  // Google's event markup: date, place and organizer, so the event can show
+  // in event search results.
+  const eventLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: ev.title,
+    url: shareUrl,
+    startDate: ev.starts_at,
+    ...(ev.ends_at ? { endDate: ev.ends_at } : {}),
+    ...(ev.description ? { description: String(ev.description).slice(0, 500) } : {}),
+    image: [
+      (ev.cover_image as string | null) || `https://www.undergroundaquarium.com${DEFAULT_EVENT_IMAGE}`,
+    ],
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: ev.is_online
+      ? "https://schema.org/OnlineEventAttendanceMode"
+      : "https://schema.org/OfflineEventAttendanceMode",
+    location: ev.is_online
+      ? { "@type": "VirtualLocation", url: (ev.online_url as string | null) || shareUrl }
+      : {
+          "@type": "Place",
+          name: (ev.venue_name as string | null) || [ev.city, ev.state].filter(Boolean).join(", ") || "TBA",
+          address: {
+            "@type": "PostalAddress",
+            ...(ev.address ? { streetAddress: ev.address } : {}),
+            ...(ev.city ? { addressLocality: ev.city } : {}),
+            ...(ev.state ? { addressRegion: ev.state } : {}),
+            ...(ev.postal_code ? { postalCode: ev.postal_code } : {}),
+            addressCountry: "US",
+          },
+        },
+    organizer: {
+      "@type": "Organization",
+      name: hostLabel,
+      url: hostHref ? `https://www.undergroundaquarium.com${hostHref}` : "https://www.undergroundaquarium.com/events",
+    },
+  };
+
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
+      {ev.status === "published" && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(eventLd) }} />
+      )}
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <Link

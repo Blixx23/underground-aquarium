@@ -9,6 +9,24 @@ import JustPosted from "@/components/sections/JustPosted";
 import SocietyBanner from "@/components/sections/SocietyBanner";
 import CTA from "@/components/sections/CTA";
 import HotForums from "@/components/forum/HotForums";
+import type { Metadata } from "next";
+
+// The page leads with the store finder, so the title does too, with the
+// brand first for people searching "underground aquarium".
+export const metadata: Metadata = {
+  title: { absolute: "Underground Aquarium: Find Local Fish Stores, Buy & Sell Fish" },
+  description:
+    "Find independent aquarium and fish stores near you, buy and sell fish, shrimp and plants locally for free, and get answers from fellow fish keepers.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Underground Aquarium: find local fish stores, buy & sell fish",
+    description: "Independent fish stores near you, free local fish classifieds, care guides and forums.",
+    url: "https://www.undergroundaquarium.com",
+    siteName: "Underground Aquarium",
+    type: "website",
+    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Underground Aquarium" }],
+  },
+};
 
 // The homepage shows live listings, so it can't be fully static, but it
 // doesn't need to be fresh to the second either.

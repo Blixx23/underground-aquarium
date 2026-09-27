@@ -23,6 +23,7 @@ export const metadata: Metadata = {
   title: "Free Aquarium Classifieds — Buy, Sell & Give Away Locally",
   description:
     "Post aquarium fish, plants, coral, tanks and gear for free. Browse local listings by state and metro area, and deal with keepers near you.",
+  alternates: { canonical: "/marketplace" },
 };
 
 export default async function MarketplacePage() {

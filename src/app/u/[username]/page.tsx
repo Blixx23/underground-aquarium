@@ -93,13 +93,35 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { username } = await params;
   const { data } = await supabasePublic
     .from("profiles")
-    .select("username, full_name, bio, avatar_url")
+    .select("id, username, full_name, bio, avatar_url")
     .eq("username", username)
     .maybeSingle();
   const name = data?.full_name || data?.username || username;
+  const handle = data?.username ?? username;
+
+  // Empty profiles stay out of Google; ones with a tank, an ad, forum posts
+  // or a real bio are worth finding.
+  let worthIndexing = (data?.bio ?? "").trim().length >= 40;
+  if (!worthIndexing && data?.id) {
+    const [{ count: tanks }, { count: ads }, { count: threads }] = await Promise.all([
+      supabasePublic.from("tanks").select("id", { count: "exact", head: true }).eq("user_id", data.id).eq("is_public", true),
+      supabasePublic
+        .from("listings")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", data.id)
+        .eq("status", "active")
+        .gt("expires_at", new Date().toISOString()),
+      supabasePublic.from("forum_threads").select("id", { count: "exact", head: true }).eq("author_id", data.id).is("hidden_at", null),
+    ]);
+    worthIndexing = (tanks ?? 0) + (ads ?? 0) + (threads ?? 0) > 0;
+  }
+
   return {
-    title: `${name} (@${data?.username ?? username})`,
+    title: `${name} (@${handle})`,
     description: data?.bio?.slice(0, 160) || `${name} on Underground Aquarium.`,
+    // ?tab=tanks, ?tab=listings... are the same profile.
+    alternates: { canonical: `/u/${handle}` },
+    robots: { index: worthIndexing, follow: true },
     openGraph: data?.avatar_url ? { images: [data.avatar_url] } : undefined,
   };
 }

@@ -18,7 +18,8 @@ type Prof = {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { username } = await params;
-  return { title: `Followers — @${username}` };
+  // Lists of people add nothing for search; the profile itself is the page.
+  return { title: `Followers — @${username}`, robots: { index: false, follow: true } };
 }
 
 export default async function FollowersPage({ params }: Params) {

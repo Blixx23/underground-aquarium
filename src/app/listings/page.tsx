@@ -17,6 +17,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   return {
     title: c ? `${c.label} for sale nationwide` : "Every aquarium listing, nationwide",
     description: "Search every free aquarium classified on Underground Aquarium, across every state.",
+    alternates: { canonical: c ? `/listings?category=${c.key}` : "/listings" },
   };
 }
 

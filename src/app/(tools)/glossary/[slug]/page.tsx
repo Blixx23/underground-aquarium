@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { matchLegacyGlossary } from "@/lib/legacy";
+import { ldJson } from "@/lib/jsonLd";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
@@ -26,8 +28,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     .eq("slug", slug)
     .maybeSingle();
 
-  // Before the page streams, so a missing term is a real 404 to Google.
-  if (!term) notFound();
+  // Before the page streams, so a missing term is a real 308 or 404 to
+  // Google. Old WordPress glossary entries were often species care guides.
+  if (!term) {
+    const to = await matchLegacyGlossary(slug);
+    if (to) permanentRedirect(to);
+    notFound();
+  }
 
   // People search "what is brackish water", so lead with the question.
   const title = (term.seo_title as string | null) || `What Is ${term.term}? Meaning for Fish Tanks`;
@@ -48,7 +55,11 @@ export default async function TermPage({ params }: Params) {
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!term) notFound();
+  if (!term) {
+    const to = await matchLegacyGlossary(slug);
+    if (to) permanentRedirect(to);
+    notFound();
+  }
 
   const { data: related } = await supabasePublic
     .from("glossary_terms")
@@ -58,24 +69,51 @@ export default async function TermPage({ params }: Params) {
     .order("term")
     .limit(8);
 
-  const guides = await relatedThreads({ terms: [term.term as string], limit: 4 });
+  const [guides, { data: sameSpecies }] = await Promise.all([
+    relatedThreads({ terms: [term.term as string], limit: 4 }),
+    // Terms like "Cherry shrimp" also have a full species care guide.
+    supabasePublic.from("species").select("slug, common_name").eq("slug", term.slug).maybeSingle(),
+  ]);
 
   const sections = (Array.isArray(term.sections) ? term.sections : []) as Section[];
   const faq = (Array.isArray(term.faq) ? term.faq : []) as Faq[];
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "DefinedTerm",
-    name: term.term,
-    description: term.definition,
-    inDefinedTermSet: "https://www.undergroundaquarium.com/glossary",
-  };
+  const SITE = "https://www.undergroundaquarium.com";
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      name: term.term,
+      description: term.definition,
+      url: `${SITE}/glossary/${term.slug}`,
+      inDefinedTermSet: { "@type": "DefinedTermSet", name: "Aquarium glossary", url: `${SITE}/glossary` },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Glossary", item: `${SITE}/glossary` },
+        { "@type": "ListItem", position: 2, name: term.term, item: `${SITE}/glossary/${term.slug}` },
+      ],
+    },
+  ];
+  if (faq.length > 0) {
+    jsonLd.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faq.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
+  }
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }}
       />
       <div className="max-w-2xl mx-auto">
         {/* Breadcrumb */}
@@ -140,6 +178,19 @@ export default async function TermPage({ params }: Params) {
               ))}
             </dl>
           </section>
+        )}
+
+        {sameSpecies && (
+          <p className="mb-8 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-ocean-200">
+            Keeping them?{" "}
+            <Link
+              href={`/species/${sameSpecies.slug}`}
+              className="text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
+            >
+              Read the full {sameSpecies.common_name} care guide
+            </Link>{" "}
+            for tank size, water and diet.
+          </p>
         )}
 
         <div className="-mt-6 mb-10 flex flex-wrap gap-2">

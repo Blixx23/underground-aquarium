@@ -6,9 +6,10 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Freshwater Species",
+  title: "Freshwater Aquarium Fish Species: 400+ Care Guides",
   description:
-    "A curated freshwater aquarium species database with real care data — temperature, pH, size, and temperament for every species.",
+    "Care guides for 400+ freshwater aquarium fish, shrimp and snails: tank size, temperature, pH, adult size, temperament and diet, with photos from real keepers.",
+  alternates: { canonical: "/species" },
 };
 
 export default async function SpeciesPage() {

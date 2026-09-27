@@ -1,13 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-display: 'Cinzel Decorative', Georgia, serif;
-  --font-body: 'Crimson Pro', Georgia, serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* The font files come from next/font in layout.tsx. */
+  --font-display: var(--font-cinzel), Georgia, serif;
+  --font-body: var(--font-crimson), Georgia, serif;
+  --font-mono: var(--font-jetbrains), monospace;
 }
 * { box-sizing: border-box; padding: 0; margin: 0; }
 /*

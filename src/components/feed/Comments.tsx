@@ -23,6 +23,7 @@ export default function Comments({
   viewerIsAdmin = false,
   autoFocus = false,
   onCountChange,
+  initialComments,
 }: {
   kind?: FeedKind;
   /** The feed item's id (a post id, tank id, listing id...). */
@@ -32,9 +33,16 @@ export default function Comments({
   viewerIsAdmin?: boolean;
   autoFocus?: boolean;
   onCountChange: (n: number) => void;
+  /** Rendered on the server (a post's own page), so search engines see them. */
+  initialComments?: FeedComment[];
 }) {
   const [supabase] = useState(() => createClient());
-  const [rows, setRows] = useState<FeedComment[] | null>(null);
+  const [rows, setRows] = useState<FeedComment[] | null>(() =>
+    initialComments
+      ? initialComments.map((c) => ({ ...c, like_count: c.like_count ?? 0, liked: Boolean(c.liked) }))
+      : null
+  );
+  const skipFirstLoad = useRef(Boolean(initialComments));
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -55,6 +63,11 @@ export default function Comments({
   }
 
   useEffect(() => {
+    // Already rendered on the server: no need to fetch the same list again.
+    if (skipFirstLoad.current) {
+      skipFirstLoad.current = false;
+      return;
+    }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, postId]);

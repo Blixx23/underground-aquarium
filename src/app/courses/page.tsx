@@ -12,7 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Courses — Underground Aquarium",
+  title: "Free Aquarium Courses for Beginners",
+  alternates: { canonical: "/courses" },
   description:
     "Free, guided aquarium courses from Underground Aquarium. Learn the hobby the right way, pass the quizzes, and earn a certificate and a profile badge.",
 };

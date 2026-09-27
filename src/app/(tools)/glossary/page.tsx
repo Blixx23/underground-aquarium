@@ -5,9 +5,10 @@ import { supabasePublic } from "@/lib/supabase/public";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Glossary",
+  title: "Aquarium Glossary: 200+ Fishkeeping Terms Explained",
   description:
-    "A glossary of 200+ aquarium and fishkeeping terms in plain English — searchable, filterable, and explained for beginners and pros alike.",
+    "200+ aquarium and fishkeeping terms in plain English, from ammonia and cycling to ich and KH. Searchable, with fixes and common questions for each.",
+  alternates: { canonical: "/glossary" },
 };
 
 export default async function GlossaryPage() {
