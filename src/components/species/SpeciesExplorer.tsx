@@ -336,11 +336,6 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
                                 {c}
                               </span>
                             ))}
-                            {s.entry_type === "variety" && (
-                              <span className="text-[11px] uppercase tracking-wide text-ocean-300 bg-white/5 border border-white/10 rounded px-1.5 py-0.5">
-                                variety
-                              </span>
-                            )}
                           </div>
                         </div>
                         {s.scientific_name && (
