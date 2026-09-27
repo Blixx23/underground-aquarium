@@ -15,7 +15,12 @@ export type Notification = {
   data?: Record<string, unknown> | null;
 };
 
-export const NOTIFICATION_COLUMNS = "id, type, title, body, link, read, created_at, data";
+/**
+ * Everything on the row. Naming columns one by one meant a single missing
+ * column (e.g. data, before its migration ran) failed the whole list and
+ * the bell showed a count with nothing under it.
+ */
+export const NOTIFICATION_COLUMNS = "*";
 
 export type Tone = "sky" | "amber" | "cyan" | "emerald" | "gold" | "coral" | "violet";
 export type IconKey = "forum" | "trophy" | "bubbles" | "message" | "store" | "review" | "society" | "sale" | "event" | "heart" | "comment" | "bell";
