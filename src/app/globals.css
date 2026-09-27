@@ -106,3 +106,7 @@ textarea {
    helper lines, captions). Brighter, still clearly "muted". */
 .text-ocean-600 { color: #6f9cc0 !important; }
 .text-ocean-500 { color: #83aed2 !important; }
+
+/* Store map: OpenStreetMap tiles turned dark to match the site. */
+.ua-dark-tiles { filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6); }
+.leaflet-container { background: #020b18; font-family: inherit; }

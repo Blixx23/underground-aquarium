@@ -15,7 +15,7 @@ export type MapPoint = {
 };
 
 /**
- * A map of fish stores. Leaflet with free OpenStreetMap-based tiles, loaded
+ * A map of fish stores. Leaflet with free OpenStreetMap tiles, loaded
  * only in the browser. Pins are drawn on a canvas, so a state with hundreds
  * of shops stays smooth on a phone.
  */
@@ -47,11 +47,12 @@ export default function StoreMap({
         scrollWheelZoom: false,
         attributionControl: true,
       });
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: "abcd",
+      // OpenStreetMap's own tiles: free, no key. Darkened with a CSS filter
+      // (see .ua-dark-tiles in globals.css) to match the site.
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
+        className: "ua-dark-tiles",
       }).addTo(m);
       m.setView([39.5, -98.35], 4);
       map.current = m;
