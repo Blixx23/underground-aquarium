@@ -69,6 +69,8 @@ export async function POST(req: Request) {
   }
 
   if (result.slug) revalidatePath(`/species/${result.slug}`);
+  // The species list shows each main photo too.
+  revalidatePath("/species");
 
   return NextResponse.json({ ok: true, bubbles });
 }

@@ -20,6 +20,8 @@ type Species = {
   temp_max_f: number | null;
   care_level: string | null;
   suitability: string | null;
+  /** The species' main member photo, if one has been approved. */
+  cover_url?: string | null;
 };
 
 const GROUP_ORDER = [
@@ -318,8 +320,9 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
                       <Link
                         key={s.slug}
                         href={`/species/${s.slug}`}
-                        className="block rounded-xl bg-white/5 border border-white/10 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
+                        className="flex gap-3 rounded-xl bg-white/5 border border-white/10 p-4 hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
                       >
+                        <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="text-white font-medium">
                             {s.common_name}
@@ -362,6 +365,18 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
                               {s.suitability}
                             </span>
                           )}
+                        </div>
+                        {s.cover_url && (
+                          <div className="relative w-24 shrink-0 self-stretch overflow-hidden rounded-lg border border-white/10 bg-ocean-900 sm:w-28">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={s.cover_url}
+                              alt={s.common_name}
+                              loading="lazy"
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                          </div>
+                        )}
                       </Link>
                     ))}
                   </div>
