@@ -110,3 +110,6 @@ textarea {
 /* Store map: OpenStreetMap tiles turned dark to match the site. */
 .ua-dark-tiles { filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6); }
 .leaflet-container { background: #020b18; font-family: inherit; }
+/* A site-wide max-width:100% squashes Leaflet's pin layer to 0px wide
+   (its pane has no width). Let the map size its own layers. */
+.leaflet-container canvas, .leaflet-container svg, .leaflet-container img { max-width: none !important; max-height: none !important; }
