@@ -1,5 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export type OwnedStore = {
   id: string;
@@ -28,7 +29,10 @@ export async function requireOwnedStore(slug: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/my/shops/${slug}`);
 
-  const { data } = await supabase
+  // Read with the service client: a hidden shop may not be visible to the
+  // signed-in user's own reads, and its owner or an admin still needs its
+  // dashboard (the check below decides who gets in).
+  const { data } = await supabaseAdmin
     .from("fish_stores")
     .select("id, name, slug, address, city, state, phone, website, hours, description, tags, claimed_by")
     .eq("slug", slug)
