@@ -120,6 +120,9 @@ export default function SubmitSpeciesVideo({
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
+  // A clip that already made it to storage. If the last step fails, pressing
+  // Send again reuses it instead of uploading the whole thing again.
+  const uploaded = useRef<{ file: File; path: string } | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -223,12 +226,27 @@ export default function SubmitSpeciesVideo({
     setError(null);
     setPhase("uploading");
     setProgress(0);
-    const path = `${userId}/${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${extFor(file)}`;
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error("Your sign-in expired. Sign in again and retry.");
-      await uploadResumable(file, "video-uploads", path, token, setProgress);
+      // Check first, upload second: limits and setup problems show up in a
+      // second, not after a long upload. (If the check itself isn't in the
+      // database yet, carry on; the submit step checks the same rules.)
+      const { error: checkErr } = await supabase.rpc("check_species_video", { p_slug: slug });
+      if (checkErr && !/could not find the function/i.test(checkErr.message)) {
+        throw new Error(checkErr.message);
+      }
+
+      const reuse = uploaded.current && uploaded.current.file === file ? uploaded.current.path : null;
+      const path =
+        reuse ?? `${userId}/${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${extFor(file)}`;
+      if (reuse) {
+        setProgress(100);
+      } else {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (!token) throw new Error("Your sign-in expired. Sign in again and retry.");
+        await uploadResumable(file, "video-uploads", path, token, setProgress);
+        uploaded.current = { file, path };
+      }
 
       const { data: id, error: rpcErr } = await supabase.rpc("submit_species_video", {
         p_slug: slug,
@@ -238,9 +256,15 @@ export default function SubmitSpeciesVideo({
         p_confirm: confirm,
       });
       if (rpcErr || !id) {
-        await supabase.storage.from("video-uploads").remove([path]);
-        throw new Error(rpcErr?.message ?? "Couldn't send that video.");
+        // Keep the uploaded clip: a retry sends it without uploading again.
+        const why = rpcErr?.message ?? "Couldn't send that video.";
+        throw new Error(
+          /could not find the function/i.test(why)
+            ? "Your video uploaded, but the site isn't finished setting up video submissions. Press Send again in a bit; it won't re-upload."
+            : `${why} Your video is saved, so pressing Send again won't re-upload it.`
+        );
       }
+      uploaded.current = null;
 
       setPhase("converting");
       setWaiting((w) => w + 1);
