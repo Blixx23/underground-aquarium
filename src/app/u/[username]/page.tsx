@@ -371,8 +371,9 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           {tab === "trophies" && <TrophiesTab profileId={profile.id} name={displayName} isMe={isMe} />}
         </div>
 
-        <div className="mt-16 flex flex-wrap items-start gap-6 border-t border-ocean-800/40 pt-6">
+        <div className="mt-16 flex flex-wrap items-center gap-6 border-t border-ocean-800/40 pt-6">
           <ReportButton
+            className="flex items-center"
             targetType="profile"
             targetId={profile.id}
             targetLabel={displayName}
