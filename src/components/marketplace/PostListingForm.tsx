@@ -117,6 +117,8 @@ export default function PostListingForm({
   );
   const [title, setTitle] = useState(existing?.title ?? "");
   const [category, setCategory] = useState(existing?.category ?? "");
+  // Live animals and plants: condition doesn't apply.
+  const isLive = category.startsWith("livestock-") || category === "plants";
   const [stateCode, setStateCode] = useState(existing?.state_code ?? "");
   const [regionId, setRegionId] = useState(existing?.region_id ?? "");
   const [city, setCity] = useState(existing?.city ?? "");
@@ -341,7 +343,7 @@ export default function PostListingForm({
         description: description.trim() || null,
         price_cents: priceCents,
         is_wanted: kind === "wanted",
-        condition: kind === "wanted" ? null : condition || null,
+        condition: kind === "wanted" || isLive ? null : condition || null,
         city: city.trim() || null,
         images: allImages.length ? allImages : null,
         // Every poster has an account, so every listing can be messaged.
@@ -677,6 +679,8 @@ export default function PostListingForm({
               </p>
             </div>
           )}
+          {/* "New" or "For parts" means nothing for a fish or a plant. */}
+          {!isLive && (
           <div>
             <label className="block text-sm text-ocean-300 mb-2">
               Condition (optional)
@@ -694,6 +698,7 @@ export default function PostListingForm({
               ))}
             </select>
           </div>
+          )}
         </div>
       )}
 

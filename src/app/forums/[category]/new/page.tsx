@@ -27,7 +27,7 @@ export default async function NewThreadPage({ params }: Params) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/forums/${category}/new`)}`);
 
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">

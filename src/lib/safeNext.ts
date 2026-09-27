@@ -18,5 +18,7 @@ export function safeNext(raw: string | null | undefined, fallback = "/profile"):
 /** Read ?next from the current URL (client components only). */
 export function nextFromLocation(fallback = "/profile"): string {
   if (typeof window === "undefined") return fallback;
-  return safeNext(new URLSearchParams(window.location.search).get("next"), fallback);
+  const q = new URLSearchParams(window.location.search);
+  // Older links used ?redirect=; treat it the same as ?next=.
+  return safeNext(q.get("next") ?? q.get("redirect"), fallback);
 }

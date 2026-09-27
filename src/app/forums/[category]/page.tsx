@@ -221,8 +221,10 @@ export default async function CategoryPage({ params, searchParams }: Params) {
                       href={url}
                       className="inline-flex items-center gap-1.5 text-xs text-ocean-400 hover:text-ocean-200 mt-2"
                     >
-                      <MessageSquare className="w-3.5 h-3.5" /> {t.reply_count}{" "}
-                      comments
+                      <MessageSquare className="w-3.5 h-3.5" />{" "}
+                      {(t.reply_count as number) > 0
+                        ? `${t.reply_count} ${(t.reply_count as number) === 1 ? "comment" : "comments"}`
+                        : "Be the first to reply"}
                     </Link>
                   </div>
                 </article>

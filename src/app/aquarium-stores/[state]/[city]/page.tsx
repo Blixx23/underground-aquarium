@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Fish, MapPin, Plus } from "lucide-react";
 import PlaceStoreCard from "@/components/stores/PlaceStoreCard";
+import StoreMap, { type MapPoint } from "@/components/stores/StoreMap";
 import { POST_AD_PATH } from "@/lib/config";
 import {
   getPlaceStores,
@@ -139,6 +140,16 @@ export default async function CityPage({ params }: { params: Promise<{ state: st
           {nearbyShops.length > 0 ? `, and ${nearbyShops.length} more within ${NEARBY_MILES} miles` : ""}. Tap a
           shop for directions, hours and reviews.
         </p>
+
+        {(() => {
+          const pts: MapPoint[] = [
+            ...c.stores.map((s) => ({ s, sub: [s.city, s.state].filter(Boolean).join(", "), main: true })),
+            ...nearbyShops.map(({ s, d: dist }) => ({ s, sub: `${s.city ?? ""} · ${dist.toFixed(1)} mi`, main: false })),
+          ]
+            .filter(({ s }) => s.lat != null && s.lng != null)
+            .map(({ s, sub, main }) => ({ slug: s.slug, name: s.name, lat: s.lat as number, lng: s.lng as number, sub, main }));
+          return pts.length > 0 ? <StoreMap points={pts} height={280} className="mb-6" /> : null;
+        })()}
 
         <div className="grid gap-3 sm:grid-cols-2">
           {c.stores.map((s) => (

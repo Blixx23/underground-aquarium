@@ -187,7 +187,9 @@ export default async function ListingPage({
   const region = regionData as { name: string; state_name: string } | null;
 
   const images = listing.images ?? [];
-  const condition = conditionLabel(listing.condition);
+  // Older ads could say "New" for live fish; don't show that on livestock or plants.
+  const live = String(listing.category ?? "").startsWith("livestock-") || listing.category === "plants";
+  const condition = live ? null : conditionLabel(listing.condition);
   const regionUrl = `/marketplace/${listing.state_code.toLowerCase()}/${listing.region_slug}`;
   const sellerName = seller?.full_name?.trim() || seller?.username || "A hobbyist";
 

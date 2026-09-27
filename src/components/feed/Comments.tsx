@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
 import SocietySeal from "@/components/society/SocietySeal";
 import { timeAgo, type FeedComment, type FeedKind } from "@/lib/feed";
+import { goToLogin, takeDraft } from "@/lib/loginRedirect";
 
 const REPLIES_SHOWN = 2;
 
@@ -76,6 +77,12 @@ export default function Comments({
     if (autoFocus && viewerId) box.current?.focus();
   }, [autoFocus, viewerId]);
 
+  // Back from signing in: put their comment back in the box.
+  useEffect(() => {
+    const saved = takeDraft<string>(`comment:${kind}:${postId}`);
+    if (saved) setBody(saved);
+  }, [kind, postId]);
+
   // Top-level comments with their replies underneath. A reply whose parent was
   // deleted is shown as a top-level comment so it isn't lost.
   const threads = useMemo(() => {
@@ -123,7 +130,7 @@ export default function Comments({
 
   async function likeComment(c: FeedComment) {
     if (!viewerId) {
-      window.location.href = "/login?next=/feed";
+      goToLogin({ key: `comment:${kind}:${postId}`, value: body });
       return;
     }
     const flip = (liked: boolean, count: number) =>
@@ -141,7 +148,7 @@ export default function Comments({
 
   function startReply(c: FeedComment) {
     if (!viewerId) {
-      window.location.href = "/login?next=/feed";
+      goToLogin({ key: `comment:${kind}:${postId}`, value: body });
       return;
     }
     setReplyTo(c);
@@ -286,7 +293,7 @@ export default function Comments({
         </div>
       ) : (
         <p className="mt-4 text-sm text-slate-500">
-          <Link href="/login?next=/feed" className="text-ocean-300 hover:text-white">
+          <Link href="/login" className="text-ocean-300 hover:text-white">
             Sign in
           </Link>{" "}
           to comment.

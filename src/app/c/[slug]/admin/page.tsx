@@ -30,7 +30,7 @@ export default async function ClubAdminPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/c/${slug}/admin`)}`);
 
   const { data: club } = await supabase
     .from("clubs")

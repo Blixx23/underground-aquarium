@@ -20,10 +20,11 @@ import {
   BookOpen,
   Wrench,
   Droplets,
-  ScrollText,
   Info,
   MapPin,
   Crown,
+  Tag,
+  Egg,
 } from "lucide-react";
 import Avatar from "@/components/profile/Avatar";
 import type { User } from "@supabase/supabase-js";
@@ -67,6 +68,7 @@ const nav: NavItem[] = [
       { label: "Fish Species", href: "/species", group: "Learn" },
       { label: "Courses", href: "/courses", group: "Learn" },
       { label: "Glossary", href: "/glossary", group: "Learn" },
+      { label: "Breeding Guides", href: "/breeding", group: "Learn" },
       { label: "Tank Builder", href: "/tank-builder", group: "Tools" },
       { label: "Water Check", href: "/water-check", group: "Tools" },
       { label: "All Fish Stores", href: "/stores", group: "Tools" },
@@ -77,6 +79,7 @@ const nav: NavItem[] = [
 /** The phone menu: places on the site, not things about you. */
 const EXPLORE = [
   { href: "/forums", label: "Forums", Icon: MessagesSquare },
+  { href: "/marketplace", label: "Classifieds", Icon: Tag },
   { href: "/stores?near=1", label: "Shops Near Me", Icon: MapPin },
   { href: "/species", label: "Fish Species", Icon: Fish },
   { href: "/events", label: "Events", Icon: CalendarDays },
@@ -84,7 +87,7 @@ const EXPLORE = [
   { href: "/glossary", label: "Glossary", Icon: BookOpen },
   { href: "/tank-builder", label: "Tank Builder", Icon: Wrench },
   { href: "/water-check", label: "Water Check", Icon: Droplets },
-  { href: "/verify", label: "Certificate Registry", Icon: ScrollText },
+  { href: "/breeding", label: "Breeding Guides", Icon: Egg },
   { href: "/about", label: "About", Icon: Info },
 ];
 

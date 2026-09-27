@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 /**
  * A thin bar across the top the instant a link is tapped, until the next
@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
  */
 export default function NavProgress() {
   const pathname = usePathname();
+  const router = useRouter();
   const [active, setActive] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -37,6 +38,24 @@ export default function NavProgress() {
         return;
       }
       if (url.origin !== window.location.origin) return;
+
+      // Any "Sign in" / "Create account" link without a ?next= brings the
+      // person back to this page afterwards, instead of dumping them on
+      // the feed. One place, so every button on the site gets it.
+      if (
+        (url.pathname === "/login" || url.pathname === "/register") &&
+        !url.searchParams.has("next") &&
+        !url.searchParams.has("redirect") &&
+        !window.location.pathname.startsWith("/login") &&
+        !window.location.pathname.startsWith("/register")
+      ) {
+        const here = window.location.pathname + window.location.search;
+        if (here !== "/") url.searchParams.set("next", here);
+        e.preventDefault();
+        setActive(true);
+        router.push(url.pathname + url.search);
+        return;
+      }
       // Same page (or just a #section on it): nothing to wait for.
       if (url.pathname === window.location.pathname) return;
       setActive(true);
@@ -46,7 +65,7 @@ export default function NavProgress() {
     }
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
-  }, []);
+  }, [router]);
 
   return (
     <div

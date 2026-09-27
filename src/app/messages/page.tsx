@@ -4,6 +4,7 @@ import { Fish, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/marketplace/listings";
 import Avatar from "@/components/profile/Avatar";
+import NewMessage from "@/components/messages/NewMessage";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,10 @@ export default async function MessagesPage() {
     return (
       <main className="min-h-screen pt-28 pb-20 px-6">
         <div className="max-w-3xl mx-auto">
-          <h1 className="font-display text-4xl text-white mb-10">Messages</h1>
+          <div className="mb-10 flex flex-wrap items-center justify-between gap-3">
+            <h1 className="font-display text-4xl text-white">Messages</h1>
+            <NewMessage />
+          </div>
           <div className="text-center py-20 rounded-2xl border border-dashed border-ocean-800/60">
             <MessageCircle className="w-10 h-10 text-ocean-700 mx-auto mb-4" />
             <p className="text-ocean-200 text-lg mb-1">No conversations yet</p>
@@ -163,13 +167,16 @@ export default async function MessagesPage() {
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-3xl mx-auto">
-        <div className="mb-8 flex items-center gap-3">
+        <div className="mb-8 flex flex-wrap items-center gap-3">
           <h1 className="font-display text-4xl text-white">Messages</h1>
           {unreadCount > 0 && (
             <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-sm font-medium text-emerald-300 ring-1 ring-emerald-400/40">
               {unreadCount} unread
             </span>
           )}
+          <div className="ml-auto">
+            <NewMessage />
+          </div>
         </div>
 
         {groups.map((g) => (

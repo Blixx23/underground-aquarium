@@ -29,6 +29,18 @@ import OsmCredit from "@/components/stores/OsmCredit";
 import Stars from "@/components/stores/Stars";
 import { formatPhone } from "@/lib/phone";
 import { storeIsStub } from "@/lib/stores/thin";
+import StoreMap from "@/components/stores/StoreMap";
+
+/** "Joe's Fish" -> "Joe's Fish's", but "Seven Seas" -> "Seven Seas'". */
+function possessive(name: string) {
+  return /s$/i.test(name.trim()) ? `${name}'` : `${name}'s`;
+}
+
+/** Imported addresses sometimes end in a bare suite letter: "6910 Luther Dr i". */
+function tidyAddress(a: string | null): string | null {
+  if (!a) return a;
+  return a.trim().replace(/\s([A-Za-z])$/, (_m, l: string) => ` Ste ${l.toUpperCase()}`);
+}
 
 export const dynamic = "force-dynamic";
 
@@ -86,14 +98,18 @@ async function getStore(slug: string) {
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  if (!withZip.error) return (withZip.data as StoreRow | null) ?? null;
+  if (!withZip.error) {
+    const row = (withZip.data as StoreRow | null) ?? null;
+    return row ? { ...row, address: tidyAddress(row.address) } : null;
+  }
   const { data } = await supabasePublic
     .from("fish_stores")
     .select(STORE_COLS)
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return (data as StoreRow | null) ?? null;
+  const row = (data as StoreRow | null) ?? null;
+  return row ? { ...row, address: tidyAddress(row.address) } : null;
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -544,7 +560,7 @@ export default async function StoreDetailPage({ params }: Params) {
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-white">What are {store.name}&apos;s hours?</dt>
+                  <dt className="font-medium text-white">What are {possessive(store.name)} hours?</dt>
                   <dd className="mt-1 text-ocean-300">
                     {store.hours
                       ? store.hours
@@ -580,6 +596,27 @@ export default async function StoreDetailPage({ params }: Params) {
                 )}
               </dl>
             </section>
+
+            {store.lat != null && store.lng != null && (
+              <section className="mt-12 border-t border-white/10 pt-8">
+                <h2 className="mb-4 font-display text-xl text-white">On the map</h2>
+                <StoreMap
+                  points={[
+                    { slug: store.slug, name: store.name, lat: store.lat, lng: store.lng, sub: fullAddress || null, main: true },
+                    ...nearby
+                      .filter(({ s: n }) => n.lat != null && n.lng != null)
+                      .map(({ s: n, d }) => ({
+                        slug: n.slug,
+                        name: n.name,
+                        lat: n.lat as number,
+                        lng: n.lng as number,
+                        sub: `${[n.city, n.state].filter(Boolean).join(", ")} · ${d.toFixed(1)} mi`,
+                      })),
+                  ]}
+                  height={260}
+                />
+              </section>
+            )}
 
             {nearby.length > 0 && (
               <section className="mt-12 border-t border-white/10 pt-8">

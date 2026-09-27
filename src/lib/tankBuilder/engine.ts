@@ -90,8 +90,8 @@ const INVERT_GROUPS = new Set(["Shrimp", "Snails", "Crabs", "Crayfish", "Inverte
 //   TANK_TIP_RATIO .. 1.0            -> gentle "note" (NOT counted as a problem)
 //   TANK_TIGHT_RATIO .. TANK_TIP     -> "caution" (amber, workable but tight)
 //   below TANK_TIGHT_RATIO           -> "conflict" (red, genuinely too small)
-const TANK_TIP_RATIO = 0.5;
-const TANK_TIGHT_RATIO = 0.4;
+const TANK_TIP_RATIO = 0.8;
+const TANK_TIGHT_RATIO = 0.6;
 
 // Stocking: % of a deliberately conservative ceiling before we flag it.
 const STOCK_OVER_PCT = 130;
@@ -370,8 +370,10 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   if (nippers.length > 0) {
     const targets = species.filter((s) => !s.fin_nipper && LONG_FIN.test(s.common_name));
     if (targets.length > 0) {
+      // A betta with fin nippers is the classic mistake: call it a conflict.
+      const betta = targets.some((t) => /betta/i.test(t.common_name));
       issues.push({
-        level: "caution",
+        level: betta ? "conflict" : "caution",
         title: "Fin nippers with long fins",
         detail: `${list(nippers.map((n) => n.common_name))} can nip fins, and ${list(
           targets.map((t) => t.common_name)
@@ -531,8 +533,14 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   const conflicts = issues.filter((i) => i.level === "conflict").length;
   const cautions = issues.filter((i) => i.level === "caution").length;
   const notes = issues.filter((i) => i.level === "note").length;
-  const score =
-    stock.length === 0 ? 0 : Math.max(5, Math.min(100, 100 - conflicts * 28 - cautions * 9 - notes * 2));
+  // A real problem has to sink the score, not trim it: "61/100" for a
+  // badly overstocked tank reads as "basically fine" to a beginner.
+  let score = 100 - conflicts * 30 - cautions * 10 - notes * 2;
+  if (conflicts > 0) score = Math.min(score, 49);
+  if (conflicts >= 2) score = Math.min(score, 25);
+  if (g > 0 && stocking.pct > 150) score = Math.min(score, 25);
+  else if (g > 0 && stocking.pct > STOCK_OVER_PCT) score = Math.min(score, 40);
+  score = stock.length === 0 ? 0 : Math.max(5, Math.min(100, score));
 
   return {
     equipment,
@@ -544,6 +552,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
 }
 
 export function scoreLabel(score: number, conflicts: number): string {
+  if (conflicts > 0 && score <= 25) return "Don't do this";
   if (conflicts > 0) return "Needs changes";
   if (score >= 90) return "Great match";
   if (score >= 75) return "Good match";

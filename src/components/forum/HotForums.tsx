@@ -161,9 +161,13 @@ export default async function HotForums() {
                   {cat.name}
                 </span>
                 <span className="line-clamp-3 text-[13px] font-semibold leading-snug text-white">{t.title}</span>
-                <span className="mt-1 flex items-center gap-1 text-[11px] text-white/70">
-                  <MessageSquare className="h-3 w-3" /> {t.reply_count ?? 0}
-                </span>
+                {(t.reply_count ?? 0) > 0 ? (
+                  <span className="mt-1 flex items-center gap-1 text-[11px] text-white/70">
+                    <MessageSquare className="h-3 w-3" /> {t.reply_count}
+                  </span>
+                ) : (
+                  <span className="mt-1 block text-[11px] font-medium text-cyan-200/90">Add your take</span>
+                )}
               </span>
             </Link>
           );
@@ -175,8 +179,8 @@ export default async function HotForums() {
             className={`${card} flex flex-col items-center justify-center gap-2 border-amber-500/30 bg-amber-500/[0.07] px-2 text-center transition-colors hover:border-amber-400/60`}
           >
             <MessageSquareDashed className="h-7 w-7 text-amber-300" />
-            <span className="text-2xl font-semibold text-amber-100">{unanswered}</span>
-            <span className="text-xs leading-tight text-amber-100/70">waiting for a reply</span>
+            <span className="text-sm font-semibold leading-tight text-amber-100">Answer a question</span>
+            <span className="text-xs leading-tight text-amber-100/70">Help another keeper out</span>
           </Link>
         )}
       </div>

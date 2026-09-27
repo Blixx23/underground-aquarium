@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, PenLine, ImagePlus, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { goToLogin, takeDraft } from "@/lib/loginRedirect";
 
 const MAX_PHOTOS = 4;
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // input cap; resized/compressed below
@@ -66,6 +67,16 @@ export default function NewThreadForm({
   const [error, setError] = useState<string | null>(null);
   const [photoMsg, setPhotoMsg] = useState<string | null>(null);
 
+  // Back from signing in: put what they'd written back in the form.
+  useEffect(() => {
+    const saved = takeDraft<{ title: string; body: string }>("new-thread");
+    if (saved) {
+      setTitle(saved.title ?? "");
+      setBody(saved.body ?? "");
+    }
+  }, []);
+  const toLogin = () => goToLogin({ key: "new-thread", value: { title, body } });
+
   async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = ""; // allow re-selecting the same file later
@@ -76,7 +87,7 @@ export default function NewThreadForm({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      window.location.href = "/login";
+      toLogin();
       return;
     }
 
@@ -169,7 +180,7 @@ export default function NewThreadForm({
         }),
       });
       if (res.status === 401) {
-        window.location.href = "/login";
+        toLogin();
         return;
       }
       const data = await res.json();

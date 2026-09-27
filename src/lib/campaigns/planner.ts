@@ -77,16 +77,18 @@ async function enrolAudience(campaign: Campaign): Promise<number> {
     .eq("campaign_id", campaign.id);
   const have = new Set(((already ?? []) as { store_id: string | null }[]).map((r) => r.store_id));
 
-  // Shops with an address we can write to, that nobody has claimed.
+  // Shops with an address we can write to, that nobody has claimed and
+  // that are actually shown in the directory (hidden = not a fish store).
   const rows: { store_id: string; email: string }[] = [];
   const pageSize = 1000;
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabaseAdmin
       .from("store_contacts")
-      .select("store_id, email, fish_stores!inner(id, claimed_by)")
+      .select("store_id, email, fish_stores!inner(id, claimed_by, status)")
       .not("email", "is", null)
       .is("unsubscribed_at", null)
       .is("fish_stores.claimed_by", null)
+      .eq("fish_stores.status", "published")
       .range(from, from + pageSize - 1);
     if (error) throw new Error(error.message);
     const page = (data ?? []) as unknown as { store_id: string; email: string | null }[];
@@ -145,6 +147,17 @@ async function stopTheFinished(campaign: Campaign): Promise<number> {
     for (const e of active) if (e.store_id && ids.has(e.store_id)) stop.set(e.id, "claimed");
   }
 
+  // Shops hidden from the directory (not fish stores, or taken down).
+  for (let i = 0; i < storeIds.length; i += 500) {
+    const { data: gone } = await supabaseAdmin
+      .from("fish_stores")
+      .select("id")
+      .in("id", storeIds.slice(i, i + 500))
+      .neq("status", "published");
+    const ids = new Set(((gone ?? []) as { id: string }[]).map((r) => r.id));
+    for (const e of active) if (e.store_id && ids.has(e.store_id) && !stop.has(e.id)) stop.set(e.id, "hidden");
+  }
+
   // Shops that asked to come off the outreach list.
   for (let i = 0; i < storeIds.length; i += 500) {
     const { data: off } = await supabaseAdmin
@@ -170,10 +183,18 @@ async function stopTheFinished(campaign: Campaign): Promise<number> {
   }
   for (const [reason, ids] of byReason) {
     for (let i = 0; i < ids.length; i += 500) {
-      await supabaseAdmin
+      const chunk = ids.slice(i, i + 500);
+      const { error } = await supabaseAdmin
         .from("email_campaign_enrollments")
         .update({ status: "stopped", stop_reason: reason, stopped_at: new Date().toISOString() })
-        .in("id", ids.slice(i, i + 500));
+        .in("id", chunk);
+      // If the database only knows the older reasons, still stop them.
+      if (error && reason === "hidden") {
+        await supabaseAdmin
+          .from("email_campaign_enrollments")
+          .update({ status: "stopped", stop_reason: "unsubscribed", stopped_at: new Date().toISOString() })
+          .in("id", chunk);
+      }
     }
   }
   return stop.size;

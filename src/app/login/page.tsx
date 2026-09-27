@@ -18,9 +18,10 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; redirect?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next: nextParam, redirect: legacy } = await searchParams;
+  const next = nextParam ?? legacy;
   const supabase = await createClient();
   const {
     data: { user },

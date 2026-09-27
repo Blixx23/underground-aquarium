@@ -35,12 +35,13 @@ export default function BubbleBadge({
       <BubbleIcon className={`${icon} ${tier.color}`} />
       <span className={`font-semibold tabular-nums ${tier.color} ${text}`}>
         {balance.toLocaleString()}
+        {size === "md" && <span className="ml-1 font-normal text-ocean-400">bubbles</span>}
       </span>
       {showTier && (
         <span className="text-ocean-500 text-sm">
           · {tier.name}{" "}
           <span className="text-ocean-600">
-            ({rank}/{TIER_COUNT})
+            {size === "md" ? `(level ${rank} of ${TIER_COUNT})` : `(${rank}/${TIER_COUNT})`}
           </span>
         </span>
       )}

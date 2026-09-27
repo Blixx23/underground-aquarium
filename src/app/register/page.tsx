@@ -53,7 +53,8 @@ export default function RegisterPage() {
           terms_accepted_at: new Date().toISOString(),
           terms_version: TERMS_VERSION,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // After confirming their email, back to wherever they were headed.
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextFromLocation("/feed"))}`,
       },
     });
 
@@ -134,7 +135,11 @@ export default function RegisterPage() {
                   autoComplete="username"
                   className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white outline-none focus:border-ocean-500"
                 />
-                <span className="text-xs text-ocean-600">
+                <span
+                  className={`text-xs ${
+                    username && !/^[A-Za-z0-9_]+$/.test(username.trim()) ? "text-coral-300" : "text-ocean-600"
+                  }`}
+                >
                   Letters, numbers, and underscores only — no spaces or symbols.
                 </span>
               </label>
@@ -196,7 +201,7 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                disabled={loading || !accepted}
+                disabled={loading}
                 className="mt-2 rounded-lg bg-ocean-500 px-4 py-2 font-medium text-white transition hover:bg-ocean-400 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Creating account…" : "Register"}

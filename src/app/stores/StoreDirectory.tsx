@@ -13,6 +13,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import Stars from "@/components/stores/Stars";
+import StoreMap, { type MapPoint } from "@/components/stores/StoreMap";
 import {
   queryWords,
   tokenise,
@@ -242,6 +243,36 @@ export default function StoreDirectory({
       .slice(0, 12);
   }, [place, noMatch, stores, activeType]);
 
+  /**
+   * Searching a town ("sacramento") matches only shops with that town in
+   * their address, but people mean "near Sacramento". When every match is
+   * in one town, also show the other shops within 30 miles, nearest first.
+   */
+  const nearbyExtra = useMemo(() => {
+    if (!searching || closeMatches || coords || filtered.length === 0) return null;
+    const towns = new Set(filtered.map((s) => `${(s.city ?? "").toLowerCase()}|${s.state ?? ""}`));
+    if (towns.size !== 1) return null;
+    const [town] = towns;
+    if (!town.split("|")[0]) return null;
+    // Only when the search was the town, not a shop's name.
+    const townWords = queryWords(
+      `${filtered[0].city ?? ""} ${filtered[0].state ?? ""} ${stateName(filtered[0].state ?? "")}`
+    );
+    if (!words.every((w) => townWords.some((t) => t.startsWith(w) || w.startsWith(t)) || w.length <= 2)) return null;
+    const pts = filtered.filter((s) => s.lat != null && s.lng != null);
+    if (pts.length === 0) return null;
+    const lat = pts.reduce((a, s) => a + (s.lat as number), 0) / pts.length;
+    const lng = pts.reduce((a, s) => a + (s.lng as number), 0) / pts.length;
+    const inTown = new Set(filtered.map((s) => s.slug));
+    const list = stores
+      .filter((s) => !inTown.has(s.slug) && s.lat != null && s.lng != null && (!activeType || (s.tags ?? []).includes(activeType)))
+      .map((store) => ({ store, miles: milesBetween(lat, lng, store.lat as number, store.lng as number) }))
+      .filter((x) => x.miles <= 30)
+      .sort((a, b) => a.miles - b.miles)
+      .slice(0, 12);
+    return list.length > 0 ? { town: filtered[0].city as string, list } : null;
+  }, [searching, closeMatches, coords, filtered, stores, words, activeType]);
+
   const ranked = useMemo(() => {
     if (!coords) return null;
     return filtered
@@ -276,6 +307,31 @@ export default function StoreDirectory({
   }, [filtered, stateCode, searching, coords]);
 
   const showBrowse = !stateCode && !searching && !coords;
+
+  /** Whatever the list is showing, on a map. The landing page maps every shop. */
+  const mapPoints = useMemo((): MapPoint[] => {
+    const pin = (s: StoreRow, miles?: number | null): MapPoint | null =>
+      s.lat != null && s.lng != null
+        ? {
+            slug: s.slug,
+            name: s.name,
+            lat: s.lat,
+            lng: s.lng,
+            sub: [ [s.city, s.state].filter(Boolean).join(", "), miles != null ? `${miles.toFixed(1)} mi` : null ]
+              .filter(Boolean)
+              .join(" · "),
+          }
+        : null;
+    let list: (MapPoint | null)[] = [];
+    if (showBrowse) list = stores.map((s) => pin(s));
+    else if (filtered.length === 0 && nearPlace) list = nearPlace.map(({ store, miles }) => pin(store, miles));
+    else if (ranked) list = ranked.slice(0, limit).map(({ store, miles }) => pin(store, miles));
+    else {
+      list = filtered.slice(0, Math.max(limit, 200)).map((s) => pin(s));
+      if (nearbyExtra) list = list.concat(nearbyExtra.list.map(({ store, miles }) => pin(store, miles)));
+    }
+    return list.filter((p): p is MapPoint => p !== null);
+  }, [showBrowse, stores, filtered, nearPlace, ranked, limit, nearbyExtra]);
   const hasFilters = searching || stateCode !== null || activeType !== null || coords !== null;
 
   function clearAll() {
@@ -326,7 +382,8 @@ export default function StoreDirectory({
           {place && (
             <span className="flex items-center gap-1 text-ocean-400">
               <MapPin className="h-3.5 w-3.5" />
-              {lit(place)}
+              {/* One span, so the highlighted part doesn't get a gap before the comma. */}
+              <span>{lit(place)}</span>
             </span>
           )}
           {miles != null && (
@@ -467,6 +524,15 @@ export default function StoreDirectory({
         </div>
       )}
 
+      {mapPoints.length > 0 && (
+        <StoreMap
+          points={mapPoints}
+          you={coords}
+          height={showBrowse ? 340 : 300}
+          className="mb-6"
+        />
+      )}
+
       {/* Landing view: pick a state instead of scrolling 317 cards. */}
       {showBrowse ? (
         <div>
@@ -587,6 +653,15 @@ export default function StoreDirectory({
               remaining={filtered.length - limit}
               onClick={() => setLimit((n) => n + PAGE)}
             />
+          )}
+          {nearbyExtra && (
+            <section className="mt-10">
+              <h2 className="mb-1 font-display text-xl text-white">More shops near {nearbyExtra.town}</h2>
+              <p className="mb-4 text-sm text-ocean-400">Within 30 miles, nearest first.</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {nearbyExtra.list.map(({ store, miles }) => card(store, miles, true))}
+              </div>
+            </section>
           )}
         </>
       )}

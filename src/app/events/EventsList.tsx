@@ -10,7 +10,6 @@ import {
   Users,
   Navigation,
 } from "lucide-react";
-import { DEFAULT_EVENT_IMAGE } from "@/lib/eventTime";
 
 export type EventCard = {
   id: string;
@@ -168,15 +167,17 @@ export default function EventsList({ events }: { events: EventCard[] }) {
               className="group flex flex-col sm:flex-row rounded-2xl bg-white/5 border border-white/10 overflow-hidden hover:border-emerald-500/40 hover:bg-white/10 transition-colors"
             >
               <div className="relative shrink-0 overflow-hidden bg-ocean-950 aspect-[1200/630] sm:aspect-auto sm:w-64 sm:min-h-[170px]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={ev.cover_image || DEFAULT_EVENT_IMAGE}
-                  alt=""
-                  loading="lazy"
-                  className={`absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] ${
-                    ev.cover_image ? "object-center" : "object-left"
-                  }`}
-                />
+                {ev.cover_image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={ev.cover_image}
+                    alt={ev.title}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <DateTile title={ev.title} startsAt={ev.starts_at} tz={ev.timezone} />
+                )}
               </div>
               <div className="p-5 min-w-0 flex-1">
                 <p className="text-emerald-400 text-sm font-medium flex items-center gap-1.5">
@@ -220,5 +221,45 @@ export default function EventsList({ events }: { events: EventCard[] }) {
         })}
       </div>
     </>
+  );
+}
+
+/**
+ * No photo? A date card instead of the same stock picture on every event:
+ * the day big enough to scan the list by, colored by what kind of event it is.
+ */
+function DateTile({ title, startsAt, tz }: { title: string; startsAt: string; tz: string | null }) {
+  const t = title.toLowerCase();
+  const kind =
+    /auction/.test(t)
+      ? { emoji: "🔨", label: "Auction", bg: "from-amber-500/35 via-amber-900/40" }
+      : /frag|swap|trade/.test(t)
+      ? { emoji: "🪸", label: "Swap", bg: "from-rose-500/35 via-rose-900/40" }
+      : /con\b|convention|expo|show|fest|fair|summit|aquashella/.test(t)
+      ? { emoji: "🎪", label: "Show", bg: "from-violet-500/35 via-violet-900/40" }
+      : /meeting|meetup|club|society/.test(t)
+      ? { emoji: "👥", label: "Meetup", bg: "from-sky-500/35 via-sky-900/40" }
+      : { emoji: "🐟", label: "Event", bg: "from-emerald-500/35 via-emerald-900/40" };
+  const zone = tz || "America/Los_Angeles";
+  const d = new Date(startsAt);
+  const part = (o: Intl.DateTimeFormatOptions) => {
+    try {
+      return d.toLocaleString("en-US", { ...o, timeZone: zone });
+    } catch {
+      return d.toLocaleString("en-US", o);
+    }
+  };
+  return (
+    <div className={`absolute inset-0 flex items-center justify-center gap-4 bg-gradient-to-br ${kind.bg} to-ocean-950`}>
+      <div className="text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">{part({ month: "short" })}</p>
+        <p className="font-display text-5xl leading-none text-white">{part({ day: "numeric" })}</p>
+        <p className="mt-1 text-xs uppercase tracking-wider text-white/60">{part({ weekday: "short" })}</p>
+      </div>
+      <div className="text-center">
+        <p className="text-4xl" aria-hidden="true">{kind.emoji}</p>
+        <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-white/70">{kind.label}</p>
+      </div>
+    </div>
   );
 }

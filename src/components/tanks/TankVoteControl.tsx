@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Droplet } from "lucide-react";
 import BubbleIcon from "@/components/bubbles/BubbleIcon";
 import { createClient } from "@/lib/supabase/client";
+import { goToLogin } from "@/lib/loginRedirect";
 
 type Vote = -1 | 0 | 1;
 
@@ -70,7 +71,7 @@ export default function TankVoteControl({
       if (res.status === 401) {
         setVote(prevVote);
         setScore(prevScore);
-        window.location.href = "/login";
+        goToLogin();
         return;
       }
       const data = await res.json();

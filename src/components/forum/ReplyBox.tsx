@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { goToLogin, takeDraft } from "@/lib/loginRedirect";
 
 export default function ReplyBox({
   threadId,
@@ -20,6 +21,16 @@ export default function ReplyBox({
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const draftKey = `reply:${threadId}:${parentId ?? "top"}`;
+
+  // Back from signing in: put their reply back in the box.
+  useEffect(() => {
+    const saved = takeDraft<string>(draftKey);
+    if (saved) {
+      setBody(saved);
+      setOpen(true);
+    }
+  }, [draftKey]);
 
   async function submit() {
     if (!body.trim()) {
@@ -39,7 +50,7 @@ export default function ReplyBox({
         }),
       });
       if (res.status === 401) {
-        window.location.href = "/login";
+        goToLogin({ key: draftKey, value: body });
         return;
       }
       const data = await res.json();

@@ -36,7 +36,7 @@ const TOOLS: Tool[] = [
   {
     href: "/forums",
     label: "Forums",
-    desc: "Ask anything. Get answers from people who've killed the same fish you're about to — usually within the hour.",
+    desc: "Ask anything. Get answers from keepers who've already made the mistake you're about to.",
     Icon: MessagesSquare,
     wide: true,
     highlight: true,

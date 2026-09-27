@@ -312,15 +312,11 @@ export default async function SpeciesDetailPage({ params }: Params) {
           </p>
         )}
 
-        <div className="mt-6">
-          <SpeciesPhotos photos={photos} name={s.common_name as string} />
-          <SubmitSpeciesPhoto
-            speciesId={s.id as string}
-            slug={s.slug as string}
-            name={s.common_name as string}
-            approvedCount={photos.length}
-          />
-        </div>
+        {photos.length > 0 && (
+          <div className="mt-6">
+            <SpeciesPhotos photos={photos} name={s.common_name as string} />
+          </div>
+        )}
 
         {s.summary && (
           <p className="text-ocean-200 text-lg leading-relaxed mt-6 mb-6">
@@ -350,12 +346,6 @@ export default async function SpeciesDetailPage({ params }: Params) {
         </dl>
 
         <SpeciesVideos videos={videos} slug={s.slug as string} name={s.common_name as string} />
-        <SubmitSpeciesVideo
-          speciesId={s.id as string}
-          slug={s.slug as string}
-          name={s.common_name as string}
-          approvedCount={videos.length}
-        />
 
         {speciesTanks && speciesTanks.length > 0 && (
           <div className="border-t border-white/10 pt-8 mb-8">
@@ -440,6 +430,26 @@ export default async function SpeciesDetailPage({ params }: Params) {
             </dl>
           </section>
         )}
+
+        {/* Members' photos and breeding videos: the ask comes after the care
+            info, so the page reads as a guide first, not an empty gallery. */}
+        <section className="mb-10 border-t border-white/10 pt-8">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-ocean-400 mb-4">
+            Keep {s.common_name}? Share yours
+          </h2>
+          <SubmitSpeciesPhoto
+            speciesId={s.id as string}
+            slug={s.slug as string}
+            name={s.common_name as string}
+            approvedCount={photos.length}
+          />
+          <SubmitSpeciesVideo
+            speciesId={s.id as string}
+            slug={s.slug as string}
+            name={s.common_name as string}
+            approvedCount={videos.length}
+          />
+        </section>
 
         <ListingsStrip
           listings={forSale}
