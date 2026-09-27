@@ -141,8 +141,7 @@ export default function RemoveFromOutreach() {
           <span>
             Send them a confirmation email
             <span className="block text-xs text-ocean-500">
-              A short, friendly note from you: they&apos;re off the list, sorry for the bother, you only meant to send
-              customers their way.
+              One line from you saying they&apos;ve been unsubscribed. Nothing else.
             </span>
           </span>
         </label>
@@ -165,9 +164,13 @@ export default function RemoveFromOutreach() {
       {removed && (
         <div className="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
           <p>
-            Done. {who} won&apos;t get outreach again.
-            {removed.hidden ? " Their page is hidden." : " Their page stays up."}
-            {removed.cancelled ? ` Cancelled ${removed.cancelled} waiting email${removed.cancelled === 1 ? "" : "s"}.` : ""}
+            {[
+              `Done. ${(who ?? "").trim()} won't get outreach emails again.`,
+              removed.hidden ? "Their page is hidden." : "Their page stays up.",
+              removed.cancelled ? `Cancelled ${removed.cancelled} waiting email${removed.cancelled === 1 ? "" : "s"}.` : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
           </p>
           {removed.confirmed && removed.confirmed.length > 0 && (
             <p className="mt-1">Confirmation sent to {removed.confirmed.join(", ")}.</p>

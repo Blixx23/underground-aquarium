@@ -57,7 +57,7 @@ export async function GET(req: Request) {
   const r = await off(req);
   const html = r.ok
     ? `<h1 style="font:600 22px Helvetica,Arial;color:#0c2740;">You're unsubscribed</h1>
-       <p style="font:15px Helvetica,Arial;color:#41566a;">We won't email ${r.email} again. A short confirmation is on its way. Your shop stays listed in the directory.</p>`
+       <p style="font:15px Helvetica,Arial;color:#41566a;">We won't email ${r.email} again.</p>`
     : `<h1 style="font:600 22px Helvetica,Arial;color:#0c2740;">That link didn't work</h1>
        <p style="font:15px Helvetica,Arial;color:#41566a;">Email hello@undergroundaquarium.com and we'll take you off the list by hand.</p>`;
   return new NextResponse(

@@ -30,8 +30,6 @@ export type OptOutResult = {
   confirmFailed: string[];
 };
 
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
 /** "sales@x.com" matches itself, "%@x.com" matches the whole domain. */
 async function findEverything(pattern: string) {
   const [{ data: contacts }, { data: enrolled }] = await Promise.all([
@@ -67,34 +65,22 @@ async function replyTo(): Promise<string | undefined> {
   return (data as { reply_to: string | null } | null)?.reply_to ?? undefined;
 }
 
-function confirmationEmail(shopName: string | null, pageHidden: boolean, isShop: boolean) {
-  const shop = shopName ? esc(shopName) : "your shop";
+/** Just the fact: they're unsubscribed. Nothing about the listing. */
+function confirmationEmail() {
   const p = (t: string) =>
     `<p style="margin:0 0 17px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:${BRAND.body};">${t}</p>`;
-  const paragraphs = !isShop
-    ? [
-        "Hi,",
-        "This is Chris from Underground Aquarium. I've taken this address off our email list, so this is the last email you'll get from us.",
-        "Sorry for the bother.",
-        "Chris Lewis<br>Underground Aquarium",
-      ]
-    : [
+  const paragraphs = [
     "Hi,",
-    `This is Chris from Underground Aquarium. I've taken ${shop} off our email list, so this is the last email you'll get from us.`,
-    "Sorry for the bother. The only reason I reached out was to help send more local fish keepers through your door.",
-    pageHidden
-      ? `I've also taken ${shop}'s page down from the directory like you asked. If you ever change your mind, reply to this email and I'll put it back up.`
-      : `Your page will stay in the directory so customers can still find you and leave reviews. If you ever want to manage it yourself, reply to this email and I'll get you set up.`,
-    "Best of luck with the shop.",
+    "This is Chris from Underground Aquarium. You've been unsubscribed and won't get any more emails from us.",
     "Chris Lewis<br>Underground Aquarium",
   ];
   const html = letterShell({
-    preheader: "You're off our email list.",
+    preheader: "You've been unsubscribed.",
     contentHtml:
       paragraphs.map(p).join("\n") +
       `<p style="margin:26px 0 0;border-top:1px solid ${BRAND.hair};padding-top:16px;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:${BRAND.muted};">Underground Aquarium, ${POSTAL}</p>`,
   });
-  return { subject: "You're off our list", html };
+  return { subject: "You've been unsubscribed", html };
 }
 
 export async function optOut(opts: {
@@ -156,8 +142,7 @@ export async function optOut(opts: {
 
   if (opts.confirm) {
     const reply = await replyTo();
-    const name = shops.length === 1 ? shops[0].name : null;
-    const { subject, html } = confirmationEmail(name, out.hidden > 0, shops.length > 0);
+    const { subject, html } = confirmationEmail();
     for (const to of list.slice(0, 5)) {
       if (already.has(to)) continue;
       try {
