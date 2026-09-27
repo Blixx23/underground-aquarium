@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Star, Trash2, Reply, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +32,9 @@ export default function StoreReviews({
   isOwner: boolean;
 }) {
   const [supabase] = useState(() => createClient());
+  // The page header (stars, count) and search results are drawn on the
+  // server, so refresh them whenever a review changes.
+  const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -98,6 +102,7 @@ export default function StoreReviews({
       }).catch(() => {});
       setRating(0);
       setBody("");
+      router.refresh();
     } catch {
       setError(
         "Couldn't post your review. You may have already reviewed this store."
@@ -134,6 +139,7 @@ export default function StoreReviews({
       prev.map((r) => (r.id === id ? { ...r, rating: editRating, body: text, editedAt: now } : r))
     );
     setEditingId(null);
+    router.refresh();
   }
 
   async function removeReview(id: string) {
@@ -147,6 +153,7 @@ export default function StoreReviews({
         .eq("id", id);
       if (delError) throw delError;
       setReviews((prev) => prev.filter((r) => r.id !== id));
+      router.refresh();
     } catch {
       // ignore
     } finally {
