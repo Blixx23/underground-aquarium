@@ -125,8 +125,8 @@ export default async function RecordPage({
                 <span className="font-mono text-white">{parsed.code}</span>. If
                 you copied it correctly, it was not issued by Underground
                 Aquarium. If you think that&apos;s wrong, email{" "}
-                <a className="text-amber-300 hover:underline" href="mailto:hello@undergroundaquarium.com">
-                  hello@undergroundaquarium.com
+                <a className="text-amber-300 hover:underline" href="mailto:support@undergroundaquarium.com">
+                  support@undergroundaquarium.com
                 </a>{" "}
                 with a photo of the certificate.
               </>

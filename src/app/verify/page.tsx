@@ -213,10 +213,10 @@ export default function RegistryPage() {
               public and instant, and it shows only what&apos;s printed on the
               certificate. Questions go to{" "}
               <a
-                href="mailto:hello@undergroundaquarium.com"
+                href="mailto:support@undergroundaquarium.com"
                 className="text-amber-300 underline-offset-4 hover:underline"
               >
-                hello@undergroundaquarium.com
+                support@undergroundaquarium.com
               </a>
               .
             </p>

@@ -514,7 +514,7 @@ export default function TermsPage() {
             <h2 className="font-display text-2xl text-emerald-400">Contact</h2>
             <p>
               Questions about these Terms? Email us at{" "}
-              <span className="text-white">Chris.m.lewis2020@gmail.com</span>.
+              <span className="text-white">support@undergroundaquarium.com</span>.
             </p>
           </section>
         </div>

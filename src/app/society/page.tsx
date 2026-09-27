@@ -307,7 +307,7 @@ export default async function SocietyPage({
             <ShieldCheck className="h-3.5 w-3.5" />
             {society?.contact_email
               ? `Questions? ${society.contact_email}`
-              : "Questions? hello@undergroundaquarium.com"}
+              : "Questions? support@undergroundaquarium.com"}
           </p>
         </div>
       </section>

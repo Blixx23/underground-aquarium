@@ -56,7 +56,7 @@ export default function Footer() {
               {[
                 { icon: Twitter, href: "#" },
                 { icon: Github, href: "#" },
-                { icon: Mail, href: "mailto:hello@undergroundaquarium.com" },
+                { icon: Mail, href: "mailto:support@undergroundaquarium.com" },
               ].map(({ icon: Icon, href }, i) => (
                 <a
                   key={i}

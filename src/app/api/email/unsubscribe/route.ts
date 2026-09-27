@@ -59,7 +59,7 @@ export async function GET(req: Request) {
     ? `<h1 style="font:600 22px Helvetica,Arial;color:#0c2740;">You're unsubscribed</h1>
        <p style="font:15px Helvetica,Arial;color:#41566a;">We won't email ${r.email} again.</p>`
     : `<h1 style="font:600 22px Helvetica,Arial;color:#0c2740;">That link didn't work</h1>
-       <p style="font:15px Helvetica,Arial;color:#41566a;">Email hello@undergroundaquarium.com and we'll take you off the list by hand.</p>`;
+       <p style="font:15px Helvetica,Arial;color:#41566a;">Email support@undergroundaquarium.com and we'll take you off the list by hand.</p>`;
   return new NextResponse(
     `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
      <div style="max-width:32rem;margin:12vh auto;padding:0 24px;text-align:center;">${html}</div>`,
