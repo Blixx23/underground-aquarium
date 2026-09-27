@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, Store, LayoutDashboard, ExternalLink } from "lucide-react";
+import { Search, Store, LayoutDashboard, ExternalLink, UserRound } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import ShopVisibilityToggle from "@/components/stores/ShopVisibilityToggle";
 
@@ -52,6 +52,24 @@ export default async function AdminShopsPage({
 
   const { data, count } = await query;
   const rows = (data ?? []) as Row[];
+
+  // Who owns each claimed shop: their profile, and their sign-in email so
+  // you can reach them. Admin eyes only (the admin layout gates the page).
+  const ownerIds = [...new Set(rows.map((r) => r.claimed_by).filter(Boolean))] as string[];
+  const owners = new Map<string, { username: string | null; name: string | null; email: string | null }>();
+  if (ownerIds.length) {
+    const { data: profs } = await supabaseAdmin.from("profiles").select("id, username, full_name").in("id", ownerIds);
+    for (const p of (profs ?? []) as { id: string; username: string | null; full_name: string | null }[]) {
+      owners.set(p.id, { username: p.username, name: p.full_name, email: null });
+    }
+    await Promise.all(
+      ownerIds.map(async (id) => {
+        const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
+        const o = owners.get(id) ?? { username: null, name: null, email: null };
+        owners.set(id, { ...o, email: u?.user?.email ?? null });
+      })
+    );
+  }
 
   const href = (v: string) => {
     const p = new URLSearchParams();
@@ -124,6 +142,27 @@ export default async function AdminShopsPage({
                       {s.claimed_by ? "Claimed" : "Unclaimed"}
                     </span>
                   </p>
+                  {s.claimed_by && (() => {
+                    const o = owners.get(s.claimed_by);
+                    return (
+                      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ocean-300">
+                        <UserRound className="h-3.5 w-3.5 text-emerald-300" />
+                        {o?.username ? (
+                          <Link href={`/u/${o.username}`} className="text-white underline decoration-ocean-600 hover:decoration-white">
+                            {o.name || `@${o.username}`}
+                          </Link>
+                        ) : (
+                          <span className="text-white">{o?.name || "Owner"}</span>
+                        )}
+                        {o?.username && o.name && <span className="text-ocean-500">@{o.username}</span>}
+                        {o?.email && (
+                          <a href={`mailto:${o.email}`} className="text-ocean-300 hover:text-white">
+                            {o.email}
+                          </a>
+                        )}
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div className="flex flex-wrap items-start gap-2">
                   <ShopVisibilityToggle storeId={s.id} visible={s.status === "published"} />

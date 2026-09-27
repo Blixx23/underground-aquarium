@@ -260,10 +260,15 @@ export default async function AdminShopStatsPage({ searchParams }: { searchParam
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] px-3 py-1.5 text-ocean-200 ring-1 ring-white/10">
                 <Store className="h-4 w-4 text-ocean-400" /> {r.directory.listed.toLocaleString()} shops listed
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-200 ring-1 ring-emerald-400/25">
+              <Link
+                href="/admin/shops?view=claimed"
+                title="See who claimed them"
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-200 ring-1 ring-emerald-400/25 hover:bg-emerald-500/20"
+              >
                 {r.directory.claimed.toLocaleString()} claimed
                 {r.directory.listed > 0 ? ` (${((r.directory.claimed / r.directory.listed) * 100).toFixed(1)}%)` : ""}
-              </span>
+                <span aria-hidden>→</span>
+              </Link>
               <Link
                 href="/admin/stores"
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 ring-1 ${
