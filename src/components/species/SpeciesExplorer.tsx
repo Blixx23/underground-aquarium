@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, X, Filter, ChevronDown } from "lucide-react";
 import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
@@ -116,6 +116,32 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string>("All");
   const [showFilters, setShowFilters] = useState(false);
+  const [restored, setRestored] = useState(false);
+
+  // Keep the search in the address (?q=…&group=…), so tapping a fish and
+  // coming back with the back arrow lands on the same results.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const q = p.get("q");
+    const g = p.get("group");
+    if (q) setQuery(q);
+    if (g) setGroup(g);
+    setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+    const p = new URLSearchParams(window.location.search);
+    if (query.trim()) p.set("q", query);
+    else p.delete("q");
+    if (group && group !== "All") p.set("group", group);
+    else p.delete("group");
+    const qs = p.toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+    if (url !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(window.history.state, "", url);
+    }
+  }, [query, group, restored]);
 
   const groups = useMemo(() => {
     const present = new Set(species.map((s) => s.group_name ?? ""));
