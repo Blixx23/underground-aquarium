@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/admin/email", label: "Email", sub: "Queue, health and delivery", Icon: Mail },
   { href: "/admin/campaigns", label: "Campaigns", sub: "Sequences and who is in them", Icon: Megaphone },
   { href: "/admin/shop-stats", label: "Shop stats", sub: "Top shops, leads, totals", Icon: BarChart3 },
+  { href: "/admin/shops", label: "All shops", sub: "Dashboards, show or hide", Icon: Store },
   { href: "/admin/stores", label: "Store claims", sub: "Owners claiming a shop", Icon: Store },
   { href: "/admin/store-fixes", label: "Shop fixes", sub: "Wrong hours, moved, closed", Icon: Wrench },
   { href: "/admin/reports", label: "Reports", sub: "Flagged posts and members", Icon: Flag },
