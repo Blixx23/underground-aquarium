@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import MuteAll from "./MuteAll";
 import VideoQueue, { type QueueVideo, type LiveVideo } from "./VideoQueue";
 
 export const metadata: Metadata = { title: "Admin · Breeding videos" };
@@ -80,6 +81,7 @@ export default async function AdminSpeciesVideosPage() {
           <strong className="text-white">Use it</strong> gives it its own watch page, puts it on the species page, and
           gives them 75 bubbles toward their Videographer trophies. A rejection needs a reason; they see it.
         </p>
+        <MuteAll />
         {(converting ?? 0) > 0 && (
           <p className="mb-6 text-sm text-amber-300">
             {converting} more {converting === 1 ? "is" : "are"} still converting and will show up here when done.

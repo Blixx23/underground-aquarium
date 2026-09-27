@@ -10,7 +10,7 @@ import { MAX_VIDEO_SECONDS } from "@/lib/video/stages";
  * Turns a member's original upload into the site's own copy.
  *
  * Whatever the phone recorded (iPhone HEVC .mov, Android, WebM), what
- * goes on the site is always the same: an H.264/AAC MP4 that plays in
+ * goes on the site is always the same: a silent H.264 MP4 that plays in
  * every browser, full HD (1920 on its long side, never upscaled), up to
  * 60 fps so fast spawning action stays smooth, with the
  * streaming index at the front so it starts playing straight away, and
@@ -49,7 +49,8 @@ export async function convertSpeciesVideo(id: string): Promise<void> {
       "-y",
       "-i", input,
       "-map", "0:v:0",
-      "-map", "0:a:0?",
+      // No sound: tank pumps, TVs and people talking aren't part of it.
+      "-an",
       "-t", String(MAX_VIDEO_SECONDS),
       "-vf", "scale='if(gte(iw,ih),min(1920,iw),-2)':'if(gte(iw,ih),-2,min(1920,ih))':flags=lanczos,format=yuv420p",
       "-fpsmax", "60",
@@ -59,9 +60,6 @@ export async function convertSpeciesVideo(id: string): Promise<void> {
       "-crf", "22",
       "-maxrate", "8M",
       "-bufsize", "16M",
-      "-c:a", "aac",
-      "-b:a", "128k",
-      "-ac", "2",
       "-map_metadata", "-1",
       "-map_chapters", "-1",
       "-movflags", "+faststart",
