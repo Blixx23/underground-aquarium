@@ -54,7 +54,7 @@ export type SiteSearchResult = {
 };
 
 export const GROUP_LABELS: Record<SiteGroupKey, string> = {
-  help: "Help answers",
+  help: "Using the site",
   listings: "Classifieds",
   species: "Fish species & care",
   breeding: "Breeding guides",
@@ -65,7 +65,10 @@ export const GROUP_LABELS: Record<SiteGroupKey, string> = {
   courses: "Courses",
 };
 
-const ORDER: SiteGroupKey[] = ["help", "species", "listings", "stores", "forums", "breeding", "events", "glossary", "courses"];
+// Real answers first: fish, care, stores, ads, the community. "How the site
+// works" help articles always come last, and only a few of them.
+const ORDER: SiteGroupKey[] = ["species", "glossary", "stores", "listings", "forums", "breeding", "events", "courses", "help"];
+const HELP_MAX = 3;
 
 // ---------------------------------------------------------------------------
 // Matching
@@ -512,7 +515,7 @@ export async function siteSearch(rawQ: string, perGroup = 5): Promise<SiteSearch
   const none = async () => [] as SiteHit[];
 
   const jobs: Record<SiteGroupKey, Promise<SiteHit[]>> = {
-    help: Promise.resolve().then(() => helpGroup(q, n)),
+    help: Promise.resolve().then(() => helpGroup(q, Math.min(n, HELP_MAX))),
     species: hasTerms ? speciesGroup(terms, n) : none(),
     listings: hasTerms ? listingsGroup(terms, n) : none(),
     stores: hasTerms ? storesGroup(terms, n) : none(),
@@ -528,7 +531,7 @@ export async function siteSearch(rawQ: string, perGroup = 5): Promise<SiteSearch
   const more: Partial<Record<SiteGroupKey, { label: string; href: string }>> = {
     forums: { label: "All forum results", href: `/forums/search?q=${enc}` },
     stores: { label: "Open the store directory", href: `/stores?q=${enc}` },
-    help: { label: "Open the Help Center", href: "/help" },
+    help: { label: "More in the Help Center", href: "/help" },
     breeding: { label: "All breeding guides", href: "/breeding" },
   };
 

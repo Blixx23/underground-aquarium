@@ -171,7 +171,7 @@ export default function SiteSearch({
           enterKeyHint="search"
           autoComplete="off"
           spellCheck={false}
-          placeholder="Search fish, care, ads, stores, help… typos are fine"
+          placeholder="Search fish, care, stores, ads… typos are fine"
           aria-label="Search the site"
           className={`w-full rounded-2xl border border-ocean-700/60 bg-ocean-950/80 pl-12 pr-14 text-base text-white placeholder:text-ocean-500 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10 ${
             modal ? "py-3.5" : "py-4 shadow-lg"
