@@ -34,12 +34,14 @@ The panel closes when you move the mouse away or pick a link. The **About** page
 ## What do the buttons on the right of the top bar do?
 
 ### When you're signed out
+- **Magnifying glass:** opens [Search](/search) for the whole site.
 - **Sign In** opens the Log in page. After logging in from here you land on the Feed.
 - **Post Free Ad** opens the Post a free ad page. You'll be asked to sign in to finish posting.
 
 ### When you're signed in
 From left to right:
 
+- **Magnifying glass:** opens [Search](/search) for the whole site.
 - **Bell:** your notifications. A red number shows how many new notifications arrived since you last opened it (up to "9+").
 - **Clipboard:** a shortcut to [My listings](/my/listings).
 - **Chat bubble:** your [Messages](/messages). A red number shows how many conversations have unread messages (up to "9+").
@@ -94,7 +96,9 @@ The bottom of every page has three columns of links plus the support email icon.
 The envelope icon under the logo opens an email to support@undergroundaquarium.com. The very bottom has **Privacy Policy**, **Terms of Service**, the copyright line and a small "build" code that tells us exactly which version of the site you're seeing (handy to include when you report a bug).
 
 ## Is there a search box for the whole site?
-No. There isn't one search that covers everything. Instead, each section has its own search box:
+Yes. Tap the **magnifying glass** at the top of any page (next to the bell on a computer, next to the menu button on a phone). It opens [Search](/search), which looks through help answers, classifieds, fish species, fish stores, forum threads, upcoming events, the glossary and courses all at once. See [Searching the whole site](/help/searching-the-site).
+
+Each section also has its own search box for narrowing things down inside it:
 
 - **Fish stores:** "City, state or shop name" on the home page and the store finder, and "Search by shop, city or state…" on the store directory.
 - **Classifieds:** "Search listings…" on the Classifieds page, or "Search (area) listings…" inside an area.

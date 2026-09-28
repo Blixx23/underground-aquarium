@@ -12,6 +12,7 @@ import {
   Trophy,
   Settings,
   Newspaper,
+  Search,
 } from "lucide-react";
 import {
   MessagesSquare,
@@ -360,6 +361,17 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
+          <Link
+            href="/search"
+            aria-label="Search the site"
+            title="Search"
+            className={cn(
+              "p-2 transition-colors",
+              pathname === "/search" ? "text-white" : "text-ocean-300 hover:text-white"
+            )}
+          >
+            <Search className="w-4 h-4" />
+          </Link>
           <NotificationBell />
           {user ? (
             <>
@@ -460,6 +472,14 @@ export default function Navbar() {
         {/* Mobile: notifications + toggle */}
         <div className="md:hidden flex items-center gap-0.5">
           {/* Posting and Messages live on the bottom bar on phones. */}
+          <Link
+            href="/search"
+            aria-label="Search the site"
+            onClick={() => setOpen(false)}
+            className="p-2 text-ocean-300 hover:text-white"
+          >
+            <Search className="w-5 h-5" />
+          </Link>
           <NotificationBell variant="link" onNavigate={() => setOpen(false)} />
           <button
             className="p-2 text-ocean-300 hover:text-white"

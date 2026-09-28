@@ -174,7 +174,11 @@ export default function HelpSearch({
             <div className="px-3 py-6 text-center">
               <p className="text-sm font-medium text-white">No help articles match “{q}”.</p>
               <p className="mt-1 text-sm text-ocean-400">
-                Try different words, browse the topics below, or email{" "}
+                Try different words,{" "}
+                <a href={`/search?q=${encodeURIComponent(q.trim())}`} className="text-emerald-400 hover:underline">
+                  search the whole site
+                </a>
+                , browse the topics below, or email{" "}
                 <a href="mailto:support@undergroundaquarium.com" className="text-emerald-400 hover:underline">
                   support@undergroundaquarium.com
                 </a>

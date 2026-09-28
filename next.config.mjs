@@ -18,6 +18,8 @@ const nextConfig = {
     "/help/[slug]": ["./content/help/**"],
     "/help/search-index.json": ["./content/help/**"],
     "/sitemap.xml": ["./content/help/**"],
+    "/api/search": ["./content/help/**"],
+    "/search": ["./content/help/**"],
     "/admin/help": ["./content/help-admin/**"],
     "/admin/help/[slug]": ["./content/help-admin/**"],
     "/admin/help/search-index.json": ["./content/help-admin/**"],
