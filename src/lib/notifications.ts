@@ -63,6 +63,9 @@ const KINDS: Record<string, KindMeta> = {
   feed_comment: { icon: "comment", tone: "sky", category: "feed", label: "comments", mutable: true },
   feed_reply: { icon: "comment", tone: "sky", category: "feed", label: "comment replies", mutable: true },
   feed_comment_like: { icon: "heart", tone: "coral", category: "feed", label: "comment likes", mutable: true },
+  store_suggestion: { icon: "store", tone: "emerald", category: "shops", label: "shop suggestions" },
+  report: { icon: "bell", tone: "sky", category: "other", label: "report updates" },
+  moderation: { icon: "bell", tone: "coral", category: "other", label: "account notices" },
 };
 
 export function kindOf(type: string | null | undefined): KindMeta {

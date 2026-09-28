@@ -34,9 +34,9 @@ When you choose **Freshwater Fish**, **Saltwater & Coral**, **Shrimp, Snails & I
 
 > Which species you can legally sell, move or rehome is set by your state, and it varies. Checking that for what you're posting is on you, not us.
 >
-> Never release anything into the wild. See our terms.
+> Never release anything into the wild. See our listing rules.
 
-The **terms** link opens the [Terms of Service](/terms). The box is a reminder, not a check: the site doesn't look up your species or block anything automatically.
+The **listing rules** link opens the [Listing rules](/rules). The box is a reminder, not a check: the site doesn't look up your species or block anything automatically.
 
 Every ad, livestock or not, also shows this line above the post button: "By posting you confirm this listing follows our listing rules: nothing endangered, protected or illegal in your state."
 
@@ -55,7 +55,7 @@ Many corals and some fish are on CITES Appendix II. You may list them only with 
 Not unless you hold the license that allows it. The rules specifically ban selling animals or plants taken from a creek, lake or the ocean without the right license.
 
 ## Can I ship livestock to a buyer?
-The site doesn't arrange or handle shipping for classified ads. Most deals are local pickup. If you and a buyer agree to ship, the [Listing rules](/rules) remind you: "Shipping live animals has its own carrier rules. Check them before you ship." Rules about moving live plants and animals across state lines also apply. See [Safe local pickup](/help/safe-local-pickup).
+The site doesn't arrange or handle shipping for classified ads. Most deals are local pickup. If you and a buyer agree to ship, the [Listing rules](/rules) remind you: "Shipping live animals has its own carrier rules. Check them before you ship." Rules about moving live plants and animals across state lines also apply. The [Terms of Service](/terms) say the same: if you and the other person decide to ship, you arrange it yourselves and are responsible for following the carrier's rules, especially for live animals and plants. See [Safe local pickup](/help/safe-local-pickup).
 
 ## What should I do with fish or plants I can't sell?
 Never release aquarium animals or plants into the wild, a waterway or a storm drain. Rehome them instead: post a **Free** ad, or ask in the [forums](/forums) and somebody will usually take them. See [Where to sell aquarium fish](/help/where-to-sell-aquarium-fish).

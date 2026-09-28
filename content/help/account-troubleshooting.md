@@ -30,10 +30,10 @@ See [Confirming your email](/help/confirming-your-email).
 - Wait a couple of minutes, then check spam, junk and any "Promotions" tab.
 - Make sure you typed the address correctly. On the **Check your inbox** screen, **Use a different email** lets you go back and register again with the right one.
 - If you already had an account with that address, try logging in or using **Forgot your password?** instead of registering again.
-- If you've ever unsubscribed from or marked our emails as spam, email support@undergroundaquarium.com.
+- If emails to your address ever bounced, we can't email it at all. Email support@undergroundaquarium.com. (Unsubscribing or marking an email as spam doesn't block sign-up emails.)
 
 ## I clicked the confirmation link and ended up on the login page
-The link didn't work, usually because it was already used or it's too old. The login page doesn't show a message about this.
+The link didn't work, usually because it was already used or it's too old. The login page shows a message in an amber box at the top, such as "We couldn't confirm that link. It may have expired or already been used. Log in below, or use "Forgot your password?" to get a fresh link." or "That sign-in link didn't work. It may have expired or already been used. Please try logging in again." The message goes away once you try logging in again.
 
 Try logging in with your email and password. If you get "Email not confirmed", email support@undergroundaquarium.com and we'll help confirm the account.
 
@@ -70,7 +70,9 @@ The profile form also notes that you can change your username once every 30 days
 Tick the checkbox on the **Create account** or **Welcome** page before continuing. Underground Aquarium is for adults only.
 
 ## Google sign-in problems
-- **"That sign-in link didn't work. Try logging in."** The Google sign-in didn't complete. Go back to [Log in](/login) and click **Continue with Google** again.
+- **"That sign-in link didn't work. It may have expired or already been used. Please try logging in again."** or **"Sign-in was cancelled or not allowed. Please try again."** shown on the Log in page: the Google sign-in didn't complete. Click **Continue with Google** again.
+- **You land on "This account is suspended".** The account has been suspended by a moderator and can't sign in with Google either. See [I think my account was suspended](/help/account-troubleshooting#i-think-my-account-was-suspended).
+- **You land on "Account scheduled for deletion".** The account is waiting to be deleted. Google sign-in sends you there automatically so you can click **Cancel deletion & reactivate**. See [Deleting your account](/help/deleting-your-account).
 - **I signed in with Google but never picked a username.** New Google accounts go to the **Welcome** page to choose one. If you left it, sign in with Google again and you'll be taken back there, or set a username with **Edit profile** on [Your profile](/profile).
 - **I have an email/password account and want to use Google.** Use **Continue with Google** with the same Gmail address. If it doesn't sign you into your existing account, email support@undergroundaquarium.com.
 
@@ -98,7 +100,9 @@ Your account was deleted and is in the 30-day grace period. Click **Cancel delet
 Profiles of deleted and suspended accounts aren't shown. Also, the profile address follows the username, so an old link breaks after a username change. If it's your own account, sign in and open [Your profile](/profile) to find your current link.
 
 ## I think my account was suspended
-Suspended members get an **Account suspended** notification, and their public profile stops showing. Email support@undergroundaquarium.com from your account email if you think it was a mistake.
+If you try to log in and land on "This account is suspended", a moderator has suspended your account. A suspended account can't sign in, with email and password or with Google, and any session already open ends within about an hour. While it's suspended, your public profile, classified ads and tanks are hidden. You'll also have an **Account suspended** notification from when it happened.
+
+Email support@undergroundaquarium.com from the email address on the account if you think it was a mistake. If the suspension is lifted, you can sign in again, you get an **Account restored** notification, and the ads and tanks the suspension hid come back (ads whose 45 days ran out in the meantime come back as expired).
 
 ## I think someone else got into my account
 1. Change your password right away on [Password](/account/update-password) (or use **Forgot your password?** if you can't sign in).
@@ -117,7 +121,7 @@ See [Deleting your account](/help/deleting-your-account).
 
 ## I'm not getting notifications or emails
 - Bell: check the switches under **Choose what you get notified about** on [Notifications](/notifications). See [Notifications](/help/notifications).
-- Email: check spam, and see [Emails we send](/help/emails-we-send). Only some emails can be switched off, and unsubscribing stops all of them.
+- Email: check spam, and see [Emails we send](/help/emails-we-send). Only some emails can be switched off. Unsubscribing only stops marketing and outreach; account and message emails keep arriving.
 
 ## The site looks out of date or a change didn't save
 Refresh the page. For profile edits, make sure you clicked **Save** (only the photo saves automatically). If something still looks wrong, sign out and back in.

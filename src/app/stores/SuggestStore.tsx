@@ -74,7 +74,7 @@ export default function SuggestStore() {
       if (insertError) throw insertError;
       setDone(true);
     } catch {
-      setError("Couldn't submit — please try again.");
+      setError("Couldn't submit. Please try again.");
     } finally {
       setBusy(false);
     }

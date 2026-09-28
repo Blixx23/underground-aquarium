@@ -7,6 +7,7 @@ import Markdown from "@/components/forum/Markdown";
 import VoteControl from "@/components/forum/VoteControl";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
 import ReplyBox from "@/components/forum/ReplyBox";
+import EditablePost from "@/components/forum/EditablePost";
 import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
 import RelatedGuides from "@/components/discover/RelatedGuides";
@@ -27,6 +28,8 @@ type Post = {
   parent_id: string | null;
   score: number;
   created_at: string;
+  /** Set when the author or an admin edited the post (sql/step58_fixes.sql). */
+  edited_at?: string | null;
 };
 
 function excerpt(md: string, len = 155): string {
@@ -132,12 +135,25 @@ export default async function ThreadPage({ params }: Params) {
     ? ((t as { images?: string[] }).images as string[])
     : [];
 
-  const { data: postsData } = await supabasePublic
+  // edited_at is added by sql/step58_fixes.sql. Until that has been run, ask
+  // again without it so the thread still shows (just without "(edited)").
+  const postColumns = "id, author_id, body, is_op, parent_id, score, created_at";
+  const withEdited = await supabasePublic
     .from("forum_posts")
-    .select("id, author_id, body, is_op, parent_id, score, created_at")
+    .select(`${postColumns}, edited_at`)
     .eq("thread_id", t.id)
     .is("hidden_at", null)
     .order("created_at", { ascending: true });
+  const postsData = withEdited.error
+    ? (
+        await supabasePublic
+          .from("forum_posts")
+          .select(postColumns)
+          .eq("thread_id", t.id)
+          .is("hidden_at", null)
+          .order("created_at", { ascending: true })
+      ).data
+    : withEdited.data;
 
   const all = (postsData ?? []) as Post[];
   const op = all.find((p) => p.is_op);
@@ -206,9 +222,12 @@ export default async function ThreadPage({ params }: Params) {
   };
 
   // comment tree
+  // A reply whose parent was deleted (or hidden by a moderator) moves up to
+  // the top level, so it still shows and the comment count matches the page.
+  const visibleIds = new Set(comments.map((c) => c.id));
   const childrenByParent = new Map<string, Post[]>();
   for (const c of comments) {
-    const key = c.parent_id ?? "root";
+    const key = c.parent_id && visibleIds.has(c.parent_id) ? c.parent_id : "root";
     const arr = childrenByParent.get(key) ?? [];
     arr.push(c);
     childrenByParent.set(key, arr);
@@ -228,6 +247,17 @@ export default async function ThreadPage({ params }: Params) {
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
 
+  // Small "(edited)" note, with the exact time on hover.
+  const Edited = ({ at }: { at: string }) => (
+    <span
+      className="text-ocean-600"
+      title={`Edited ${new Date(at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`}
+    >
+      {" "}
+      (edited)
+    </span>
+  );
+
   function renderComment(c: Post) {
     const kids = sortKids(childrenByParent.get(c.id) ?? []);
     return (
@@ -241,9 +271,19 @@ export default async function ThreadPage({ params }: Params) {
           <p className="text-xs text-ocean-500">
             <Author id={c.author_id} />{" "}
             · <time dateTime={c.created_at}>{timeAgo(c.created_at)}</time>
+            {c.edited_at && <Edited at={c.edited_at} />}
           </p>
           <div className="mt-1">
-            <Markdown>{c.body ?? ""}</Markdown>
+            <EditablePost
+              postId={c.id}
+              authorId={c.author_id}
+              isOp={false}
+              body={c.body ?? ""}
+              locked={locked}
+              categorySlug={category}
+            >
+              <Markdown>{c.body ?? ""}</Markdown>
+            </EditablePost>
           </div>
           {!locked && <ReplyBox threadId={t.id as string} parentId={c.id} compact />}
           <div className="mt-1">
@@ -363,8 +403,24 @@ export default async function ThreadPage({ params }: Params) {
               Posted by{" "}
               <Author id={op?.author_id ?? null} />{" "}
               · <time dateTime={op?.created_at ?? undefined}>{timeAgo(op?.created_at ?? null)}</time>
+              {op?.edited_at && <Edited at={op.edited_at} />}
             </p>
-            <Markdown>{op?.body ?? ""}</Markdown>
+            {op ? (
+              <EditablePost
+                postId={op.id}
+                authorId={op.author_id}
+                isOp
+                body={op.body ?? ""}
+                title={t.title as string}
+                hasImages={threadImages.length > 0}
+                locked={locked}
+                categorySlug={category}
+              >
+                <Markdown>{op.body ?? ""}</Markdown>
+              </EditablePost>
+            ) : (
+              <Markdown>{""}</Markdown>
+            )}
             {threadImages.length > 0 && (
               <div
                 className={`mt-4 grid gap-2 ${
@@ -412,7 +468,7 @@ export default async function ThreadPage({ params }: Params) {
         <div className="space-y-4">
           {roots.length === 0 ? (
             <p className="text-sm text-ocean-500">
-              No comments yet — be the first.
+              No comments yet. Be the first.
             </p>
           ) : (
             roots.map((c) => renderComment(c))

@@ -548,8 +548,8 @@ export default function PostListingForm({
             </p>
             <p className="mt-1.5 text-xs text-amber-200/70">
               Never release anything into the wild. See our{" "}
-              <Link href="/terms" className="underline hover:text-amber-100">
-                terms
+              <Link href="/rules" className="underline hover:text-amber-100">
+                listing rules
               </Link>
               .
             </p>

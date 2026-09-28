@@ -3,11 +3,11 @@ title: Moderating the feed, forums, comments and tanks
 category: Moderation
 summary: Exactly what an admin can remove or hide in the feed, the forums, comments and tanks, what can only be done in Supabase, and who finds out.
 order: 20
-keywords: delete post, remove comment, hide thread, lock thread, pin thread, sticky, moderate forum, moderate feed, spam post, delete tank, private tank, moderator tools
-pages: /feed, /feed/[id], /forums, /forums/[category]/[thread], /tanks/[id], /admin/reports
+keywords: delete post, remove comment, hide thread, delete thread, edit forum post, edited label, lock thread, pin thread, sticky, moderate forum, moderate feed, spam post, delete tank, private tank, tank reports, moderator tools
+pages: /feed, /feed/[id], /forums, /forums/[category]/[thread], /tanks/[id], /admin/reports, /admin/tank-reports
 ---
 
-Admin moderation tools are spread across the site rather than living in one screen. In the feed you can delete posts and comments directly. In the forums you can only hide things through the [Reports queue](/admin/help/reports-queue). Tanks have no admin tools on the site. This guide lists what each place allows and the Supabase workaround when it doesn't.
+Admin moderation tools are spread across the site rather than living in one screen. In the feed you can delete posts and comments directly. In the forums you can edit and delete any post right on the thread page, or hide things through the [Reports queue](/admin/help/reports-queue). Reported tanks are handled on [Tank reports](/admin/help/tank-reports-queue). This guide lists what each place allows and the Supabase workaround when it doesn't.
 
 ## What can I do in the feed as an admin?
 On any feed post written by a member (not activity items), you can:
@@ -27,7 +27,7 @@ These powers show on the main feed at /feed, on a member's feed, and on a single
 
 The post disappears from your screen right away. If you were on the post's own page, you are sent back to /feed. There is no undo on the site.
 
-The author is not notified. If you want them to know, message them or email them yourself. If the post came from a report, go back to /admin/reports and press **Mark resolved** so the reporter is told it was handled.
+The author is not notified. If you want them to know, message them or email them yourself. If the post came from a report, use **Remove post** on the report instead: it deletes the post the same way, tells the author "Post removed", and closes the report. See [What does Remove post do?](/admin/help/reports-queue#what-does-remove-post-do).
 
 If deleting fails, the error from the database appears under the post in red. The delete is done by a database function, so an error there means that function refused; delete the row from the feed posts table in Supabase instead.
 
@@ -42,7 +42,7 @@ Admins see the trash icon on every comment. Members see it on their own comments
 The feed mixes members' posts with activity the site creates on its own: new tanks, new classified ads, approved spawns, badges, and forum threads. Only posts have **Delete post**. For the others, you have to act on the thing itself:
 
 - **Tank:** see [What can I do about a tank?](/admin/help/moderating-feed-and-forums#what-can-i-do-about-a-tank).
-- **Classified ad:** see the workaround in [Working the Reports queue](/admin/help/reports-queue#what-does-take-down-listing-do).
+- **Classified ad:** report it and use **Take down listing**. See [Working the Reports queue](/admin/help/reports-queue#what-does-take-down-listing-do).
 - **Forum thread:** see [How do I hide a forum post or thread?](/admin/help/moderating-feed-and-forums#how-do-i-hide-a-forum-post-or-thread).
 - **Spawn or badge:** these come from the Society and trophy systems, not from anything the member typed into the feed.
 
@@ -57,10 +57,22 @@ Hiding in the forums only happens through a report:
 
 Both notify the author with a bell notification ("Post hidden" or "Thread hidden") and tell the reporter their report was resolved. Full details are in [Working the Reports queue](/admin/help/reports-queue).
 
-If nobody has reported it, report it yourself from the thread, then act on your own report. There is no hide or delete button on the forum pages themselves, even for admins.
+If nobody has reported it, you can report it yourself and act on your own report, or simply use **Delete** on the thread page (next section). Delete doesn't notify the author; the report route does.
 
 ## Can I edit or delete forum posts?
-No. Nobody, admins included, can edit a forum post or comment from the site, and there is no delete button. The only removal tool is hiding through a report. To change or delete a post's text, edit or delete its row in the forum_posts table in Supabase.
+Yes. On a thread page, admins see **Edit** and **Delete** under every post, the same buttons authors see under their own posts.
+
+- **Edit** on the opening post lets you change the thread title and the post text. On a reply, only the text. Press **Save** to keep it. The thread's link doesn't change when the title changes, so shared links keep working. Photos on an existing thread can't be changed ("Photos stay as they are. To change them, delete the thread and post it again.").
+- The edit boxes have live character counters: title 3 to 160 characters, opening post up to 20,000, reply up to 10,000. Going over shows a message such as "Your reply is 10,250 characters. The limit is 10,000, so please shorten it by 250." and nothing is saved or cut off.
+- After an edit, the post shows "(edited)" next to its time. Hovering shows the exact time it was edited. This label needs step58_fixes.sql (see below); until it has been run, edits still save but no "(edited)" appears.
+- **Delete** on a reply asks "Delete this reply? This can't be undone." The reply is hidden (not erased), the comment count is recounted, and any replies under it move up to the top level of the thread so they still show.
+- **Delete thread** on the opening post asks "Delete this whole thread? The opening post and every reply will stop showing. This can't be undone." The whole thread is hidden, the same as **Hide thread** from a report.
+
+In a locked thread, only admins can edit. Authors can still delete their own posts there.
+
+Neither Edit nor Delete notifies the author, and neither creates a record of what the old text was. If the author should know, message them, or use the report route so they get "Post hidden" or "Thread hidden".
+
+**Setup:** run step58_fixes.sql (in the sql folder) once in the Supabase SQL Editor. It adds the edited time to forum posts. The last query it runs should say ok on every row.
 
 ## How do I lock or pin a forum thread?
 There is no button for either. Both are yes/no values on the thread's row in the forum_threads table in Supabase:
@@ -68,7 +80,7 @@ There is no button for either. Both are yes/no values on the thread's row in the
 - **is_locked** set to true: the thread page shows "This thread is locked." with a lock icon in place of the comment box, and the reply boxes under comments disappear. Anyone who tries to reply anyway gets "This thread is locked." Existing comments stay visible.
 - **is_pinned** set to true: the thread sorts to the top of its category list and shows a small pin icon.
 
-Set the value back to false to undo either one.
+Set the value back to false to undo either one. While a thread is locked, members can't edit posts in it, but admins still can.
 
 ## How do I unhide a forum post or thread?
 In Supabase, open forum_posts (for a single post) or forum_threads (for a whole thread), find the row, and clear its hidden_at value. The post or thread shows again on the next page load.
@@ -79,25 +91,29 @@ When you unhide a comment, the thread's comment count isn't recounted. It will b
 Yes, in Supabase only. Each category in forum_categories has an is_public value. When it is false, the category and every thread in it show "not found". There is no admin screen for categories.
 
 ## What can I do about a tank?
-There are no admin tools on tank pages:
+There are still no admin buttons on tank pages themselves:
 
-- You can't delete, hide or edit someone's tank from the site.
+- You can't delete or edit someone's tank from the site.
 - On a tank's own page (/tanks/<id>), the comment delete button only shows for the tank's owner and the comment's writer, not for admins.
-- **Report this tank** saves into a separate table that the admin area never shows. See [Working the Reports queue](/admin/help/reports-queue#where-do-reports-come-from).
+
+Members report tanks with **Report this tank**. Those reports go to **Tank reports** at /admin/tank-reports, where **Make tank private** takes a tank out of public view and tells the owner. See [Tank reports](/admin/help/tank-reports-queue).
 
 Workarounds in Supabase:
 
-- **Hide a tank:** open the tanks table, find the tank by its id (the last part of /tanks/<id>), and set is_public to false. The owner can make it public again.
+- **Hide a tank nobody reported:** open the tanks table, find the tank by its id (the last part of /tanks/<id>), and set is_public to false. The owner can make it public again. Nobody is notified.
 - **Remove a tank comment:** delete the row in the tank_comments table.
-- **Hide all of one member's tanks:** suspending the member from a profile report switches all their tanks to private. See [Working the Reports queue](/admin/help/reports-queue#what-does-suspend-account-do).
+- **Hide all of one member's tanks:** suspending the member from a profile report switches all their tanks to private (and Unsuspend puts back the ones that were public). See [Working the Reports queue](/admin/help/reports-queue#what-does-suspend-account-do).
 
 ## Does the member find out when I moderate?
 | What you did | Author told? |
 |---|---|
-| Deleted a feed post | No |
+| Deleted a feed post from its menu | No |
+| Remove post (from a report) | Yes, "Post removed" bell notification |
 | Deleted a feed comment | No |
+| Edited or deleted a forum post on the thread page | No |
 | Hide post (from a report) | Yes, "Post hidden" bell notification |
 | Hide thread (from a report) | Yes, "Thread hidden", to the thread starter |
+| Make tank private (from Tank reports) | Yes, "Tank made private" |
 | Anything done in Supabase | No |
 
 Notifications never name the admin; they say "a moderator".
@@ -107,7 +123,9 @@ Notifications never name the admin; they say "a moderator".
 
 **Delete post shows a red error.** The database function refused the delete. Remove the row in Supabase instead, then reload.
 
-**Replies vanished when I hid one comment.** Replies nested under a hidden comment stop showing too. Unhide the parent comment in Supabase if the replies should stay.
+**Replies jumped to the top of the thread.** When a comment is hidden or deleted, the replies under it move up to the top level so they still show. That is expected.
+
+**No "(edited)" label after an edit.** step58_fixes.sql hasn't been run yet. Run it in the Supabase SQL Editor.
 
 **A hidden thread still appears in the hot threads box.** Known issue: see [Working the Reports queue](/admin/help/reports-queue#what-does-hide-thread-do).
 

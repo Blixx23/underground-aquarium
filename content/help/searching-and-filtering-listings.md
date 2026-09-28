@@ -22,11 +22,12 @@ Type a word and the list narrows as you type. Search looks for what you typed in
 
 - title,
 - description,
-- town.
+- town,
+- category name (including **Free Stuff** or **Wanted / ISO** for free and wanted ads).
 
 It isn't case sensitive, and it matches parts of words, so "neo" finds "Neocaridina" and "guppy" finds "guppy" and "guppys".
 
-It doesn't search the seller's name, the category name or the metro area name. To narrow by category, use the category pills instead. To search one area, go to that area's page.
+Because category names are searched too, typing "plants" finds ads filed under Aquatic Plants even if the title doesn't say "plants", and typing "free" finds every free ad. Search doesn't look at the seller's name or the metro area name. To search one area, go to that area's page.
 
 Tap the **X** at the end of the box to clear your search.
 
@@ -38,7 +39,7 @@ If a multi-word search comes up empty, try one distinctive word, like "cherry", 
 ## Filtering by category
 Below the search box is a row of category pills. Tap one to show only ads in that category. Tap **All** to go back to everything.
 
-Each pill shows how many ads it holds on that page, and only categories that actually have ads appear. The number on **All** is the total on the page.
+Each pill shows how many ads it holds on that page, and only categories that actually have ads appear. The number on **All** is the total on the page. Because free and wanted ads also count under **Free Stuff** and **Wanted / ISO** (see below), the pill numbers can add up to more than **All**.
 
 The twelve categories are:
 
@@ -57,12 +58,12 @@ The twelve categories are:
 
 On a phone, the pill row scrolls sideways. See [Listing categories and ad types](/help/listing-categories-and-ad-types) for what belongs where.
 
-## Why aren't all the free (or wanted) ads under Free Stuff?
-The **Free Stuff** and **Wanted / ISO** pills show ads the seller posted in those categories. Separately, every ad is also marked as for sale, free or wanted when it's posted.
+## Do Free Stuff and Wanted / ISO show every free or wanted ad?
+Yes. Every ad is marked as for sale, free or wanted when it's posted, and it also has a category. The **Free Stuff** pill shows every free ad, whatever its category, plus anything posted in the Free Stuff category. The **Wanted / ISO** pill shows every wanted ad, whatever its category, plus anything posted in the Wanted / ISO category.
 
-That means a free ad posted in, say, Freshwater Fish shows a green **Free** tag on its card and a price of "Free", but it appears under the **Freshwater Fish** pill, not **Free Stuff**. The same goes for a wanted ad posted in Tanks & Stands: it has a blue **Wanted** tag but sits under **Tanks & Stands**.
+So a free betta posted in Freshwater Fish shows under both **Freshwater Fish** and **Free Stuff**, and a wanted ad posted in Tanks & Stands shows under both **Tanks & Stands** and **Wanted / ISO**. That's why the pill counts can add up to more than **All**.
 
-To find every giveaway, look for the **Free** tag while browsing, or sort by **Price: low to high**, which puts free ads first.
+You can also sort by **Price: low to high**, which puts free ads first.
 
 ## Sorting listings
 Use the sort menu next to the search box:
@@ -100,6 +101,9 @@ Search, pills and sorting work on the ads loaded on that page: up to 500 live ad
 ## Common problems
 **"Nothing matches" appears.**
 Nothing on the page fits your search plus the category you picked. Tap **All**, clear the search with the **X**, or try a shorter single-word search.
+
+**The pill numbers add up to more than All.**
+That's expected. Free ads count under their own category and **Free Stuff**, and wanted ads count under their own category and **Wanted / ISO**, so they're counted twice.
 
 **A category pill I expected is missing.**
 Pills only appear for categories that have at least one live ad on that page. If nobody near you has posted in that category, it won't show. Try [Every listing](/listings) for the whole country.

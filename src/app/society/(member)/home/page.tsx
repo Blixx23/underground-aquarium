@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Fish, Trophy, Ticket } from "lucide-react";
+import { ArrowRight, Fish, Trophy, Ticket, Settings } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import { titleForPoints } from "@/lib/awards/titles";
@@ -8,6 +8,11 @@ import MemberCard from "@/components/society/MemberCard";
 import TrophyCabinet from "@/components/trophies/TrophyCabinet";
 import type { TrophyRow } from "@/lib/trophies";
 import { SOC_EYEBROW, SOC_CARD_LINK } from "@/lib/society/theme";
+import {
+  SOCIETY_MANAGE_PATH,
+  SOCIETY_RENEW_PATH,
+  renewalState,
+} from "@/lib/society/renewal";
 
 export const metadata: Metadata = { title: "Member area" };
 
@@ -97,6 +102,32 @@ export default async function SocietyHome() {
         tier={ctx.membership?.tier ?? null}
         paidThrough={ctx.membership?.paid_through ?? null}
       />
+
+      {/*
+        Renewal and account housekeeping, right under the card that shows the
+        paid-through date. "Renew now" only appears once renewal is open
+        (the last 30 days), so nobody pays a year early by accident.
+      */}
+      <div className="-mt-3 mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+        {renewalState(ctx.membership?.paid_through) === "expiring" &&
+          ctx.membership?.tier !== "lifetime" &&
+          ctx.membership?.role !== "owner" &&
+          (ctx.society?.dues_amount_cents ?? 0) > 0 && (
+            <Link
+              href={SOCIETY_RENEW_PATH}
+              className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-1.5 font-medium text-ocean-950 transition-colors hover:bg-amber-400"
+            >
+              Renew now <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        <Link
+          href={SOCIETY_MANAGE_PATH}
+          className="inline-flex items-center gap-1.5 text-amber-300 hover:text-amber-200"
+        >
+          <Settings className="h-3.5 w-3.5" /> Membership settings
+        </Link>
+        <span className="text-ocean-500">Update your details or leave the Society.</span>
+      </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (

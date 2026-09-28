@@ -37,7 +37,12 @@ Yes. If you tap **Suggest a store** while signed out, you'll see "Sign in to sug
 ## What happens after I submit?
 You'll see "Thanks for the suggestion!" and "We'll review it and add it to the directory." The shop doesn't appear in the directory right away. It stays hidden until our team has checked it's a real, independent shop.
 
-You won't get a notification when it's added, so search for it on [Fish stores](/stores) later to see if it's live.
+You'll get a notification when our team has reviewed it:
+
+- **Your shop suggestion is live**: "[shop] is now in the Shops directory. Thanks for helping other hobbyists find it." Tapping it opens the shop's new page. Our team may tidy up the name or address before publishing, and the shop is placed on the map when its address can be found.
+- **Shop suggestion reviewed**: "Thanks for suggesting [shop]. We couldn't add it to the directory this time." with a pointer to support@undergroundaquarium.com if you have questions. The suggestion isn't added.
+
+You can't turn these notifications off.
 
 ## Which stores can be listed?
 The directory is for independent aquarium and tropical fish stores: shops where hobbyists buy fish, invertebrates, corals, plants and supplies. It doesn't list chain stores.
@@ -58,6 +63,6 @@ Before suggesting, search [Fish stores](/stores) for the shop's name and also fo
 
 **I don't see the Suggest a store button.** It's at the very bottom of [Fish stores](/stores), below the list and **Latest shop updates**. It isn't on individual shop pages or the store finder.
 
-**It's been a while and the shop still isn't listed.** Email support@undergroundaquarium.com with the shop's name and town and we'll check on it.
+**It's been a while and the shop still isn't listed.** If you haven't had a **Your shop suggestion is live** or **Shop suggestion reviewed** notification, it's still waiting for review. Email support@undergroundaquarium.com with the shop's name and town and we'll check on it.
 
 **The shop is listed but closed or moved.** Don't suggest it again. Open its page and use **Something wrong here? Suggest a fix**.

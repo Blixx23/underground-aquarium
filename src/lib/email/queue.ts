@@ -5,7 +5,7 @@ import { checkEmail, normaliseEmail } from "@/lib/email/address";
 import { classify, backoffMs } from "@/lib/email/failure";
 import { deliver } from "@/lib/email/provider";
 import { getEmailSettings } from "@/lib/email/settings";
-import { suppressedSet, suppress } from "@/lib/email/suppress";
+import { blocks, categoryOf, skippedMessage, suppressedSet, suppressionReasons, suppress } from "@/lib/email/suppress";
 import { letterShell } from "@/lib/email/shell";
 
 export const SITE = "https://www.undergroundaquarium.com";
@@ -151,7 +151,9 @@ export async function dispatchOne(args: {
   from?: string;
   /**
    * Only for the one message that confirms an opt out. The address was
-   * just added to the do-not-email list, and this is the reply to that.
+   * just taken off marketing mail, and this is the reply to that. It is
+   * not marketing itself, so the opt out doesn't stop it, but a bounced
+   * address still gets nothing.
    */
   confirmingOptOut?: boolean;
 }): Promise<{ sent: boolean; queued: boolean }> {
@@ -160,9 +162,17 @@ export async function dispatchOne(args: {
   const to = normaliseEmail(check.value);
 
   const bulk = Boolean(args.bulk);
-  if (!args.confirmingOptOut) {
-    const set = await suppressedSet([to]);
-    if (set.has(to)) throw new Error("That address has unsubscribed or bounced.");
+  // An unsubscribe only stops marketing, so a member who opted out of
+  // outreach still gets their message alerts and receipts. A bounce
+  // stops everything, because the address doesn't work.
+  const category = args.confirmingOptOut ? "transactional" : categoryOf({ bulk, kind: args.kind });
+  const set = await suppressedSet([to], category);
+  if (set.has(to)) {
+    throw new Error(
+      category === "marketing"
+        ? "That address has opted out of marketing email, or bounced."
+        : "That address bounced or was blocked, so nothing can be sent to it."
+    );
   }
 
   const settings = await getEmailSettings();
@@ -228,7 +238,10 @@ export async function dispatchToEach(args: {
     return true;
   });
 
-  const set = await suppressedSet(usable.map((r) => r.email));
+  const set = await suppressedSet(
+    usable.map((r) => r.email),
+    categoryOf({ bulk, kind: args.kind })
+  );
   const settings = await getEmailSettings();
   out.paused = settings.paused || (bulk && settings.bulk_paused);
 
@@ -274,10 +287,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * 4 at a time with a one-second floor per group is about 4/sec.
  */
 export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
-  claimed: number; sent: number; failed: number; retried: number; paused: boolean;
+  claimed: number; sent: number; failed: number; retried: number; suppressed: number; paused: boolean;
 }> {
   const settings = await getEmailSettings();
-  if (settings.paused) return { claimed: 0, sent: 0, failed: 0, retried: 0, paused: true };
+  if (settings.paused) return { claimed: 0, sent: 0, failed: 0, retried: 0, suppressed: 0, paused: true };
 
   // Anything locked more than 15 minutes ago was orphaned by a crash.
   await supabaseAdmin
@@ -300,7 +313,7 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
   const { data, error } = await q;
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as QueueRow[];
-  if (rows.length === 0) return { claimed: 0, sent: 0, failed: 0, retried: 0, paused: false };
+  if (rows.length === 0) return { claimed: 0, sent: 0, failed: 0, retried: 0, suppressed: 0, paused: false };
 
   const lockedAt = new Date().toISOString();
   const { error: lockErr } = await supabaseAdmin
@@ -312,7 +325,7 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
 
   if (dry) {
     await supabaseAdmin.from("email_queue").update({ locked_at: null }).in("id", rows.map((r) => r.id));
-    return { claimed: rows.length, sent: 0, failed: 0, retried: 0, paused: false };
+    return { claimed: rows.length, sent: 0, failed: 0, retried: 0, suppressed: 0, paused: false };
   }
 
   // A bulk row still has to respect today's cap.
@@ -332,6 +345,13 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
   let sent = 0;
   let failed = 0;
   let retried = 0;
+  let suppressed = 0;
+
+  // Check the do-not-email list again right before sending. A row can sit
+  // in the queue for hours (or be put back by "Try again"), and in that
+  // time the address may have bounced or opted out. Checking only when it
+  // was queued is how mail keeps going to a dead address.
+  const listed = await suppressionReasons(rows.map((r) => r.to_email));
 
   const groups: QueueRow[][] = [];
   for (let i = 0; i < rows.length; i += 4) groups.push(rows.slice(i, i + 4));
@@ -340,6 +360,30 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
     const started = Date.now();
     await Promise.all(
       group.map(async (row) => {
+        const reason = listed.get(normaliseEmail(row.to_email));
+        if (reason !== undefined && blocks(reason, categoryOf(row))) {
+          // Recorded, not erased, so the ledger shows why it never went.
+          // Stamped as already alerted: this is the list doing its job,
+          // not a failure the health check should email anyone about.
+          const now = new Date().toISOString();
+          const { error: skipErr } = await supabaseAdmin
+            .from("email_queue")
+            .update({
+              status: "failed",
+              fail_reason: "other",
+              last_error: skippedMessage(reason),
+              locked_at: null,
+              alerted_at: now,
+            })
+            .eq("id", row.id);
+          if (skipErr) {
+            // Still never send it. Unlock so the next run can try to mark it.
+            console.error("[email] could not mark a suppressed row:", skipErr.message);
+            await supabaseAdmin.from("email_queue").update({ locked_at: null }).eq("id", row.id);
+          }
+          suppressed++;
+          return;
+        }
         if (row.bulk) {
           if (bulkBudget <= 0) {
             // Over today's cap: put it back for tomorrow, untouched.
@@ -398,5 +442,5 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
     if (spent < 1000) await sleep(1000 - spent); // hard floor: ~4 requests a second
   }
 
-  return { claimed: rows.length, sent, failed, retried, paused: false };
+  return { claimed: rows.length, sent, failed, retried, suppressed, paused: false };
 }

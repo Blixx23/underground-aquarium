@@ -12,6 +12,13 @@ import DuesSuccessBanner from "./DuesSuccessBanner";
 import LeaveClubButton from "./LeaveClubButton";
 import JoinClubForm from "./JoinClubForm";
 import MemberSelfEdit from "./MemberSelfEdit";
+import {
+  RENEWAL_WINDOW_DAYS,
+  daysUntilPaidThrough,
+  renewalState,
+  nextPaidThrough,
+  formatPaidThrough,
+} from "@/lib/society/renewal";
 
 export const dynamic = "force-dynamic";
 
@@ -28,15 +35,16 @@ const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
  *
  * This used to be a generic club page. There is one Society now, so it does
  * one job: get someone from "interested" to "paid member", then hand them to
- * the member area. Members only land here to pay dues or manage their
- * membership (?manage=1); otherwise they're sent straight to the member area.
+ * the member area. Members land here to renew (?renew=1, open in the last
+ * 30 days and after a lapse), to manage their membership (?manage=1), or
+ * because their dues lapsed; otherwise they're sent to the member area.
  */
 export default async function SocietyJoinPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ dues?: string; manage?: string }>;
+  searchParams: Promise<{ dues?: string; manage?: string; renew?: string }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
@@ -81,14 +89,17 @@ export default async function SocietyJoinPage({
 
   const isApplicant = me?.status === "pending";
   const isMember = Boolean(me?.role) && !isApplicant;
-  const today = new Date();
-  const paidThroughDate = me?.paid_through ? new Date(me.paid_through + "T00:00:00") : null;
-  const isPaidCurrent = paidThroughDate ? paidThroughDate >= today : false;
+  // Where the member's paid-through date stands. Renewal opens in the
+  // last 30 days so the reminder emails (sent 10 and 3 days out) always
+  // land on a page that can actually take the payment.
+  const standing = renewalState(me?.paid_through);
+  const daysLeft = daysUntilPaidThrough(me?.paid_through);
+  const renewalOpen = standing !== "current";
   const isLifetime = me?.tier === "lifetime";
   const canCollect = Boolean(club.stripe_account_id) && club.payouts_enabled;
   const myDuesCents = isLifetime ? club.lifetime_dues_amount_cents ?? 0 : club.dues_amount_cents;
-  const duesDue =
-    isMember && me?.role !== "owner" && canCollect && myDuesCents > 0 && !isPaidCurrent;
+  const owesDues = isMember && me?.role !== "owner" && myDuesCents > 0 && renewalOpen;
+  const duesDue = owesDues && canCollect;
 
   // A member in good standing has nothing to do here unless they asked to
   // manage their membership or just came back from paying.
@@ -102,7 +113,14 @@ export default async function SocietyJoinPage({
     });
     goodStanding = Boolean(data);
   }
-  if (isMember && goodStanding && !duesDue && sp.manage !== "1" && sp.dues !== "success") {
+  if (
+    isMember &&
+    goodStanding &&
+    !duesDue &&
+    sp.manage !== "1" &&
+    sp.renew !== "1" &&
+    sp.dues !== "success"
+  ) {
     redirect(SOCIETY_HOME_PATH);
   }
 
@@ -168,24 +186,97 @@ export default async function SocietyJoinPage({
               paidThrough={me?.paid_through ?? null}
             />
 
+            {/* Lapsed and locked out: say so plainly, with the way back in. */}
+            {standing === "lapsed" && !goodStanding && me?.paid_through && (
+              <div className="mb-4 rounded-2xl border border-coral-500/40 bg-coral-500/10 px-6 py-5">
+                <p className="font-medium text-white">
+                  Your membership lapsed on {formatPaidThrough(me.paid_through)}. Renew to get back in.
+                </p>
+                <p className="mt-1 text-sm text-ocean-300">
+                  Your spawn logs, points and certificates are all still here. They unlock again the
+                  moment your payment clears.
+                </p>
+              </div>
+            )}
+
             {duesDue && (
-              <div className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-500/[0.08] px-6 py-5">
+              <div
+                id="renew"
+                className="mb-6 scroll-mt-28 rounded-2xl border border-amber-500/40 bg-amber-500/[0.08] px-6 py-5"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <p className="font-medium text-white">
-                      {isLifetime ? "Lifetime membership" : paidThroughDate ? "Renew your membership" : "Activate your membership"}
+                      {isLifetime
+                        ? "Lifetime membership"
+                        : standing === "none"
+                        ? "Activate your membership"
+                        : standing === "expiring"
+                        ? daysLeft === 0
+                          ? "Your membership expires today"
+                          : `Your membership expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`
+                        : "Renew your membership"}
                     </p>
                     <p className="text-sm text-amber-100/60">
                       {isLifetime
                         ? `${money(myDuesCents)} once. No renewals, ever.`
-                        : `${money(myDuesCents)} for a year. Your member area, spawn logs and certificates unlock again the moment it clears.`}
+                        : standing === "expiring"
+                        ? `${money(myDuesCents)} for another year. Renewing early never costs you days: the new year starts when your current one ends.`
+                        : standing === "lapsed"
+                        ? `${money(myDuesCents)} for a year. Your member area, spawn logs and certificates unlock again the moment it clears.`
+                        : `${money(myDuesCents)} for a year. Your member area opens the moment it clears.`}
                     </p>
+                    {!isLifetime && (
+                      <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.15em] text-amber-400/70">
+                        Paid through after this payment:{" "}
+                        {formatPaidThrough(nextPaidThrough(me?.paid_through))}
+                      </p>
+                    )}
                   </div>
                   <PayDuesButton
                     clubId={club.id}
-                    label={isLifetime ? `Pay ${money(myDuesCents)}` : `Pay ${money(myDuesCents)} dues`}
+                    label={
+                      isLifetime
+                        ? `Pay ${money(myDuesCents)}`
+                        : standing === "none"
+                        ? `Pay ${money(myDuesCents)} dues`
+                        : `Renew for ${money(myDuesCents)}`
+                    }
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Dues are owed but Stripe can't take them right now. */}
+            {owesDues && !canCollect && (
+              <div
+                id="renew"
+                className="mb-6 scroll-mt-28 rounded-2xl border border-ocean-700/60 bg-ocean-900/40 px-6 py-5 text-sm text-ocean-300"
+              >
+                Online dues payments are paused for a moment. Please try again later, or email{" "}
+                <a
+                  href="mailto:support@undergroundaquarium.com"
+                  className="text-amber-300/80 hover:text-amber-300"
+                >
+                  support@undergroundaquarium.com
+                </a>{" "}
+                and we&apos;ll sort it out.
+              </div>
+            )}
+
+            {/* Came to renew too early: tell them when they can. */}
+            {sp.renew === "1" && standing === "current" && me?.paid_through && !isLifetime && (
+              <div
+                id="renew"
+                className={`${SOC_CARD} mb-6 scroll-mt-28 px-6 py-5 text-sm text-amber-100/70`}
+              >
+                <p className="font-medium text-white">
+                  You&apos;re paid through {formatPaidThrough(me.paid_through)}.
+                </p>
+                <p className="mt-1">
+                  Renewal opens {RENEWAL_WINDOW_DAYS} days before that date. We&apos;ll email you a
+                  reminder when it&apos;s time.
+                </p>
               </div>
             )}
 
@@ -223,7 +314,7 @@ export default async function SocietyJoinPage({
               We&apos;re reviewing it now. You&apos;ll get a notification the moment you&apos;re approved, and
               then you can pay dues and step into the member area.
             </p>
-            <LeaveClubButton clubId={club.id} clubName={club.name} label="Withdraw application" />
+            <LeaveClubButton clubId={club.id} clubName={club.name} label="Withdraw application" withdrawing />
           </div>
         )}
 

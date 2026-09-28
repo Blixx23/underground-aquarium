@@ -87,8 +87,9 @@ The four **Your shop** switches matter only if you manage a claimed shop. Turnin
 Some notices always come through because they're about your account or something you asked for:
 
 - the outcome of a report you sent
-- moderation notices, like a post of yours being hidden
-- account notices
+- moderation notices, like a post of yours being hidden or removed, or a tank made private
+- account notices, like **Account suspended** and **Account restored**
+- the outcome of a shop you suggested for the directory
 - notices about species photos, species requests and breeding videos you submitted
 - event notices and site news
 
@@ -107,9 +108,19 @@ New messages don't use the bell at all. They show as a badge on the Messages ico
 | **[Shop] posted an update** | A shop you follow posts an update | The shop's page |
 | **[Shop] responded** | A shop replies to your review | The shop's page |
 | Society notices | Applications, approval, dues, honorary membership | The Society pages |
+| **About your Underground Aquarium Society application** | Your Society application wasn't approved this time: "Thanks for applying. We couldn't approve it this time, but you're welcome to apply again." (you also get a short email with an **Apply again** button) | The Society membership page, where you can apply again |
+| **Your event is live** | An event you posted was approved: "[event] was approved and is now on the events page." | Your event's page |
+| **Event not approved** | An event you posted wasn't approved: "[event] wasn't approved for the events page." followed by the reviewer's note, or a line pointing you to support@undergroundaquarium.com | The [Events](/events) page |
+| **Your shop suggestion is live** | A shop you suggested was added: "[shop] is now in the Shops directory. Thanks for helping other hobbyists find it." | The shop's page |
+| **Shop suggestion reviewed** | A shop you suggested wasn't added: "Thanks for suggesting [shop]. We couldn't add it to the directory this time." | The [Fish stores](/stores) directory |
 | **We couldn't use your [fish] video** | A breeding video you uploaded couldn't be processed, with the reason | The species page |
 | **Report reviewed** / **Report resolved** | Our team finished reviewing a report you sent | The item you reported |
-| **Post hidden** / **Thread hidden** / **Account suspended** | A moderator acted on your content or account | The relevant page |
+| **Listing removed** | A moderator took down one of your classified ads: "Your listing "[title]" was removed by a moderator." | [My listings](/my/listings) |
+| **Post removed** | A moderator removed one of your feed posts: "A post of yours in the feed was removed by a moderator." | The [Feed](/feed) |
+| **Post hidden** / **Thread hidden** | A moderator hid one of your forum posts or threads | The thread |
+| **Tank made private** | A moderator made one of your tanks private after a community report. You can still see and edit it. | Your tank |
+| **Account suspended** | A moderator suspended your account | The "This account is suspended" page |
+| **Account restored** | Your suspension was lifted: "Your account suspension has been lifted. You can sign in again." | [Your profile](/profile) |
 | Shop alerts | For shop owners: new reviews, listing fix reports, milestones, weekly report | Your shop dashboard or page |
 
 ## Does turning off a notification stop the email too?

@@ -62,6 +62,8 @@ In feed comments, the same rules apply, plus a confirmation "Delete this comment
 
 You'll see "Thanks, this tank has been reported for review." If it fails you'll see "Couldn't submit, please try again." Our team reviews every report. See [Reporting content](/help/reporting-content).
 
+When the review is done you get a notification: **Report resolved** if we took action or resolved it, or **Report reviewed** ("No action was needed") if we didn't. If a moderator makes the tank private, its owner gets a **Tank made private** notification. They can still see and edit the tank.
+
 ## How do I report a bad comment on a tank?
 Tank comments don't have their own report button. If it's your tank, delete it. Otherwise, you can report the whole tank and mention the comment in the reason, block the person from their profile, or email support@undergroundaquarium.com with a link to the tank.
 

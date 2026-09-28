@@ -81,4 +81,4 @@ Society events show an **Edit event** button to officers that opens the Society 
 
 **I don't see the Edit event button.** You're not signed in, or you're signed in to a different account than the one that posted the event or manages the shop.
 
-**I need to edit my event while it's pending review.** After submitting, you're not given a link to the pending event. Email support@undergroundaquarium.com with the event title and the change you need.
+**I need to edit my event while it's pending review.** After submitting, you're not given a link to the pending event (the **Your event is live** notification links to it once it's approved). Email support@undergroundaquarium.com with the event title and the change you need.

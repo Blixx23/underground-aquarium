@@ -12,6 +12,8 @@ export default function DeletionPendingPage() {
   const [scheduledFor, setScheduledFor] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "cancel" | "signout">(null);
   const [error, setError] = useState<string | null>(null);
+  // Reactivated, but we couldn't tell which tanks to make public again.
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -39,24 +41,34 @@ export default function DeletionPendingPage() {
   async function cancelDeletion() {
     setBusy("cancel");
     setError(null);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      router.replace("/login");
-      return;
-    }
-    const { error: e } = await supabase
-      .from("profiles")
-      .update({ deleted_at: null, deletion_scheduled_for: null })
-      .eq("id", user.id);
-    if (e) {
+    // The server clears the deletion and puts back tanks that were public,
+    // which the browser can't do on its own because the list of those tanks
+    // is kept where only the server can read and clear it.
+    try {
+      const res = await fetch("/api/account/reactivate", { method: "POST" });
+      const data = await res.json();
+      if (res.status === 401) {
+        router.replace("/login");
+        return;
+      }
+      if (!res.ok) {
+        setError(data?.error || "Couldn't cancel deletion. Please try again.");
+        setBusy(null);
+        return;
+      }
+      if (data.tanksTracked === false) {
+        // Older deletion with no saved list: we can't tell which tanks were
+        // public, so say so instead of guessing.
+        setDone(true);
+        setBusy(null);
+        return;
+      }
+      router.refresh();
+      router.push("/profile");
+    } catch {
       setError("Couldn't cancel deletion. Please try again.");
       setBusy(null);
-      return;
     }
-    router.refresh();
-    router.push("/profile");
   }
 
   async function signOut() {
@@ -70,6 +82,34 @@ export default function DeletionPendingPage() {
     return (
       <main className="flex min-h-screen items-center justify-center px-4 pt-20">
         <Loader2 className="h-6 w-6 animate-spin text-ocean-500" />
+      </main>
+    );
+  }
+
+  if (done) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4 pt-20 pb-20">
+        <div className="w-full max-w-md rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-8 text-center">
+          <h1 className="mb-2 font-display text-2xl text-white">
+            Welcome back
+          </h1>
+          <p className="mb-6 text-sm leading-relaxed text-ocean-300">
+            Your account is active again. Your tanks are still private,
+            because we couldn&apos;t tell which ones were public before. Open
+            each tank in the Tank Builder to make it public again. Classified
+            ads you had live are marked expired, and you can repost them from
+            My listings.
+          </p>
+          <button
+            onClick={() => {
+              router.refresh();
+              router.push("/profile");
+            }}
+            className="inline-flex w-full items-center justify-center rounded-lg bg-ocean-500 px-4 py-2.5 font-medium text-white transition hover:bg-ocean-400"
+          >
+            Go to my profile
+          </button>
+        </div>
       </main>
     );
   }
@@ -130,8 +170,9 @@ export default function DeletionPendingPage() {
         </button>
 
         <p className="mt-5 text-center text-xs text-ocean-500">
-          Reactivating restores your account, but listings you had live were
-          hidden — you can re-publish them from My Listings.
+          Reactivating restores your account and makes your tanks that were
+          public visible again. Classified ads you had live were marked
+          expired, so repost the ones you still want from My listings.
         </p>
       </div>
     </main>

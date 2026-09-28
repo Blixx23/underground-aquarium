@@ -156,7 +156,11 @@ export default function EmailControls({ paused, bulkPaused, dailyBulkCap, myEmai
               type="button"
               disabled={disabled || paused}
               onClick={() =>
-                run("run", { action: "run" }, (r) => `Ran the worker: ${Number(r.sent ?? 0)} sent, ${Number(r.failed ?? 0)} failed.`)
+                run("run", { action: "run" }, (r) =>
+                  `Ran the worker: ${Number(r.sent ?? 0)} sent, ${Number(r.failed ?? 0)} failed${
+                    Number(r.suppressed ?? 0) > 0 ? `, ${Number(r.suppressed)} not sent (on the do-not-email list)` : ""
+                  }.`
+                )
               }
               className="inline-flex items-center gap-2 rounded-full border border-ocean-700 px-4 py-2 text-sm text-ocean-200 hover:text-white disabled:opacity-40"
             >

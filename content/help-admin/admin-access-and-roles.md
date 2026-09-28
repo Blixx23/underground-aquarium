@@ -4,7 +4,7 @@ category: Admin basics
 summary: How the site decides who is an admin, how to make someone an admin, what admins can do outside /admin, and how site admins differ from Society and club officers.
 order: 20
 keywords: make admin, grant admin, is_admin, permissions, moderator, staff account, remove admin, officer, club admin, society officer, roles, access denied, officers only
-pages: /admin, /profile, /my/shops, /my/shops/[slug], /feed, /c/[slug]/admin
+pages: /admin, /profile, /my/shops, /my/shops/[slug], /feed, /forums/[category]/[thread], /c/[slug]/admin
 ---
 
 There is exactly one site-wide admin switch: a yes/no flag called is_admin on each member's profile row in the database. Everything under /admin, and a handful of extra powers around the site, check that flag. Society and club officer roles are a separate system and do not make anyone a site admin.
@@ -44,6 +44,7 @@ The flag also unlocks these powers on normal member pages:
 
 - **Delete any feed post.** On any member's post in the feed, open the **More options** (three dots) menu and choose **Delete post**. See [Moderating the feed and forums](/admin/help/moderating-feed-and-forums).
 - **Delete any comment in the feed.** Comments shown under feed items get the trash icon ("Delete comment") for admins, not just for their writer and the post owner.
+- **Edit or delete any forum post.** On a thread page, admins see **Edit** and **Delete** (or **Delete thread** on the opening post) under every post, and can still edit inside a locked thread. See [Moderating the feed and forums](/admin/help/moderating-feed-and-forums#can-i-edit-or-delete-forum-posts).
 - **Open any shop's dashboard.** Go to /my/shops/<shop-slug> for any shop in the directory, claimed or not, and the shop dashboard opens for you just like it does for the owner. The shop won't be listed on your own **My shops** page (/my/shops); you reach it by address, from **All shops** (/admin/shops), or from the **Claimed** pill on [Shop stats](/admin/help/shop-stats).
 - **Show or hide a shop in the directory.** On any shop dashboard, admins get an extra switch next to **View public page**, labeled **Shown in Shops** or **Hidden from Shops** (hover text "Admin only"). See [Shop visibility and removal requests](/admin/help/shop-visibility-and-removal-requests).
 - **Your visits stop counting in site analytics.** When an admin signs in, the browser remembers to stop sending visits to Vercel Web Analytics (checked once per browser visit). This keeps your own clicking around out of the traffic numbers. You can also turn counting off on any device by opening any page with ?notrack=1 at the end of the address, and back on with ?notrack=0.
@@ -53,10 +54,9 @@ Whether a save inside a shop dashboard works for an admin depends on the databas
 ## What admins cannot do from the site
 The code has no screen or button for these, so they are done in Supabase or not at all:
 
-- Edit another member's feed post, forum post or profile.
-- Delete or hide a forum post without a report (see the workaround in [Moderating the feed and forums](/admin/help/moderating-feed-and-forums)).
+- Edit another member's feed post or profile.
 - Lock or pin a forum thread.
-- Suspend a member without a profile report, or lift a suspension.
+- Suspend a member without a profile report (report their profile yourself, then act on it). Lifting a suspension is done with **Unsuspend** on [Reports](/admin/help/reports-queue#how-do-i-lift-a-suspension).
 - Delete a member's account for them.
 - Make someone an admin.
 - Browse or search all members (the only member search is the username box on [Bubbles](/admin/help/bubbles-admin)).
@@ -65,7 +65,7 @@ The code has no screen or button for these, so they are done in Supabase or not 
 Clubs, including the Underground Aquarium Society, have their own roles stored on the club's membership roster: **owner**, **admin**, **officer** and **member**. These are completely separate from the site admin flag:
 
 - A **club owner, admin or officer** can open that club's management page at /c/<club-slug>/admin. For the Society that is /c/underground-aquarium-society/admin.
-- **Owners and club admins** also get **Club settings**. Only the **owner** gets **Delete club**. Officers can see the roster, **Member requests** when there are any, **Dues & payouts**, and the **Breeder Award Program** section.
+- **Owners and club admins** also get **Club settings**. Only the **owner** of an ordinary club gets **Delete club**; the Society has no Delete club section, and the database refuses to delete it. Officers can see the roster, **Member requests** when there are any, **Dues & payouts**, and the **Breeder Award Program** section.
 - Officers can have an officer title. The suggestions offered are President, Vice President, Treasurer, Secretary, Events Coordinator and Membership Chair, but any title can be typed.
 
 Being a site admin does **not** give you access to a club's management page. A site admin who isn't on the Society roster as owner, admin or officer sees "Officers only" and "You don't have permission to manage this club." on the Society page, even though the Society card sits on the admin Dashboard.

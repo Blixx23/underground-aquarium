@@ -3,7 +3,7 @@ title: The admin Dashboard and side menu
 category: Admin basics
 summary: What every card, count and badge on the admin Dashboard means, how the side menu works on phone and desktop, and what the email line at the top is telling you.
 order: 10
-keywords: admin home, admin panel, control panel, backend, waiting count, badges, admin menu, nav, things waiting on you, everything caught up, email health banner
+keywords: admin home, admin panel, control panel, backend, waiting count, badges, admin menu, nav, things waiting on you, everything caught up, email health banner, new shops, tank reports, events
 pages: /admin
 ---
 
@@ -52,9 +52,12 @@ The cards, in order, are:
 | Society | Roster, dues, officers and applications for Underground Aquarium Society | /c/underground-aquarium-society/admin |
 | Site stats | New sign-ups, day by day, and your newest members | /admin/site-stats |
 | Shop stats | How every shop is doing: top performers, warm leads, cities | /admin/shop-stats |
+| New shops | Shops members suggested, waiting to go in the directory | /admin/pending-shops |
 | Store claims | Shop owners asking to manage their listing | /admin/stores |
 | Shop fixes | Wrong hours, moved or closed shops, flagged by shoppers | /admin/store-fixes |
 | Reports | Posts and members flagged by the community | /admin/reports |
+| Tank reports | Community tanks members flagged for a look | /admin/tank-reports |
+| Events | Community events waiting for approval before they go public | /admin/events |
 | Species | Fish and animals the community suggested | /admin/species |
 | Species photos | Members' own photos waiting to go on species pages | /admin/species-photos |
 | Breeding videos | Members' courtship, spawning, egg and fry clips to review | /admin/species-videos |
@@ -72,9 +75,12 @@ Each count is a live database count, taken fresh every time an admin page loads:
 
 - **Email:** messages in the email queue with status failed (they gave up after retries).
 - **Society:** membership applications to the Underground Aquarium Society that are still pending.
+- **New shops:** member-suggested shops with status pending. See [New shops](/admin/help/new-shops-queue).
 - **Store claims:** store claims with status pending.
 - **Shop fixes:** shopper fix reports with status open.
 - **Reports:** member reports with status open.
+- **Tank reports:** tank reports with status open. Stays at zero until step58_fixes.sql has been run. See [Tank reports](/admin/help/tank-reports-queue).
+- **Events:** community events with status pending. See [Reviewing community events](/admin/help/events-review).
 - **Species:** species suggestions with status pending.
 - **Species photos:** species photos with status pending.
 - **Breeding videos:** breeding videos with status pending.
@@ -92,7 +98,7 @@ Every page under /admin shows the same menu:
 - **On a computer (wide screen):** a sticky rail on the left headed "Admin". Each item shows an icon, a label, a short subtitle, and an amber number badge when something is waiting. The page you are on is highlighted.
 - **On a phone or narrow window:** a row of pill buttons across the top that you swipe sideways. Each pill shows the label and an amber number when something is waiting.
 
-The menu items and their subtitles, top to bottom: **Dashboard** (Everything waiting on you), **Email** (Queue, health and delivery), **Campaigns** (Sequences and who is in them), **Site stats** (Sign-ups and members), **Shop stats** (Top shops, leads, totals), **All shops** (Dashboards, show or hide), **Store claims** (Owners claiming a shop), **Shop fixes** (Wrong hours, moved, closed), **Reports** (Flagged posts and members), **Species** (Suggested fish), **Species photos** (Member photos to review), **Breeding videos** (Member clips to review), **Glossary** (Suggested terms), **Courses** (Lessons and quizzes), **Bubbles** (Award or deduct), **Feedback** (What members sent in), **Society** (Roster, dues, officers).
+The menu items and their subtitles, top to bottom: **Dashboard** (Everything waiting on you), **Email** (Queue, health and delivery), **Campaigns** (Sequences and who is in them), **Site stats** (Sign-ups and members), **Shop stats** (Top shops, leads, totals), **All shops** (Dashboards, show or hide), **New shops** (Shops members suggested), **Store claims** (Owners claiming a shop), **Shop fixes** (Wrong hours, moved, closed), **Reports** (Flagged posts and members), **Tank reports** (Community tanks flagged), **Events** (Community events to approve), **Species** (Suggested fish), **Species photos** (Member photos to review), **Breeding videos** (Member clips to review), **Glossary** (Suggested terms), **Courses** (Lessons and quizzes), **Bubbles** (Award or deduct), **Feedback** (What members sent in), **Society** (Roster, dues, officers), **Admin help** (How every screen works).
 
 The badges use exactly the same counts as the Dashboard cards.
 
@@ -110,10 +116,10 @@ No. Counts are worked out when a page loads. After you clear items in a queue, t
 ## Common problems
 **I get "not found" at /admin.** Your account isn't flagged as an admin, or you are signed into a different account. See [Admin access and roles](/admin/help/admin-access-and-roles).
 
-**The Dashboard says something is waiting but the queue looks empty.** Some screens filter differently from the count. Feedback counts both New and In progress, but the Feedback screen opens on the **New** tab; check **In progress**. Courses counts drafts. Email counts failed messages, which live on the failed list inside /admin/email.
+**The Dashboard says something is waiting but the queue looks empty.** Some screens filter differently from the count. Feedback counts both New and In progress, but the Feedback screen opens on the **New** tab; check **In progress**. Courses counts drafts. Email counts failed messages, which live on the failed list inside /admin/email (including rows marked "Not sent · on the do-not-email list").
 
 **The email line is red and says the health check couldn't run.** The email health database function is missing or erroring. The rest of the Dashboard still works. See [Admin troubleshooting](/admin/help/admin-troubleshooting).
 
-**A queue I know has items shows no badge.** The count query failed (for example, the table is missing) and was treated as zero. Open the queue page itself; if it errors too, the table or SQL step is missing.
+**A queue I know has items shows no badge.** The count query failed (for example, the table is missing) and was treated as zero. Open the queue page itself; if it errors too, the table or SQL step is missing. Tank reports is the usual one: it needs step58_fixes.sql.
 
 **I can't find All shops on the Dashboard.** It is only in the side menu. See [Managing shops](/admin/help/managing-shops).

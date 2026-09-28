@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { checkPostMilestones } from "@/lib/bubbleMilestones";
+import { MAX_OPENER, MAX_TITLE, MIN_TITLE, tooLongMessage } from "@/lib/forum/limits";
 
 function slugify(s: string): string {
   return s
@@ -33,9 +34,9 @@ export async function POST(req: Request) {
   const title = (payload.title ?? "").trim();
   const text = (payload.body ?? "").trim();
 
-  if (!categorySlug || title.length < 3) {
+  if (!categorySlug || title.length < MIN_TITLE) {
     return NextResponse.json(
-      { error: "A title of at least 3 characters is required." },
+      { error: `A title of at least ${MIN_TITLE} characters is required.` },
       { status: 400 }
     );
   }
@@ -46,8 +47,19 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  if (title.length > 160) {
-    return NextResponse.json({ error: "Title is too long." }, { status: 400 });
+  // Say so when something is too long instead of quietly cutting it off,
+  // so nobody loses the end of what they wrote.
+  if (title.length > MAX_TITLE) {
+    return NextResponse.json(
+      { error: tooLongMessage("The title", title.length, MAX_TITLE) },
+      { status: 400 }
+    );
+  }
+  if (text.length > MAX_OPENER) {
+    return NextResponse.json(
+      { error: tooLongMessage("Your post", text.length, MAX_OPENER) },
+      { status: 400 }
+    );
   }
 
   // Only accept real, public URLs from our own forum-images bucket, capped at 4.
@@ -101,7 +113,7 @@ export async function POST(req: Request) {
   const { error: postErr } = await supabase.from("forum_posts").insert({
     thread_id: thread.id,
     author_id: user.id,
-    body: text.slice(0, 20000) || "",
+    body: text,
     is_op: true,
     parent_id: null,
   });

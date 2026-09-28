@@ -4,8 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 // Hard-deletes accounts whose 30-day grace window has passed.
-// Personal data is removed; completed order records are retained but
-// stripped of the personal link. Runs daily via Vercel Cron.
+// Personal data and classified ads are removed. Order records left over from
+// the old paid marketplace are retained but stripped of the personal link.
+// Runs daily via Vercel Cron.
 
 type StepLog = { step: string; ok: boolean; detail?: string };
 
@@ -83,7 +84,23 @@ async function purgeAccount(uid: string): Promise<StepLog[]> {
     );
   }
 
-  // Listings: delete never-sold ones; keep sold ones (already archived).
+  // Classified ads: delete them. If something still points at an ad (for
+  // example a message thread about it) and the delete is refused, fall back
+  // to the "removed" status so it stays hidden for good.
+  const { error: adDelErr } = await supabaseAdmin
+    .from("listings")
+    .delete()
+    .eq("user_id", uid);
+  if (adDelErr) {
+    await run(log, "listings -> removed (delete refused)", () =>
+      supabaseAdmin.from("listings").update({ status: "removed" }).eq("user_id", uid)
+    );
+  } else {
+    log.push({ step: "delete listings", ok: true });
+  }
+
+  // Old paid-marketplace products: delete never-sold ones; keep sold ones
+  // (already archived).
   if (storeIds.length > 0) {
     await run(log, "delete store_posts", () =>
       supabaseAdmin.from("store_posts").delete().in("store_id", storeIds)
@@ -122,18 +139,22 @@ async function purgeAccount(uid: string): Promise<StepLog[]> {
   }
 
   // Best-effort storage cleanup (uploaded images live under <uid>/...).
-  try {
-    const { data: files } = await supabaseAdmin.storage
-      .from("product-images")
-      .list(uid);
-    if (files && files.length > 0) {
-      await supabaseAdmin.storage
-        .from("product-images")
-        .remove(files.map((f) => `${uid}/${f.name}`));
+  // Classified ad photos are in listing-images, old product photos in
+  // product-images.
+  for (const bucket of ["listing-images", "product-images"]) {
+    try {
+      const { data: files } = await supabaseAdmin.storage
+        .from(bucket)
+        .list(uid, { limit: 1000 });
+      if (files && files.length > 0) {
+        await supabaseAdmin.storage
+          .from(bucket)
+          .remove(files.map((f) => `${uid}/${f.name}`));
+      }
+      log.push({ step: `storage cleanup ${bucket}`, ok: true });
+    } catch (e) {
+      log.push({ step: `storage cleanup ${bucket}`, ok: false, detail: e instanceof Error ? e.message : "error" });
     }
-    log.push({ step: "storage cleanup", ok: true });
-  } catch (e) {
-    log.push({ step: "storage cleanup", ok: false, detail: e instanceof Error ? e.message : "error" });
   }
 
   // Remove the profile (fall back to tombstone if a reference blocks deletion).

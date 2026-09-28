@@ -83,13 +83,18 @@ Our team has closed the thread to new comments. You can still read it, and you c
 Signed out, you can read every public section, thread and comment, use search and browse Hot in the forums. To post, reply, vote or report you need to sign in. If you tap **Float up**, **Sink** or submit a reply while signed out, you're taken to the sign-in page and brought back to the thread afterwards. A reply you typed is put back in the box for you (as long as you come back in the same browser tab).
 
 ## Can I edit or delete my forum posts?
-Not at the moment. Forum threads and replies can't be edited or deleted from the site once they're posted, and thread titles can't be changed. Give your post a quick read before you tap **Post**. If you need something corrected or removed, email support@undergroundaquarium.com with a link to the post and what you'd like changed.
+Yes. When you're signed in, **Edit** and **Delete** appear under your own posts.
+
+- **Opening post:** **Edit** lets you change the thread title and the text. **Delete thread** takes down the whole thread, including every reply. Photos on a thread can't be changed after posting.
+- **Comments and replies:** **Edit** changes the text. **Delete** removes the reply; replies other people wrote under it stay up and move up a level.
+
+Edited posts show a small "(edited)" label next to the time. Editing a title doesn't change the thread's link. In a locked thread only our team can edit, but you can still delete your own posts. Our team can edit or delete any post. See [Starting a forum thread](/help/starting-a-forum-thread) and [Replying in the forums](/help/replying-in-the-forums).
 
 ## Where do the forum rules come from?
 The same [community rules](/help/community-rules) apply to the forums as everywhere else on the site: be helpful, no harassment, spam, scams or hateful content. Tap **Report** under any post that breaks them. Our team reviews reports and can hide threads or comments, lock threads, or limit accounts. See [Reporting content](/help/reporting-content).
 
 ## Common problems
-**A section or thread says "not found".** The thread may have been hidden by our team, or the section may no longer be public. Go back to the [Forums](/forums) page and search for it.
+**A section or thread says "not found".** The thread may have been deleted by its author or hidden by our team, or the section may no longer be public. Go back to the [Forums](/forums) page and search for it.
 
 **I can't find the reply box.** The thread is probably locked (you'll see **This thread is locked.**). If it isn't locked, scroll to just under the opening post; the **Add a comment…** box sits above the comments.
 

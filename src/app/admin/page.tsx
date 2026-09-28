@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   ShieldCheck, Users, ArrowRight, GraduationCap, Fish, Flag, Droplets,
   BookOpen, Store, Wrench, Mail, Megaphone, MessageSquare, Camera, Clapperboard, BarChart3, Activity,
+  CalendarDays, MapPin, ShieldAlert,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SOCIETY_NAME, SOCIETY_CLUB_PATH } from "@/lib/config";
@@ -20,9 +21,12 @@ const CARDS: Card[] = [
   { href: `${SOCIETY_CLUB_PATH}/admin`, label: "Society", description: `Roster, dues, officers and applications for ${SOCIETY_NAME}`, Icon: Users, countable: true },
   { href: "/admin/site-stats", label: "Site stats", description: "New sign-ups, day by day, and your newest members", Icon: Activity },
   { href: "/admin/shop-stats", label: "Shop stats", description: "How every shop is doing: top performers, warm leads, cities", Icon: BarChart3 },
+  { href: "/admin/pending-shops", label: "New shops", description: "Shops members suggested, waiting to go in the directory", Icon: MapPin, countable: true },
   { href: "/admin/stores", label: "Store claims", description: "Shop owners asking to manage their listing", Icon: Store, countable: true },
   { href: "/admin/store-fixes", label: "Shop fixes", description: "Wrong hours, moved or closed shops, flagged by shoppers", Icon: Wrench, countable: true },
   { href: "/admin/reports", label: "Reports", description: "Posts and members flagged by the community", Icon: Flag, countable: true },
+  { href: "/admin/tank-reports", label: "Tank reports", description: "Community tanks members flagged for a look", Icon: ShieldAlert, countable: true },
+  { href: "/admin/events", label: "Events", description: "Community events waiting for approval before they go public", Icon: CalendarDays, countable: true },
   { href: "/admin/species", label: "Species", description: "Fish and animals the community suggested", Icon: Fish, countable: true },
   { href: "/admin/species-photos", label: "Species photos", description: "Members' own photos waiting to go on species pages", Icon: Camera, countable: true },
   { href: "/admin/species-videos", label: "Breeding videos", description: "Members' courtship, spawning, egg and fry clips to review", Icon: Clapperboard, countable: true },

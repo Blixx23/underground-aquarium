@@ -73,13 +73,13 @@ Every independent fish store in our directory has a free page. If your shop publ
 They stop as soon as your shop is claimed. There's a daily limit on how many go out, and the series can come around again after a while if nobody at the shop has claimed or unsubscribed.
 
 ## How do I stop the outreach emails?
-Tap **Unsubscribe** at the bottom of any of them. One click, no sign-in needed. Your shop stays listed. Read [Stopping shop emails](/help/stopping-shop-emails) first, because unsubscribing blocks all our email to that address, not just outreach.
+Tap **Unsubscribe** at the bottom of any of them. One click, no sign-in needed. Your shop stays listed. Unsubscribing stops marketing and outreach only. Shop alert emails, account emails and message emails still arrive at that address. See [Stopping shop emails](/help/stopping-shop-emails).
 
 ## Do people who follow my shop get emails?
 No. Followers get an in-app notification when you post an update, not an email. Reviewers get an in-app notification when you reply to their review.
 
 ## Common problems
-**I'm not getting shop alert emails.** Check your spam folder, and check the four **Your shop** switches are on under **Choose what you get notified about**. If that address ever used an **Unsubscribe** link from one of our emails, we can't email it at all: email support@undergroundaquarium.com to have it turned back on.
+**I'm not getting shop alert emails.** Check your spam folder, and check the four **Your shop** switches are on under **Choose what you get notified about**. Using an **Unsubscribe** link doesn't stop these, since it only stops outreach. If emails to that address ever bounced, we can't email it at all: email support@undergroundaquarium.com to have it turned back on.
 
 **I get alerts in the bell but no emails.** Same checks as above. Also make sure the email on your account is one you read.
 

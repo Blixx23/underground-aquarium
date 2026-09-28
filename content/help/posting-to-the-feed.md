@@ -48,7 +48,7 @@ Edited posts show "Edited" after the time. Only the text can be changed; photos 
 2. Tap **Delete post**.
 3. Confirm "Delete this post?".
 
-The post disappears from the feed and its page stops working. This can't be undone. Our team can also remove posts that break the [community rules](/help/community-rules).
+The post disappears from the feed and its page stops working. This can't be undone. Our team can also remove posts that break the [community rules](/help/community-rules), for example after a report. A removed post is deleted the same way, and its author gets a **Post removed** notification: "A post of yours in the feed was removed by a moderator."
 
 Activity items (a tank you shared, a listing, a trophy) aren't posts and can't be deleted from the feed. To remove one, change the thing itself: make the tank private, delete the listing, and so on.
 

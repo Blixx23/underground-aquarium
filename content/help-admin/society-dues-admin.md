@@ -3,7 +3,7 @@ title: Society dues, payouts and renewals
 category: The Society
 summary: Setting annual and lifetime dues, connecting the Society's Stripe account, how payments set paid-through dates, the reminder and lapse job, dues requests, and recording offline payments.
 order: 30
-keywords: society dues, membership dues, annual dues, lifetime price, stripe connect, payouts, bank account, paid through, renewal date, dues reminders, lapsed, lapse, cron, dues request, receipt, cash payment, check payment, owes, paid badge
+keywords: society dues, membership dues, annual dues, lifetime price, stripe connect, payouts, bank account, paid through, renewal date, renewal window, renew now, early renewal, dues reminders, lapsed, lapse, cron, dues request, receipt, cash payment, check payment, owes, paid badge
 pages: /c/[slug]/admin, /c/[slug], /society/home, /api/cron/dues-reminders
 ---
 
@@ -47,9 +47,30 @@ Each time the admin page loads, if the account isn't marked connected yet, the s
 The site needs the environment variables STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET, and Stripe must send checkout.session.completed and account.updated events to /api/webhooks/stripe.
 
 ## How does a member pay?
-Members who owe see a box on the Society page (/c/underground-aquarium-society): "Activate your membership" (never paid), "Renew your membership" (paid before) or "Lifetime membership", with **Pay $X dues** (or **Pay $X** for lifetime). This only appears when the Society's Stripe is connected and a price is set for their plan.
+Members pay on the Society page (/c/underground-aquarium-society). The pay box only appears when the Society's Stripe is connected, a price is set for their plan, and payment is actually due:
 
-The button opens Stripe Checkout for the annual price, or the lifetime price if their plan is lifetime. Errors a member might see: "This club isn't set up to collect dues yet.", "This club hasn't set a lifetime membership rate yet." or "This club has no dues for your membership type."
+- **Never paid** (approved, no paid-through date): "Activate your membership" with **Pay $X dues**.
+- **Renewal open** (30 days or fewer before the paid-through date): "Your membership expires in X days" (or "Your membership expires today") with **Renew for $X**, and the line "Renewing early never costs you days: the new year starts when your current one ends."
+- **Lapsed** (the date has passed): "Renew your membership" with **Renew for $X**.
+- **Lifetime plan:** "Lifetime membership" with **Pay $X**.
+
+Every non-lifetime box also shows "Paid through after this payment:" and the exact new date.
+
+Members get to the box from **Renew now** buttons, which all go to /c/underground-aquarium-society?renew=1#renew:
+
+- an amber notice at the top of every member-area page during the 30-day window: "Your membership expires in X days, on <date>. Renewing early adds a full year on top, so you don't lose any days." with **Renew now**,
+- **Renew now** under the member card on the member area Overview (/society/home), also only during the window,
+- the 10-day, 3-day and same-day reminder emails.
+
+Owners, lifetime members and anyone on a free (0 dues) Society never see these notices.
+
+If a member opens the renew link too early, the page says "You're paid through <date>." and "Renewal opens 30 days before that date. We'll email you a reminder when it's time." If dues are owed but Stripe can't take payments, it says "Online dues payments are paused for a moment. Please try again later, or email support@undergroundaquarium.com and we'll sort it out."
+
+The button opens Stripe Checkout for the annual price, or the lifetime price if their plan is lifetime. Checkout refuses:
+
+- pending applicants: "Apply to join first. Dues open up once you're approved."
+- payments before the window: "You're paid through <date>. Renewal opens 30 days before that date."
+- "This club isn't set up to collect dues yet.", "This club hasn't set a lifetime membership rate yet." or "This club has no dues for your membership type."
 
 After paying they return to the Society page with "Dues paid, thank you! Your membership is active."
 
@@ -57,7 +78,7 @@ After paying they return to the Society page with "Dues paid, thank you! Your me
 When Stripe confirms the payment, the webhook records it in the dues payments ledger (amount, payer name and email, Stripe ids, and the date it covers until) and sets the member to active with a new paid-through date:
 
 - **First payment ever:** today plus 12 months (lifetime: plus 1200 months, about 100 years).
-- **Paying early or on time:** the current paid-through date plus 12 months, so the anniversary never drifts.
+- **Paying early (inside the 30-day window) or on time:** the current paid-through date plus 12 months, so the anniversary never drifts and no days are lost.
 - **Paying after lapsing:** the old date is rolled forward a year at a time until it's past today. One payment catches them up; they don't get extra time.
 
 A receipt email ("Your Underground Aquarium Society dues receipt") goes to the payer. The same Stripe session is never recorded twice.
@@ -67,7 +88,7 @@ A receipt email ("Your Underground Aquarium Society dues receipt") goes to the p
 - **Covered**: a retired family plan row covered by its main member.
 - **Honorary**: honorary lifetime member.
 - **Lifetime**: lifetime plan with a paid-through date in the future.
-- **Paid**: paid-through date is today or later.
+- **Paid**: paid-through date is today or later. A member inside the 30-day renewal window still shows **Paid** until the date passes.
 - **Owes**: no paid-through date, or it's in the past (including a lifetime-plan member who hasn't paid the lifetime price yet).
 
 The owner row shows no badge. Under the badge is the paid-through date with a lock icon.
@@ -85,24 +106,26 @@ Only when adding a new member: **Already paid through (existing members only)** 
 
 1. **Lapsing:** anyone still active whose paid-through date has passed is set to lapsed.
 2. **Reminders** (only if the club's Stripe is connected), by days until the paid-through date:
-   - 10 days before: "Your Underground Aquarium Society dues renew in 10 days"
-   - 3 days before: "... dues renew in 3 days"
-   - The day itself: "... dues are due today"
-   - 3 days after: "Your Underground Aquarium Society membership has lapsed"
+   - 10 days before: "Your Underground Aquarium Society membership expires in 10 days" (it says renewing early adds a full year on top of the current one)
+   - 3 days before: "... membership expires in 3 days"
+   - The day itself: "... membership expires today"
+   - 3 days after: "Your Underground Aquarium Society membership has lapsed" ("Your records are safe. Renew anytime to get back in.")
 
-Each email shows the annual amount and date, with a **Renew your membership** button to the Society page. Each reminder is logged per member per paid-through date, so it's never sent twice for the same cycle. Emails go through the email queue, so they're held (and still counted as sent) while sending is paused; see [Email queue and health](/admin/help/email-queue-and-health). The job returns how many it lapsed and emailed.
+Each email shows the annual amount and the date ("Expires on", "Expires" or "Lapsed on"). The first three have a **Renew now** button; the lapsed one has **Renew your membership**. For the Society, the buttons go to the renewal box at /c/underground-aquarium-society?renew=1#renew. The wording says "expires", not "renews", because nothing charges automatically. Each reminder is logged per member per paid-through date, so it's never sent twice for the same cycle. Emails go through the email queue, so they're held (and still counted as sent) while sending is paused; see [Email queue and health](/admin/help/email-queue-and-health). The job returns how many it lapsed and emailed.
 
 **Known issue:** reminders only fire on those exact days. If the job doesn't run on one of them (a failed run, a deploy outage), that reminder is skipped for good. Prospects who never paid have no date, so they never get reminders; use **Send dues request**.
 
 ## What happens to a lapsed member?
-The member area (/society/home and everything under it) checks good standing through the database. A member not in good standing is sent back to the Society page to renew, with records and certificates waiting behind renewal. Officers and lifetime members are always let in. Public certificate checks at [Verify](/verify) are not affected. Members with a past date who can still get in see "Your dues have lapsed. Your records are safe, renew to keep submitting."
+The member area (/society/home and everything under it) checks good standing through the database. A member not in good standing is sent back to the Society page, which says "Your membership lapsed on <date>. Renew to get back in." and "Your spawn logs, points and certificates are all still here. They unlock again the moment your payment clears.", above the **Renew for $X** box. Officers and lifetime members are always let in. Public certificate checks at [Verify](/verify) are not affected. The old "Your dues have lapsed" banner inside the member area is gone.
 
 ## Common problems
 **A member paid but still shows Owes.** The webhook didn't land. Check the Stripe dashboard's webhook deliveries for /api/webhooks/stripe and resend the event. Resending is safe; a session is only recorded once.
 
 **The badge is stuck on Finish setup.** Stripe still needs details. Press **Finish setup**, complete everything Stripe asks for, and reload the admin page.
 
-**Members don't see a Pay button.** The Stripe account isn't connected, or the price for their plan is 0 or blank.
+**Members don't see a Pay button.** The Stripe account isn't connected, the price for their plan is 0 or blank, or they are paid through more than 30 days from now, so renewal isn't open yet.
+
+**A member wants to pay a year ahead, early.** Checkout refuses until 30 days before their paid-through date. They can pay then without losing any days.
 
 **Nobody is getting reminders.** Check the cron job's runs and that CRON_SECRET is set. Reminders also need the Stripe connection.
 

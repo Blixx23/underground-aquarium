@@ -4,6 +4,7 @@ import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { readHealth, verdict, type EmailHealth } from "@/lib/email/health";
+import { SKIPPED_PREFIX } from "@/lib/email/suppress";
 import EmailControls from "./EmailControls";
 import RowActions from "./RowActions";
 import SuppressionList from "./SuppressionList";
@@ -264,16 +265,21 @@ export default async function AdminEmailPage({
                           ? `Waiting until ${new Date(r.scheduled_at).toLocaleString()}`
                           : `Waiting · queued ${when(r.created_at)}`)}
                       {r.status === "failed" &&
-                        `Gave up after ${r.attempts} ${r.attempts === 1 ? "try" : "tries"} · ${
-                          REASON[r.fail_reason ?? "other"] ?? r.fail_reason
-                        }`}
+                        (r.last_error?.startsWith(SKIPPED_PREFIX)
+                          ? "Not sent · on the do-not-email list"
+                          : `Gave up after ${r.attempts} ${r.attempts === 1 ? "try" : "tries"} · ${
+                              REASON[r.fail_reason ?? "other"] ?? r.fail_reason
+                            }`)}
                     </span>
                     {(r.status === "failed" || (r.status === "pending" && r.attempts > 0)) && r.last_error && (
                       <span className="mt-1 block truncate text-xs text-red-300/80">{r.last_error}</span>
                     )}
                   </span>
                   <span className="shrink-0 pt-0.5">
-                    <RowActions id={r.id} status={r.status} />
+                    {/* A row held back by the do-not-email list would only be held back
+                        again, so there's no Try again. Take the address off the list below
+                        first if it really should get mail. */}
+                    {r.last_error?.startsWith(SKIPPED_PREFIX) ? null : <RowActions id={r.id} status={r.status} />}
                   </span>
                 </li>
               ))}

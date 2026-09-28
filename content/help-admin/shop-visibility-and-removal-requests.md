@@ -69,9 +69,7 @@ They still won't get campaign emails. The box says so: "They still won't get cam
 **Known issue:** **Bring back** unhides every hidden shop matching that address or domain, whatever the reason it was hidden, and it removes those addresses from Do not email even if they got there by bouncing or a spam complaint. Only use it for a shop that asked.
 
 ## What about shops members suggest?
-Members can suggest a missing shop with **Suggest a store** on the Shops page (see [Suggesting a store](/help/suggesting-a-store)). The member is told "We'll review it and add it to the directory." The suggestion is saved as a new shop with status "pending", plus the name, city, state, website, their note as the description, the store types they ticked, and who suggested it.
-
-**Known issue:** there is no admin screen for suggested shops. They are not counted on the Dashboard, not listed in All shops (which only shows shown and hidden shops), and not visible on the site. To review them, open the `fish_stores` table in Supabase and filter status to pending. To publish one, set its status to `published` (fill in the address and other details first, or later from its dashboard). To reject one, set it to `hidden` or delete the row.
+Members can suggest a missing shop with **Suggest a store** on the Shops page (see [Suggesting a store](/help/suggesting-a-store)). The suggestion is saved as a new shop with the status pending, which isn't shown anywhere public and isn't listed in All shops. Pending shops wait on the **New shops** screen at /admin/pending-shops, where you can fix the name and address, **Publish** the shop (with an instant attempt at a map pin) or **Reject** it. Rejecting sets the shop to hidden, the same hidden status described above, so it then shows under Hidden in All shops and can be switched on later. The suggester gets a bell notification either way. Full details: [New shops](/admin/help/new-shops-queue).
 
 ## Common problems
 **"Admins only." or "Not signed in." under the switch.** Your session ended or your account isn't an admin. Sign in again.

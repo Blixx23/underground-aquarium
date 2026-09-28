@@ -66,12 +66,12 @@ On your dashboard's **Overview**, tap **It's already right** on the "A shopper s
 1. Check your spam folder.
 2. On [Notifications](/notifications), open **Choose what you get notified about** and make sure the **Your shop** switches are on.
 3. Shop emails go to the email on your account, not your claim contact email.
-4. If that address ever used an **Unsubscribe** link from us, we can't email it at all. Email support@undergroundaquarium.com to turn it back on.
+4. Using an **Unsubscribe** link doesn't stop shop alerts; it only stops marketing and outreach. But if emails to that address ever bounced, we can't email it at all. Email support@undergroundaquarium.com to turn it back on.
 
 See [Shop notifications and emails](/help/shop-notifications-and-emails).
 
 ## I want to stop all emails but keep my page
-Use **Unsubscribe** in any of our emails. Your page stays listed and open to reviews. Unsubscribing blocks every email to that address, so if you just want fewer alerts, switch them off in your notification settings instead. See [Stopping emails to your shop](/help/stopping-shop-emails).
+Use **Unsubscribe** in any of our outreach emails to stop marketing and outreach. Your page stays listed and open to reviews. Unsubscribing doesn't stop shop alerts, account emails or message emails, so switch off the shop alerts you don't want in your notification settings. If you want no email from us at all, email support@undergroundaquarium.com. See [Stopping emails to your shop](/help/stopping-shop-emails).
 
 ## My shop has closed or been sold
 Email support@undergroundaquarium.com. If it's closed for good, tell us and we'll update the directory. If it's been sold, we can move the page to the new owner's account.

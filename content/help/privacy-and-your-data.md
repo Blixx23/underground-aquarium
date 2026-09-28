@@ -36,7 +36,8 @@ Only you (and our team, where needed to run the site) can see:
 ## Who else can see some of my details?
 - **Society officers** can see the contact details you give when you join The Society (like your name, email and phone) so they can manage the roster and your award entries.
 - **Shop owners** see counts of views, calls, directions and website taps on their shop page, not who made them.
-- **Our service providers** process data only to run the site: Supabase (database, accounts and storage), Resend (email delivery), Vercel (hosting), OpenStreetMap's Nominatim (turning addresses into approximate map locations), and Stripe (only for Society dues payments).
+- **Our service providers** process data only to run the site: Supabase (database, accounts and storage), Resend (email delivery), Vercel (hosting and anonymous page statistics), OpenStreetMap's Nominatim (turning addresses into approximate map locations), Google (only when you choose to sign in with Google), and Stripe (only for Society dues payments).
+- **Other members** see what's public by design: your profile, listings, store pages and community posts. When you message someone about a listing, they see your username and what you write. Classifieds have no checkout, so we never pass a shipping address to anyone. Any details you share to arrange a pickup are up to you.
 
 We don't sell your personal information or share it for cross-context behavioral advertising.
 
@@ -55,9 +56,10 @@ From the [Privacy Policy](/privacy):
 - **Listing details:** title, description, photos, price, the metro area you chose, and any contact details you chose to show.
 - **Location:** addresses you provide (for example for events and stores) are turned into approximate coordinates to power "near me" features.
 - **Technical data:** device and browser type, IP address and basic usage logs, which we and our hosting providers receive automatically.
+- **If you sign in with Google:** Google shares your name, email address and profile photo with us so we can create or sign in to your account. We never see your Google password. If you sign up with an email and password instead, Google isn't involved.
 
 ## Do you use cookies or tracking?
-We use cookies that are needed to sign you in and keep you signed in. We don't use advertising cookies. The site also counts page visits so we can see which pages are popular.
+We use cookies that are needed to sign you in and keep you signed in. We don't use advertising cookies. The site also counts page visits with Vercel Analytics so we can see which pages are popular. These page statistics are anonymous: they don't use cookies, aren't tied to your account and aren't used to follow you around other websites. The [Privacy Policy](/privacy) (last updated September 27, 2026) has the full details.
 
 ## Do you handle my payment details?
 We don't process payments for classified ads and never see your card details. Deals are settled directly between the two people involved. Society dues are handled by Stripe, and we don't store your full card number.

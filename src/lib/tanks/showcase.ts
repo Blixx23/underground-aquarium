@@ -5,7 +5,7 @@
  */
 
 export const MAX_TANK_PHOTOS = 12;
-export const MAX_PHOTO_BYTES = 15 * 1024 * 1024; // before resizing
+export const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // before resizing; matches Tank Builder and Edit showcase
 export const MAX_DESCRIPTION = 2000;
 export const PHOTO_BUCKET = "tank-photos";
 

@@ -56,7 +56,7 @@ export function letterShell({ preheader, contentHtml, unsubscribeUrl, reason, re
                 ${esc(reason ?? "You're getting this because your shop is listed in our free directory.")}${
                   removalNote ? " Reply with the word remove and I'll take the page down." : ""
                 }<br>
-                <a href="${unsubscribeUrl}" style="color:${BRAND.muted};">Unsubscribe</a> and I won't email you again.<br>
+                <a href="${unsubscribeUrl}" style="color:${BRAND.muted};">Unsubscribe</a> to stop these emails.<br>
                 Underground Aquarium, ${POSTAL}
               </p>
             </div>

@@ -33,7 +33,7 @@ We may remove content, limit features or suspend accounts that break these rules
 - Don't impersonate anyone.
 
 ## What are the rules for classified ads?
-Classified ads are free, and deals are between the two people involved. We don't process payments, hold funds, arrange shipping, verify items or vet people. In short:
+Classified ads are free, and deals are between the two people involved. We're a place for members to find each other, not the buyer or seller in any deal. We don't process payments, hold funds, arrange shipping, verify items or vet people, and we don't guarantee any listing, item or sale. Most deals are local pickup; if you and the other person decide to ship, you arrange it yourselves and follow the carrier's rules, especially for live animals and plants. In short:
 
 - Describe items honestly, and only post things you actually have and may lawfully sell or give away.
 - Follow the laws where you live on keeping, selling or moving live animals and plants.
@@ -101,11 +101,11 @@ We'll review it, remove it where appropriate, and may disable repeat infringers.
 ## What happens if I break the rules?
 Depending on what happened, our team may:
 
-- remove a listing, or hide a forum post or thread
+- remove a listing or a feed post, hide a forum post or thread, or make a tank private
 - limit features
-- suspend your account, which hides your public profile and makes your tanks private
+- suspend your account, which blocks you from signing in, hides your public profile, takes down your live classified ads and makes your tanks private
 
-You'll get a notification like **Listing removed**, **Post hidden**, **Thread hidden** or **Account suspended**. See [Reporting content](/help/reporting-content). If you think we got it wrong, email support@undergroundaquarium.com.
+You'll get a notification like **Listing removed**, **Post removed**, **Post hidden**, **Thread hidden**, **Tank made private** or **Account suspended**. If a suspension is lifted, you get **Account restored** and the ads and tanks it hid come back. See [Reporting content](/help/reporting-content). If you think we got it wrong, email support@undergroundaquarium.com.
 
 ## Is care information on the site professional advice?
 No. Species profiles, tank tools and other care content are general guidance only, not a substitute for professional or veterinary advice. Always research an animal's or plant's needs before you keep it.

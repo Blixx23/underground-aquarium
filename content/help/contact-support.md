@@ -55,7 +55,7 @@ If you think you're in danger or have been the victim of a crime, contact your l
 Use **Suggest a fix** on the store's page to report wrong hours, a wrong address or a closed shop. To add a store we're missing, see [Suggesting a store](/help/suggesting-a-store). Store owners can claim their page and edit it directly: see [Claiming your store](/help/claiming-your-store).
 
 ## Can I reply to an email from Underground Aquarium?
-Emails we send about your account and activity generally answer to our support inbox, so replying reaches us. If an email names a different reply address (for example a club's contact), your reply goes there instead. To stop a type of email, use the unsubscribe or settings link in the email, or see [Emails we send](/help/emails-we-send).
+Emails we send about your account and activity generally answer to our support inbox, so replying reaches us. If an email names a different reply address (for example a club's contact), your reply goes there instead. To stop outreach, use the unsubscribe link in the email; to stop shop alerts, use the settings link. See [Emails we send](/help/emails-we-send).
 
 ## How long does it take to hear back?
 We're a small team and answer as soon as we can. Check your spam folder for our reply. Sending the details listed above the first time usually saves a round of back and forth.

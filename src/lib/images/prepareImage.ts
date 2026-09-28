@@ -34,6 +34,34 @@ export function isHeic(file: File): boolean {
   );
 }
 
+/**
+ * True for anything we can turn into a photo. Chrome and Firefox often report
+ * an iPhone HEIC file with an empty type, so a plain "starts with image/"
+ * check would wrongly turn those away.
+ */
+export function isImageFile(file: File): boolean {
+  return file.type.startsWith("image/") || isHeic(file);
+}
+
+/**
+ * File extension to store a prepared photo under. prepareImage usually hands
+ * back a JPEG, but small PNG, WebP or GIF files pass through untouched, and
+ * they should keep their real extension.
+ */
+export function uploadExtension(file: File): string {
+  const byType: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/avif": "avif",
+  };
+  const known = byType[file.type.toLowerCase()];
+  if (known) return known;
+  const fromName = file.name.split(".").pop()?.toLowerCase();
+  return fromName && /^[a-z0-9]{2,5}$/.test(fromName) ? fromName : "jpg";
+}
+
 function jpegName(original: string): string {
   const base = original.replace(/\.[^.]+$/, "");
   return `${base || "photo"}.jpg`;

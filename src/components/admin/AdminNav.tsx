@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Mail, Megaphone, Store, Wrench, Flag, Fish, BookOpen,
   GraduationCap, Droplets, MessageSquare, Users, Camera, Clapperboard, BarChart3, Activity, LifeBuoy,
+  CalendarDays, MapPin, ShieldAlert,
 } from "lucide-react";
 import { SOCIETY_CLUB_PATH } from "@/lib/config";
 
@@ -15,9 +16,12 @@ const LINKS = [
   { href: "/admin/site-stats", label: "Site stats", sub: "Sign-ups and members", Icon: Activity },
   { href: "/admin/shop-stats", label: "Shop stats", sub: "Top shops, leads, totals", Icon: BarChart3 },
   { href: "/admin/shops", label: "All shops", sub: "Dashboards, show or hide", Icon: Store },
+  { href: "/admin/pending-shops", label: "New shops", sub: "Shops members suggested", Icon: MapPin },
   { href: "/admin/stores", label: "Store claims", sub: "Owners claiming a shop", Icon: Store },
   { href: "/admin/store-fixes", label: "Shop fixes", sub: "Wrong hours, moved, closed", Icon: Wrench },
   { href: "/admin/reports", label: "Reports", sub: "Flagged posts and members", Icon: Flag },
+  { href: "/admin/tank-reports", label: "Tank reports", sub: "Community tanks flagged", Icon: ShieldAlert },
+  { href: "/admin/events", label: "Events", sub: "Community events to approve", Icon: CalendarDays },
   { href: "/admin/species", label: "Species", sub: "Suggested fish", Icon: Fish },
   { href: "/admin/species-photos", label: "Species photos", sub: "Member photos to review", Icon: Camera },
   { href: "/admin/species-videos", label: "Breeding videos", sub: "Member clips to review", Icon: Clapperboard },

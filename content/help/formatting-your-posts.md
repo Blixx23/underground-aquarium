@@ -115,8 +115,15 @@ No. HTML tags aren't run. They show up as plain text in your post, exactly as yo
 ## Can I use emoji?
 Yes. Type or paste emoji straight from your phone or computer's emoji keyboard. Shortcodes like `:fish:` aren't converted and stay as text.
 
+## How long can a forum post be?
+- **Thread title:** 3 to 160 characters.
+- **Opening post:** up to 20,000 characters.
+- **Comments and replies:** up to 10,000 characters.
+
+Every box shows a live counter, like "1,234 / 10,000". It turns amber as you get close and red once you're over, showing how many characters over you are. Nothing is ever cut off: if you're over, tapping **Post**, **Comment** or **Reply** shows a message like "Your reply is 10,250 characters. The limit is 10,000, so please shorten it by 250." and your text stays in the box. The Markdown symbols count toward the total.
+
 ## Is there a preview?
-No, there's no preview button, and forum posts can't be edited after posting. For anything long or heavily formatted, check your symbols carefully before tapping **Post**, **Comment** or **Reply**. If a post comes out wrong, you can add a follow-up comment, or email support@undergroundaquarium.com if it needs removing.
+No, there's no preview button. For anything long or heavily formatted, check your symbols carefully before tapping **Post**, **Comment** or **Reply**. If a post comes out wrong, tap **Edit** under it, fix it and tap **Save**. The editor uses the same Markdown. In a locked thread only our team can edit, so email support@undergroundaquarium.com if something there needs fixing.
 
 ## Common problems
 **My lines all ran together.** Leave a blank line between paragraphs. A single line break doesn't start a new line.

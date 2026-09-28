@@ -32,6 +32,9 @@ On a computer, the menu is a rail on the left. On a phone, it's a row of buttons
 - **Certificates**
 - **Raffle** (marked **Soon**)
 - **Judge's Desk** (only for Society judges)
+- **Membership settings** (always last): opens the page where you update your roster name and email, see your paid-through date, renew, or leave the Society. See [Leaving the Society](/help/leaving-the-society).
+
+In the last 30 days before your paid-through date, an amber notice sits at the top of every member-area page: "Your membership expires in [number] days, on [date]. Renewing early adds a full year on top, so you don't lose any days." with a **Renew now** button. Lifetime and honorary members never see it. See [Society dues and renewal](/help/society-dues-and-renewal).
 
 On a computer, small counts appear next to **My Submissions** (your entries waiting on a decision), **Review Queue** (reviews assigned to you) and **Judge's Desk** (cases waiting for the judge). Above the menu, an identity plate shows your name, your title (once you've earned one) and your member number.
 
@@ -39,6 +42,7 @@ On a computer, small counts appear next to **My Submissions** (your entries wait
 [Overview](/society/home) is the member area's front page. It shows:
 
 - **Your member card** (explained below).
+- Right under the card: a **Renew now** button when renewal is open (the last 30 days before your paid-through date), and a **Membership settings** link with the note "Update your details or leave the Society."
 - **Four numbers:** **Points**, **Approved**, **Pending** and **Rank**. Rank shows a dash until you have points.
 - **Progress to your next title**, when there is one: a line like "[number] points to [next title]" with a progress bar.
 - **Three shortcuts:** **Start a Spawn Log** ("Register a pair before they breed. That's how an entry begins."), **Leaderboard** (with the number of members in good standing) and **Raffle · coming soon**.

@@ -35,7 +35,10 @@ export const adminPending = cache(async (): Promise<PendingCounts> => {
     .eq("slug", SOCIETY_SLUG)
     .maybeSingle();
 
-  const [members, courses, species, photos, videos, glossary, claims, fixes, reports, feedback, emailFailed] =
+  const [
+    members, courses, species, photos, videos, glossary, claims, fixes, reports, feedback, emailFailed,
+    events, newShops, tankReports,
+  ] =
     await Promise.all([
       society ? countWhere("club_members", [["club_id", society.id as string], ["status", "pending"]]) : 0,
       countWhere("courses", [["is_published", false]]),
@@ -48,6 +51,11 @@ export const adminPending = cache(async (): Promise<PendingCounts> => {
       countWhere("reports", [["status", "open"]]),
       countWhere("feedback", [], ["status", ["new", "in_progress"]]),
       countWhere("email_queue", [["status", "failed"]]),
+      // Community events and member-suggested shops both wait as "pending".
+      countWhere("events", [["status", "pending"]]),
+      countWhere("fish_stores", [["status", "pending"]]),
+      // tank_reports.status arrives with step 58; before that this is zero.
+      countWhere("tank_reports", [["status", "open"]]),
     ]);
 
   return {
@@ -62,5 +70,8 @@ export const adminPending = cache(async (): Promise<PendingCounts> => {
     "/admin/reports": reports,
     "/admin/feedback": feedback,
     "/admin/email": emailFailed,
+    "/admin/events": events,
+    "/admin/pending-shops": newShops,
+    "/admin/tank-reports": tankReports,
   };
 });

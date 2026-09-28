@@ -30,7 +30,7 @@ The three pills under the search box:
 
 Your search is kept when you switch filters.
 
-**Known issue:** shops suggested by members that nobody has approved yet are in none of these views. See [Shop visibility and removal requests](/admin/help/shop-visibility-and-removal-requests) for how to find and publish them.
+Shops suggested by members that nobody has reviewed yet (status pending) are in none of these views. They wait on [New shops](/admin/help/new-shops-queue) at /admin/pending-shops. Once published they show here; a rejected suggestion shows under **Hidden**.
 
 ## What does each row show?
 - **The shop name.**
@@ -91,4 +91,4 @@ There is no button for it on this screen. The only **Remove current owner** cont
 
 **The owner's email is missing from the row.** The owner's account has no email address the admin tools can read. Use their profile instead.
 
-**My shop isn't in the list.** Only the first 60 matches show. Search by name. If it still isn't there, it may be a member suggestion that was never published.
+**My shop isn't in the list.** Only the first 60 matches show. Search by name. If it still isn't there, it may be a member suggestion still waiting on [New shops](/admin/help/new-shops-queue).

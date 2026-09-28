@@ -60,7 +60,13 @@ Sign out of Underground Aquarium first (**Sign out** in your profile menu on a c
 An error message appears in red under the button if Google sign in couldn't start. Refresh the page and try again. Pop-up or tracker blockers and strict privacy extensions can interfere, so try turning them off for our site or use a different browser.
 
 **Google sent me back to the Log in page instead of signing me in.**
-The sign in didn't complete, often because the page sat open too long, you pressed Back during the Google step, or you started in one browser and finished in another. Click **Continue with Google** again from the same browser.
+The sign in didn't complete, often because the page sat open too long, you pressed Back during the Google step, or you started in one browser and finished in another. The Log in page shows a message at the top, such as "That sign-in link didn't work. It may have expired or already been used. Please try logging in again." or "Sign-in was cancelled or not allowed. Please try again." Click **Continue with Google** again from the same browser.
+
+**Google sent me to "This account is suspended".**
+The account has been suspended by a moderator and can't sign in, with Google or with a password. If you think it's a mistake, email support@undergroundaquarium.com from the email address on the account.
+
+**Google sent me to "Account scheduled for deletion".**
+You asked to delete this account and it's in the 30-day grace period. Click **Cancel deletion & reactivate** to keep it, or **Sign out**. See [Deleting your account](/help/deleting-your-account).
 
 **I keep getting the Welcome page.**
 You haven't finished it yet. Pick a username, tick the 18+ box and click **Continue**. If you leave without finishing, it appears again next time you sign in with Google.

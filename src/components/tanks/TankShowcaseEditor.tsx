@@ -16,12 +16,10 @@ import { createClient } from "@/lib/supabase/client";
 import {
   SPEC_FIELDS,
   MAX_TANK_PHOTOS,
-  MAX_PHOTO_BYTES,
   MAX_DESCRIPTION,
-  PHOTO_BUCKET,
-  compressImage,
   type TankSpecs,
 } from "@/lib/tanks/showcase";
+import { TANK_PHOTO_MAX_MB, uploadTankPhoto } from "@/components/tanks/tankPhotoUpload";
 
 /**
  * Everything that makes a tank page worth showing off, edited in place:
@@ -67,30 +65,14 @@ export default function TankShowcaseEditor({
           setMsg(`Up to ${MAX_TANK_PHOTOS} photos per tank.`);
           break;
         }
-        if (!file.type.startsWith("image/")) {
-          setMsg("Photos only, please.");
+        // Checks, HEIC conversion, shrinking and upload all live in one
+        // helper shared with Tank Builder.
+        const result = await uploadTankPhoto(supabase, userId, file);
+        if ("error" in result) {
+          setMsg(result.error);
           continue;
         }
-        if (file.size > MAX_PHOTO_BYTES) {
-          setMsg("One photo was over 15 MB and was skipped.");
-          continue;
-        }
-        let blob: Blob = file;
-        let ext = "jpg";
-        let type = "image/jpeg";
-        try {
-          blob = await compressImage(file);
-        } catch {
-          ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-          type = file.type || "image/jpeg";
-        }
-        const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, blob, { contentType: type });
-        if (error) {
-          setMsg("A photo didn't upload. Try that one again.");
-          continue;
-        }
-        const url = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+        const url = result.url;
         setImages((prev) => [...prev, url]);
         n++;
       }
@@ -231,11 +213,14 @@ export default function TankShowcaseEditor({
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/*,image/heic,image/heif,.heic,.heif,.HEIC,.HEIF"
               multiple
               className="hidden"
               onChange={(e) => addPhotos(e.target.files)}
             />
+            <p className="mt-2 text-xs text-ocean-500">
+              Each photo can be up to {TANK_PHOTO_MAX_MB} MB. iPhone photos are converted and big photos are resized automatically.
+            </p>
           </section>
 
           {/* Story */}

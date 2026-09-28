@@ -39,7 +39,7 @@ To fix this, after posting open the event, click **Edit event** and choose the r
 ## What happens after I submit a community event?
 You'll see "Thanks, your event was submitted!" and "We review community submissions before they go public. You'll see it on the events page once it's approved." Click **Back to events** to return.
 
-Until it's approved, the event isn't on the public list, and its page shows "This event is pending review and isn't public yet." The site doesn't send a notification or email when your event is approved, so check [Events](/events) for it. After approval, the events list shows "Community event" as the host, and the event page shows your name (or username).
+Until it's approved, the event isn't on the public list, and its page shows "This event is pending review and isn't public yet." When our team approves it, you get a **Your event is live** notification ("[event] was approved and is now on the events page.") that opens your event, and the event appears on [Events](/events). If it isn't approved, the event is deleted and you get an **Event not approved** notification ("[event] wasn't approved for the events page."), with the reviewer's note if they left one. After approval, the events list shows "Community event" as the host, and the event page shows your name (or username).
 
 ## How long does event review take?
 The site doesn't promise a set time. If your event still isn't showing after a reasonable wait, or the event date is getting close, email support@undergroundaquarium.com with the event title and date.
@@ -80,8 +80,8 @@ Yes. Posting and RSVPing are free.
 
 **"Please sign in again."** Your session ended while uploading. Sign in and try again.
 
-**My event isn't on the events page.** Community events wait for review first. If it's approved and still missing, open it, click **Edit event** and make sure **Show on the public events page** is ticked. Events also drop off the list about 12 hours after they start.
+**My event isn't on the events page.** Community events wait for review first; you'll get a **Your event is live** notification when it's approved. If it's approved and still missing, open it, click **Edit event** and make sure **Show on the public events page** is ticked. Events also drop off the list about 12 hours after they start.
 
 **My event shows the wrong time.** It was saved in your device's time zone. Open it, click **Edit event**, pick the event's **Time zone** and re-enter the times.
 
-**I can't find my pending event.** You aren't given a link to a pending event. Once it's approved it appears on [Events](/events). If you need to change something before then, email support@undergroundaquarium.com.
+**I can't find my pending event.** You aren't given a link to a pending event. Once it's approved, the **Your event is live** notification links straight to it, and it appears on [Events](/events). If you need to change something before then, email support@undergroundaquarium.com.

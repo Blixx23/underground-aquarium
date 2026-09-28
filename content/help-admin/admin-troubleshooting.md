@@ -4,7 +4,7 @@ category: Admin basics
 summary: Fixes for the admin area not opening, counts that look wrong, pages that say a SQL step is missing, scheduled jobs that don't run, and the known gaps in the admin tools.
 order: 30
 keywords: admin broken, admin 404, not found, admins only, officers only, zero counts, sql step, supabase error, cron not running, scheduled jobs, env vars, environment variables, service role key, cron secret
-pages: /admin, /admin/email, /admin/shop-stats, /admin/site-stats, /admin/reports, /admin/feedback
+pages: /admin, /admin/email, /admin/shop-stats, /admin/site-stats, /admin/reports, /admin/tank-reports, /admin/feedback
 ---
 
 Most admin problems come from one of four things: the account isn't flagged as an admin, a database step hasn't been run, an environment variable is missing in Vercel, or a known gap in the tools. This guide goes through each, in the order you are most likely to hit them.
@@ -35,14 +35,17 @@ What each count measures is listed in [The admin Dashboard and side menu](/admin
 ## A count says something is waiting but the screen is empty
 - **Feedback** counts New and In progress, but the screen opens on the New tab. Check **In progress**.
 - **Courses** counts every unpublished course, including drafts. It never clears while you have a draft.
-- **Email** counts failed messages, which sit in the failed list on /admin/email.
+- **Email** counts failed messages, which sit in the failed list on /admin/email. Rows marked "Not sent · on the do-not-email list" count here too.
+- **Tank reports** before step58_fixes.sql has been run: the count shows zero, and the screen shows a yellow box asking for the database update.
 - Counts only update on page load. Reload.
 
 ## A page says to run a SQL step
 Some screens tell you the database part of a feature hasn't been set up:
 
 - **Shop stats:** "The report couldn't load. If this is the first time, run step 53's SQL in Supabase."
-- **Shop visibility switch:** an error ending in "Run step 56 in Supabase first."
+- **Shop visibility switch:** an error ending in "Run step 56 in Supabase first." The same hint can appear when you press **Reject** on [New shops](/admin/help/new-shops-queue).
+- **Tank reports:** "This screen needs a small database update first. Run step58_admin_queues.sql in the Supabase SQL Editor, then reload this page." Run **step58_fixes.sql** from the sql folder instead: it includes that tank reports update plus the forum "(edited)" column and the Society delete guard, and it is safe to run more than once. Its last query lists each part; every row should say ok.
+- **Forum "(edited)" labels missing:** no message appears, but edits don't show "(edited)" until step58_fixes.sql has been run.
 
 Run the named step's SQL in the Supabase SQL editor, then reload. If the step has been run and the message stays, the database function itself is erroring; the Supabase logs will show why.
 
@@ -68,7 +71,7 @@ These live under /api/cron and are run by Vercel Cron. Each one refuses to run u
 | email-health | Emails support@undergroundaquarium.com only when something is wrong with email. |
 | campaign-planner | Once a day: enrolls new shops in campaigns, drops those who claimed or opted out, and queues the day's campaign mail. |
 | shop-alerts | Every 10 minutes: builds claimed shops' weekly reports on Monday mornings (8am Pacific) and emails shop alerts. |
-| dues-reminders | Emails club members when dues renew in 10 days, in 3 days, are due today, and when a membership has lapsed. |
+| dues-reminders | Emails club members when their membership expires in 10 days, in 3 days, expires today, and when it has lapsed. Society reminders link to the renewal box. |
 | expire-listings | Flips classified ads past their expiry date from active to expired. |
 | bubble-milestones | Once a day: grants the yearly anniversary bubble awards. |
 | purge-accounts | Daily: permanently removes accounts whose 30 day deletion window has passed. |
@@ -92,13 +95,11 @@ Every admin page is built fresh on each load, and member pages that read the cha
 ## Known gaps in the admin tools
 These are limits in the current code, with the workaround for each:
 
-- **Take down listing** on a classified ad report doesn't take the ad down. Hide or delete it in the listings table. See [Working the Reports queue](/admin/help/reports-queue#what-does-take-down-listing-do).
-- **Suspension** only hides the member's public profile; they can still sign in and post. See [Member lookup and accounts](/admin/help/member-lookup-and-accounts#what-does-a-suspended-member-still-have-access-to).
-- **Tank reports** go to a separate table the admin area never shows. Check tank_reports in Supabase.
 - **Feedback** can't be sent by members, because the feedback widget isn't on the site. See [The Feedback queue](/admin/help/feedback-queue).
-- **Forum posts** can only be hidden through a report; there is no lock, pin, edit or delete button. See [Moderating the feed and forums](/admin/help/moderating-feed-and-forums).
-- **Account deletion** doesn't hide or remove classified ads. See [Member lookup and accounts](/admin/help/member-lookup-and-accounts#what-does-the-30-day-purge-remove).
-- **No un-suspend, no make-admin, no member directory** on the site. These are done in Supabase.
+- **Forum threads** have no lock or pin button. Set is_locked or is_pinned in Supabase. See [Moderating the feed and forums](/admin/help/moderating-feed-and-forums).
+- **Tanks** nobody reported can't be hidden from the site. Set is_public to false in Supabase, or wait for a report on [Tank reports](/admin/help/tank-reports-queue).
+- **Suspensions from before 27 September 2026** have no saved list of hidden ads and tanks, so **Unsuspend** restores sign-in but not their ads or tanks. See [Member lookup and accounts](/admin/help/member-lookup-and-accounts#how-do-i-lift-a-suspension).
+- **No make-admin and no member directory** on the site. These are done in Supabase.
 
 ## My own visits show up in analytics
 When an admin signs in, the browser stops sending visits to Vercel Web Analytics, checked once per browser visit. On a device where you don't sign in, open any page with ?notrack=1 on the end of the address. ?notrack=0 turns counting back on.
@@ -109,5 +110,7 @@ When an admin signs in, the browser stops sending visits to Vercel Web Analytics
 **Every queue shows zero and every page errors.** Check SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL in Vercel, then redeploy.
 
 **Emails stopped and the Dashboard is red.** The email worker isn't running. Check CRON_SECRET and the job's logs in Vercel.
+
+**Tank reports is empty but members say they reported a tank.** If the screen shows the yellow database update box, run step58_fixes.sql. Reports filed before that are kept and appear once it has been run.
 
 **I did something by mistake.** Most admin actions have no undo button. The undo steps in Supabase are listed in each guide, for example [Working the Reports queue](/admin/help/reports-queue#can-i-see-past-reports-or-undo-an-action).

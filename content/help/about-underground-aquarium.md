@@ -43,10 +43,7 @@ You earn bubbles (reputation points) and trophies for taking part. They show on 
 ## Is Underground Aquarium free?
 Yes. Creating an account, browsing, posting classified ads, messaging, the feed, the forums, the tools, the courses and the store directory are all free. Classified ads have no listing fee, no commission and never need a card.
 
-The paid parts are optional:
-
-- **The Society** has membership dues (yearly, with a one-time lifetime option). See [Society dues and renewal](/help/society-dues-and-renewal).
-- **Clubs** on the site can collect their own dues from their members. See [Clubs](/help/clubs).
+The only thing you can pay for on the site is membership dues for **The Society** (yearly, with a one-time lifetime option), and joining is optional. Everything else stays free whether or not you're a member. See [Society dues and renewal](/help/society-dues-and-renewal).
 
 Store owners can claim and manage their shop's page for free. See [Claiming your store](/help/claiming-your-store).
 

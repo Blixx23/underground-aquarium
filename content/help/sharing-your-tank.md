@@ -43,17 +43,17 @@ Tap **Save** to publish your changes, or **Cancel** to close without saving.
 ## How do tank photos work?
 In **Edit showcase**, the photo section shows how many you have out of 12, with the note "first one is the cover".
 
-- Tap **Add photos** to upload one or more. Photos over 15 MB are skipped; others are resized automatically (to at most 2048 pixels on the longest side).
+- Tap **Add photos** to upload one or more. The note under the photos says "Each photo can be up to 10 MB. iPhone photos are converted and big photos are resized automatically." Big photos are resized to at most 2000 pixels on the longest side, and iPhone .heic files show up in the file picker on a computer.
 - Use the left and right arrows on a photo (**Move earlier**, **Move later**) to reorder.
 - Tap the star (**Make cover**) to move a photo to the front. The first photo has a **Cover** label and is used on your tank's tile, in the feed and when the page is shared.
 - Tap the trash icon (**Remove photo**) to take one out.
 
-Nothing is final until you tap **Save**. You can also add photos in the Tank Builder's save section, which has a 10 MB limit per photo; both places share the same 12-photo limit.
+Nothing is final until you tap **Save**. You can also add photos in the Tank Builder's save section. Both places accept the same photos, with the same 10 MB limit per photo and the same 12-photo limit.
 
 ## What do the photo and save messages mean?
 - **Up to 12 photos per tank.** You've hit the limit. Remove one to add another.
 - **Photos only, please.** A file you picked isn't an image.
-- **One photo was over 15 MB and was skipped.** Pick a smaller version of that photo.
+- **That photo is too large (max 10 MB).** That photo was skipped. Pick a smaller version of it.
 - **A photo didn't upload. Try that one again.** A connection hiccup. Add it again.
 - **Couldn't save. Try again.** Your changes didn't save. Check your connection and tap **Save** again.
 
@@ -91,6 +91,6 @@ In the [Tank Builder](/tank-builder), tap the **X** on the tank under **Your tan
 
 **My photos aren't showing to others.** The tank is private, or you added photos and closed **Edit showcase** without tapping **Save**.
 
-**My iPhone photo won't upload.** Some browsers can't read iPhone HEIC photos. On your iPhone, **Settings › Camera › Formats › Most Compatible** saves new photos as JPEG, or share the photo to yourself first so it comes through as a JPEG.
+**My iPhone photo won't upload.** iPhone HEIC photos are converted automatically, in any browser. If one still fails, you'll see a message that it's an iPhone HEIC photo this browser can't read. On your iPhone, **Settings › Camera › Formats › Most Compatible** saves new photos as JPEG, or share the photo to yourself first so it comes through as a JPEG.
 
 **I can't save another tank.** You can keep up to 4 saved tanks. Delete or reuse one. See [Saving and sharing tanks](/help/saving-and-sharing-tanks).

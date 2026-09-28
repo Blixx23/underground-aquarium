@@ -42,21 +42,32 @@ export default function ClubRequests({ requests }: { requests: Request[] }) {
       }).catch(() => null);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't approve.");
+      // Supabase errors are plain objects, not Error instances.
+      const e = err as { message?: string; details?: string } | null;
+      setError(e?.message || e?.details || "Couldn't approve.");
       setBusyId(null);
     }
   }
 
   async function decline(id: string, label: string) {
-    if (!confirm(`Decline ${label}'s request to join?`)) return;
+    if (
+      !confirm(
+        `Decline ${label}'s request to join? They'll get a short, kind note saying they're welcome to apply again.`
+      )
+    )
+      return;
     setError(null);
     setBusyId(id);
     try {
-      const { error: e } = await supabase
-        .from("club_members")
-        .delete()
-        .eq("id", id);
-      if (e) throw e;
+      // Server-side so the applicant is notified (in-app and by email)
+      // before their application row is removed.
+      const res = await fetch("/api/clubs/decline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error || "Couldn't decline.");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't decline.");

@@ -96,7 +96,7 @@ Below that, two optional extras:
 Leave both off to keep everything in on-site messages. See [Contacting a seller](/help/contacting-a-seller) for what buyers see.
 
 ## The listing rules line
-Just above the post button, the form says: "By posting you confirm this listing follows our listing rules: nothing endangered, protected or illegal in your state." The **listing rules** link opens the [Listing rules](/rules) page in a new tab. If you pick a fish, invert, coral or plant category, you also get a reminder about state laws. See [Livestock and restricted species](/help/livestock-and-restricted-species).
+Just above the post button, the form says: "By posting you confirm this listing follows our listing rules: nothing endangered, protected or illegal in your state." The **listing rules** link opens the [Listing rules](/rules) page in a new tab. If you pick a fish, invert, coral or plant category, you also get an amber reminder about state laws that ends "Never release anything into the wild. See our listing rules." That **listing rules** link also opens the [Listing rules](/rules). See [Livestock and restricted species](/help/livestock-and-restricted-species).
 
 ## What happens after I tap Post it, free?
 - Your photos upload, then the ad is saved as **active**.

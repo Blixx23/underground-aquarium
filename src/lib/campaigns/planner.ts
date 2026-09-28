@@ -68,7 +68,7 @@ const day = 86_400_000;
  * and the ones already sitting there. A trigger would only ever catch
  * the first of those, and would go stale the moment an import ran.
  */
-async function enrolAudience(campaign: Campaign): Promise<number> {
+async function enrolAudience(campaign: Campaign, dry = false): Promise<number> {
   if (campaign.audience !== "unclaimed_shops") return 0;
 
   const { data: already } = await supabaseAdmin
@@ -99,8 +99,13 @@ async function enrolAudience(campaign: Campaign): Promise<number> {
   const fresh = rows.filter((r) => !have.has(r.store_id));
   if (fresh.length === 0) return 0;
 
-  // Never enrol an address we already promised not to write to.
-  const blocked = await suppressedSet(fresh.map((r) => r.email));
+  // Never enrol an address we already promised not to write to. Campaign
+  // mail is marketing, so an unsubscribe or a bounce both keep them out.
+  const blocked = await suppressedSet(fresh.map((r) => r.email), "marketing");
+
+  // A dry run only counts. It must never write, or "What would a run
+  // do?" would quietly do it.
+  if (dry) return fresh.filter((r) => !blocked.has(normaliseEmail(r.email))).length;
 
   let added = 0;
   for (let i = 0; i < fresh.length; i += 500) {
@@ -122,8 +127,11 @@ async function enrolAudience(campaign: Campaign): Promise<number> {
   return added;
 }
 
-/** Anyone who claimed their shop, unsubscribed or bounced comes off the list. */
-async function stopTheFinished(campaign: Campaign): Promise<number> {
+/**
+ * Anyone who claimed their shop, unsubscribed or bounced comes off the
+ * list. Returns the enrolments it stopped (or, on a dry run, would stop).
+ */
+async function stopTheFinished(campaign: Campaign, dry = false): Promise<Set<string>> {
   const { data } = await supabaseAdmin
     .from("email_campaign_enrollments")
     .select("id, store_id, email")
@@ -131,7 +139,7 @@ async function stopTheFinished(campaign: Campaign): Promise<number> {
     .eq("status", "active")
     .limit(5000);
   const active = (data ?? []) as { id: string; store_id: string | null; email: string }[];
-  if (active.length === 0) return 0;
+  if (active.length === 0) return new Set();
 
   const stop = new Map<string, string>();
 
@@ -170,10 +178,11 @@ async function stopTheFinished(campaign: Campaign): Promise<number> {
   }
 
   // Bounced, complained or unsubscribed through the one-click link.
-  const blocked = await suppressedSet(active.map((e) => e.email));
+  const blocked = await suppressedSet(active.map((e) => e.email), "marketing");
   for (const e of active) if (blocked.has(normaliseEmail(e.email))) stop.set(e.id, "unsubscribed");
 
-  if (stop.size === 0) return 0;
+  // A dry run reports who would come off, and changes nothing.
+  if (stop.size === 0 || dry) return new Set(stop.keys());
 
   const byReason = new Map<string, string[]>();
   for (const [id, reason] of stop) {
@@ -197,7 +206,7 @@ async function stopTheFinished(campaign: Campaign): Promise<number> {
       }
     }
   }
-  return stop.size;
+  return new Set(stop.keys());
 }
 
 /**
@@ -242,8 +251,10 @@ async function todaysBudget(): Promise<number> {
 export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; limit?: number } = {}): Promise<PlanResult> {
   const out: PlanResult = { enrolled: 0, stopped: 0, queued: 0, finished: 0, recycled: 0, skipped: 0, budget: 0 };
 
-  out.enrolled = await enrolAudience(campaign);
-  out.stopped = await stopTheFinished(campaign);
+  // On a dry run both of these only count; nothing is written anywhere.
+  out.enrolled = await enrolAudience(campaign, Boolean(opts.dry));
+  const stoppedIds = await stopTheFinished(campaign, Boolean(opts.dry));
+  out.stopped = stoppedIds.size;
 
   const { data: stepData } = await supabaseAdmin
     .from("email_campaign_steps")
@@ -270,7 +281,10 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
     .order("cycle", { ascending: true })      // people who have heard from us least go first
     .order("next_send_at", { ascending: true })
     .limit(budget);
-  const due = (dueData ?? []) as Enrollment[];
+  // On a real run the stopped ones are already off the list. On a dry run
+  // they're still marked active, so leave them out here by hand, or the
+  // count would include mail to shops that are about to be dropped.
+  const due = ((dueData ?? []) as Enrollment[]).filter((e) => !stoppedIds.has(e.id));
   if (due.length === 0) return out;
 
   const storeIds = due.map((e) => e.store_id).filter(Boolean) as string[];

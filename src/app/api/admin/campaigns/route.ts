@@ -189,6 +189,14 @@ export async function POST(req: Request) {
       case "run-now": {
         const campaign = body.key ? await getCampaign(body.key) : null;
         if (!campaign) return NextResponse.json({ error: "Which campaign?" }, { status: 400 });
+        // Off means off. Pressing Run it now on a campaign that's turned
+        // off would enrol shops and queue outreach the owner switched off.
+        if (!campaign.active) {
+          return NextResponse.json(
+            { error: "This campaign is turned off, so nothing was run. Turn the campaign on first, then press Run it now." },
+            { status: 409 }
+          );
+        }
         const result = await runCampaign(campaign);
         return NextResponse.json({ ok: true, ...result });
       }
@@ -196,8 +204,10 @@ export async function POST(req: Request) {
       case "dry-run": {
         const campaign = body.key ? await getCampaign(body.key) : null;
         if (!campaign) return NextResponse.json({ error: "Which campaign?" }, { status: 400 });
+        // Read-only: counts what a run would do and writes nothing, so it
+        // is safe to press even while the campaign is off.
         const result = await runCampaign(campaign, { dry: true });
-        return NextResponse.json({ ok: true, ...result });
+        return NextResponse.json({ ok: true, active: campaign.active, ...result });
       }
 
       // A shop replied "take me off". One press does everything; see

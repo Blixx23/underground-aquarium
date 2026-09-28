@@ -1,13 +1,13 @@
 ---
 title: Member lookup and accounts
 category: Moderation
-summary: How to find a member, what suspension really does and how to lift it, how account deletion requests and the 30 day purge work, and what an admin can and can't change on an account.
+summary: How to find a member, what suspension does and how to lift it, how account deletion requests and the 30 day purge work, and what an admin can and can't change on an account.
 order: 30
 keywords: find user, look up member, search members, user email, suspend, unsuspend, ban, reinstate, delete account, deletion request, purge, gdpr, data export, cancel deletion, deleted user
-pages: /admin/bubbles, /admin/site-stats, /admin/shops, /admin/reports, /account, /account/deletion-pending, /u/[username]
+pages: /admin/bubbles, /admin/site-stats, /admin/shops, /admin/reports, /account, /account/deletion-pending, /account-suspended, /u/[username]
 ---
 
-There is no member directory or account editor in the admin area. Member lookups are spread across a few screens, suspension only comes from a profile report, and account deletion is something members do themselves. Anything else is done in Supabase. This guide covers what exists and the safe way to do the rest.
+There is no member directory or account editor in the admin area. Member lookups are spread across a few screens, suspension comes from a profile report (and is lifted from the Suspended accounts list on the same page), and account deletion is something members do themselves. Anything else is done in Supabase. This guide covers what exists and the safe way to do the rest.
 
 ## How do I find a member?
 There is no "all members" screen. Your options:
@@ -23,37 +23,29 @@ Only from a profile report. When a member reports someone's profile, the report 
 
 If you want to suspend someone nobody has reported, open their profile at /u/<username>, press **Report**, pick a reason, then act on your own report at /admin/reports. The reason you pick is saved as the suspension reason.
 
-The full list of effects and notifications is in [Working the Reports queue](/admin/help/reports-queue#what-does-suspend-account-do). In short: their public profile shows "not found", their tanks go private, and they get an "Account suspended" bell notification.
+The full list of effects and notifications is in [Working the Reports queue](/admin/help/reports-queue#what-does-suspend-account-do). In short: they are banned from signing in (Supabase Auth ban), their public profile shows "not found", their live classified ads are set to removed, their tanks go private, and they get an "Account suspended" bell notification.
 
 ## What does a suspended member still have access to?
-**Known issue:** in the site code, only the public profile page checks for suspension. A suspended member can still:
+Very little. A suspended member:
 
-- sign in
-- post and comment in the feed
-- start threads and reply in the forums
-- send messages
-- keep their classified ads live
-- use every tool
+- can't sign in. Email and password sign-in and **Continue with Google** both send them to /account-suspended, which says "This account is suspended" and asks them to email support@undergroundaquarium.com from the address on the account.
+- loses any session they already had open within about an hour, because it can't be refreshed.
+- has no public profile, no live classified ads and no public tanks while suspended.
 
-Workarounds, in Supabase:
-
-- Hide their ads: in the listings table, filter user_id by their id and change status from active to expired, or delete the rows.
-- Stop them signing in: under Authentication, Users, find their email and ban the user. Nothing on the site does this.
+Their feed posts, forum posts and messages are not removed by a suspension. Remove individual posts from reports or from the posts themselves if needed (see [Moderating the feed and forums](/admin/help/moderating-feed-and-forums)).
 
 ## How do I lift a suspension?
-There is no button. In the Supabase **Table editor**:
+Use the **Suspended accounts** list at the bottom of [Reports](/admin/reports) and press **Unsuspend**. It lifts the sign-in ban, clears the suspension from the profile, puts back only the ads and tanks the suspension hid (ads past their expiry date come back as expired), and sends the member an "Account restored" notification. Step by step: [How do I lift a suspension?](/admin/help/reports-queue#how-do-i-lift-a-suspension).
 
-1. Open **profiles** and find the member's row.
-2. Clear **suspended_at**. You can also clear **suspended_reason** and **suspended_by** so the record is clean.
-3. Save.
+**Known issue:** members suspended before the 27 September 2026 change have no saved list of what was hidden, so their ads and tanks aren't restored. Tell them to repost ads from **My listings** and make tanks public again themselves.
 
-Their public profile comes back straight away. Their tanks stay private, because suspending switched every tank to private and nothing remembers which ones were public before. Let the member know so they can make their tanks public again, or set is_public back to true on the tanks you know were public. Nothing notifies the member that the suspension was lifted.
+Don't lift a suspension by clearing suspended_at in Supabase. That leaves the sign-in ban in place and restores nothing.
 
 ## How does account deletion work?
-Members delete their own account from **Account & data** at /account, by typing DELETE to confirm. The member-side flow is in [Deleting your account](/help/deleting-your-account). What happens:
+Members delete their own account from **Account & data** at /account: they type DELETE, tick "I understand my account will be permanently deleted after 30 days unless I sign in and reactivate it before then.", and press **Delete my account**. The member-side flow is in [Deleting your account](/help/deleting-your-account). What happens:
 
-1. **Right away:** their profile is marked deleted and a purge date 30 days out is set. All their tanks are switched to private. Their public profile shows "not found", and they drop out of the Bubbles member search and can't be picked as a new message recipient.
-2. **During the 30 days:** if they sign in, they land on /account/deletion-pending with two buttons, **Cancel deletion & reactivate** and **Sign out**. Cancelling clears the deletion and takes them back to their profile page.
+1. **Right away:** their profile is marked deleted and a purge date 30 days out is set. Their live classified ads are marked expired. All their tanks are switched to private, and the site remembers which ones were public (saved on their sign-in record in Supabase Auth). Their public profile shows "not found", and they drop out of the Bubbles member search and can't be picked as a new message recipient.
+2. **During the 30 days:** if they sign in, with email and password or with Google, they land on /account/deletion-pending with two buttons, **Cancel deletion & reactivate** and **Sign out**. Cancelling clears the deletion, makes the tanks that were public visible again, and takes them to their profile page. Their ads stay expired; they repost the ones they want from **My listings**. For deletions requested before this change there is no saved tank list, so they see "Welcome back" and are told their tanks are still private and to make them public again in the Tank Builder.
 3. **After 30 days:** a scheduled job (/api/cron/purge-accounts, which the code says runs daily via Vercel Cron) permanently removes the account. It handles up to 50 accounts per run.
 
 A member who owns a club can't delete their account. They see "You own one or more clubs. Please transfer ownership or delete those clubs first, then delete your account."
@@ -62,16 +54,16 @@ A member who owns a club can't delete their account. They see "You own one or mo
 When the purge job reaches an account, it:
 
 - **Keeps but anonymizes:** their store reviews and the events they created (the author link is removed, the content stays).
-- **Deletes:** their tanks, tank votes, notifications, club memberships, Breeder Award submissions, event RSVPs and shop review replies.
+- **Deletes:** their classified ads (if the database refuses because something still points at an ad, such as a message thread, the ads are set to removed instead so they stay hidden), their ad photos, tanks, tank votes, notifications, club memberships, Breeder Award submissions, event RSVPs and shop review replies.
 - **Deletes their profile.** If something in the database still points at the profile and blocks the delete, the profile is instead kept as a blank placeholder with the username changed to deleted_ followed by the first 8 characters of their id.
 - **Deletes their sign-in account** (email and login) last.
 
 The job needs the CRON_SECRET environment variable. The request must carry it, or the job answers "Unauthorized" and does nothing.
 
-**Known issue:** neither the delete request nor the purge touches classified ads (the listings table). A member's live ads stay up during the 30 days, and after the purge they are either left behind or removed only if the database is set to remove them with the profile. The same goes for feed posts, forum posts and messages, which the purge code doesn't mention. After a purge, check the listings table for rows belonging to that member's id and delete them.
+**Known issue:** the purge code doesn't mention feed posts, forum posts or messages. Whether they go depends on how the database links them to the profile. If you need them gone, check those tables for the member's id after the purge.
 
 ## Can I cancel someone's deletion for them?
-Yes, in Supabase. In **profiles**, find their row and clear both **deleted_at** and **deletion_scheduled_for**. That is exactly what the member's own **Cancel deletion & reactivate** button does. Their tanks stay private; they need to switch them back on.
+Yes, in Supabase. In **profiles**, find their row and clear both **deleted_at** and **deletion_scheduled_for**. The member's own **Cancel deletion & reactivate** button also makes their previously public tanks public again from the saved list; doing it by hand in Supabase doesn't, so their tanks stay private until they switch them back on. Better: ask the member to sign in and press the button themselves.
 
 This only works before the purge job runs. Once purged, the account is gone.
 
@@ -93,12 +85,12 @@ Members can download their own copy from /account. There is no admin version. If
 ## Common problems
 **The member search on Bubbles doesn't find someone.** It searches usernames only, and skips accounts scheduled for deletion. Try part of the username, or look them up in Supabase.
 
-**A deleted member's ads are still showing.** Known issue: deletion doesn't touch classified ads. Change their ads' status or delete the rows in the listings table.
+**A member reactivated and their ads are gone.** Deleting the account marked their live ads expired. They repost them from **My listings**.
 
 **A member says they can't delete their account.** If they own a club, they must hand it over or delete it first. See [Deleting your account](/help/deleting-your-account).
 
 **A purged member shows as deleted_xxxxxxxx somewhere.** The profile couldn't be fully deleted because other data still pointed at it, so it was blanked instead. That is expected.
 
-**A member wants their suspended account back.** Follow [How do I lift a suspension?](/admin/help/member-lookup-and-accounts#how-do-i-lift-a-suspension), then tell them to re-publish their tanks.
+**A member wants their suspended account back.** Follow [How do I lift a suspension?](/admin/help/member-lookup-and-accounts#how-do-i-lift-a-suspension).
 
 **The purge job isn't removing anyone.** Check CRON_SECRET is set in Vercel and that the job is scheduled. See [Admin troubleshooting](/admin/help/admin-troubleshooting).

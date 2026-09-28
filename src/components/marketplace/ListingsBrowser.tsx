@@ -3,7 +3,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Fish, Search, X, MapPin, Eye } from "lucide-react";
-import { CATEGORIES, categoryLabel } from "@/lib/marketplace/categories";
+import {
+  CATEGORIES,
+  categoryLabel,
+  listingCategoryKeys,
+  listingInCategory,
+} from "@/lib/marketplace/categories";
 import {
   formatPrice,
   conditionLabel,
@@ -40,9 +45,10 @@ export default function ListingsBrowser({
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
+    // A free or wanted ad counts toward its own category AND toward
+    // Free Stuff / Wanted / ISO, so those pills appear whenever such ads exist.
     for (const l of listings) {
-      const k = l.category ?? "other";
-      m[k] = (m[k] ?? 0) + 1;
+      for (const k of listingCategoryKeys(l)) m[k] = (m[k] ?? 0) + 1;
     }
     return m;
   }, [listings]);
@@ -56,16 +62,18 @@ export default function ListingsBrowser({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = listings.filter((l) => {
-      const k = l.category ?? "other";
-      if (active !== "all" && k !== active) return false;
+      if (active !== "all" && !listingInCategory(l, active)) return false;
       if (q) {
-        const hay = `${l.title} ${l.description ?? ""} ${l.city ?? ""}`.toLowerCase();
+        // Include the category names too, so searching "plants" or "free"
+        // finds ads filed under those categories even if the title doesn't say so.
+        const labels = listingCategoryKeys(l).map(categoryLabel).join(" ");
+        const hay = `${l.title} ${l.description ?? ""} ${l.city ?? ""} ${labels}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
 
-    // "Contact for price" sorts last either way — it isn't a number.
+    // "Contact for price" sorts last either way, since it isn't a number.
     const priceOf = (l: Listing) =>
       l.price_cents === null ? Number.POSITIVE_INFINITY : l.price_cents;
 

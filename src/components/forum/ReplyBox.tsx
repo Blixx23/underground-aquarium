@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { goToLogin, takeDraft } from "@/lib/loginRedirect";
+import { MAX_REPLY, tooLongMessage } from "@/lib/forum/limits";
+import CharCounter from "@/components/forum/CharCounter";
 
 export default function ReplyBox({
   threadId,
@@ -35,6 +37,10 @@ export default function ReplyBox({
   async function submit() {
     if (!body.trim()) {
       setError("Write something first.");
+      return;
+    }
+    if (body.trim().length > MAX_REPLY) {
+      setError(tooLongMessage("Your reply", body.trim().length, MAX_REPLY));
       return;
     }
     setBusy(true);
@@ -111,6 +117,7 @@ export default function ReplyBox({
           </button>
         )}
         <span className="text-[11px] text-ocean-600">Markdown supported</span>
+        <CharCounter length={body.trim().length} max={MAX_REPLY} className="ml-auto" />
       </div>
     </div>
   );

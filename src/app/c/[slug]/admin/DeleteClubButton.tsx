@@ -23,7 +23,7 @@ export default function DeleteClubButton({
     );
     if (typed === null) return;
     if (typed.trim() !== clubName) {
-      setError("Name didn't match — nothing was deleted.");
+      setError("Name didn't match, so nothing was deleted.");
       return;
     }
     setError(null);
@@ -36,7 +36,9 @@ export default function DeleteClubButton({
       router.push("/clubs");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't delete the club.");
+      // Supabase errors are plain objects, not Error instances.
+      const e = err as { message?: string; details?: string } | null;
+      setError(e?.message || e?.details || "Couldn't delete the club.");
       setBusy(false);
     }
   }

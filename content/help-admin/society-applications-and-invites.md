@@ -37,15 +37,19 @@ The admin screens don't send officers an email when an application arrives. Watc
 
 If the email fails, the approval still stands (the email is best effort and no error is shown). Check [Email queue and health](/admin/help/email-queue-and-health).
 
-After approval, a prospect pays on the Society page. Payment makes them active; see [Society dues admin](/admin/help/society-dues-admin).
+After approval, a prospect pays on the Society page. Payment makes them active; see [Society dues admin](/admin/help/society-dues-admin). Applicants who haven't been approved can't pay: checkout answers "Apply to join first. Dues open up once you're approved."
 
 ## What happens when I press Decline?
-Confirm "Decline [name]'s request to join?". Their roster row and application are deleted.
+Confirm "Decline [name]'s request to join? They'll get a short, kind note saying they're welcome to apply again." Then:
 
-**Known issue:** declining sends nothing. No email, no notification. The applicant simply finds they can apply again. If you want them to know why, contact them yourself (their email and phone are on the card, so note them before declining).
+1. The site looks up where to reach them, then deletes their roster row and application.
+2. They get an in-app notice "About your Underground Aquarium Society application": "Thanks for applying. We couldn't approve it this time, but you're welcome to apply again.", linking to the Society page.
+3. They get a short email with the same subject, saying the application wasn't approved this time, that they're welcome to apply again, and that their account, classifieds and tools keep working. It has an **Apply again** button to the Society page. It is ordinary (not marketing) mail, so an unsubscribe from outreach doesn't block it.
+
+The note doesn't give a reason. If you want them to know why, contact them yourself (their email and phone are on the card, so note them before declining). Only owners, admins and officers can decline, and only an application that is still pending; a second press shows "That application was already handled." If the notice or email fails, the decline still stands.
 
 ## Can an applicant withdraw?
-Yes. **Withdraw application** on the Society page removes their pending row, and the request disappears from your list.
+Yes. **Withdraw application** on the Society page asks "Withdraw your application to Underground Aquarium Society? You can apply again any time.", removes their pending row, and sends them to /society. The request disappears from your list.
 
 ## What if an application needs a different plan?
 Approve it, then change the **Plan** dropdown on their roster row. See [Running the Society admin page](/admin/help/society-admin).

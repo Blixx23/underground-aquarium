@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { checkPostMilestones } from "@/lib/bubbleMilestones";
+import { MAX_REPLY, tooLongMessage } from "@/lib/forum/limits";
 
 export async function POST(req: Request) {
   let body: { thread_id?: string; parent_id?: string | null; body?: string };
@@ -18,6 +19,13 @@ export async function POST(req: Request) {
   if (!threadId || !text) {
     return NextResponse.json(
       { error: "A thread and a message are required." },
+      { status: 400 }
+    );
+  }
+  // Say so instead of quietly cutting the end off.
+  if (text.length > MAX_REPLY) {
+    return NextResponse.json(
+      { error: tooLongMessage("Your reply", text.length, MAX_REPLY) },
       { status: 400 }
     );
   }
@@ -62,7 +70,7 @@ export async function POST(req: Request) {
     .insert({
       thread_id: threadId,
       author_id: user.id,
-      body: text.slice(0, 10000),
+      body: text,
       is_op: false,
       parent_id: parentId,
     })

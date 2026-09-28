@@ -85,8 +85,11 @@ Wait a few minutes and check your spam, junk and promotions folders. Make sure y
 **"This reset link has expired or was already used. Request a new one from the login page."**
 Reset links work once and don't last forever. Go to [Reset password](/forgot-password) and send a new one, then use the newest email.
 
+**Logging in took me to "This account is suspended".**
+A moderator has suspended the account, so it can't sign in with a password or with Google. Email support@undergroundaquarium.com from the email address on the account if you think it's a mistake. See [Reporting content](/help/reporting-content#what-happens-to-a-suspended-account).
+
 **Clicking the reset link just took me to the Log in page.**
-The link couldn't be used (it was already used, expired, or was opened in a way that broke it). The page doesn't show a message about it. Request a new link from [Reset password](/forgot-password) and click it straight from the email.
+The link couldn't be used (it was already used, expired, or was opened in a way that broke it). The Log in page shows a message at the top explaining this, such as "We couldn't confirm that link. It may have expired or already been used. Log in below, or use "Forgot your password?" to get a fresh link." Use **Forgot your password?** or go to [Reset password](/forgot-password) to request a new link, and click it straight from the email.
 
 **"Password must be at least 8 characters."**
 New passwords need 8 or more characters. Make it longer and click **Update password** again.

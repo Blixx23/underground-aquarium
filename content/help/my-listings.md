@@ -47,7 +47,7 @@ The page shows up to your 200 most recent ads.
 - **sold**: you tapped **Mark sold**, **Mark found**, **Mark as sold** or **Mark as found**. It's off the classifieds and only you can see it. Wanted ads marked found also show as sold.
 - **expired**: its 45 days ran out. Off the classifieds, only you can see it, nothing deleted.
 - **draft**: an ad carried over from the old version of the site that hasn't been published yet. Only you can see it.
-- **removed**: our team took it down for breaking the [listing rules](/rules). Only you can see it, and it can't be reposted.
+- **removed**: our team took it down for breaking the [listing rules](/rules), and you got a **Listing removed** notification. Only you can see it, and it can't be reposted.
 
 For every status except active, opening the ad shows a banner saying it's (sold, expired and so on) and only you can see it.
 

@@ -11,6 +11,7 @@ import {
   ExternalLink,
   EyeOff,
   Ban,
+  Trash2,
 } from "lucide-react";
 
 type QueueReport = {
@@ -25,7 +26,13 @@ type QueueReport = {
   reporter_name: string | null;
 };
 
-type Action = "remove" | "resolve" | "dismiss" | "hide_post" | "hide_thread";
+type Action =
+  | "remove"
+  | "resolve"
+  | "dismiss"
+  | "hide_post"
+  | "hide_thread"
+  | "remove_feed_post";
 
 type PrimaryAction = {
   action: Action;
@@ -120,8 +127,8 @@ export default function AdminReportsList({
         const heading = r.target_label || r.target_url || "Reported content";
 
         // The take-down options depend on what was reported. Forum posts get
-        // two choices; listings/profiles get one; everything else only
-        // resolve/dismiss.
+        // two choices; listings, profiles and feed posts get one; everything
+        // else only resolve/dismiss.
         const primaryActions: PrimaryAction[] =
           r.target_type === "listing"
             ? [
@@ -130,7 +137,7 @@ export default function AdminReportsList({
                   label: "Take down listing",
                   Icon: EyeOff,
                   confirm:
-                    "Take down this listing? It will be hidden from the marketplace and the seller will be notified.",
+                    "Take down this listing? It will be hidden from the marketplace and search, marked removed on the seller's My listings page (they can't repost it), and the seller will be notified.",
                 },
               ]
             : r.target_type === "profile"
@@ -140,7 +147,17 @@ export default function AdminReportsList({
                   label: "Suspend account",
                   Icon: Ban,
                   confirm:
-                    "Suspend this account? Their profile and listings will be hidden and they will be notified.",
+                    "Suspend this account? They will be blocked from signing in (a session already open ends within about an hour), their public profile will be hidden, their live classified ads will be taken down and their tanks made private. They will be notified. You can undo this from Suspended accounts below.",
+                },
+              ]
+            : r.target_type === "feed_post"
+            ? [
+                {
+                  action: "remove_feed_post",
+                  label: "Remove post",
+                  Icon: Trash2,
+                  confirm:
+                    "Remove this feed post? It will be deleted, the same as using Delete post on the feed, and the author will be notified. This can't be undone.",
                 },
               ]
             : r.target_type === "forum_post"
@@ -236,7 +253,7 @@ export default function AdminReportsList({
                 onClick={() => act(r.id, "resolve")}
                 disabled={busy}
                 className="inline-flex items-center gap-1.5 text-sm text-ocean-500 hover:text-ocean-300 transition-colors disabled:opacity-50"
-                title="Close this report without an automatic action — for things you've already handled."
+                title="Close this report without an automatic action, for things you've already handled."
               >
                 <Check className="w-4 h-4" /> Mark resolved
               </button>

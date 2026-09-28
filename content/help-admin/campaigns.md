@@ -78,13 +78,11 @@ Press **Turn the campaign on** or **Turn the campaign off** on the campaign's pa
 - Off: "Campaign turned off. Nobody new will be added." The daily planner skips it entirely, so nobody new is added and nothing new is queued. Mail already in the queue is not cancelled; cancel it on the Email page if needed.
 
 ## What do "What would a run do?" and "Run it now" do?
-- **What would a run do?** is meant as a dry run. It queues no email and doesn't move anyone to their next step. It reports "A run right now would add N shops, drop N, and send N emails today."
+- **What would a run do?** is a read-only dry run. It counts what a real run would do and changes nothing: nobody is enrolled or stopped, no email is queued, and nobody moves to their next step. It reports "A run right now would add N shops, drop N, and queue N emails to shops already on the list. Nothing was changed." When the campaign is Off, the message starts "This campaign is off, so nothing will run. If it were on, a run right now would..." It is safe to press at any time, including while the campaign is Off.
 
-  **Known issue:** the adding and dropping in a dry run are real. Pressing **What would a run do?** actually enrolls the new shops and stops the finished ones, even when the campaign is Off. No email is queued, so nothing is sent, but the stats and **Who is in it** list change.
+- **Run it now** does a real run immediately: "Added N, dropped N, queued N. The queue sends them, subject to the pause switch and the daily cap." It only works while the campaign is **On**. While the campaign is Off the button is greyed out (hovering says "Turn the campaign on first") and a line under the buttons reads "Run it now is off while the campaign is off. What would a run do? still works and changes nothing." If a stale page sends the request anyway, it is refused with "This campaign is turned off, so nothing was run. Turn the campaign on first, then press Run it now."
 
-- **Run it now** does a real run immediately: "Added N, dropped N, queued N. The queue sends them, subject to the pause switch and the daily cap."
-
-**Known issue:** **Run it now** runs even when the campaign is **Off**. Don't press it on a campaign you aren't ready to send.
+The queued count in the dry run only covers shops already enrolled. Shops a real run would add get their first email on the run after they are added, or on the same run if they are due straight away.
 
 The safe way to test a whole campaign is the one the page suggests when bulk is paused: "turn the campaign on, press Run it now, and read what lands in the queue on the email panel." With bulk paused, nothing leaves, and you can **Cancel** anything you don't like.
 
@@ -142,7 +140,7 @@ With nobody enrolled it says "Nobody yet. Press Run it now to add shops."
 **Known issue:** shops dropped because their page was hidden show just "stopped", because that reason has no label.
 
 ## What is the footer on every campaign email?
-Every campaign email is wrapped in a plain letter layout: the wordmark, your text, and a footer saying "You're getting this because your shop is listed in our free directory.", an **Unsubscribe** link ("and I won't email you again") and the postal address. The unsubscribe link and the one-click unsubscribe header are added automatically. See [Shop outreach](/admin/help/shop-outreach).
+Every campaign email is wrapped in a plain letter layout: the wordmark, your text, and a footer saying "You're getting this because your shop is listed in our free directory.", an **Unsubscribe** link ("Unsubscribe to stop these emails.") and the postal address. The unsubscribe link and the one-click unsubscribe header are added automatically. An unsubscribe stops all marketing and outreach mail to that address (every campaign and any shop outreach). If the same person has a member account, their account, message, Society dues and shop alert emails still arrive. See [Shop outreach](/admin/help/shop-outreach) and [Email queue and health](/admin/help/email-queue-and-health#what-is-the-do-not-email-list).
 
 ## Common problems
 **"Repeat between 0 and 365 days."** / **"Wait between 0 and 365 days."** The number is out of range.
@@ -150,6 +148,8 @@ Every campaign email is wrapped in a plain letter layout: the wordmark, your tex
 **"A subject line is required."** / **"The email can't be empty."** Fill in both before saving.
 
 **"No unclaimed shop to preview against."** Every shop is claimed, so there's nothing to write the test for.
+
+**Run it now is greyed out.** The campaign is Off. Turn it on first.
 
 **Run it now queued 0.** The budget is 0 (cap reached or the queue already holds a day's worth), nobody is due yet, or the campaign has no steps.
 

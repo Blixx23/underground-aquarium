@@ -4,7 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Play, Pause, FlaskConical, Plus, Zap } from "lucide-react";
 
-type Result = { enrolled?: number; stopped?: number; queued?: number; finished?: number; budget?: number; error?: string };
+type Result = {
+  enrolled?: number;
+  stopped?: number;
+  queued?: number;
+  finished?: number;
+  budget?: number;
+  active?: boolean;
+  error?: string;
+};
 
 async function post(payload: Record<string, unknown>): Promise<Result> {
   const res = await fetch("/api/admin/campaigns", {
@@ -68,7 +76,9 @@ export default function CampaignControls({
           disabled={busy !== null}
           onClick={() =>
             run("dry", { action: "dry-run", key: campaignKey }, (r) =>
-              `A run right now would add ${r.enrolled ?? 0} shops, drop ${r.stopped ?? 0}, and send ${r.queued ?? 0} emails today.`
+              `${r.active === false ? "This campaign is off, so nothing will run. If it were on, a" : "A"} run right now would add ${
+                r.enrolled ?? 0
+              } shops, drop ${r.stopped ?? 0}, and queue ${r.queued ?? 0} emails to shops already on the list. Nothing was changed.`
             )
           }
           className="inline-flex items-center gap-2 rounded-full border border-ocean-700 px-4 py-2 text-sm text-ocean-200 hover:text-white disabled:opacity-40"
@@ -78,7 +88,8 @@ export default function CampaignControls({
 
         <button
           type="button"
-          disabled={busy !== null}
+          disabled={busy !== null || !active}
+          title={active ? undefined : "Turn the campaign on first"}
           onClick={() =>
             run("run", { action: "run-now", key: campaignKey }, (r) =>
               `Added ${r.enrolled ?? 0}, dropped ${r.stopped ?? 0}, queued ${r.queued ?? 0}. The queue sends them, subject to the pause switch and the daily cap.`
@@ -88,6 +99,7 @@ export default function CampaignControls({
         >
           <Zap className="h-4 w-4" /> Run it now
         </button>
+
 
         <button
           type="button"
@@ -131,6 +143,12 @@ export default function CampaignControls({
           0 means send it once and stop.
         </span>
       </div>
+
+      {!active && (
+        <p className="mt-3 text-xs text-ocean-500">
+          Run it now is off while the campaign is off. What would a run do? still works and changes nothing.
+        </p>
+      )}
 
       {note && (
         <p

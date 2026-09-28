@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { emailLayout, emailStats, sendEmail } from "@/lib/email";
+import { SOCIETY_SLUG } from "@/lib/config";
+import { SOCIETY_RENEW_PATH } from "@/lib/society/renewal";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.undergroundaquarium.com";
@@ -30,6 +32,8 @@ function kindForDays(days: number): ReminderKind | null {
   return null;
 }
 
+// Dues are paid by hand each year; nothing auto-charges. So the wording
+// is "expires", never "renews", which would sound like automatic billing.
 function buildEmail(
   kind: ReminderKind,
   clubName: string,
@@ -37,40 +41,39 @@ function buildEmail(
   dateLabel: string,
   link: string
 ): { subject: string; html: string } {
-  const cta = { label: "Renew your membership", url: link };
   const club = `<strong>${clubName}</strong>`;
   switch (kind) {
     case "10d":
       return {
-        subject: `Your ${clubName} dues renew in 10 days`,
+        subject: `Your ${clubName} membership expires in 10 days`,
         html: emailLayout({
-          preheader: `Your ${clubName} membership renews on ${dateLabel}`,
-          title: "Membership renewal coming up",
-          intro: `Heads up — your ${club} membership renews in about 10 days.`,
-          bodyHtml: emailStats([["Amount", `$${amount}`], ["Renews on", dateLabel]]),
-          cta,
+          preheader: `Your ${clubName} membership expires on ${dateLabel}`,
+          title: "Your membership expires soon",
+          intro: `Heads up: your ${club} membership expires in 10 days. You can renew now. Renewing early adds a full year on top of your current one, so you don't lose any days.`,
+          bodyHtml: emailStats([["Amount", `$${amount}`], ["Expires on", dateLabel]]),
+          cta: { label: "Renew now", url: link },
         }),
       };
     case "3d":
       return {
-        subject: `Your ${clubName} dues renew in 3 days`,
+        subject: `Your ${clubName} membership expires in 3 days`,
         html: emailLayout({
-          preheader: `Your ${clubName} membership renews on ${dateLabel}`,
-          title: "Renewal in 3 days",
-          intro: `Your ${club} membership renews in just 3 days.`,
-          bodyHtml: emailStats([["Amount", `$${amount}`], ["Renews on", dateLabel]]),
-          cta,
+          preheader: `Your ${clubName} membership expires on ${dateLabel}`,
+          title: "3 days left",
+          intro: `Your ${club} membership expires in 3 days. Renew now to keep your member area, spawn logs and certificates open without a break.`,
+          bodyHtml: emailStats([["Amount", `$${amount}`], ["Expires on", dateLabel]]),
+          cta: { label: "Renew now", url: link },
         }),
       };
     case "0d":
       return {
-        subject: `Your ${clubName} dues are due today`,
+        subject: `Your ${clubName} membership expires today`,
         html: emailLayout({
-          preheader: `Your ${clubName} dues are due today`,
-          title: "Your dues are due today",
-          intro: `Your ${club} membership is due today. Renew now to stay active.`,
-          bodyHtml: emailStats([["Amount", `$${amount}`], ["Due", dateLabel]]),
-          cta,
+          preheader: `Your ${clubName} membership expires today`,
+          title: "Your membership expires today",
+          intro: `Your ${club} membership expires today. Renew now to stay active.`,
+          bodyHtml: emailStats([["Amount", `$${amount}`], ["Expires", dateLabel]]),
+          cta: { label: "Renew now", url: link },
         }),
       };
     case "past3d":
@@ -79,9 +82,9 @@ function buildEmail(
         html: emailLayout({
           preheader: `Your ${clubName} membership has lapsed`,
           title: "Your membership has lapsed",
-          intro: `Your ${club} membership lapsed. Renew anytime to return to active standing.`,
+          intro: `Your ${club} membership lapsed. Your records are safe. Renew anytime to get back in.`,
           bodyHtml: emailStats([["Amount", `$${amount}`], ["Lapsed on", dateLabel]]),
-          cta,
+          cta: { label: "Renew your membership", url: link },
         }),
       };
   }
@@ -168,7 +171,12 @@ export async function GET(request: Request) {
       month: "long",
       day: "numeric",
     });
-    const link = `${SITE_URL}/c/${club.slug}`;
+    // The Society's renew page shows the Pay button even to a member who is
+    // still paid up, which is exactly who the 10 and 3 day reminders go to.
+    const link =
+      club.slug === SOCIETY_SLUG
+        ? `${SITE_URL}${SOCIETY_RENEW_PATH}`
+        : `${SITE_URL}/c/${club.slug}`;
     const { subject, html } = buildEmail(kind, club.name, amount, dateLabel, link);
 
     // Handed to the queue: sent now, or held while sending is paused.

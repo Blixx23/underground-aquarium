@@ -64,15 +64,17 @@ Tap **New** at the top of the builder. It clears the builder so you can start fr
 Photos need you to be signed in; the **Photos** area is inside the save section.
 
 1. Under **Photos**, tap **Add**.
-2. Choose one or more images.
+2. Choose one or more images. On a computer, iPhone .heic files show up in the file picker too.
 3. While they upload the tile says "Uploading…". Each photo appears as a thumbnail.
 4. Tap **Save tank** or **Update tank** to keep them. If you're editing a saved tank you'll see "Photos added. Save the tank to keep them."
 
 Limits and handling:
 
 - Up to **12 photos** per tank. The **Add** tile disappears at 12.
-- Each photo can be up to **10 MB** when you choose it.
-- Big photos are automatically resized (to at most 1920 pixels on the longest side) and saved as JPEG.
+- Each photo can be up to **10 MB** when you choose it. The note under the photos says "Up to 12 photos, each up to 10 MB."
+- iPhone (HEIC) photos are converted automatically, in any browser.
+- Big photos are automatically resized (to at most 2000 pixels on the longest side) and saved as JPEG.
+- The same limits apply when you add photos with **Edit showcase** on the tank's page.
 - The first photo is used as the tank's cover on its card.
 
 To remove a photo, tap the **X** on its thumbnail, then tap **Update tank**. Photos only show publicly once the tank is public.
@@ -81,9 +83,10 @@ For a description and setup details, use **Edit showcase** on the tank's public 
 
 ## What do the photo error messages mean?
 - **"Up to 12 photos per tank."** You've hit the limit. Remove one before adding another.
-- **"Images only, please."** The file you picked isn't an image.
+- **"Photos only, please."** The file you picked isn't an image.
 - **"That photo is too large (max 10 MB)."** Pick a smaller file or shrink it first.
-- **"A photo failed to upload. Try again."** A network or upload problem. Try again on a stronger connection.
+- **"A photo didn't upload. Try that one again."** A network or upload problem. Try again on a stronger connection.
+- **"[file name]" is an iPhone HEIC photo this browser can't read...** Rare, since iPhone photos are normally converted for you. On your iPhone, **Settings › Camera › Formats › Most Compatible** makes new photos upload anywhere, or share the photo to yourself first so it comes through as a JPEG.
 
 ## How do I make a tank public on my profile?
 1. Tick **Show this tank on my profile and in the feed** in the save section.
@@ -128,7 +131,7 @@ The tank, its photos list and all its logged water readings are removed. This ca
 Deleting only happens in the Tank Builder; there's no delete button on the tank's public page. If you want to keep your water readings first, use **Download my data** on your [Account & data](/account) page. If deleting fails you'll see "Couldn't delete that tank."
 
 ## What happens to my tanks if I delete my account?
-When you request account deletion, all your tanks are made private right away, so they disappear from your profile and the feed. See [Deleting your account](/help/deleting-your-account).
+When you request account deletion, all your tanks are made private right away, so they disappear from your profile and the feed. We remember which ones were public, and if you reactivate within the 30 days, those tanks are made public again automatically. See [Deleting your account](/help/deleting-your-account).
 
 ## Common problems
 **I can't save: nothing happens or I see the 4 tank message.**

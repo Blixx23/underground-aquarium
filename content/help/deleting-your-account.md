@@ -13,7 +13,7 @@ You can delete your account yourself from [Account & data](/account). Deleting d
 Deleting is a big step. Before you start:
 
 1. **Download your data.** On [Account & data](/account), click **Download my data** to save a copy. See [Privacy and your data](/help/privacy-and-your-data).
-2. **Take down your classified ads.** Mark them sold or delete them from [My listings](/my/listings) so buyers stop contacting you. See [Marking sold and deleting](/help/marking-sold-and-deleting).
+2. **Deal with your classified ads.** Any ads still live are marked expired automatically when you delete, but you may want to mark them sold or delete them yourself from [My listings](/my/listings) first. See [Marking sold and deleting](/help/marking-sold-and-deleting).
 3. **Hand off any club you own.** You can't delete your account while you own a club (see below).
 4. **Save anything you want to keep** from your messages, tanks or posts.
 
@@ -21,19 +21,20 @@ Deleting is a big step. Before you start:
 1. Go to [Account & data](/account) (signed in).
 2. Scroll to the bottom and click **Delete account**.
 3. Type **DELETE** in the box labeled "Type DELETE to confirm". Capital letters aren't required.
-4. Tick the confirmation checkbox.
-5. Click **Permanently delete my account**. It shows **Deleting…** while it works.
+4. Tick the checkbox: "I understand my account will be permanently deleted after 30 days unless I sign in and reactivate it before then."
+5. Click **Delete my account**. It shows **Deleting...** while it works.
 
-The **Permanently delete my account** button stays grayed out until you've typed DELETE and ticked the box. Click **Cancel** to back out.
+The **Delete my account** button stays grayed out until you've typed DELETE and ticked the box. Click **Cancel** to back out.
 
-When it's done you'll see **Account scheduled for deletion** with the exact date your account will be permanently deleted, and you're signed out. Click **Return home** to leave.
+When it's done you'll see **Account scheduled for deletion** with the exact date your account will be permanently deleted, and you're signed out. The message reminds you that if you change your mind, you can sign in before then and choose **Cancel deletion & reactivate**. Click **Return home** to leave.
 
 ## What happens right away when I delete?
 The moment you confirm:
 
 - Your account is deactivated and you're signed out.
 - Your public profile stops showing. Anyone visiting /u/your-username gets a "not found" page.
-- All your tanks are set to private, so they disappear from your profile and public pages.
+- All your tanks are set to private, so they disappear from your profile and public pages. We remember which ones were public, so reactivating can make those public again.
+- Your live classified ads are marked expired, so they come off the classifieds right away. If you reactivate, you can repost them from [My listings](/my/listings) like any expired ad.
 - Other members can no longer find you or send you a new direct message.
 - A permanent deletion date is set 30 days from now.
 
@@ -42,6 +43,7 @@ On the scheduled date, your account is permanently deleted. That includes:
 
 - your profile details (name, bio, location, website) and username
 - your tanks and tank likes
+- your classified ads and their photos
 - your notifications
 - your club and Society memberships, award submissions and event RSVPs
 - your shop review replies, and shops you manage along with their posts
@@ -54,21 +56,20 @@ After permanent deletion there's no way to recover the account.
 ## Can I cancel the deletion and get my account back?
 Yes, any time before the permanent deletion date.
 
-1. Go to [Log in](/login) and sign in with your email and password.
-2. You'll land on **Account scheduled for deletion**, which shows the date your account will be deleted.
+1. Go to [Log in](/login) and sign in with your email and password, or with **Continue with Google** if that's how you signed up.
+2. You'll land on **Account scheduled for deletion**, which shows the date your account will be deleted. This happens automatically for both email and Google sign-in.
 3. Click **Cancel deletion & reactivate**.
 
 You're taken to [Your profile](/profile) and your account is active again. If you'd rather leave it scheduled, click **Sign out** instead.
 
-If you signed up with Google, sign in with **Continue with Google**, then go to /account/deletion-pending to find the **Cancel deletion & reactivate** button.
-
 You can also email support@undergroundaquarium.com before the deletion date and we'll cancel it for you.
 
 ## What do I need to redo after reactivating?
-Reactivating restores your account, profile, followers, posts and history, but a few things stay the way deletion left them:
+Reactivating restores your account, profile, followers, posts and history. Tanks that were public before you deleted are made public again automatically, and tanks you kept private stay private. One thing stays the way deletion left it:
 
-- **Tanks:** every tank was set to private. Open each one in the [Tank Builder](/tank-builder) and share it again if you want it public. See [Saving and sharing tanks](/help/saving-and-sharing-tanks).
-- **Classified ads:** check [My listings](/my/listings) and re-publish or renew any ads you want live. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
+- **Classified ads:** ads you had live were marked expired. Repost the ones you still want from [My listings](/my/listings). See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
+
+For some older deletion requests, we didn't keep a record of which tanks were public. In that case you'll see **Welcome back** with a note that your tanks are still private. Open each tank in the [Tank Builder](/tank-builder) to make it public again, then click **Go to my profile**. See [Saving and sharing tanks](/help/saving-and-sharing-tanks).
 
 ## "You own one or more clubs"
 If you see: "You own one or more clubs. Please transfer ownership or delete those clubs first, then delete your account."
@@ -107,10 +108,13 @@ Your account is in the 30-day grace period. Click **Cancel deletion & reactivate
 Refresh the page and click **Cancel deletion & reactivate** again. If it keeps failing, email support@undergroundaquarium.com before your deletion date.
 
 **I signed in with Google and didn't see the reactivate page.**
-Google sign-in doesn't send you there automatically. While signed in, open /account/deletion-pending and click **Cancel deletion & reactivate**, or email support.
+Google sign-in now sends accounts waiting for deletion to the reactivate page automatically. If you still don't see it, open /account/deletion-pending while signed in and click **Cancel deletion & reactivate**, or email support.
 
 **My tanks are all private after reactivating.**
-That's expected. Deletion makes every tank private, and reactivating doesn't undo it. Share each tank again from the [Tank Builder](/tank-builder).
+Reactivating makes public again the tanks that were public when you deleted. For some older deletion requests we couldn't tell which ones were public, so they all stay private: share each tank again from the [Tank Builder](/tank-builder).
+
+**My classified ads are expired after reactivating.**
+That's expected. Deleting marks live ads expired. Repost the ones you want from [My listings](/my/listings).
 
 **My deletion date has passed. Can you restore my account?**
 No. After permanent deletion the account and its data are gone. You're welcome to create a new account. See [Creating an account](/help/creating-an-account).

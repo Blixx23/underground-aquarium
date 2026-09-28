@@ -80,7 +80,9 @@ Every ad stays up for 45 days from when it's posted or last renewed. After that 
 To keep an ad up, tap **Renew 45 days** any time while it's active. It also moves the ad back to the top of the newest list. To bring back an expired ad, tap **Repost**. Editing an ad doesn't reset its expiry date. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
 
 ## My listing was removed
-If an ad breaks the [listing rules](/rules) or is reported and our team agrees, it can be removed. A removed ad shows the **removed** status in [My listings](/my/listings) and can't be reposted. You can still delete it.
+If an ad breaks the [listing rules](/rules) or is reported and our team agrees, it can be removed. A removed ad disappears from the classifieds and search, shows the **removed** status in [My listings](/my/listings) and can't be reposted. You get a **Listing removed** notification saying your listing "[title]" was removed by a moderator, which links to My listings. You can still delete it.
+
+If your account is suspended, your live ads are also taken down. If the suspension is lifted, those ads come back (or come back as expired if their 45 days ran out in the meantime).
 
 If you think it was removed by mistake, email support@undergroundaquarium.com with the listing title.
 

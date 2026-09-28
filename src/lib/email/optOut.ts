@@ -12,9 +12,11 @@ import { claimToken } from "@/lib/stores/claimToken";
  * Taking a shop off outreach, and bringing it back. One place, so the
  * admin button and the unsubscribe link can never drift apart.
  *
- * Opting out means: never email the address again, mark the shop's
- * contact so no campaign re-enrols it, stop every enrolment, cancel
- * anything waiting in the outbox, and send one plain confirmation.
+ * Opting out means: no more marketing or outreach to the address, mark
+ * the shop's contact so no campaign re-enrols it, stop every enrolment,
+ * cancel any outreach waiting in the outbox, and send one plain
+ * confirmation. Account and message email still reaches them: an
+ * unsubscribe is from outreach, not from their own account.
  * The shop's page stays in the directory unless we're told to hide it.
  */
 
@@ -71,7 +73,8 @@ function confirmationEmail() {
     `<p style="margin:0 0 17px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:${BRAND.body};">${t}</p>`;
   const paragraphs = [
     "Hi,",
-    "This is Chris from Underground Aquarium. You've been unsubscribed and won't get any more emails from us.",
+    "This is Chris from Underground Aquarium. You've been unsubscribed from our marketing and outreach emails, and you won't get any more of them.",
+    "If you have an account with us, emails about your account and your messages will still arrive.",
     "Chris Lewis<br>Underground Aquarium",
   ];
   const html = letterShell({
@@ -101,7 +104,9 @@ export async function optOut(opts: {
   const out: OptOutResult = { addresses: list, shops: shops.map((s) => s.name), stopped: 0, cancelled: 0, hidden: 0, confirmed: [], confirmFailed: [] };
   if (list.length === 0) return out;
 
-  const already = opts.confirmNewOnly ? await suppressedSet(list) : new Set<string>();
+  // Listed for any reason already (an earlier unsubscribe, or a bounce)
+  // means they've had their confirmation or can't receive one.
+  const already = opts.confirmNewOnly ? await suppressedSet(list, "any") : new Set<string>();
   for (const e of list) await suppress(e, "unsubscribe", opts.why ?? "Asked to be removed from outreach");
 
   await supabaseAdmin.from("store_contacts").update({ unsubscribed_at: now }).in("email", list).is("unsubscribed_at", null);

@@ -48,7 +48,7 @@ Ads are organized by state, then by **area**, which is a metro area inside that 
 A category for ads where you're looking for something instead of selling it. ISO means "in search of". Wanted ads show "Wanted" instead of a price, and you mark them **Mark found** instead of **Mark sold**.
 
 ### Free Stuff
-A category for things you're giving away.
+A category for things you're giving away. The **Free Stuff** pill also shows every ad posted as **Free**, whatever its category, and the **Wanted / ISO** pill shows every wanted ad. See [Searching and filtering listings](/help/searching-and-filtering-listings).
 
 ### Bumped and renewing
 Ads last 45 days. **Renew 45 days** on [My listings](/my/listings) gives an ad a fresh 45 days and moves it back to the top as if it were just posted. "Bumped" shows when an ad was last posted or renewed. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
@@ -65,7 +65,10 @@ A **thread** is a forum topic someone started. Everyone else adds **replies** un
 Our words for upvote and downvote. **Float up** means a post is helpful. **Sink** means it isn't. See [Forum voting](/help/forum-voting).
 
 ### Hot, Unanswered, pinned and locked
-**Hot in the forums** lists busy threads. **Unanswered topics** are threads still waiting for a reply (see [Unanswered threads](/help/unanswered-threads)). A **pinned** thread stays at the top of its category. A **locked** thread says "This thread is locked." and can't get new replies.
+**Hot in the forums** lists busy threads. **Unanswered topics** are threads still waiting for a reply (see [Unanswered threads](/help/unanswered-threads)). A **pinned** thread stays at the top of its category. A **locked** thread says "This thread is locked." and can't get new replies, and only our team can edit posts in it.
+
+### Edited
+A forum post marked "(edited)" was changed by its author or our team after it was posted. Hover over the label on a computer to see when.
 
 ## The Society words
 
@@ -79,7 +82,7 @@ Every Society member gets a permanent number in the format UAS-0001, shown in th
 A member whose membership is current. Members in good standing wear a **gold ring** around their profile photo across the site.
 
 ### Dues, lifetime and honorary lifetime
-**Dues** are the Society's yearly membership fee. **Lifetime membership** is a one-time payment instead of yearly dues. **Honorary lifetime** membership is granted free by the Society. See [Society dues and renewal](/help/society-dues-and-renewal) and [Lifetime and honorary membership](/help/lifetime-and-honorary-membership).
+**Dues** are the Society's yearly membership fee. Renewal opens 30 days before your paid-through date, and renewing early adds a full year on top, so you don't lose any days. **Lifetime membership** is a one-time payment instead of yearly dues. **Honorary lifetime** membership is granted free by the Society. See [Society dues and renewal](/help/society-dues-and-renewal) and [Lifetime and honorary membership](/help/lifetime-and-honorary-membership).
 
 ### Member area
 The members-only part of The Society, with spawn logs, the breeder program, certificates and the leaderboard. See [Society member area](/help/society-member-area).

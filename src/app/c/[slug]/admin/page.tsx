@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe/server";
+import { SOCIETY_SLUG } from "@/lib/config";
 import MemberManager from "./MemberManager";
 import ClubPayoutButton from "./ClubPayoutButton";
 import ClubSettings from "./ClubSettings";
@@ -342,7 +343,10 @@ export default async function ClubAdminPage({
     ),
   });
 
-  if (role === "owner") {
+  // The Society is the whole site now, so it can never be deleted from
+  // here. The database refuses too (sql/step58_fixes.sql), in case
+  // anything ever calls delete_club for it directly.
+  if (role === "owner" && club.slug !== SOCIETY_SLUG) {
     sections.push({
       key: "danger",
       title: "Delete club",

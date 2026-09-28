@@ -10,7 +10,10 @@ pages: /c/underground-aquarium-society
 You manage your Society membership on the membership management page. From there you can change your roster name and contact email, or leave the Society.
 
 ## Where do I manage my Society membership?
-Go to [manage your membership](/c/underground-aquarium-society?manage=1), the address /c/underground-aquarium-society?manage=1. There's no link to it inside the member area, so bookmark it.
+Go to [manage your membership](/c/underground-aquarium-society?manage=1), the address /c/underground-aquarium-society?manage=1. From inside the member area there are two links to it:
+
+- **Membership settings**, the last item in the member area's menu
+- **Membership settings** under your member card on the Overview page, next to the note "Update your details or leave the Society."
 
 The ?manage=1 part matters: if you're a member in good standing, opening the membership page without it sends you straight to the member area. If your dues are owed or lapsed, the plain membership page opens anyway and has the same options further down.
 
@@ -37,9 +40,9 @@ Not on the site. The phone and address you gave on your application can't be edi
 ## How do I leave the Society?
 1. Open [manage your membership](/c/underground-aquarium-society?manage=1).
 2. Scroll to the bottom and click **Leave the Society**.
-3. Your browser asks you to confirm ("Leave Underground Aquarium Society?"). Click OK.
+3. Your browser asks you to confirm: "Leave Underground Aquarium Society? You can apply to join again any time." Click OK.
 
-You're taken back to [the Society page](/society).
+You're taken to [the Society page](/society).
 
 ## What happens when I leave the Society?
 - You lose access to the member area.
@@ -53,10 +56,10 @@ If you want to know exactly what happens to your spawn logs, points or certifica
 No. Nothing charges automatically, so you can simply not renew. Your membership lapses after your paid-through date, the member area locks, and your records are kept in case you renew later. See [Society dues and renewal](/help/society-dues-and-renewal).
 
 ## Can I rejoin the Society after leaving?
-The confirmation message mentions rejoining if you're invited again. You can also go to [the Society page](/society) and apply again with **Apply for membership**. If anything gets in the way, email support@undergroundaquarium.com.
+Yes. Membership is open to anyone, and the confirmation message says you can apply to join again any time. Go to [the Society page](/society) and apply again with **Apply for membership**. If anything gets in the way, email support@undergroundaquarium.com.
 
 ## How do I withdraw a pending Society application?
-Go to [the membership page](/c/underground-aquarium-society). Under **Application received**, click **Withdraw application** and confirm. You can reapply any time.
+Go to [the membership page](/c/underground-aquarium-society). Under **Application received**, click **Withdraw application** and confirm ("Withdraw your application to Underground Aquarium Society? You can apply again any time."). You're taken to [the Society page](/society). You can reapply any time.
 
 ## Why don't I see a Leave the Society button?
 The Society's owner account can't leave. Every other member sees the button at the bottom of the manage page.
@@ -66,8 +69,8 @@ The Society's owner account can't leave. Every other member sees the button at t
 
 **"Couldn't save your details. Please try again."** The change didn't save. Try again in a moment.
 
-**"Couldn't leave the club."** Leaving didn't go through. Reload the page and try again, or email support@undergroundaquarium.com.
+**"Couldn't leave the Society." or "Couldn't withdraw your application."** It didn't go through. Reload the page and try again, or email support@undergroundaquarium.com.
 
-**The manage page keeps sending me to the member area.** Make sure the address ends in ?manage=1: /c/underground-aquarium-society?manage=1.
+**The manage page keeps sending me to the member area.** Use the **Membership settings** link in the member area's menu, or make sure the address ends in ?manage=1: /c/underground-aquarium-society?manage=1.
 
 **The manage page says "Couldn't load your membership".** The roster couldn't be read just then. Nothing changed. Try again in a minute.

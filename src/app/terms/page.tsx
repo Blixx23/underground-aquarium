@@ -16,7 +16,7 @@ export default function TermsPage() {
         <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
           Terms of Service
         </h1>
-        <p className="text-ocean-400 text-sm mb-10">Last updated: September 26, 2026</p>
+        <p className="text-ocean-400 text-sm mb-10">Last updated: September 27, 2026</p>
 
         <div className="space-y-8 text-ocean-200 leading-relaxed">
           <section className="space-y-3">
@@ -24,8 +24,8 @@ export default function TermsPage() {
               Welcome to Underground Aquarium. These Terms of Service (the
               &ldquo;Terms&rdquo;) are a binding agreement between you and
               Underground Aquarium (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or
-              &ldquo;our&rdquo;) covering your use of our website, marketplace,
-              and community features (together, the &ldquo;Service&rdquo;). By
+              &ldquo;our&rdquo;) covering your use of our website, free
+              classifieds, and community features (together, the &ldquo;Service&rdquo;). By
               creating an account or using the Service, you agree to these Terms
               and to our{" "}
               <Link href="/privacy" className="text-white hover:underline">
@@ -216,43 +216,28 @@ export default function TermsPage() {
 
           <section className="space-y-3">
             <h2 className="font-display text-2xl text-emerald-400">
-              The marketplace
-            </h2>
-            <p>
-              Underground Aquarium is a venue that connects buyers and sellers.
-              We are not the buyer or seller in any transaction, we do not take
-              title to any item, and we do not guarantee any listing, item,
-              quality, or sale. Sellers are solely responsible for their
-              listings, for the accuracy of what they describe, for the legality
-              of what they sell (including any rules that apply to shipping live
-              plants across state lines), and for fulfilling and shipping their
-              orders.
-            </p>
-            <p>
-              Live animals may not be listed or sold on Underground Aquarium. The
-              marketplace is for aquatic plants, equipment, hardscape, decor, and
-              other dry goods only. We may remove listings and restrict or
-              prohibit additional categories of items at our discretion.
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="font-display text-2xl text-emerald-400">
               Classified listings
             </h2>
             <p>
-              Listings on Underground Aquarium are free classified ads. We are
-              not a party to any deal you make. We do not process payments, hold
-              funds, arrange shipping, verify items, or vet the people you deal
-              with. Everything that happens after two people connect here is
-              between them.
+              Listings on Underground Aquarium are free classified ads. We are a
+              place for members to find each other, and we are not the buyer or
+              seller in any deal. We do not process payments, hold funds, arrange
+              shipping, verify items, or vet the people you deal with, and we do
+              not guarantee any listing, item, or sale. Everything that happens
+              after two people connect here is between them.
             </p>
             <p>
               You agree to describe items honestly, to post only things you
               actually have and may lawfully sell or give away, and to comply
-              with all laws that apply to you — including any rules on keeping,
+              with all laws that apply to you, including any rules on keeping,
               selling, or transporting live animals and plants in your state.
               You are responsible for any taxes on anything you sell.
+            </p>
+            <p>
+              Most deals here are local pickup. If you and the other person
+              decide to ship instead, you arrange it yourselves and are
+              responsible for following the carrier&apos;s rules, especially
+              for live animals and plants.
             </p>
             <p>
               Because no money passes through us, we cannot reverse a payment,
@@ -315,9 +300,10 @@ export default function TermsPage() {
               and we take no commission on anything you buy or sell here.
             </p>
             <p>
-              Membership in the Underground Aquarium Society is the one paid
-              thing on the site, and it is optional. Everything described above
-              stays free whether or not you are a member. If we ever introduce
+              The only thing you can pay for on the site is membership dues for
+              the Underground Aquarium Society, and joining is optional.
+              Everything described above stays free whether or not you are a
+              member. If we ever introduce
               another paid feature, it will also be optional and we will give
               notice before it applies to you.
             </p>
@@ -375,8 +361,8 @@ export default function TermsPage() {
               Our content and intellectual property
             </h2>
             <p>
-              The Service itself — its design, text, logos, branding, and
-              software — belongs to Underground Aquarium and is protected by
+              The Service itself, including its design, text, logos, branding,
+              and software, belongs to Underground Aquarium and is protected by
               intellectual property laws. You may not copy, modify, distribute,
               or reuse it without our permission. These Terms do not grant you any
               right to our trademarks or branding.
@@ -402,12 +388,13 @@ export default function TermsPage() {
               Third-party services
             </h2>
             <p>
-              The Service relies on third parties — including Stripe for payments
-              and other providers described in our{" "}
+              The Service relies on third parties, including Stripe for Society
+              dues payments, Google for optional Google sign-in, and other
+              providers described in our{" "}
               <Link href="/privacy" className="text-white hover:underline">
                 Privacy Policy
-              </Link>{" "}
-              — and may link to third-party sites. Your use of those services is
+              </Link>
+              , and may link to third-party sites. Your use of those services is
               governed by their own terms, and we are not responsible for them.
             </p>
           </section>
@@ -421,10 +408,9 @@ export default function TermsPage() {
               We may suspend or close any account, limit any feature, or stop
               offering any part of the Service, at any time and for any reason,
               including violating these Terms, creating risk for the community,
-              or complying with law. Some obligations — including the content
-              licenses and library assignments,
-              disclaimers, liability, and governing law — survive the end of your
-              account.
+              or complying with law. Some obligations, including the content
+              licenses and library assignments, disclaimers, liability, and
+              governing law, survive the end of your account.
             </p>
           </section>
 
@@ -465,8 +451,8 @@ export default function TermsPage() {
             <p>
               You agree to indemnify and hold harmless Underground Aquarium from
               claims, losses, and expenses (including reasonable legal fees)
-              arising from your content, your use of the Service, your sales or
-              purchases, or your violation of these Terms or of any law or the
+              arising from your content, your use of the Service, any deal you
+              make with another member, or your violation of these Terms or of any law or the
               rights of others.
             </p>
           </section>

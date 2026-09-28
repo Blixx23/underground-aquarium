@@ -12,9 +12,11 @@ import {
   Ticket,
   ShieldCheck,
   Gavel,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import SocietySeal from "@/components/society/SocietySeal";
+import { SOCIETY_MANAGE_PATH } from "@/lib/society/renewal";
 
 type Item = {
   href: string;
@@ -81,6 +83,14 @@ export default function SocietyNav({
       badge: judgeQueue || undefined,
     });
   }
+
+  // Last on purpose: your details, renewal and leaving live on the
+  // membership page, which sits outside the member area's route tree.
+  items.push({
+    href: SOCIETY_MANAGE_PATH,
+    label: "Membership settings",
+    Icon: Settings,
+  });
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");

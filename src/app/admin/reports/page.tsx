@@ -4,6 +4,9 @@ import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import AdminReportsList from "./AdminReportsList";
+import SuspendedMembersList, {
+  type SuspendedMember,
+} from "./SuspendedMembersList";
 
 export const metadata: Metadata = { title: "Admin · Reports" };
 
@@ -95,6 +98,21 @@ export default async function AdminReportsPage() {
     };
   });
 
+  // Everyone currently suspended, so an admin can lift a suspension here.
+  const { data: suspendedRows } = await supabaseAdmin
+    .from("profiles")
+    .select("id, username, full_name, suspended_at, suspended_reason")
+    .not("suspended_at", "is", null)
+    .order("suspended_at", { ascending: false })
+    .limit(200);
+  const suspended: SuspendedMember[] = (suspendedRows ?? []).map((p) => ({
+    id: p.id as string,
+    username: (p.username as string | null) ?? null,
+    full_name: (p.full_name as string | null) ?? null,
+    suspended_at: (p.suspended_at as string | null) ?? null,
+    suspended_reason: (p.suspended_reason as string | null) ?? null,
+  }));
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-3xl mx-auto">
@@ -105,6 +123,7 @@ export default async function AdminReportsPage() {
           dismiss it if there&apos;s nothing to do.
         </p>
         <AdminReportsList initialReports={queue} />
+        <SuspendedMembersList initialMembers={suspended} />
       </div>
     </main>
   );

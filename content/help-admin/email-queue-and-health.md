@@ -3,11 +3,11 @@ title: Email queue and health
 category: Email & campaigns
 summary: How every site email flows through the queue, what each number and switch on the Email page means, retrying and cancelling, the Do not email list, alerts and setup.
 order: 10
-keywords: email panel, outbox, email ledger, kill switch, pause email, bulk cap, daily cap, bounce rate, spam complaints, suppression list, unsubscribe list, resend, webhook, email worker, deliverability, failed emails
+keywords: email panel, outbox, email ledger, kill switch, pause email, bulk cap, daily cap, bounce rate, spam complaints, suppression list, unsubscribe list, marketing only, all email, not sent, resend, webhook, email worker, deliverability, failed emails
 pages: /admin/email, /admin, /api/email/unsubscribe
 ---
 
-Almost every email the site sends goes through one queue, and the **Email** page at /admin/email is the window onto it. It shows whether mail is flowing, every message and what happened to it, the switches that pause sending, and the list of addresses the site must never write to again.
+Almost every email the site sends goes through one queue, and the **Email** page at /admin/email is the window onto it. It shows whether mail is flowing, every message and what happened to it, the switches that pause sending, and the Do not email list of addresses that must not get some or all mail.
 
 ## How does an email get sent?
 Every send goes through the queue in one of two ways:
@@ -69,7 +69,7 @@ When a run hits the cap, the rest of the bulk mail is put back untouched and res
 Two buttons in **Check it works**:
 
 - **Send me a test** sends "Underground Aquarium test email" to the address you sign in with, even while paused. You see "Test sent to ...". This proves the ordinary (transactional) path only.
-- **Run the queue now** runs the worker once by hand, taking up to 40 messages, and reports "Ran the worker: N sent, N failed." It is greyed out while all email is paused.
+- **Run the queue now** runs the worker once by hand, taking up to 40 messages, and reports "Ran the worker: N sent, N failed." If any rows were held back by the Do not email list it adds ", N not sent (on the do-not-email list)". It is greyed out while all email is paused.
 
 To prove the bulk path, use **Send me this one** on a campaign step instead (see [Campaigns](/admin/help/campaigns)); it sends from the bulk address with the unsubscribe headers.
 
@@ -82,6 +82,7 @@ Each row shows the subject, a **bulk** tag for bulk mail, the recipient and the 
 - **"Waiting · queued 3m ago"** or **"Waiting until [time]"** for mail not yet due.
 - **"Retrying · N tries so far · next [time]"** for mail that failed for a temporary reason, with the last error in red.
 - **"Gave up after N tries · [reason]"** for failed mail, with the error in red. Reasons: **bad address**, **sending too fast**, **Resend problem**, **something else**.
+- **"Not sent · on the do-not-email list"** for mail the worker refused to send because the address was on the Do not email list by the time it came up. The red line explains which kind of block: "Not sent: this address is on the do-not-email list (bounce), so nothing can go to it." or "Not sent: this person opted out of marketing and outreach email (unsubscribe)." These rows have no **Try again** button, because they would only be held back again.
 
 Empty tabs show "Nothing here.", or "Nothing for "..."." when searching.
 
@@ -95,7 +96,9 @@ Empty tabs show "Nothing here.", or "Nothing for "..."." when searching.
 - On a failed row, **Try again** puts it back in the queue with its tries reset, due now.
 - On a waiting row, **Cancel** stops it. The row is kept as failed with "Cancelled from the admin panel", so the history has no holes.
 
-**Known issue:** the worker does not re-check the Do not email list when it sends. **Try again** on a failed "bad address" row will send to that address again, and mail already queued before an address bounced or complained still goes out. Only retry rows that failed for a temporary reason.
+The worker re-checks the Do not email list right before it sends each queued row, so **Try again** on a row whose address has since bounced or opted out doesn't send it: the row comes back as "Not sent". If an address really should get mail again, remove it from Do not email first.
+
+**Known issue:** "Not sent" rows are stored with the failed status, so they are counted with failed messages in the Email badge and the Dashboard pill. They aren't emailed to support as failures.
 
 These buttons don't show errors; if a row doesn't change after the page refreshes, try again.
 
@@ -104,17 +107,24 @@ Sent by the site isn't the same as landed in the inbox. When the Resend webhook 
 
 Before the webhook is set up it says "Nothing yet. This fills in once the Resend webhook is pointed at the site."
 
-A hard bounce or a spam complaint automatically adds the address to Do not email. A soft (temporary) bounce does not. Events for mail sent from other domains on the same Resend account are ignored.
+A hard bounce adds the address to Do not email as **all email**. A spam complaint adds it as **marketing only**, the same as an unsubscribe. A soft (temporary) bounce adds nothing. Events for mail sent from other domains on the same Resend account are ignored.
 
 ## What is the Do not email list?
-**Do not email** shows the newest 50 addresses the site must never write to, with the total. Each shows why: **Bounced**, **Marked as spam**, **Unsubscribed**, **Added by hand**, **Address doesn't work**, plus the date and any detail.
+**Do not email** shows the newest 50 listed addresses, with the total. Each address has a tag saying how far the block reaches, then why it was listed (**Bounced**, **Marked as spam**, **Unsubscribed**, **Added by hand**, **Address doesn't work**), the date and any detail. The note above the list reads: "Bounces, spam complaints and unsubscribes land here automatically. A bounced address gets nothing at all. An unsubscribe or spam complaint only stops marketing and outreach; account and message emails still go to them. Addresses you add by hand get nothing at all."
 
-- To add one, type it in "add an address" and press **Add** (the button needs an @). It is saved as "Added by hand".
+The two tags:
+
+- **all email** (red): Bounced, Address doesn't work and Added by hand. Nothing at all is sent to the address, not even account or message email, because the address doesn't work or you blocked it on purpose.
+- **marketing only** (amber): Unsubscribed and Marked as spam. Campaign mail, shop outreach and campaign tests stop. Account emails, message alerts, Society dues reminders and shop alerts still go to that person, because those are mail they need.
+
+A block is never weakened: if an address already bounced, a later unsubscribe click leaves it as all email.
+
+- To add one, type it in "add an address" and press **Add** (the button needs an @). It is saved as "Added by hand", which blocks all email.
 - To remove one, press the **X** next to it ("Allow email to this address again"). Only do this when you know why it got there, such as a typo fixed or a shop that asked to be put back on.
 
-The list blocks **all** email to that address, not just outreach: a button-press email to a listed address fails with "That address has unsubscribed or bounced." If the list itself can't be read, the site sends anyway rather than silently dropping a whole run.
+When you press a button that sends to a listed address, it fails with "That address has opted out of marketing email, or bounced." (for marketing mail) or "That address bounced or was blocked, so nothing can be sent to it." (for account and other mail to an all email address). If the list itself can't be read, the site sends anyway rather than silently dropping a whole run.
 
-**Known issue:** the address search on this page only searches the message list. To check whether a specific address is on Do not email when it isn't in the newest 50, look in Supabase.
+**Known issue:** the address search on this page only searches the message list. To check whether a specific address is on Do not email when it isn't in the newest 50, look in Supabase (the email_suppressions table).
 
 ## What alerts will I get by email?
 The email health job (/api/cron/email-health; the page footer says it runs every six hours) writes to support@undergroundaquarium.com only when something is wrong:
@@ -145,7 +155,11 @@ Replies to any email go to support@undergroundaquarium.com unless a campaign set
 
 **Bulk mail sits in Waiting forever.** Bulk is paused, the daily cap is reached (rows show "Waiting until" tomorrow 9:00), or `RESEND_FROM_BULK` is missing.
 
-**"Send me a test" says the address has unsubscribed or bounced.** Your own address is on Do not email. Remove it with the X.
+**"Send me a test" says "That address bounced or was blocked, so nothing can be sent to it."** Your own address is on Do not email as all email. Remove it with the X. (A marketing only entry doesn't block the test, because the test is ordinary mail.)
+
+**A member unsubscribed from outreach but still gets message alerts.** Expected. An unsubscribe only stops marketing and outreach. To stop everything, add the address by hand, which blocks all email.
+
+**Rows show "Not sent · on the do-not-email list".** The address was listed after the mail was queued. Nothing to fix unless the listing was a mistake; then remove the address and queue the mail again.
 
 **Nothing under "What mailboxes did with it".** The Resend webhook isn't pointed at /api/webhooks/resend, or `RESEND_WEBHOOK_SECRET` doesn't match.
 

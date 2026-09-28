@@ -1,7 +1,7 @@
 ---
 title: Running the Society admin page
 category: The Society
-summary: The Society's officer page: who can open it, the member roster and every column, roles and officer titles, adding and removing members, honorary lifetime, settings, and the leftover Delete club section.
+summary: The Society's officer page: who can open it, the member roster and every column, roles and officer titles, adding and removing members, honorary lifetime, settings, and why there is no Delete club section.
 order: 10
 keywords: society admin, club admin, roster, members list, officers, roles, owner, admin, officer, officer title, president, treasurer, add member, remove member, honorary, lifetime, club settings, logo, delete club, member status, prospect, lapsed
 pages: /c/[slug]/admin, /c/[slug], /society, /society/home
@@ -32,7 +32,6 @@ The page is titled **Club admin**, with a back link to the Society's name.
    - **Member requests** ("Applications awaiting your approval"), only when applications are waiting, with a count badge. See [Society applications and invites](/admin/help/society-applications-and-invites).
    - **Dues & payouts**. See [Society dues admin](/admin/help/society-dues-admin).
    - **Breeder Award Program** ("Submissions and species point list"). See [Society judging and appeals](/admin/help/society-judging-and-appeals).
-   - **Delete club** ("Permanently remove this club"). Owner only.
 
 ## How do I read the roster?
 Under **Members** the intro reads: "Add members, set their plan, role, and status, or remove them. Search by name, username, email, or phone. The owner row is locked. Dues are paid online, each member's row shows whether they're paid, owe, or are covered."
@@ -60,7 +59,7 @@ Changing status by hand doesn't change the paid-through date, and the member are
 ## How do roles and officer titles work?
 Roles decide what someone can do:
 
-- **owner**: one person, locked. The only role that sees **Delete club**.
+- **owner**: one person, locked.
 - **admin**: everything an officer can do, plus **Club settings**, the logo and Stripe payout setup.
 - **officer**: the roster, applications, dues requests, honorary grants, the species point list and the Society events page.
 - **member**: no officer tools.
@@ -104,12 +103,12 @@ The roster shows name, @username, email and phone. An applicant's full applicati
 
 **Known issue:** once an applicant is approved, only their phone shows on the roster. Their address and other application answers are still stored (in the club member details table) but no screen shows them. Look them up in Supabase if you need a mailing address.
 
-Members can change their own roster name and contact email under **Your details** on the Society page (/c/underground-aquarium-society?manage=1).
+Members can change their own roster name and contact email under **Your details** on the Society page (/c/underground-aquarium-society?manage=1). They reach it from **Membership settings** at the bottom of the member area menu, or from "Update your details or leave the Society" under their member card on the Overview.
 
 ## How do I remove a member?
 Press the trash can on their row and confirm "Remove [name] from the club?". Their roster row is deleted outright and they lose access to the member area. No email is sent. Their dues payment history is kept.
 
-Members can leave on their own with **Leave the Society** on the Society page; see [Leaving the Society](/help/leaving-the-society).
+Members can leave on their own with **Leave the Society** on the same manage page. It asks "Leave Underground Aquarium Society? You can apply to join again any time." and then sends them to /society. See [Leaving the Society](/help/leaving-the-society).
 
 ## What's in Club settings?
 Owners and admins can open **Club settings**:
@@ -127,10 +126,8 @@ Changing the name changes it everywhere, including emails and new certificates.
 ## What does the "In review" badge on Club settings mean?
 It shows when **Public club** is on but the club's approved flag is off. The settings then say "Pending review, your club won't appear in the public directory until an admin approves it." This comes from the old multi-club directory, which has been retired (every /clubs address now goes to /society). There's no screen to approve a club. If you want the badge gone, set approved to true on the Society's row in the clubs table in Supabase.
 
-## What is the Delete club section?
-It's left over from when members could run their own clubs. Only the owner sees it. It says "Deleting the club removes all members, invites, and dues records. This can't be undone." Pressing **Delete club** asks you to type the club name, and on a match deletes the Society completely: roster, invites and dues history. A wrong name shows "Name didn't match, nothing was deleted."
-
-**Known issue:** on the Society this would wipe out the whole Society. Never use it. There's no need for it now that there's only one Society.
+## Is there a Delete club section?
+No. The Society's officer page no longer has a Delete club tile, even for the owner. The database also refuses to delete the Society, whoever asks: any attempt fails with "The Underground Aquarium Society cannot be deleted." and nothing is removed. That guard is part A of step58_fixes.sql (in the sql folder), which must be run once in the Supabase SQL Editor.
 
 ## Common problems
 **"Officers only" when I'm a site admin.** Your Society role isn't owner, admin or officer. Fix your row in the club members table in Supabase.

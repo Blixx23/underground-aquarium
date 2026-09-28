@@ -1,11 +1,17 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CalendarClock, ArrowRight } from "lucide-react";
 import { getSocietyContext } from "@/lib/society/membership";
 import { createClient } from "@/lib/supabase/server";
 import SocietyNav from "@/components/society/SocietyNav";
 import { titleForPoints } from "@/lib/awards/titles";
 import { SOCIETY_PATH, SOCIETY_CLUB_PATH } from "@/lib/config";
+import {
+  SOCIETY_RENEW_PATH,
+  daysUntilPaidThrough,
+  renewalState,
+  formatPaidThrough,
+} from "@/lib/society/renewal";
 
 // Everything here depends on who's asking, so none of it can be static.
 export const dynamic = "force-dynamic";
@@ -53,6 +59,8 @@ export default async function SocietyMemberLayout({
 
   // Dues lapsed: the whole member area waits behind renewal, records and
   // certificates included. Officers and lifetime members are always in.
+  // The membership page tells them when it lapsed and has the Pay button,
+  // so lapsed members never see this layout at all.
   // (Public certificate verification at /verify is unaffected.)
   const { data: goodStanding } = await supabase.rpc("is_in_good_standing", {
     p_club_id: ctx.society.id,
@@ -106,24 +114,37 @@ export default async function SocietyMemberLayout({
     judgeQueue = ((jq as unknown[] | null) ?? []).length;
   }
 
-  const lapsed =
-    ctx.membership?.paid_through !== null &&
-    ctx.membership?.paid_through !== undefined &&
-    new Date(ctx.membership.paid_through + "T00:00:00") < new Date() &&
-    ctx.membership?.tier !== "lifetime";
+  // In the last 30 days before the paid-through date, a notice on every
+  // member page with a way to renew early. Owners and lifetime members
+  // never pay, so they never see it.
+  const paidThrough = ctx.membership?.paid_through ?? null;
+  const expiringSoon =
+    paidThrough !== null &&
+    renewalState(paidThrough) === "expiring" &&
+    ctx.membership?.tier !== "lifetime" &&
+    ctx.membership?.role !== "owner" &&
+    (ctx.society.dues_amount_cents ?? 0) > 0;
+  const daysLeft = daysUntilPaidThrough(paidThrough) ?? 0;
 
   return (
     <main className="min-h-screen px-6 pb-24 pt-24 sm:pt-28">
       <div className="mx-auto max-w-7xl">
-        {lapsed && (
-          <Link
-            href="/society/home"
-            className="mb-6 flex items-center gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm text-amber-200 transition-colors hover:border-amber-400/70"
-          >
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" />
-            Your dues have lapsed. Your records are safe — renew to keep
-            submitting.
-          </Link>
+        {expiringSoon && paidThrough && (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm text-amber-200">
+            <CalendarClock className="h-4 w-4 shrink-0 text-amber-300" />
+            <span className="min-w-0 flex-1">
+              {daysLeft === 0
+                ? "Your membership expires today."
+                : `Your membership expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"}, on ${formatPaidThrough(paidThrough)}.`}{" "}
+              Renewing early adds a full year on top, so you don&apos;t lose any days.
+            </span>
+            <Link
+              href={SOCIETY_RENEW_PATH}
+              className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-medium text-ocean-950 transition-colors hover:bg-amber-400"
+            >
+              Renew now <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         )}
 
         <div className="lg:grid lg:grid-cols-[248px_minmax(0,1fr)] lg:gap-10">

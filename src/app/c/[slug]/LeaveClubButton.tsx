@@ -4,15 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { SOCIETY_PATH } from "@/lib/config";
 
 export default function LeaveClubButton({
   clubId,
   clubName,
-  label = "Leave this club",
+  label = "Leave the Society",
+  withdrawing = false,
 }: {
   clubId: string;
   clubName: string;
   label?: string;
+  /** True for a pending applicant pulling their application. */
+  withdrawing?: boolean;
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -20,8 +24,12 @@ export default function LeaveClubButton({
   const [error, setError] = useState<string | null>(null);
 
   async function leave() {
-    if (!confirm(`Leave ${clubName}? You can re-join later if you're invited again.`))
-      return;
+    // Membership is open to anyone, so leaving (or withdrawing) is never
+    // permanent: they can apply again from the Society page any time.
+    const question = withdrawing
+      ? `Withdraw your application to ${clubName}? You can apply again any time.`
+      : `Leave ${clubName}? You can apply to join again any time.`;
+    if (!confirm(question)) return;
     setError(null);
     setBusy(true);
     try {
@@ -29,10 +37,16 @@ export default function LeaveClubButton({
         p_club: clubId,
       });
       if (rpcErr) throw rpcErr;
-      router.push("/clubs");
+      router.push(SOCIETY_PATH);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't leave the club.");
+      // Supabase errors are plain objects, not Error instances.
+      const e = err as { message?: string; details?: string } | null;
+      setError(
+        e?.message ||
+          e?.details ||
+          (withdrawing ? "Couldn't withdraw your application." : "Couldn't leave the Society.")
+      );
       setBusy(false);
     }
   }

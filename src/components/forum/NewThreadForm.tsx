@@ -6,47 +6,17 @@ import Link from "next/link";
 import { Loader2, PenLine, ImagePlus, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { goToLogin, takeDraft } from "@/lib/loginRedirect";
+import { isImageFile, prepareImage, uploadExtension } from "@/lib/images/prepareImage";
+import {
+  MAX_OPENER,
+  MAX_TITLE,
+  MIN_TITLE,
+  tooLongMessage,
+} from "@/lib/forum/limits";
+import CharCounter from "@/components/forum/CharCounter";
 
 const MAX_PHOTOS = 4;
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // input cap; resized/compressed below
-const MAX_DIM = 1920; // longest edge after resize
-
-// Resize + compress in the browser before upload (mirrors the tank pipeline).
-async function compressImage(file: File): Promise<Blob> {
-  const dataUrl: string = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error("read failed"));
-    reader.readAsDataURL(file);
-  });
-
-  const img: HTMLImageElement = await new Promise((resolve, reject) => {
-    const im = new Image();
-    im.onload = () => resolve(im);
-    im.onerror = () => reject(new Error("decode failed"));
-    im.src = dataUrl;
-  });
-
-  let { width, height } = img;
-  if (width > MAX_DIM || height > MAX_DIM) {
-    const scale = Math.min(MAX_DIM / width, MAX_DIM / height);
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-  }
-
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("no canvas context");
-  ctx.drawImage(img, 0, 0, width, height);
-
-  const blob: Blob | null = await new Promise((resolve) =>
-    canvas.toBlob((b) => resolve(b), "image/jpeg", 0.82)
-  );
-  if (!blob) throw new Error("encode failed");
-  return blob;
-}
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // checked before converting and shrinking
 
 export default function NewThreadForm({
   category: initialCategory = "",
@@ -99,7 +69,7 @@ export default function NewThreadForm({
           setPhotoMsg(`Up to ${MAX_PHOTOS} photos per post.`);
           break;
         }
-        if (!file.type.startsWith("image/")) {
+        if (!isImageFile(file)) {
           setPhotoMsg("Images only, please.");
           continue;
         }
@@ -108,23 +78,27 @@ export default function NewThreadForm({
           continue;
         }
 
-        let blob: Blob = file;
-        let ext = "jpg";
-        let contentType = "image/jpeg";
+        // The same converter the feed uses: turns iPhone HEIC photos into
+        // JPEGs (even in Chrome and Firefox, via our server) and shrinks big
+        // photos. Uploading a raw HEIC is what used to show up blank.
+        let ready: File;
         try {
-          blob = await compressImage(file);
-        } catch {
-          blob = file;
-          ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-          contentType = file.type || "image/jpeg";
+          ready = await prepareImage(file);
+        } catch (err) {
+          setPhotoMsg(
+            err instanceof Error && err.message
+              ? err.message
+              : "That photo couldn't be read. Try a different one."
+          );
+          continue;
         }
 
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const path = `${user.id}/${crypto.randomUUID()}.${uploadExtension(ready)}`;
         const { error: upErr } = await supabase.storage
           .from("forum-images")
-          .upload(path, blob, { contentType });
+          .upload(path, ready, { contentType: ready.type || "image/jpeg" });
         if (upErr) {
-          setPhotoMsg("A photo failed to upload — try again.");
+          setPhotoMsg("A photo failed to upload. Try again.");
           continue;
         }
         const { data } = supabase.storage
@@ -148,14 +122,22 @@ export default function NewThreadForm({
       try {
         await supabase.storage.from("forum-images").remove([path]);
       } catch {
-        // ignore — orphaned file is harmless
+        // ignore, an orphaned file is harmless
       }
     }
   }
 
   async function submit() {
-    if (title.trim().length < 3) {
-      setError("Give your post a title (at least 3 characters).");
+    if (title.trim().length < MIN_TITLE) {
+      setError(`Give your post a title (at least ${MIN_TITLE} characters).`);
+      return;
+    }
+    if (title.trim().length > MAX_TITLE) {
+      setError(tooLongMessage("The title", title.trim().length, MAX_TITLE));
+      return;
+    }
+    if (body.trim().length > MAX_OPENER) {
+      setError(tooLongMessage("Your post", body.trim().length, MAX_OPENER));
       return;
     }
     if (!category) {
@@ -226,16 +208,23 @@ export default function NewThreadForm({
         </div>
       )}
 
-      <label className="block text-xs text-ocean-400 mb-1">Title</label>
+      {/* No maxLength here on purpose: it silently chops pasted text. The
+          counter shows the limit instead, and Post explains if it's over. */}
+      <div className="flex items-baseline justify-between mb-1">
+        <label className="block text-xs text-ocean-400">Title</label>
+        <CharCounter length={title.trim().length} max={MAX_TITLE} />
+      </div>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="What's your question or topic?"
-        maxLength={160}
         className={`${inputClass} mb-4`}
       />
 
-      <label className="block text-xs text-ocean-400 mb-1">Body</label>
+      <div className="flex items-baseline justify-between mb-1">
+        <label className="block text-xs text-ocean-400">Body</label>
+        <CharCounter length={body.trim().length} max={MAX_OPENER} />
+      </div>
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
@@ -278,7 +267,7 @@ export default function NewThreadForm({
             )}
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,image/heic,image/heif,.heic,.heif,.HEIC,.HEIF"
               multiple
               onChange={handleFiles}
               disabled={uploading}

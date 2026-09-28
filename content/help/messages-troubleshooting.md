@@ -74,7 +74,7 @@ The badge and inbox can disagree for a moment right after you read or send a mes
 ## I'm not getting emails about new messages
 - Check spam, junk and promotions folders.
 - Make sure the email on your account is the one you're checking. See [Your dashboard and settings](/help/your-dashboard-and-settings).
-- If you ever used an unsubscribe link in one of our emails, or emails to your address bounced before, we stop emailing that address, including message emails. Email support@undergroundaquarium.com to turn them back on.
+- Using an unsubscribe link doesn't stop message emails; it only stops marketing and outreach. But if emails to your address bounced before, or the address was blocked, we stop emailing it entirely, including message emails. Email support@undergroundaquarium.com to turn them back on.
 
 Your inbox and chat bubble always show new messages, even when an email doesn't arrive. See [Message notifications](/help/message-notifications).
 

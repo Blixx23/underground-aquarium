@@ -17,12 +17,23 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as EmailOtpType | null;
   const next = safeNext(searchParams.get("next"), "/feed");
 
+  // A suspended (banned) member who tries "Continue with Google" is sent
+  // back here by Supabase with an error instead of a code. Show them the
+  // suspension page rather than a vague "link didn't work".
+  const authError = `${searchParams.get("error_code") ?? ""} ${searchParams.get("error_description") ?? ""}`;
+  if (/banned/i.test(authError)) {
+    redirect("/account-suspended");
+  }
+
   const supabase = await createClient();
 
   let ok = false;
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     ok = !error;
+    if (error && /banned/i.test(`${error.code ?? ""} ${error.message}`)) {
+      redirect("/account-suspended");
+    }
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     ok = !error;
@@ -39,9 +50,20 @@ export async function GET(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("needs_username")
+      .select("needs_username, deleted_at, suspended_at")
       .eq("id", user.id)
       .maybeSingle();
+    // Suspended before sign-in was blocked at the auth level (older
+    // suspensions only set suspended_at). Don't leave them signed in.
+    if (profile?.suspended_at) {
+      await supabase.auth.signOut();
+      redirect("/account-suspended");
+    }
+    // Same check the email and password login does: an account waiting to
+    // be deleted goes to the page where it can be reactivated.
+    if (profile?.deleted_at) {
+      redirect("/account/deletion-pending");
+    }
     if (profile?.needs_username) {
       redirect(`/welcome?next=${encodeURIComponent(next)}`);
     }

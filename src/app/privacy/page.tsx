@@ -16,15 +16,15 @@ export default function PrivacyPage() {
         <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
           Privacy Policy
         </h1>
-        <p className="text-ocean-400 text-sm mb-10">Last updated: June 20, 2026</p>
+        <p className="text-ocean-400 text-sm mb-10">Last updated: September 27, 2026</p>
 
         <div className="space-y-8 text-ocean-200 leading-relaxed">
           <section className="space-y-3">
             <p>
               This Privacy Policy explains how Underground Aquarium
               (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) collects,
-              uses, and shares information when you use our website, marketplace,
-              and community features (the &ldquo;Service&rdquo;). By using the
+              uses, and shares information when you use our website, free
+              classifieds, and community features (the &ldquo;Service&rdquo;). By using the
               Service, you agree to this policy and to our{" "}
               <Link href="/terms" className="text-white hover:underline">
                 Terms of Service
@@ -53,9 +53,17 @@ export default function PrivacyPage() {
               you create an account we collect your email, username, and password
               (passwords are stored in hashed form by our authentication
               provider). You may add profile details such as a display name, bio,
-              location, and website. We also collect the content you create —
+              location, and website. We also collect the content you create:
               listings and photos, tanks, reviews, Society records, forum posts,
               and messages.
+            </p>
+            <p>
+              <span className="text-white">Signing in with Google.</span> If
+              you choose &ldquo;Continue with Google,&rdquo; Google shares your
+              name, email address, and profile photo with us so we can create
+              or sign in to your account. We never see your Google password.
+              If you sign up with an email and password instead, Google is not
+              involved.
             </p>
             <p>
               <span className="text-white">Listing information.</span> When you
@@ -68,7 +76,7 @@ export default function PrivacyPage() {
             <p>
               <span className="text-white">Payment information.</span> We do not
               process payments for listings and never see your card details.
-              Deals are settled directly between the two people involved. If a
+              Deals are settled directly between the two people involved. If
               you pay Society dues, that payment is handled by Stripe under
               their own privacy policy, and we do not store your full card
               number.
@@ -92,6 +100,13 @@ export default function PrivacyPage() {
               and browser type, IP address, and basic usage logs, and we use
               cookies needed to keep you signed in.
             </p>
+            <p>
+              <span className="text-white">Page statistics.</span> We use
+              Vercel Analytics to count page visits so we can see which parts
+              of the site people use. These statistics are anonymous: they do
+              not use cookies, and they are not tied to your account or used to
+              follow you around other websites.
+            </p>
           </section>
 
           <section className="space-y-3">
@@ -105,12 +120,12 @@ export default function PrivacyPage() {
                 deliver messages between members about a listing;
               </li>
               <li>
-                send transactional messages such as order updates and account
-                notices;
+                send account and service messages, such as sign-in links,
+                replies to your listings, and Society membership notices;
               </li>
               <li>run community features like profiles, the Society, and events;</li>
               <li>
-                keep the Service safe — detecting and preventing fraud, abuse, and
+                keep the Service safe by detecting and preventing fraud, abuse, and
                 violations of our Terms; and
               </li>
               <li>comply with legal obligations.</li>
@@ -125,16 +140,19 @@ export default function PrivacyPage() {
               <span className="text-white">Service providers.</span> We share data
               with the providers that run our platform, only as needed to operate
               the Service: Supabase (database, accounts, and storage), Resend
-              (email delivery), Vercel (hosting), OpenStreetMap&apos;s Nominatim
-              (geocoding), and Stripe, used only where the Society collects its own
-              dues.
+              (email delivery), Vercel (hosting and anonymous page statistics),
+              OpenStreetMap&apos;s Nominatim (geocoding), Google (only when you
+              choose to sign in with Google), and Stripe (Society dues
+              payments).
             </p>
             <p>
               <span className="text-white">Other users.</span> Some information is
-              public by design — your profile, listings, storefront, and
-              community posts can be seen by others. To complete a sale, the
-              information needed to fulfill the order (such as a shipping address)
-              is shared with the seller.
+              public by design: your profile, listings, store pages, and
+              community posts can be seen by others. When you message someone
+              about a listing, they see your username and what you write.
+              Classifieds have no checkout, so we never pass a shipping address
+              to anyone. Any details you share to arrange a pickup are up to
+              you.
             </p>
             <p>
               <span className="text-white">Legal and safety.</span> We may
@@ -160,9 +178,10 @@ export default function PrivacyPage() {
             </h2>
             <p>
               We use cookies that are necessary to sign you in and keep your
-              session active. We do not currently use advertising cookies. If we
-              add analytics or other non-essential cookies in the future, we will
-              update this policy and provide choices where required.
+              session active. We do not use advertising cookies, and our page
+              statistics (Vercel Analytics) work without cookies. If we ever add
+              non-essential cookies, we will update this policy and provide
+              choices where required.
             </p>
           </section>
 
@@ -172,8 +191,8 @@ export default function PrivacyPage() {
             </h2>
             <p>
               We keep your information for as long as your account is active and
-              as needed to provide the Service. We may retain certain records —
-              such as Society dues records — for longer when needed
+              as needed to provide the Service. We may retain certain records,
+              such as Society dues records, for longer when needed
               for legal, tax, accounting, or fraud-prevention purposes, even after
               a listing or account is removed.
             </p>
@@ -188,7 +207,7 @@ export default function PrivacyPage() {
               settings, and you can request to access, correct, delete, or receive
               a copy of your personal information by emailing us. Depending on
               where you live, you may have additional rights under laws such as the
-              California Consumer Privacy Act — including the right to know what we
+              California Consumer Privacy Act, including the right to know what we
               collect, to delete it, to correct it, and not to be discriminated
               against for exercising your rights. We will verify and respond to
               requests as the law requires.

@@ -1,9 +1,9 @@
 ---
 title: Replying in the forums
 category: Community
-summary: Comment on a forum thread or reply to a specific comment, how nesting and order work, reply notifications, locked threads, limits and error messages.
+summary: Comment on a forum thread or reply to a specific comment, how nesting and order work, editing and deleting, reply notifications, limits and errors.
 order: 30
-keywords: reply, comment, answer, respond, nested reply, threaded replies, quote, new reply notification, reply to comment, forum reply, locked thread, can't reply
+keywords: reply, comment, answer, respond, nested reply, threaded replies, quote, new reply notification, reply to comment, forum reply, locked thread, can't reply, edit reply, delete reply, edit comment, character limit
 pages: /forums/[category]/[thread], /forums/unanswered, /notifications
 ---
 
@@ -12,7 +12,7 @@ Replies are how the forums work: someone asks, someone answers. You can comment 
 ## How do I comment on a thread?
 1. Open the thread.
 2. Under the opening post, find the **Add a comment…** box. It sits just above the list of comments.
-3. Type your comment. The note **Markdown supported** under the box means you can use formatting (see [Formatting your posts](/help/formatting-your-posts)).
+3. Type your comment. The note **Markdown supported** under the box means you can use formatting (see [Formatting your posts](/help/formatting-your-posts)). A counter on the right shows your length, like "250 / 10,000".
 4. Tap **Comment**.
 
 The page refreshes and your comment appears in the thread. The comment count at the top of the comments goes up by one.
@@ -48,7 +48,7 @@ There's no way to follow or subscribe to someone else's thread. To keep track of
 Not as an upload. Only the opening post of a thread can have uploaded photos (up to 4, added when the thread is started). In a comment you can show an image that's already online by using Markdown image syntax: `![short description](image address)`. See [Formatting your posts](/help/formatting-your-posts).
 
 ## How long can a reply be?
-Replies can be very long, but anything past 10,000 characters is cut off when you post. An empty reply can't be posted.
+Up to 10,000 characters. A live counter beside the box shows how many you've used, like "9,500 / 10,000". It turns amber as you get close and red once you're over, with how many characters over. Nothing is cut off: if you're over, tapping the button shows "Your reply is [number] characters. The limit is 10,000, so please shorten it by [number]." and your text stays in the box. An empty reply can't be posted.
 
 ## Why can't I reply to a thread?
 - **You see "This thread is locked."** Our team has closed the thread. The comment box and all **Reply** links are removed. You can still read and vote.
@@ -57,12 +57,21 @@ Replies can be very long, but anything past 10,000 characters is cut off when yo
 
 ## What do the reply error messages mean?
 - **Write something first.** The box is empty. Type your reply and try again.
+- **Your reply is [number] characters. The limit is 10,000, so please shorten it by [number].** Shorten your reply by that many characters, or split it into two replies.
 - **This thread is locked.** The thread was locked while you were writing. Your reply can't be posted there.
 - **Thread not found.** The thread was removed or hidden while you had it open. Go back to the section.
 - **Couldn't post.** A connection problem or a problem on our end. Your text stays in the box; wait a moment and tap the button again.
 
 ## Can I edit or delete a reply?
-Not at the moment. Forum comments and replies can't be edited or deleted once they're posted. If you got something wrong, post a follow-up reply with the correction. If a comment needs to be removed (for example you shared personal details by mistake), email support@undergroundaquarium.com with a link to the thread and say which comment.
+Yes, your own. Under each of your comments and replies you'll see **Edit** and **Delete**.
+
+**Editing:** tap **Edit**, change the text (up to 10,000 characters, with the live counter) and tap **Save**, or **Cancel** to back out. An edited comment shows a small "(edited)" label next to the time; hover over it on a computer to see when it was edited.
+
+**Deleting:** tap **Delete** and confirm "Delete this reply? This can't be undone." It's replaced by "Reply deleted." and stops showing. The comment count goes down to match. Replies other people wrote under it stay up and move up a level on the page.
+
+**Locked threads:** once a thread is locked, only our team can edit posts in it. You can still delete your own replies.
+
+Our team can also edit or delete any comment. If you want something of someone else's removed, report it (see below).
 
 ## How do I link someone to a specific comment?
 Every comment has its own anchor in the page, which is what reply notifications use to scroll to it. There's no **Copy link** button for a single comment, so the simplest way is to share the thread link and say whose comment you mean.
@@ -71,6 +80,8 @@ Every comment has its own anchor in the page, which is what reply notifications 
 Your first forum post of any kind earns bubbles, and so does reaching 10, 50 and 100 forum posts (your thread openers and replies both count). Upvotes other members give your comments also count toward your bubbles. See [Bubbles](/help/bubbles).
 
 ## Common problems
+**I don't see Edit or Delete.** They only show under your own posts, when you're signed in. In a locked thread, **Edit** is hidden for everyone except our team, but **Delete** still shows on your own posts.
+
 **My reply disappeared after I signed in.** Saved replies only come back in the same browser tab you started in. If you signed in in a new tab or a different browser, the draft stays behind in the old tab.
 
 **I replied but the person didn't get notified.** Only the person you directly answered is notified: the thread author for a top-level comment, or the comment author for a nested reply. If they've switched off **Forum replies** in their settings, they won't see a notification.

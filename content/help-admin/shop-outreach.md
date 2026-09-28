@@ -25,7 +25,7 @@ It's written to look like a letter, not an advert, because Gmail sorts mail into
 - a small wordmark and a rule at the top,
 - the step's text, in plain paragraphs, with bare web addresses turned into links,
 - an optional closing link (underlined, never a filled button) with its address underneath,
-- a footer: "You're getting this because your shop is listed in our free directory.", "**Unsubscribe** and I won't email you again." and the postal address.
+- a footer: "You're getting this because your shop is listed in our free directory.", "**Unsubscribe** to stop these emails." and the postal address.
 
 The inbox preview line is the first real sentence of the email. The text can include true facts about the shop (views in the last month, reviews, sightings, what's missing from the page) through the placeholders; the code only uses figures from the shop's own page.
 
@@ -41,11 +41,13 @@ The older `{{claim_url}}` placeholder links to /stores/[slug]#claim instead, whi
 ## How does the unsubscribe link work?
 Every bulk email carries a personal unsubscribe link (/api/email/unsubscribe with the address and a signature) in the footer, plus one-click unsubscribe headers that Gmail and Yahoo use for their own **Unsubscribe** button.
 
-- **Clicking the footer link** opens a plain page: "You're unsubscribed. We won't email [address] again." No sign-in, no confirmation step.
+- **Clicking the footer link** opens a plain page: "You're unsubscribed. [address] won't get any more marketing or outreach emails from Underground Aquarium. If you have an account, emails about your account and your messages will still arrive." No sign-in, no confirmation step.
 - **Gmail or Yahoo's own button** posts to the same address in the background.
 - **A broken or tampered link** shows "That link didn't work" and asks them to email support@undergroundaquarium.com to be taken off by hand.
 
-Either way the site does the same thing as the admin **Remove** button (below), without hiding the page, and sends one "You've been unsubscribed" confirmation, but only the first time, so clicking twice doesn't send two. If anything goes wrong partway, the address still goes on the Do not email list.
+Either way the site does the same thing as the admin **Remove** button (below), without hiding the page, and sends one "You've been unsubscribed" confirmation, but only the first time, so clicking twice doesn't send two. If anything goes wrong partway, the address still goes on the Do not email list (as marketing only).
+
+The footer says "**Unsubscribe** to stop these emails." An unsubscribe stops outreach and campaigns only; if the same address belongs to a member account, their account and message emails keep coming.
 
 Unsubscribe links are signed with `CRON_SECRET`. **If that secret changes, every unsubscribe link already emailed stops working** and shows "That link didn't work", which also risks spam complaints. Don't rotate it casually.
 
@@ -63,26 +65,28 @@ The policy and the hide option are covered in [Shop visibility and removal reque
 ## What exactly does Remove do?
 For the address, or every address at the domain, that matches a shop contact or campaign enrollment:
 
-1. Adds each address to the Do not email list as "Unsubscribed" with the reason "Asked by reply to be removed from outreach".
+1. Adds each address to the Do not email list as "Unsubscribed" (tagged marketing only) with the reason "Asked by reply to be removed from outreach". An address that had already bounced stays blocked for all email.
 2. Marks the shop's contact as opted out, so no campaign ever re-enrolls it.
 3. Stops every active campaign enrollment for those addresses.
 4. Cancels any bulk email for those addresses still waiting in the queue (it stays in the ledger as failed, "Removed from outreach at their request").
 5. If **Also hide their page** was ticked, hides unclaimed shown shops among them. Claimed shops are never hidden.
-6. If **Send them a confirmation email** was ticked, sends "You've been unsubscribed" to up to 5 of the addresses. It reads: "This is Chris from Underground Aquarium. You've been unsubscribed and won't get any more emails from us." signed Chris Lewis. It goes even while email is paused.
+6. If **Send them a confirmation email** was ticked, sends "You've been unsubscribed" to up to 5 of the addresses. It reads: "This is Chris from Underground Aquarium. You've been unsubscribed from our marketing and outreach emails, and you won't get any more of them." and "If you have an account with us, emails about your account and your messages will still arrive." signed Chris Lewis. It goes even while email is paused.
 
 ## What does the confirmation email not do?
-It doesn't mention the shop page, doesn't offer to claim, and doesn't carry an unsubscribe link. It's the one message allowed to an address that was just put on Do not email.
+It doesn't mention the shop page, doesn't offer to claim, and doesn't carry an unsubscribe link. It isn't marketing, so the unsubscribe doesn't stop it; an address that bounced still gets nothing.
 
 ## Does unsubscribing stop every email to that address?
-Yes. The Do not email list blocks every email the site tries to send to that address, not just outreach. If a shop that unsubscribed later claims its page using the same address, its approval and shop alert emails will be blocked too.
+No. An unsubscribe (or a spam complaint) stops marketing and outreach only: every campaign and any shop outreach. Account emails, message alerts, Society dues reminders and shop alert emails still go to that address. So a shop that unsubscribed and later claims its page with the same address still gets its shop alerts.
 
-To fix that, use **Bring back** in the Remove from outreach box (it takes the shop's addresses off Do not email, unhides its page and gives you a claim link to send), or remove the single address with the **X** on the [Email](/admin/email) page's Do not email list. Outreach stays off either way.
+What does stop every email: a hard bounce, an address Resend says doesn't work, or an address you added to Do not email by hand. See [Email queue and health](/admin/help/email-queue-and-health#what-is-the-do-not-email-list).
+
+To take a shop's addresses off Do not email (for example to send a claim link as outreach mail), use **Bring back** in the Remove from outreach box (it takes the shop's addresses off Do not email, unhides its page and gives you a claim link to send), or remove the single address with the **X** on the [Email](/admin/email) page's Do not email list. Outreach stays off either way.
 
 ## Why are some shop emails never sent?
 The queue skips or blocks mail when:
 
 - the address fails basic checks (spaces, no @, a placeholder domain such as example.com, over 254 characters),
-- the address is on Do not email,
+- the address is on Do not email (outreach is marketing, so both marketing only and all email entries block it),
 - bulk mail is paused, or the daily cap is used up (it waits for the next day),
 - `RESEND_FROM_BULK` isn't set (it keeps retrying until it is).
 
@@ -93,6 +97,6 @@ The queue skips or blocks mail when:
 
 **A shop wants to claim after unsubscribing.** Press **Bring back** and send them the copied claim link.
 
-**A bounce or spam complaint came in.** The address goes on Do not email automatically (via the Resend webhook) and the shop drops out of the campaign on the next run. **Known issue:** a bulk email already waiting in the queue for that address is not cancelled and will still be sent. Cancel it on the Email page's Waiting tab.
+**A bounce or spam complaint came in.** The address goes on Do not email automatically (via the Resend webhook): a hard bounce as all email, a complaint as marketing only. The shop drops out of the campaign on the next run. A bulk email already waiting in the queue for that address isn't sent: the worker re-checks the list and marks it "Not sent · on the do-not-email list".
 
 **I want to email one shop personally.** Write from support@undergroundaquarium.com as normal. Outreach has no one-off send; use a campaign test only for checking the template.

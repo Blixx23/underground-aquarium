@@ -53,8 +53,8 @@ Check spam and other folders, and wait a few minutes. Make sure the address on t
 **"Email not confirmed" when I try to log in.**
 You haven't clicked the link yet. Find the email and click it, then log in again.
 
-**The link took me to the Log in page with no message.**
-The link couldn't sign you in, usually because it was already used, it had expired, or you opened it in a different browser than the one you signed up in. The page doesn't say why. Try logging in with your email and password. If it says "Email not confirmed", email support@undergroundaquarium.com.
+**The link took me to the Log in page with a message at the top.**
+The link couldn't sign you in, usually because it was already used, it had expired, or you opened it in a different browser than the one you signed up in. The Log in page says so in an amber box, for example "We couldn't confirm that link. It may have expired or already been used. Log in below, or use "Forgot your password?" to get a fresh link." or "That sign-in link didn't work. It may have expired or already been used. Please try logging in again." Try logging in with your email and password. If it says "Email not confirmed", email support@undergroundaquarium.com.
 
 **My email program says the link looks suspicious or won't open it.**
 Some work and school mail systems scan or block links. Copy the link into your browser, or sign up again with a personal email address.

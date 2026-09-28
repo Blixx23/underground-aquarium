@@ -36,7 +36,7 @@ export default function ReportButton({ tankId }: { tankId: string }) {
   if (done) {
     return (
       <p className="text-xs text-ocean-500">
-        Thanks — this tank has been reported for review.
+        Thanks, this tank has been reported for review.
       </p>
     );
   }
@@ -67,7 +67,7 @@ export default function ReportButton({ tankId }: { tankId: string }) {
       />
       {error && (
         <p className="text-xs text-red-300 mb-2">
-          Couldn&apos;t submit — please try again.
+          Couldn&apos;t submit. Please try again.
         </p>
       )}
       <div className="flex gap-2">

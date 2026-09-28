@@ -33,12 +33,12 @@ Mentioning undergroundaquarium.com is fine.
 - **Online events:** tick **This is an online event** and put the meeting link in the separate **Event link (optional)** field. It shows on the event page as a **join link**. That field is the one place a link is allowed.
 
 ## Are events reviewed before they're public?
-- **Community events** (posted as yourself) are reviewed by our team before they appear on [Events](/events). Until then, the event page says "This event is pending review and isn't public yet."
+- **Community events** (posted as yourself) are reviewed by our team before they appear on [Events](/events). Until then, the event page says "This event is pending review and isn't public yet." When it's approved, it goes on the events page and you get a **Your event is live** notification.
 - **Shop events** posted by the verified manager of a published fish store listing publish right away.
 - **Society events** are posted by Society officers and publish right away.
 
 ## Why was my event not approved?
-The site doesn't send a notice when an event is declined. If your event hasn't appeared, email support@undergroundaquarium.com with the title and date and we'll let you know.
+If our team doesn't approve a community event, the event is deleted and you get an **Event not approved** notification: "[event] wasn't approved for the events page." It includes the reviewer's reason if they gave one; otherwise it points you to support@undergroundaquarium.com. If the reason is something you can fix, such as a rule on this page, you can post the event again. If you have questions, email support@undergroundaquarium.com with the title and date.
 
 ## Can I post the same event more than once?
 Post each date once. For a repeating meeting, post one event per date rather than several copies of the same one.

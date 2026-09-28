@@ -6,6 +6,10 @@ export const dynamic = "force-dynamic";
 
 const GRACE_DAYS = 30;
 
+// app_metadata key holding the tanks that were public before deletion.
+// Read back by /api/account/reactivate.
+const DELETION_HIDDEN_TANKS_KEY = "ua_deletion_public_tanks";
+
 export async function POST() {
   const supabase = await createClient();
   const {
@@ -22,7 +26,7 @@ export async function POST() {
     .eq("owner_id", user.id);
   const storeIds = (stores ?? []).map((s) => (s as { id: string }).id);
 
-  // Blocker 1 — orders still in progress (as buyer or seller).
+  // Blocker 1: orders still in progress (as buyer or seller).
   const { count: buyerInflight } = await supabaseAdmin
     .from("orders")
     .select("id", { count: "exact", head: true })
@@ -49,7 +53,7 @@ export async function POST() {
     );
   }
 
-  // Blocker 2 — clubs the user owns.
+  // Blocker 2: clubs the user owns.
   const { data: ownerRows } = await supabaseAdmin
     .from("club_members")
     .select("club_id")
@@ -66,7 +70,7 @@ export async function POST() {
     );
   }
 
-  // Soft delete — schedule purge and hide content immediately.
+  // Soft delete: schedule purge and hide content immediately.
   const now = new Date();
   const purgeAt = new Date(now.getTime() + GRACE_DAYS * 24 * 60 * 60 * 1000);
 
@@ -84,7 +88,17 @@ export async function POST() {
     );
   }
 
-  // Hide listings (archive) and public tanks right away.
+  // Take live classified ads down by marking them expired. That hides them
+  // from the marketplace right away, and if the member reactivates they can
+  // repost each one from My listings, exactly like an ad that ran out.
+  await supabaseAdmin
+    .from("listings")
+    .update({ status: "expired" })
+    .eq("user_id", user.id)
+    .eq("status", "active");
+
+  // Old paid-marketplace products (not shown anywhere any more, but archive
+  // them so nothing lingers if the paid side is ever switched back on).
   if (storeIds.length > 0) {
     await supabaseAdmin
       .from("products")
@@ -92,10 +106,31 @@ export async function POST() {
       .in("store_id", storeIds)
       .is("archived_at", null);
   }
+
+  // Make tanks private, but remember which ones were public so reactivating
+  // can switch exactly those back on. There is no column for this, so the
+  // ids go on the auth user's app_metadata, which only the server can write.
+  const { data: publicTanks } = await supabaseAdmin
+    .from("tanks")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("is_public", true);
+  const publicTankIds = (publicTanks ?? [])
+    .map((t) => (t as { id: string }).id)
+    .slice(0, 200);
   await supabaseAdmin
     .from("tanks")
     .update({ is_public: false })
     .eq("user_id", user.id);
+  const { error: metaErr } = await supabaseAdmin.auth.admin.updateUserById(
+    user.id,
+    { app_metadata: { [DELETION_HIDDEN_TANKS_KEY]: publicTankIds } }
+  );
+  if (metaErr) {
+    // Deletion is still scheduled. Only the tank undo list is missing, and
+    // the reactivation page tells the member to check their tanks.
+    console.error("account delete: couldn't save public tank list", metaErr.message);
+  }
 
   return NextResponse.json({
     ok: true,

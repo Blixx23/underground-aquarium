@@ -62,7 +62,7 @@ No. There's no way to mute a single conversation. Blocking the person stops them
 ## I'm not getting message emails
 - **Check spam, junk and promotions folders**, and add Underground Aquarium to your contacts or safe senders.
 - **Check the email address on your account** is the one you're checking. See [Your dashboard and settings](/help/your-dashboard-and-settings).
-- **If you ever used an unsubscribe link** in one of our emails, or if emails to your address bounced in the past, we stop emailing that address entirely, and that includes message emails. Email support@undergroundaquarium.com to get them turned back on.
+- **Unsubscribing doesn't stop message emails.** An unsubscribe link or a spam report only stops marketing and outreach. But if emails to your address bounced in the past, or the address was blocked, we stop emailing it entirely, and that includes message emails. Email support@undergroundaquarium.com to get them turned back on.
 - **Emails can occasionally be delayed.** Your inbox and chat bubble always show new messages, even if an email is late.
 
 ## Do I get an email for messages I send?

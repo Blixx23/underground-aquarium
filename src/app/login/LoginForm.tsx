@@ -8,7 +8,7 @@ import { nextFromLocation } from '@/lib/safeNext'
 import { useCarrySearch } from '@/lib/hooks/useCarrySearch'
 import GoogleButton from '@/components/auth/GoogleButton'
 
-export default function LoginForm() {
+export default function LoginForm({ notice = null }: { notice?: string | null }) {
   const router = useRouter()
   const carry = useCarrySearch()
   const supabase = createClient()
@@ -26,6 +26,12 @@ export default function LoginForm() {
     const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
+      // A suspended account is banned in Supabase Auth: explain it on its own
+      // page instead of showing Supabase's raw "User is banned" text.
+      if (error.code === 'user_banned' || /banned/i.test(error.message ?? '')) {
+        router.push('/account-suspended')
+        return
+      }
       setError(error.message)
       setLoading(false)
       return
@@ -56,6 +62,17 @@ export default function LoginForm() {
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
         <p className="mb-3 font-mono text-xs uppercase tracking-widest text-ocean-500">Welcome back</p>
         <h1 className="mb-6 font-display text-3xl text-white">Log in</h1>
+
+        {/* Why they were sent back here (an expired or broken link). Only
+            shown until they try again, so it doesn't sit next to a new error. */}
+        {notice && !error && !loading && (
+          <div
+            role="alert"
+            className="mb-5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-200"
+          >
+            {notice}
+          </div>
+        )}
 
         <GoogleButton />
 

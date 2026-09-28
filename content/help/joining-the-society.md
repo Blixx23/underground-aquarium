@@ -43,7 +43,7 @@ Your application goes to the Society officers for review. While you wait, [the m
 
 **Application received.** "We're reviewing it now. You'll get a notification the moment you're approved, and then you can pay dues and step into the member area."
 
-The site doesn't give a set review time. You don't need to do anything while you wait.
+The site doesn't give a set review time. You don't need to do anything while you wait. You can't pay dues until you're approved: if you try, checkout says "Apply to join first. Dues open up once you're approved."
 
 ## How will I know I've been approved?
 You'll get two things:
@@ -68,10 +68,15 @@ Society officers can invite people by email. The email's subject is "You're invi
 If an invite can't be used, the page says **Invite problem** with a reason, most often "This invite is no longer valid." or "This invite couldn't be used." That usually means the invite was already used or has been withdrawn. Click **Go home**, then either apply normally from [the Society page](/society) or ask the officer who invited you for a new invite. You can also email support@undergroundaquarium.com.
 
 ## Can I withdraw my application?
-Yes. While your application is pending, go to [the membership page](/c/underground-aquarium-society) and click **Withdraw application** under **Application received**. Your browser asks you to confirm. Once withdrawn, the page shows the application form again, so you can reapply whenever you like.
+Yes. While your application is pending, go to [the membership page](/c/underground-aquarium-society) and click **Withdraw application** under **Application received**. Your browser asks you to confirm: "Withdraw your application to Underground Aquarium Society? You can apply again any time." Once withdrawn, you're taken to [the Society page](/society), where you can apply again whenever you like.
 
 ## What if my application isn't approved?
-If the officers decline an application, it's removed and the membership page shows the application form again. The site doesn't send a notification or email when an application is declined. If you think there's been a mistake, email support@undergroundaquarium.com.
+If the officers decline an application, it's removed and you're told in two ways:
+
+- **A notification** in the bell: "About your Underground Aquarium Society application", saying "Thanks for applying. We couldn't approve it this time, but you're welcome to apply again." Tapping it opens the membership page.
+- **A short email** with the same subject, saying you're welcome to apply again whenever you like and that your Underground Aquarium account, classifieds and tools all keep working as before. It has an **Apply again** button.
+
+You can apply again from the membership page or [the Society page](/society) any time. If you think there's been a mistake, email support@undergroundaquarium.com.
 
 ## Can I change my application details after submitting?
 There's no edit button on a pending application. You can **Withdraw application** and apply again with the correct details. After you're a member, you can change your roster name and contact email yourself (see [Leaving the Society](/help/leaving-the-society)). For a new phone number or mailing address, email support@undergroundaquarium.com.

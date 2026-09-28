@@ -54,7 +54,7 @@ They're two separate settings, and they don't set each other.
 - The **Free** ad type is what makes your ad show "Free" and the green Free tag.
 - The **Free Stuff** category is just a category, like any other. An ad in Free Stuff that's set to **For sale** with a price still shows that price.
 
-The best approach for most giveaways: choose the **Free** ad type, and pick the category for what the item actually is (for example **Aquatic Plants** for trimmings). Buyers browsing plants will see it, and the Free tag still stands out. Use the **Free Stuff** category for mixed giveaways that don't fit anywhere else.
+The best approach for most giveaways: choose the **Free** ad type, and pick the category for what the item actually is (for example **Aquatic Plants** for trimmings). A Free ad shows under its own category pill and under the **Free Stuff** pill, so buyers browsing plants and buyers browsing freebies both see it. Use the **Free Stuff** category for mixed giveaways that don't fit anywhere else.
 
 Also: a For sale ad with a price of 0 shows as Free with the Free tag, the same as a Free ad.
 
@@ -64,7 +64,7 @@ Same idea. They're independent.
 - The **Wanted** ad type is what adds the blue Wanted tag, hides the price and condition, and changes the button to **Mark as found**.
 - The **Wanted / ISO** category is just a category. If you pick it but leave the ad type on **For sale**, your ad won't get the Wanted tag and will show a price or "Contact for price", which confuses people.
 
-For a wanted ad, always choose the **Wanted** ad type. Then pick either the category of the thing you want (so sellers of that thing see it, for example **Tanks & Stands** for "Looking for a 40 gallon breeder") or **Wanted / ISO**.
+For a wanted ad, always choose the **Wanted** ad type. Then pick either the category of the thing you want (for example **Tanks & Stands** for "Looking for a 40 gallon breeder") or **Wanted / ISO**. A Wanted ad shows under its own category pill and under the **Wanted / ISO** pill either way, so picking the item's category lets people browsing that category see it too.
 
 ## What does Condition mean, and when does it show?
 **Condition (optional)** lets you say what shape an item is in. The choices are:
@@ -87,16 +87,16 @@ On an area page and on the nationwide [Every listing](/listings) page, buyers se
 
 - **All** comes first, with the total number of ads.
 - After that, only categories that have at least one ad in that area appear, each with its count. Empty categories are hidden.
+- Free ads count under their own category and **Free Stuff**; wanted ads count under their own category and **Wanted / ISO**. So the pill numbers can add up to more than **All**.
 - Tapping a pill shows only that category, and the line above the grid reads, for example, "4 listings in Aquatic Plants".
 
 Each listing card also shows its category in the top corner, plus a **Wanted** or **Free** tag in the other corner when it applies. See [Searching and filtering listings](/help/searching-and-filtering-listings).
 
 ## Can people filter by For sale, Free or Wanted?
-Not directly. The filters are by category, not ad type. People find free items and wanted ads by:
+Yes, through two of the pills. **Free Stuff** shows every free ad, whatever its category, and **Wanted / ISO** shows every wanted ad, whatever its category. There's no separate For sale filter. People also find free items and wanted ads by:
 - The green **Free** and blue **Wanted** tags on cards.
-- The **Free Stuff** and **Wanted / ISO** category pills.
 - Sorting by **Price: low to high**, which puts Free ads (price 0) first.
-- Searching words like "free" or "ISO" that appear in titles or descriptions.
+- Searching words like "free" or "wanted". Search also matches category names, so "free" finds every free ad.
 
 That's another reason to use the right ad type and, if it helps, a clear word like "Free" or "ISO" in your title.
 

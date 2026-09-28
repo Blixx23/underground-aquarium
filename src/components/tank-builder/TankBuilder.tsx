@@ -43,6 +43,7 @@ import { byPopularity } from "@/lib/tankBuilder/popular";
 import { buildPath, parseBuild } from "@/lib/tankBuilder/share";
 import { nearestSize } from "@/lib/tankBuilder/sizes";
 import { MAX_TANK_PHOTOS } from "@/lib/tanks/showcase";
+import { TANK_PHOTO_MAX_MB, uploadTankPhoto } from "@/components/tanks/tankPhotoUpload";
 import { checkWater, type WaterReading, type WaterLevel } from "@/lib/waterCheck/engine";
 import TankVisual, { speciesColor } from "@/components/tank-builder/TankVisual";
 import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
@@ -50,8 +51,6 @@ import { RangeChart, ScoreDial } from "@/components/tank-builder/Insights";
 
 const FREE_TANK_LIMIT = 4;
 const MAX_PHOTOS = MAX_TANK_PHOTOS;
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // input cap; images are resized/compressed below
-const MAX_DIM = 1920; // longest edge after resize
 const DRAFT_KEY = "ua.tankBuilder.draft.v1";
 const QUICK_SIZES = [5, 10, 20, 29, 40, 55, 75, 125];
 
@@ -105,38 +104,6 @@ function readingSummary(r: {
   if (r.gh != null) parts.push(`GH ${r.gh} dGH`);
   if (r.kh != null) parts.push(`KH ${r.kh} dKH`);
   return parts.length ? parts.join(" · ") : "No values recorded";
-}
-
-// Resize + compress an image to a small JPEG before upload.
-// Throws if the file can't be decoded (caller falls back to the original).
-async function compressImage(file: File): Promise<Blob> {
-  const dataUrl: string = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error("read failed"));
-    reader.readAsDataURL(file);
-  });
-  const img: HTMLImageElement = await new Promise((resolve, reject) => {
-    const im = new Image();
-    im.onload = () => resolve(im);
-    im.onerror = () => reject(new Error("decode failed"));
-    im.src = dataUrl;
-  });
-  let { width, height } = img;
-  if (width > MAX_DIM || height > MAX_DIM) {
-    const scale = Math.min(MAX_DIM / width, MAX_DIM / height);
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-  }
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("no canvas context");
-  ctx.drawImage(img, 0, 0, width, height);
-  const blob: Blob | null = await new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.82));
-  if (!blob) throw new Error("encode failed");
-  return blob;
 }
 
 type SavedTank = {
@@ -561,32 +528,15 @@ export default function TankBuilder({
           setPhotoMsg(`Up to ${MAX_PHOTOS} photos per tank.`);
           break;
         }
-        if (!file.type.startsWith("image/")) {
-          setPhotoMsg("Images only, please.");
+        // Same checks, HEIC conversion and upload as the tank page's Edit
+        // showcase, so both places accept the same photos.
+        const result = await uploadTankPhoto(supabase, user.id, file);
+        if ("error" in result) {
+          setPhotoMsg(result.error);
           continue;
         }
-        if (file.size > MAX_PHOTO_BYTES) {
-          setPhotoMsg("That photo is too large (max 10 MB).");
-          continue;
-        }
-        let blob: Blob = file;
-        let ext = "jpg";
-        let contentType = "image/jpeg";
-        try {
-          blob = await compressImage(file);
-        } catch {
-          blob = file;
-          ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-          contentType = file.type || "image/jpeg";
-        }
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("tank-photos").upload(path, blob, { contentType });
-        if (error) {
-          setPhotoMsg("A photo failed to upload. Try again.");
-          continue;
-        }
-        const { data } = supabase.storage.from("tank-photos").getPublicUrl(path);
-        setImages((prev) => [...prev, data.publicUrl]);
+        const url = result.url;
+        setImages((prev) => [...prev, url]);
         count++;
       }
       if (currentTankId) setPhotoMsg("Photos added. Save the tank to keep them.");
@@ -1334,7 +1284,7 @@ export default function TankBuilder({
                   ))}
                   {images.length < MAX_PHOTOS && (
                     <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-white/20 text-[11px] text-ocean-400 hover:border-white/40">
-                      <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} disabled={uploading} />
+                      <input type="file" accept="image/*,image/heic,image/heif,.heic,.heif,.HEIC,.HEIF" multiple className="hidden" onChange={handlePhotoSelect} disabled={uploading} />
                       {uploading ? (
                         <span>Uploading…</span>
                       ) : (
@@ -1348,7 +1298,7 @@ export default function TankBuilder({
                 </div>
                 {photoMsg && <p className="mt-2 text-xs text-ocean-300">{photoMsg}</p>}
                 <p className="mt-2 text-xs text-ocean-500">
-                  Up to {MAX_PHOTOS} photos. Big photos are resized automatically. They show publicly once the tank is public.
+                  Up to {MAX_PHOTOS} photos, each up to {TANK_PHOTO_MAX_MB} MB. iPhone photos are converted and big photos are resized automatically. They show publicly once the tank is public.
                 </p>
               </div>
 

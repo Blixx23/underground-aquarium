@@ -118,7 +118,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Could not log" }, { status: 500 });
   }
 
-  // A hard bounce or a spam complaint means never mail that address again.
+  // A hard bounce means the address doesn't work, so it gets nothing at
+  // all. A spam complaint is treated like an unsubscribe: no more
+  // marketing or outreach, but account and message email still goes.
+  // The reason stored here is what decides that (see lib/email/suppress).
   if (email && (type === "bounced" || type === "complained")) {
     const bounceType = String((d.bounce as { type?: string } | undefined)?.type ?? "").toLowerCase();
     const soft = bounceType.includes("transient") || bounceType.includes("soft");
