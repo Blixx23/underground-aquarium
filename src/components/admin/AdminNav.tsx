@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Mail, Megaphone, Store, Wrench, Flag, Fish, BookOpen,
-  GraduationCap, Droplets, MessageSquare, Users, Camera, Clapperboard, BarChart3, Activity,
+  GraduationCap, Droplets, MessageSquare, Users, Camera, Clapperboard, BarChart3, Activity, LifeBuoy,
 } from "lucide-react";
 import { SOCIETY_CLUB_PATH } from "@/lib/config";
 
@@ -26,6 +26,7 @@ const LINKS = [
   { href: "/admin/bubbles", label: "Bubbles", sub: "Award or deduct", Icon: Droplets },
   { href: "/admin/feedback", label: "Feedback", sub: "What members sent in", Icon: MessageSquare },
   { href: `${SOCIETY_CLUB_PATH}/admin`, label: "Society", sub: "Roster, dues, officers", Icon: Users },
+  { href: "/admin/help", label: "Admin help", sub: "How every screen works", Icon: LifeBuoy },
 ];
 
 /**

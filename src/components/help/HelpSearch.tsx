@@ -28,30 +28,38 @@ function Hl({ text, terms }: { text: string; terms: string[] }) {
   );
 }
 
-// One download per page view at most, shared by every search box on the page.
-let indexPromise: Promise<HelpSection[]> | null = null;
-function loadIndex(): Promise<HelpSection[]> {
-  if (!indexPromise) {
-    indexPromise = fetch("/help/search-index.json")
+// One download per index per page view, shared by every search box on the page.
+const indexPromises = new Map<string, Promise<HelpSection[]>>();
+function loadIndex(url: string): Promise<HelpSection[]> {
+  let p = indexPromises.get(url);
+  if (!p) {
+    p = fetch(url, { credentials: "same-origin" })
       .then((r) => (r.ok ? r.json() : []))
       .catch(() => {
-        indexPromise = null;
+        indexPromises.delete(url);
         return [];
       });
+    indexPromises.set(url, p);
   }
-  return indexPromise;
+  return p;
 }
 
 export default function HelpSearch({
   autoFocus = false,
   placeholder = "Search help, e.g. “mark as sold”",
+  indexUrl = "/help/search-index.json",
+  base = "/help",
 }: {
   autoFocus?: boolean;
   placeholder?: string;
+  /** Where the index comes from. Admin help uses a gated URL. */
+  indexUrl?: string;
+  /** "/help" or "/admin/help": where results link to. */
+  base?: string;
 }) {
   const [sections, setSections] = useState<HelpSection[] | null>(null);
   const warm = () => {
-    if (!sections) loadIndex().then(setSections);
+    if (!sections) loadIndex(indexUrl).then(setSections);
   };
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -88,7 +96,7 @@ export default function HelpSearch({
     if (!r) return;
     setFocused(false);
     setQ("");
-    router.push(helpHref(r.s));
+    router.push(helpHref(r.s, base));
   }
 
   function onKeyDown(e: React.KeyboardEvent) {

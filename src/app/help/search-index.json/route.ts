@@ -9,7 +9,7 @@ import { getHelpSections } from "@/lib/help/content";
 export const dynamic = "force-static";
 
 export function GET() {
-  return NextResponse.json(getHelpSections(), {
+  return NextResponse.json(getHelpSections("member"), {
     headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
   });
 }

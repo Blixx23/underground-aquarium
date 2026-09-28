@@ -34,6 +34,17 @@ export const HELP_CATEGORIES = [
   "Help",
 ] as const;
 
-export function helpHref(s: { slug: string; anchor?: string }): string {
-  return s.anchor ? `/help/${s.slug}#${s.anchor}` : `/help/${s.slug}`;
+export const ADMIN_HELP_CATEGORIES = [
+  "Admin basics",
+  "Moderation",
+  "Fish stores",
+  "Content review",
+  "The Society",
+  "Email & campaigns",
+  "Stats & members",
+] as const;
+
+/** base is "/help" for member help, "/admin/help" for admin help. */
+export function helpHref(s: { slug: string; anchor?: string }, base = "/help"): string {
+  return s.anchor ? `${base}/${s.slug}#${s.anchor}` : `${base}/${s.slug}`;
 }

@@ -18,6 +18,9 @@ const nextConfig = {
     "/help/[slug]": ["./content/help/**"],
     "/help/search-index.json": ["./content/help/**"],
     "/sitemap.xml": ["./content/help/**"],
+    "/admin/help": ["./content/help-admin/**"],
+    "/admin/help/[slug]": ["./content/help-admin/**"],
+    "/admin/help/search-index.json": ["./content/help-admin/**"],
   },
   // Old WordPress addresses Google still crawls. Species links (/fish/...)
   // are matched in src/app/fish/[slug]/route.ts, events in

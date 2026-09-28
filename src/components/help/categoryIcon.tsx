@@ -10,6 +10,10 @@ import {
   LifeBuoy,
   MessageCircle,
   BadgeCheck,
+  Flag,
+  ClipboardCheck,
+  Mail,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -25,6 +29,12 @@ const ICONS: Record<string, LucideIcon> = {
   "For store owners": BadgeCheck,
   "Account & safety": ShieldCheck,
   Help: LifeBuoy,
+  // Admin help
+  "Admin basics": ShieldCheck,
+  Moderation: Flag,
+  "Content review": ClipboardCheck,
+  "Email & campaigns": Mail,
+  "Stats & members": BarChart3,
 };
 
 export function CategoryIcon({ category, className }: { category: string; className?: string }) {

@@ -13,7 +13,17 @@ import type { HelpArticleMeta, HelpSection } from "./types";
  * search result that deep-links to that spot in the article.
  */
 
-const HELP_DIR = path.join(process.cwd(), "content", "help");
+/**
+ * Two separate collections. Member help is public at /help. Admin help lives
+ * in content/help-admin and is only served inside /admin (the admin layout
+ * checks is_admin), so none of it reaches the public site, search or sitemap.
+ */
+export type HelpCollection = "member" | "admin";
+
+const HELP_DIRS: Record<HelpCollection, string> = {
+  member: path.join(process.cwd(), "content", "help"),
+  admin: path.join(process.cwd(), "content", "help-admin"),
+};
 
 export type HelpArticle = HelpArticleMeta & {
   intro: string; // markdown before the first "## "
@@ -106,25 +116,26 @@ function parseArticle(slug: string, raw: string): HelpArticle {
   };
 }
 
-export const getHelpArticles = cache((): HelpArticle[] => {
+export const getHelpArticles = cache((collection: HelpCollection = "member"): HelpArticle[] => {
+  const dir = HELP_DIRS[collection];
   let files: string[] = [];
   try {
-    files = fs.readdirSync(HELP_DIR).filter((f) => f.endsWith(".md"));
+    files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
   } catch {
     return [];
   }
   return files
-    .map((f) => parseArticle(f.replace(/\.md$/, ""), fs.readFileSync(path.join(HELP_DIR, f), "utf8")))
+    .map((f) => parseArticle(f.replace(/\.md$/, ""), fs.readFileSync(path.join(dir, f), "utf8")))
     .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
 });
 
-export function getHelpArticle(slug: string): HelpArticle | undefined {
-  return getHelpArticles().find((a) => a.slug === slug);
+export function getHelpArticle(slug: string, collection: HelpCollection = "member"): HelpArticle | undefined {
+  return getHelpArticles(collection).find((a) => a.slug === slug);
 }
 
 /** Every searchable section, with the article's keywords folded in so synonyms still hit. */
-export function getHelpSections(): HelpSection[] {
-  return getHelpArticles().flatMap((a) =>
+export function getHelpSections(collection: HelpCollection = "member"): HelpSection[] {
+  return getHelpArticles(collection).flatMap((a) =>
     a.sections.map((s) => ({ ...s, keywords: a.keywords.join(" ") }))
   );
 }
