@@ -13,6 +13,11 @@ const nextConfig = {
   outputFileTracingIncludes: {
     "/api/species-videos/process": ["./node_modules/ffmpeg-static/ffmpeg"],
     "/api/admin/species-videos": ["./node_modules/ffmpeg-static/ffmpeg"],
+    // Help Center markdown, read from disk by these routes.
+    "/help": ["./content/help/**"],
+    "/help/[slug]": ["./content/help/**"],
+    "/help/search-index.json": ["./content/help/**"],
+    "/sitemap.xml": ["./content/help/**"],
   },
   // Old WordPress addresses Google still crawls. Species links (/fish/...)
   // are matched in src/app/fish/[slug]/route.ts, events in

@@ -26,6 +26,7 @@ const links = {
     { label: "Verify a certificate", href: "/verify" },
     { label: "Events", href: "/events" },
     { label: "About Us", href: "/about" },
+    { label: "Help Center", href: "/help" },
   ],
 };
 

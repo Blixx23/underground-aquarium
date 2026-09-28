@@ -7,6 +7,7 @@ import { cityWorthIndexing, storeIsStub } from "@/lib/stores/thin";
 import { plainText, threadIndexable } from "@/lib/forum/indexable";
 import { postIndexable } from "@/lib/feedSeo";
 import type { FeedItem } from "@/lib/feed";
+import { getHelpArticles } from "@/lib/help/content";
 
 const baseUrl = "https://www.undergroundaquarium.com";
 
@@ -190,6 +191,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/about", 0.5, "monthly"],
     ["/rules", 0.5, "monthly"],
     ["/verify", 0.4, "monthly"],
+    ["/help", 0.5, "monthly"],
+    // Help Center articles, one per content/help/*.md file.
+    ...getHelpArticles().map((a): [string, number, Freq] => [`/help/${a.slug}`, 0.4, "monthly"]),
     ["/privacy", 0.2, "yearly"],
     ["/terms", 0.2, "yearly"],
   ];

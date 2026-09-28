@@ -25,6 +25,7 @@ import {
   Crown,
   Tag,
   Egg,
+  LifeBuoy,
 } from "lucide-react";
 import Avatar from "@/components/profile/Avatar";
 import type { User } from "@supabase/supabase-js";
@@ -72,6 +73,7 @@ const nav: NavItem[] = [
       { label: "Tank Builder", href: "/tank-builder", group: "Tools" },
       { label: "Water Check", href: "/water-check", group: "Tools" },
       { label: "All Fish Stores", href: "/stores", group: "Tools" },
+      { label: "Help Center", href: "/help", group: "Help" },
     ],
   },
 ];
@@ -89,6 +91,7 @@ const EXPLORE = [
   { href: "/water-check", label: "Water Check", Icon: Droplets },
   { href: "/breeding", label: "Breeding Guides", Icon: Egg },
   { href: "/about", label: "About", Icon: Info },
+  { href: "/help", label: "Help Center", Icon: LifeBuoy },
 ];
 
 export default function Navbar() {
@@ -410,6 +413,7 @@ export default function Navbar() {
                       ...(MY_LISTINGS_ENABLED
                         ? [{ href: "/my/listings", label: "My listings", Icon: ClipboardList }]
                         : []),
+                      { href: "/help", label: "Help Center", Icon: LifeBuoy },
                     ].map(({ href, label, Icon }) => (
                       <Link
                         key={href}
