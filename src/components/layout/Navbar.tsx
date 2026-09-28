@@ -34,6 +34,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
 import MessageBell from "./MessageBell";
+import SearchModal, { openSiteSearch } from "@/components/search/SearchModal";
 import {
   MY_LISTINGS_ENABLED,
   POST_AD_PATH,
@@ -361,17 +362,15 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/search"
+          <button
+            type="button"
+            onClick={openSiteSearch}
             aria-label="Search the site"
-            title="Search"
-            className={cn(
-              "p-2 transition-colors",
-              pathname === "/search" ? "text-white" : "text-ocean-300 hover:text-white"
-            )}
+            title="Search (Ctrl+K)"
+            className="p-2 text-ocean-300 transition-colors hover:text-white"
           >
             <Search className="w-4 h-4" />
-          </Link>
+          </button>
           <NotificationBell />
           {user ? (
             <>
@@ -472,14 +471,17 @@ export default function Navbar() {
         {/* Mobile: notifications + toggle */}
         <div className="md:hidden flex items-center gap-0.5">
           {/* Posting and Messages live on the bottom bar on phones. */}
-          <Link
-            href="/search"
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              openSiteSearch();
+            }}
             aria-label="Search the site"
-            onClick={() => setOpen(false)}
             className="p-2 text-ocean-300 hover:text-white"
           >
             <Search className="w-5 h-5" />
-          </Link>
+          </button>
           <NotificationBell variant="link" onNavigate={() => setOpen(false)} />
           <button
             className="p-2 text-ocean-300 hover:text-white"
@@ -537,6 +539,7 @@ export default function Navbar() {
           )}
         </div>
       )}
+      <SearchModal />
     </header>
   );
 }

@@ -77,12 +77,13 @@ export default function HelpSearch({
 
   useEffect(() => setActive(0), [q]);
 
-  // "/" or Cmd/Ctrl+K jumps to the search box.
+  // "/" jumps to the search box.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement)?.tagName;
       const typing = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
-      if ((e.key === "/" && !typing) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) {
+      // Cmd/Ctrl+K belongs to the site-wide search pop-out; "/" jumps here.
+      if (e.key === "/" && !typing) {
         e.preventDefault();
         inputRef.current?.focus();
       }

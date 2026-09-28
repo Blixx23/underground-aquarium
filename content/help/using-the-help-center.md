@@ -36,12 +36,13 @@ Search fixes most typos for you. If no answer contains every word you typed, it 
 Common shorthand works too: "pic" or "foto" for photo, "msg" or "dm" for message, "pw" for password. Words of 3 letters or fewer, and words with numbers in them, are never changed.
 
 ## Can I search more than help answers?
-Yes. Tap the **magnifying glass** at the top of any page to search the whole site: help answers, fish species and care guides, classifieds, fish stores, forums, breeding guides, events, the glossary and courses at once. See [Searching the whole site](/help/searching-the-site).
+Yes. Tap the **magnifying glass** at the top of any page (or press Cmd+K or Ctrl+K) to open the search pop-out for the whole site: help answers, fish species and care guides, classifieds, fish stores, forums, breeding guides, events, the glossary and courses at once. See [Searching the whole site](/help/searching-the-site).
 
 ## Are there keyboard shortcuts?
 Yes, on the Help Center and every help guide:
 
-- Press **/** (forward slash) or **Cmd+K** (Mac) / **Ctrl+K** (Windows) to jump to the search box from anywhere on the page.
+- Press **/** (forward slash) to jump to the help search box from anywhere on the page.
+- Press **Cmd+K** (Mac) or **Ctrl+K** (Windows) to open the search pop-out for the whole site instead.
 - Use the **up and down arrow keys** to move through results.
 - Press **Enter** to open the highlighted result.
 - Press **Escape** to clear the search and leave the box.
@@ -82,7 +83,7 @@ Results only appear after two or more characters. If still nothing shows, try ot
 They hide when you click outside the search box or press Escape. Click back in the box to see them again, or retype your search.
 
 **Pressing / doesn't jump to search.**
-It won't work while you're typing in another box, and it only works on Help Center pages. Click on an empty part of the page first, or use Cmd+K or Ctrl+K.
+It won't work while you're typing in another box, and it only works on Help Center pages. Click on an empty part of the page first, or just click in the search box.
 
 **The link I was sent opens the guide but not the right answer.**
 The answer's heading may have been reworded since the link was made. Use **In this article** or search to find it.

@@ -121,13 +121,21 @@ function clip(s: string | null | undefined, n = 150): string | undefined {
 // Data, cached in memory per server instance
 // ---------------------------------------------------------------------------
 
-const memo = new Map<string, { at: number; data: unknown }>();
+const memo = new Map<string, { at: number; data: Promise<unknown> }>();
 
-async function cached<T>(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
+/**
+ * Keep a loaded list for `ttlMs`. The promise itself is stored, so ten
+ * searches arriving at once during a cold start share one database load.
+ * A failed load is forgotten straight away so the next search retries.
+ */
+function cached<T>(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
   const hit = memo.get(key);
-  if (hit && Date.now() - hit.at < ttlMs) return hit.data as T;
-  const data = await load();
+  if (hit && Date.now() - hit.at < ttlMs) return hit.data as Promise<T>;
+  const data = load();
   memo.set(key, { at: Date.now(), data });
+  data.catch(() => {
+    if (memo.get(key)?.data === data) memo.delete(key);
+  });
   return data;
 }
 
@@ -472,6 +480,14 @@ async function forumsGroup(q: string, n: number): Promise<SiteHit[]> {
 
 // ---------------------------------------------------------------------------
 
+/** Never let one slow source hold up the whole search. */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label} took over ${ms}ms`)), ms)),
+  ]);
+}
+
 export async function siteSearch(rawQ: string, perGroup = 5): Promise<SiteSearchResult> {
   const typed = rawQ.trim().slice(0, 100);
   if (typed.length < 2) return { groups: [], correctedTo: null };
@@ -482,7 +498,8 @@ export async function siteSearch(rawQ: string, perGroup = 5): Promise<SiteSearch
   let q = typed;
   let correctedTo: string | null = null;
   try {
-    const fixed = correctTerms(terms, await loadVocab());
+    // If the vocabulary isn't ready fast (cold start), search as typed.
+    const fixed = correctTerms(terms, await withTimeout(loadVocab(), 2500, "vocabulary"));
     if (fixed.changed) {
       correctedTo = describeFix(typed, terms, fixed.terms);
       terms = fixed.terms;
@@ -506,7 +523,7 @@ export async function siteSearch(rawQ: string, perGroup = 5): Promise<SiteSearch
     courses: hasTerms ? coursesGroup(terms, n) : none(),
   };
 
-  const settled = await Promise.allSettled(ORDER.map((k) => jobs[k]));
+  const settled = await Promise.allSettled(ORDER.map((k) => withTimeout(jobs[k], 4000, k)));
   const enc = encodeURIComponent(q);
   const more: Partial<Record<SiteGroupKey, { label: string; href: string }>> = {
     forums: { label: "All forum results", href: `/forums/search?q=${enc}` },

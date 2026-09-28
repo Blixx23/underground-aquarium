@@ -7,14 +7,25 @@ keywords: search, find, site search, search bar, look up, magnifying glass, sear
 pages: /search
 ---
 
-The [Search](/search) page looks across the whole of Underground Aquarium at once and groups what it finds, so you don't have to guess which section something lives in.
+Site search looks across the whole of Underground Aquarium at once and groups what it finds, so you don't have to guess which section something lives in. It opens as a pop-out over whatever page you're on, so you never lose your place.
 
 ## How do I search the whole site?
-1. Tap the **magnifying glass** at the top of any page. On a computer it sits to the left of the bell; on a phone it's next to the menu button.
-2. Start typing. Results appear as you type, a moment after you stop.
-3. Tap any result to open it.
+1. Tap the **magnifying glass** at the top of any page. On a computer it sits to the left of the bell; on a phone it's next to the menu button. On a computer you can also press **Cmd+K** (Mac) or **Ctrl+K** (Windows) from anywhere.
+2. The search pop-out opens over the page with the cursor already in the box. Start typing. Results appear as you type, a moment after you stop.
+3. Tap any result to open it. The pop-out closes and the result opens.
 
-You can also go straight to [undergroundaquarium.com/search](/search). You don't need an account to search.
+You don't need an account to search.
+
+## How do I close the search pop-out?
+Press **Esc**, tap the **X** in the top corner, or click anywhere outside the pop-out (on a computer). Opening a result or going to another page closes it too. Pressing Cmd+K or Ctrl+K again also closes it.
+
+On a phone the pop-out fills the screen; tap the **X** to go back to the page you were on.
+
+## Can I use the keyboard in search?
+Yes. Use the **up and down arrow keys** to move through the results and **Enter** to open the highlighted one. If nothing is highlighted, Enter opens the full results page.
+
+## How do I see all the results?
+The pop-out shows up to four results per group to keep things quick. Click **See all results** (above the results) to open the full [Search](/search) page, which shows up to six per group, has chips to jump between groups, and links like **All forum results** under some groups. The full page's address includes your search (for example /search?q=cherry+shrimp), so you can bookmark it or share it.
 
 ## What does site search look through?
 Results come back in groups, in this order, and a group only shows when it has matches:
@@ -29,7 +40,7 @@ Results come back in groups, in this order, and a group only shows when it has m
 - **Glossary:** aquarium terms, matched on the term, its definition and its topic.
 - **Courses:** published free courses, matched on the title and subtitle.
 
-Each group shows up to six results. When results come back in more than one group, chips under the search box let you jump straight to a group.
+The pop-out shows up to four results per group; the full [Search](/search) page shows up to six, with chips under the search box to jump straight to a group.
 
 ## How does it decide what matches?
 - Every word you type (apart from little words like "how", "the" or "my") has to appear somewhere in a result for it to show.
@@ -49,7 +60,7 @@ Yes. Search knows every word used across the site: help answers, species names a
 Words with numbers in them (like L046 or 20g) and words of 3 letters or fewer are never changed.
 
 ## How do I see more results in one group?
-Some groups have a link under them:
+On the full [Search](/search) page, some groups have a link under them:
 
 - **All forum results** opens the full forum search page with your words already filled in.
 - **Open the store directory** opens the fish store directory filtered by your words, with the map and Near me.
@@ -59,7 +70,7 @@ Some groups have a link under them:
 For classifieds, species, events, the glossary and courses, open that section and use its own search box to see everything.
 
 ## Can I share or bookmark a search?
-Yes. Once results load, the page address changes to include your search, for example /search?q=cherry+shrimp. Copy that link to share it or bookmark it, and it opens with the same results (as of the moment someone opens it).
+Yes. Click **See all results** in the pop-out to open the full search page. Its address includes your search, for example /search?q=cherry+shrimp. Copy that link to share it or bookmark it, and it opens with the same results (as of the moment someone opens it).
 
 ## Is site search the same as the Help Center search?
 No. The search box on the [Help Center](/help) only looks through help answers, and it works instantly in your browser. It also fixes typos (against the words the help guides use) and, if no answer contains every word, shows the answers that contain most of them. Site search covers help answers plus everything else on the site, and only shows help answers that contain every word, because the other groups cover the rest. If the Help Center search finds nothing, its message has a **search the whole site** link that runs the same words through site search.
