@@ -11,16 +11,16 @@ export async function GET(request: Request) {
   const q = (searchParams.get("q") ?? "").trim();
   const n = Number(searchParams.get("n")) || 5;
 
-  if (q.length < 2) return NextResponse.json({ q, groups: [] });
+  if (q.length < 2) return NextResponse.json({ q, groups: [], correctedTo: null });
 
   try {
-    const groups = await siteSearch(q, n);
+    const { groups, correctedTo } = await siteSearch(q, n);
     return NextResponse.json(
-      { q, groups },
+      { q, groups, correctedTo },
       { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
     );
   } catch (err) {
     console.error("Site search error:", err);
-    return NextResponse.json({ q, groups: [] });
+    return NextResponse.json({ q, groups: [], correctedTo: null });
   }
 }

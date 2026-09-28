@@ -28,7 +28,15 @@ You land right on that answer inside its guide. Up to 12 results show at a time,
 ## Can I type a whole question?
 Yes. Search ignores filler words like "how", "do", "I", "my" and "the", and matches simple word endings, so "listings" finds "listing" and "posted" finds "post". Answers that contain all of your words come first. If none do, you'll see answers that match most of them.
 
-If nothing matches, the box says "No help articles match" your search, and suggests trying different words, browsing the topics or emailing support@undergroundaquarium.com.
+If nothing matches, the box says "No help articles match" your search, and suggests trying different words, searching the whole site, browsing the topics or emailing support@undergroundaquarium.com.
+
+## What if I spell something wrong?
+Search fixes most typos for you. If no answer contains every word you typed, it checks each word against the words the help guides actually use and swaps in the closest one: 1 mistake allowed in words of 4 or 5 letters, 2 in longer words. Swapping two letters in "claim" or leaving an "s" out of "password" still finds the right answer. When that happens, the top of the results says **Showing results for** the fixed words.
+
+Common shorthand works too: "pic" or "foto" for photo, "msg" or "dm" for message, "pw" for password. Words of 3 letters or fewer, and words with numbers in them, are never changed.
+
+## Can I search more than help answers?
+Yes. Tap the **magnifying glass** at the top of any page to search the whole site: help answers, fish species and care guides, classifieds, fish stores, forums, breeding guides, events, the glossary and courses at once. See [Searching the whole site](/help/searching-the-site).
 
 ## Are there keyboard shortcuts?
 Yes, on the Help Center and every help guide:

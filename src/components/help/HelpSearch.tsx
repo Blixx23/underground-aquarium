@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import type { HelpSection } from "@/lib/help/types";
 import { helpHref } from "@/lib/help/types";
-import { highlightParts, queryTerms, searchHelp } from "@/lib/help/search";
+import { highlightParts, searchHelpFull } from "@/lib/help/search";
 
 /**
  * Instant help search. The whole index ships with the page (it's small), so
@@ -68,8 +68,12 @@ export default function HelpSearch({
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const terms = useMemo(() => queryTerms(q), [q]);
-  const results = useMemo(() => (sections ? searchHelp(sections, q, 12) : []), [sections, q]);
+  const found = useMemo(
+    () => (sections ? searchHelpFull(sections, q, 12) : { hits: [], terms: [], correctedTo: null }),
+    [sections, q]
+  );
+  const results = found.hits;
+  const terms = found.terms;
 
   useEffect(() => setActive(0), [q]);
 
@@ -187,6 +191,11 @@ export default function HelpSearch({
             </div>
           ) : (
             <ul>
+              {found.correctedTo && (
+                <li className="px-3 pb-1 pt-1.5 text-xs text-ocean-400">
+                  Showing results for <span className="font-medium text-white">{found.correctedTo}</span>
+                </li>
+              )}
               {results.map((r, i) => (
                 <li key={`${r.s.slug}#${r.s.anchor}`} data-idx={i}>
                   <button

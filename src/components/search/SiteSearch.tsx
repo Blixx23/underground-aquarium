@@ -10,6 +10,7 @@ import {
   LifeBuoy,
   Tag,
   Fish,
+  Egg,
   Store,
   MessagesSquare,
   CalendarDays,
@@ -25,6 +26,7 @@ const ICONS: Record<SiteGroupKey, LucideIcon> = {
   help: LifeBuoy,
   listings: Tag,
   species: Fish,
+  breeding: Egg,
   stores: Store,
   forums: MessagesSquare,
   events: CalendarDays,
@@ -32,7 +34,7 @@ const ICONS: Record<SiteGroupKey, LucideIcon> = {
   courses: GraduationCap,
 };
 
-const SUGGESTIONS = ["cherry shrimp", "betta tankmates", "claim my store", "nitrate", "post a free ad", "Society dues"];
+const SUGGESTIONS = ["cherry shrimp", "betta tankmates", "peaceful schooling fish", "claim my store", "nitrate", "breeding"];
 
 function Hl({ text, terms }: { text: string; terms: string[] }) {
   return (
@@ -53,9 +55,11 @@ function Hl({ text, terms }: { text: string; terms: string[] }) {
 export default function SiteSearch({
   initialQuery = "",
   initialGroups = [],
+  initialCorrectedTo = null,
 }: {
   initialQuery?: string;
   initialGroups?: SiteGroup[];
+  initialCorrectedTo?: string | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -63,6 +67,7 @@ export default function SiteSearch({
   const [groups, setGroups] = useState<SiteGroup[]>(initialGroups);
   const [searched, setSearched] = useState(initialQuery.trim().length >= 2 ? initialQuery.trim() : "");
   const [loading, setLoading] = useState(false);
+  const [correctedTo, setCorrectedTo] = useState<string | null>(initialCorrectedTo);
   const inputRef = useRef<HTMLInputElement>(null);
   const reqId = useRef(0);
 
@@ -73,6 +78,7 @@ export default function SiteSearch({
     if (query.length < 2) {
       setGroups([]);
       setSearched("");
+      setCorrectedTo(null);
       setLoading(false);
       router.replace(pathname, { scroll: false });
       return;
@@ -82,9 +88,10 @@ export default function SiteSearch({
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&n=6`);
-        const data = (await res.json()) as { groups?: SiteGroup[] };
+        const data = (await res.json()) as { groups?: SiteGroup[]; correctedTo?: string | null };
         if (id !== reqId.current) return; // a newer search already started
         setGroups(data.groups ?? []);
+        setCorrectedTo(data.correctedTo ?? null);
         setSearched(query);
         router.replace(`${pathname}?q=${encodeURIComponent(query)}`, { scroll: false });
       } catch {
@@ -97,7 +104,7 @@ export default function SiteSearch({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  const terms = queryTerms(searched);
+  const terms = queryTerms(correctedTo ?? searched);
   const total = groups.reduce((n, g) => n + g.hits.length, 0);
 
   return (
@@ -113,7 +120,7 @@ export default function SiteSearch({
           inputMode="search"
           enterKeyHint="search"
           autoComplete="off"
-          placeholder="Try “cherry shrimp”, “claim my store” or a town name"
+          placeholder="Search fish, care, ads, stores, help… typos are fine"
           aria-label="Search the site"
           className="w-full rounded-2xl border border-ocean-700/60 bg-ocean-950/80 py-4 pl-12 pr-14 text-base text-white placeholder:text-ocean-500 shadow-lg outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10"
         />
@@ -172,7 +179,17 @@ export default function SiteSearch({
       {groups.length > 0 && (
         <>
           <p className="mt-6 text-xs text-ocean-500" aria-live="polite">
-            {total} result{total === 1 ? "" : "s"} for “{searched}”
+            {correctedTo ? (
+              <>
+                {total} result{total === 1 ? "" : "s"} for{" "}
+                <span className="font-medium text-white">“{correctedTo}”</span>
+                <span className="text-ocean-500"> (you typed “{searched}”)</span>
+              </>
+            ) : (
+              <>
+                {total} result{total === 1 ? "" : "s"} for “{searched}”
+              </>
+            )}
           </p>
           {groups.length > 1 && (
             <nav aria-label="Jump to" className="mt-3 flex flex-wrap gap-2">

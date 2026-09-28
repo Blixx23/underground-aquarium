@@ -1,36 +1,15 @@
 import type { HelpSection } from "./types";
 
 /**
- * Plain keyword search over help sections. Runs in the browser in well under
- * a millisecond for a few hundred sections, so it costs nothing to run.
- *
- * People type questions ("how do I mark my listing sold"), so filler words
- * are dropped and simple plurals/verb endings are folded ("listings" finds
- * "listing", "posted" finds "post").
+ * Plain keyword search over help sections. Runs in the browser in a few
+ * milliseconds, so it costs nothing to run. Misspellings are fixed against
+ * the words the help docs actually use (see lib/search/fuzzy.ts).
  */
 
-const STOP = new Set(
-  "a an and are as at be can do does for from get how i if in is it me my of on or so the to up we what when where which who why will with you your".split(" ")
-);
+import { queryTerms, stem } from "@/lib/search/terms";
+import { buildVocab, correctTerms, describeFix, type Vocab } from "@/lib/search/fuzzy";
 
-export function stem(w: string): string {
-  if (w.length > 5 && w.endsWith("ing")) return w.slice(0, -3);
-  if (w.length > 4 && w.endsWith("ed")) return w.slice(0, -2);
-  if (w.length > 4 && w.endsWith("es") && !w.endsWith("ses")) return w.slice(0, -1);
-  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
-  return w;
-}
-
-export function queryTerms(q: string): string[] {
-  const words = q
-    .toLowerCase()
-    .replace(/[^a-z0-9\s'-]/g, " ")
-    .split(/\s+/)
-    .map((w) => w.replace(/^['-]+|['-]+$/g, ""))
-    .filter(Boolean);
-  const kept = words.filter((w) => !STOP.has(w));
-  return (kept.length ? kept : words).map(stem);
-}
+export { queryTerms, stem };
 
 function escapeRe(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -42,11 +21,9 @@ function termScore(term: string, heading: string, article: string, keywords: str
   // Short terms ("ph", "gh", "kh", "co2") must match a whole word, or "ph" finds "photo".
   const wordStart = new RegExp(term.length <= 3 ? `\\b${escapeRe(term)}\\b` : `\\b${escapeRe(term)}`);
   if (wordStart.test(heading)) return 30;
-  if (heading.includes(term)) return 22;
   if (wordStart.test(keywords)) return 18;
   if (wordStart.test(article)) return 16;
   if (wordStart.test(text)) return 10;
-  if (text.includes(term)) return 5;
   return 0;
 }
 
@@ -69,9 +46,8 @@ export function makeSnippet(text: string, terms: string[], len = 170): string {
  * them, fall back to sections matching most terms, so a long question with
  * one odd word still gets an answer.
  */
-export function searchHelp(sections: HelpSection[], q: string, limit = 12): HelpHit[] {
-  const terms = queryTerms(q);
-  if (!terms.length) return [];
+function rankSections(sections: HelpSection[], terms: string[], limit: number): { hits: HelpHit[]; full: boolean } {
+  if (!terms.length) return { hits: [], full: false };
   const scored: (HelpHit & { matched: number })[] = [];
   for (const s of sections) {
     const heading = s.heading.toLowerCase();
@@ -92,7 +68,59 @@ export function searchHelp(sections: HelpSection[], q: string, limit = 12): Help
   const full = scored.filter((h) => h.matched === terms.length);
   const pool = full.length ? full : scored.filter((h) => h.matched >= Math.max(1, Math.ceil(terms.length / 2)));
   pool.sort((a, b) => b.matched - a.matched || b.score - a.score);
-  return pool.slice(0, limit).map(({ s, score, snippet }) => ({ s, score, snippet }));
+  return {
+    hits: pool.slice(0, limit).map(({ s, score, snippet }) => ({ s, score, snippet })),
+    full: full.length > 0,
+  };
+}
+
+// One vocabulary per index, built the first time it's searched.
+const vocabs = new WeakMap<HelpSection[], Vocab>();
+export function helpVocab(sections: HelpSection[]): Vocab {
+  let v = vocabs.get(sections);
+  if (!v) {
+    v = buildVocab(sections.flatMap((s) => [s.heading, s.articleTitle, s.keywords ?? "", s.text]));
+    vocabs.set(sections, v);
+  }
+  return v;
+}
+
+export type HelpSearchResult = {
+  hits: HelpHit[];
+  /** the terms actually searched (after any spelling fix), for highlighting */
+  terms: string[];
+  /** set when a misspelling was fixed: the words we searched instead */
+  correctedTo: string | null;
+};
+
+/**
+ * Search as typed first. Only if no answer contains every word do we try
+ * fixing misspellings, so real words the docs don't use are never "fixed"
+ * into something else while exact matches exist.
+ */
+export function searchHelpFull(
+  sections: HelpSection[],
+  q: string,
+  limit = 12,
+  /** only answers containing every word (site search, where other groups cover the rest) */
+  strict = false
+): HelpSearchResult {
+  const terms = queryTerms(q);
+  const asTyped = rankSections(sections, terms, limit);
+  const partial = strict ? [] : asTyped.hits;
+  if (asTyped.full || !terms.length) return { hits: asTyped.hits, terms, correctedTo: null };
+
+  const fixed = correctTerms(terms, helpVocab(sections));
+  if (!fixed.changed) return { hits: partial, terms, correctedTo: null };
+  const retry = rankSections(sections, fixed.terms, limit);
+  if (retry.full || (!strict && retry.hits.length > asTyped.hits.length)) {
+    return { hits: retry.hits, terms: fixed.terms, correctedTo: describeFix(q, terms, fixed.terms) };
+  }
+  return { hits: partial, terms, correctedTo: null };
+}
+
+export function searchHelp(sections: HelpSection[], q: string, limit = 12): HelpHit[] {
+  return searchHelpFull(sections, q, limit).hits;
 }
 
 export function highlightParts(text: string, terms: string[]): { t: string; hit: boolean }[] {
