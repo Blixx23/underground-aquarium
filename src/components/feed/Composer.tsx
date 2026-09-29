@@ -5,6 +5,8 @@ import { ImagePlus, Loader2, Send, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { prepareImage } from "@/lib/images/prepareImage";
 import Avatar from "@/components/profile/Avatar";
+import SeasonMotif from "@/components/seasonal/SeasonMotif";
+import { useSeason } from "@/lib/hooks/useSeason";
 
 const MAX_PHOTOS = 4;
 const MAX_CHARS = 2000;
@@ -39,6 +41,7 @@ export default function Composer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const season = useSeason();
 
   const canPost = !busy && (body.trim().length > 0 || drafts.length > 0) && body.length <= MAX_CHARS;
 
@@ -100,12 +103,23 @@ export default function Composer({
   return (
     <section
       aria-label="Create a post"
-      className="rounded-2xl border border-ocean-600/40 bg-gradient-to-b from-ocean-800/50 to-ocean-900/60 p-4 shadow-lg shadow-black/30 sm:p-5"
+      className={`relative overflow-hidden rounded-2xl border bg-gradient-to-b from-ocean-800/50 to-ocean-900/60 p-4 shadow-lg shadow-black/30 sm:p-5 ${season ? season.composer.card : "border-ocean-600/40"}`}
     >
+      {season && (
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent to-transparent ${season.composer.topLine}`}
+        />
+      )}
       <div className="mb-3 flex items-center gap-3">
         <Avatar name={name} src={avatar} society={society} size={36} />
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold text-white">Create a post</p>
+          <p className="flex items-center gap-1.5 text-[15px] font-semibold text-white">
+            Create a post
+            {season && (
+              <SeasonMotif motif={season.motif} className={`h-3.5 w-3.5 ${season.composer.motifColor}`} />
+            )}
+          </p>
           <p className="text-xs text-ocean-400">Share a photo, a question or what&apos;s new in your tanks</p>
         </div>
       </div>
@@ -115,7 +129,7 @@ export default function Composer({
         onChange={(e) => setBody(e.target.value)}
         rows={3}
         autoFocus={autoFocus}
-        placeholder={`What's happening in your tanks, ${name.split(" ")[0]}?`}
+        placeholder={`What's happening in your tanks${season?.composer.promptSuffix ?? ""}, ${name.split(" ")[0]}?`}
         className="block w-full resize-none rounded-xl border border-ocean-700/70 bg-ocean-950/70 px-3.5 py-3 text-base leading-relaxed text-white placeholder-ocean-500 outline-none transition-colors focus:border-ocean-400 sm:text-[15px]"
       />
 

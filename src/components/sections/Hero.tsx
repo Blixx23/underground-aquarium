@@ -3,6 +3,8 @@ import { ArrowRight, Fish, Flower2, Gift, LocateFixed, MapPin, Package, Plus, Se
 import { POST_AD_PATH } from "@/lib/config";
 import { supabasePublic } from "@/lib/supabase/public";
 import type { LocatableRegion } from "@/components/marketplace/NearMeButton";
+import { currentSeason } from "@/lib/seasons";
+import SeasonMotif from "@/components/seasonal/SeasonMotif";
 
 /** The classifieds, as one quiet row under the shop finder. */
 const CHIPS = [
@@ -73,6 +75,8 @@ export default async function Hero({
   liveListings: number;
 }) {
   const { total, topCities } = await storeStats();
+  // Seasonal touch (pumpkin in fall, etc). Null means the normal look.
+  const season = currentSeason();
 
   return (
     <section className="relative overflow-hidden pt-28 pb-16 font-sans sm:pt-36 sm:pb-24">
@@ -84,6 +88,12 @@ export default async function Hero({
             "radial-gradient(closest-side, rgba(56,189,248,0.18), rgba(18,100,160,0.10) 45%, transparent 75%)",
         }}
       />
+      {season && (
+        <div
+          className="pointer-events-none absolute left-1/2 top-24 h-[420px] w-[760px] max-w-[130%] -translate-x-1/2"
+          style={{ background: season.hero.glow }}
+        />
+      )}
 
       <div className="relative z-10 mx-auto w-full max-w-3xl px-5 text-center sm:px-6">
         {total > 0 && (
@@ -93,13 +103,18 @@ export default async function Hero({
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
             {roundedDown(total)} independent fish stores
+            {season && (
+              <SeasonMotif motif={season.motif} className={`-mr-0.5 h-3.5 w-3.5 ${season.hero.motifColor}`} />
+            )}
           </p>
         )}
 
         <h1 className="text-[clamp(2.4rem,7vw,4.5rem)] font-bold leading-[1.02] tracking-[-0.035em] text-white">
           Find your local
           <br />
-          <span className="bg-gradient-to-r from-sky-300 via-cyan-200 to-emerald-200 bg-clip-text text-transparent">
+          <span
+            className={`bg-gradient-to-r bg-clip-text text-transparent ${season ? season.hero.headline : "from-sky-300 via-cyan-200 to-emerald-200"}`}
+          >
             fish store.
           </span>
         </h1>
@@ -113,7 +128,7 @@ export default async function Hero({
           <label htmlFor="hero-store-search" className="sr-only">
             Search fish stores by city, state or name
           </label>
-          <div className="rounded-2xl bg-gradient-to-r from-sky-400/40 via-cyan-300/20 to-emerald-300/40 p-px shadow-[0_20px_60px_-15px_rgba(14,165,233,0.35)] transition-shadow focus-within:shadow-[0_20px_70px_-10px_rgba(14,165,233,0.55)]">
+          <div className={`rounded-2xl bg-gradient-to-r ${season ? season.hero.searchFrame : "from-sky-400/40 via-cyan-300/20 to-emerald-300/40"} p-px shadow-[0_20px_60px_-15px_rgba(14,165,233,0.35)] transition-shadow focus-within:shadow-[0_20px_70px_-10px_rgba(14,165,233,0.55)]`}>
             <div className="flex items-center gap-2 rounded-[15px] bg-ocean-950/95 p-1.5 backdrop-blur-xl">
               <Search className="ml-3 h-5 w-5 shrink-0 text-ocean-400" />
               <input
