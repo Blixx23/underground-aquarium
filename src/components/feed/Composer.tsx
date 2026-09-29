@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { prepareImage } from "@/lib/images/prepareImage";
 import Avatar from "@/components/profile/Avatar";
 import SeasonMotif from "@/components/seasonal/SeasonMotif";
+import SeasonGarland from "@/components/seasonal/SeasonGarland";
 import { useSeason } from "@/lib/hooks/useSeason";
 
 const MAX_PHOTOS = 4;
@@ -103,12 +104,19 @@ export default function Composer({
   return (
     <section
       aria-label="Create a post"
-      className={`relative overflow-hidden rounded-2xl border bg-gradient-to-b from-ocean-800/50 to-ocean-900/60 p-4 shadow-lg shadow-black/30 sm:p-5 ${season ? season.composer.card : "border-ocean-600/40"}`}
+      className={`relative rounded-2xl border bg-gradient-to-b from-ocean-800/50 to-ocean-900/60 p-4 shadow-lg shadow-black/30 sm:p-5 ${season ? `mt-12 sm:mt-14 ${season.composer.card}` : "border-ocean-600/40"}`}
     >
       {season && (
         <span
           aria-hidden
           className={`pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent to-transparent ${season.composer.topLine}`}
+        />
+      )}
+      {season && (
+        <SeasonGarland
+          motif={season.motif}
+          id="composer"
+          className="absolute left-3 top-0 w-[400px] max-w-[88%] -translate-y-[80%] -scale-x-100"
         />
       )}
       <div className="mb-3 flex items-center gap-3">

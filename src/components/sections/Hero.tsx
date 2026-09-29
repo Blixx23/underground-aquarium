@@ -5,6 +5,7 @@ import { supabasePublic } from "@/lib/supabase/public";
 import type { LocatableRegion } from "@/components/marketplace/NearMeButton";
 import { currentSeason } from "@/lib/seasons";
 import SeasonMotif from "@/components/seasonal/SeasonMotif";
+import SeasonGarland from "@/components/seasonal/SeasonGarland";
 
 /** The classifieds, as one quiet row under the shop finder. */
 const CHIPS = [
@@ -124,7 +125,19 @@ export default async function Hero({
         </p>
 
         {/* The shop finder */}
-        <form action="/stores" method="get" role="search" className="mx-auto mt-9 max-w-xl">
+        <form
+          action="/stores"
+          method="get"
+          role="search"
+          className={`relative mx-auto max-w-xl ${season ? "mt-14 sm:mt-16" : "mt-9"}`}
+        >
+          {season && (
+            <SeasonGarland
+              motif={season.motif}
+              id="hero"
+              className="absolute left-1 top-0 z-10 w-[440px] max-w-full -translate-y-[80%] -scale-x-100"
+            />
+          )}
           <label htmlFor="hero-store-search" className="sr-only">
             Search fish stores by city, state or name
           </label>
