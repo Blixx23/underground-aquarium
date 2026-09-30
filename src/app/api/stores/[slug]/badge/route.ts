@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { supabasePublic } from "@/lib/supabase/public";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { canSeeHiddenShop } from "@/lib/stores/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -9,13 +10,17 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { data: store } = await supabasePublic
+  const { data: store } = await supabaseAdmin
     .from("fish_stores")
-    .select("name")
+    .select("name, status, claimed_by")
     .eq("slug", slug)
-    .eq("status", "published")
     .maybeSingle();
   if (!store) return new NextResponse("Not found", { status: 404 });
+  // A hidden shop's badge only shows to its owner and admins (their preview).
+  const hidden = store.status !== "published";
+  if (hidden && !(await canSeeHiddenShop((store.claimed_by as string | null) ?? null))) {
+    return new NextResponse("Not found", { status: 404 });
+  }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="64" viewBox="0 0 240 64" role="img" aria-label="Find us on Underground Aquarium">
   <rect width="240" height="64" rx="12" fill="#041525"/>
@@ -32,7 +37,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   return new NextResponse(svg, {
     headers: {
       "Content-Type": "image/svg+xml",
-      "Cache-Control": "public, max-age=86400",
+      "Cache-Control": hidden ? "private, no-store" : "public, max-age=86400",
     },
   });
 }
