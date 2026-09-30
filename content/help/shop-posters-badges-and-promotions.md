@@ -12,7 +12,7 @@ The **Promotions** tab in your [shop dashboard](/help/shop-dashboard-overview) i
 ## What's on the Promotions page?
 Three sections:
 
-- **Posters**: four printable PDFs, each with your shop name and QR code
+- **Posters**: two printable PDFs, each with your shop name and QR code
 - **Your website**: a badge you can paste onto your own site
 - **Tell your customers**: a ready-made post and your page link to copy
 
@@ -24,20 +24,16 @@ Three sections:
 
 Each poster is a full US Letter page with your shop name across the top and your QR code in the middle, written for someone already standing in your shop. **Light** is plain white paper and light on ink, made for an ordinary inkjet. **Dark** is meant for a print shop or showing on a screen.
 
-## What do the four posters say?
+## What do the posters say?
 | Poster | Call to action | Suggested spot | Printed bullets |
 |---|---|---|---|
-| **Save us to your phone** | "Scan to save us" | By the door or the register | Our hours, directions and phone. One tap next time you need us. "No app. It just opens our page in your browser." |
-| **Know what just came in** | "Scan to follow us" | Above the tanks | We post the day new stock lands. You get a notification, free. |
 | **Leave us a review** | "Scan and tell us" | At the register | One minute, right from your phone. It helps other keepers find us. |
 | **Free help with your tank** | "Scan for free guides" | By the starter kits | Care guides and a water checker. A planner that catches bad mixes. |
 
 Every poster also prints your shop name, your town and your page's web address under the QR code.
 
 ## Where does the QR code go?
-Every poster's QR code opens your shop's page on Underground Aquarium. The four posters differ in what they ask people to do once they're there (save the page, tap the heart to follow, scroll to **Reviews**, or explore the free guides), but the code itself goes to the same page on all of them.
-
-The "Know what just came in" poster only pays off if you post updates, so pair it with regular posts. See [Posting shop updates](/help/shop-updates).
+Every poster's QR code opens your shop's page on Underground Aquarium. The two posters differ in what they ask people to do once they're there (leave a review, or explore the free guides), but the code itself goes to the same page on both.
 
 ## Will my poster still work if I change my shop details?
 Yes. The QR code goes to your page, not to a copy of your details, so edits to your hours, phone or photos show up for anyone who scans an old poster. If your shop name or town changes, download a fresh poster so the printed text matches.
@@ -64,7 +60,7 @@ Each button shows **Copied** for a moment when it works. Paste into your post, b
 No. The posters, badge and share text are free, as many copies as you like. There's nothing to buy and no upgrade.
 
 ## Where should I put the posters?
-The page suggests a spot for each: "Save us to your phone" by the door or register, "Know what just came in" above the tanks, "Leave us a review" at the register where customers are happy with what they just bought, and "Free help with your tank" by the starter kits.
+The page suggests a spot for each: "Leave us a review" at the register where customers are happy with what they just bought, and "Free help with your tank" by the starter kits.
 
 ## Common problems
 **The preview says "Preview isn't available here."** Your browser couldn't draw it, but the download still works. Tap **Download** and open the file.

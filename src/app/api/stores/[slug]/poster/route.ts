@@ -6,7 +6,8 @@ import { buildStorePoster, type FlyerStyle } from "@/lib/stores/storePoster";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const STYLES: FlyerStyle[] = ["save", "updates", "review", "newtank"];
+// "save" and "updates" were retired; the drawing code for them stays in storePoster.ts.
+const STYLES: FlyerStyle[] = ["review", "newtank"];
 
 /**
  * The shop's free print kit: window sign, counter card, handout cards and a
@@ -16,7 +17,7 @@ const STYLES: FlyerStyle[] = ["save", "updates", "review", "newtank"];
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const asked = request.nextUrl.searchParams.get("style") as FlyerStyle | null;
-  const style: FlyerStyle = asked && STYLES.includes(asked) ? asked : "save";
+  const style: FlyerStyle = asked && STYLES.includes(asked) ? asked : "review";
   // Plain paper by default: a shop is printing this on their own inkjet.
   const dark = request.nextUrl.searchParams.get("ink") === "dark";
 

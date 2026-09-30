@@ -6,18 +6,6 @@ import PdfPreview from "./PdfPreview";
 
 const FLYERS = [
   {
-    key: "save",
-    title: "Save us to your phone",
-    cta: "Scan to save us",
-    blurb: "By the door or the register. Your customer leaves with your hours and number in their pocket.",
-  },
-  {
-    key: "updates",
-    title: "Know what just came in",
-    cta: "Scan to follow us",
-    blurb: "Above the tanks. Turns a one-off visitor into someone who hears every time you post new stock.",
-  },
-  {
     key: "review",
     title: "Leave us a review",
     cta: "Scan and tell us",
