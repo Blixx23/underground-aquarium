@@ -132,34 +132,6 @@ export default function PromoKit({ slug, name }: { slug: string; name: string })
       </section>
 
       <section>
-        <h2 className="mb-1 font-display text-lg text-white">Your website</h2>
-        <p className="mb-3 text-sm text-ocean-400">
-          Paste this anywhere on your own site. It shows this badge, linking back to your page.
-        </p>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/api/stores/${slug}/badge`}
-            alt="Find us on Underground Aquarium"
-            width={240}
-            height={64}
-            className="mb-3"
-          />
-          <code className="block overflow-x-auto rounded-lg bg-ocean-950/70 p-3 text-[11px] text-ocean-300">
-            {badge}
-          </code>
-          <button
-            type="button"
-            onClick={() => copy("badge", badge)}
-            className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-sm text-ocean-200 hover:bg-white/5"
-          >
-            {copied === "badge" ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-            {copied === "badge" ? "Copied" : "Copy the code"}
-          </button>
-        </div>
-      </section>
-
-      <section>
         <h2 className="mb-1 flex items-center gap-2 font-display text-lg text-white">
           <Share2 className="h-5 w-5 text-ocean-400" />
           Tell your customers
@@ -195,6 +167,34 @@ export default function PromoKit({ slug, name }: { slug: string; name: string })
               {copied === "link" ? "Copied" : "Copy your link"}
             </button>
           </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-1 font-display text-lg text-white">Your website</h2>
+        <p className="mb-3 text-sm text-ocean-400">
+          Paste this anywhere on your own site. It shows this badge, linking back to your page.
+        </p>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/stores/${slug}/badge`}
+            alt="Find us on Underground Aquarium"
+            width={240}
+            height={64}
+            className="mb-3"
+          />
+          <code className="block overflow-x-auto rounded-lg bg-ocean-950/70 p-3 text-[11px] text-ocean-300">
+            {badge}
+          </code>
+          <button
+            type="button"
+            onClick={() => copy("badge", badge)}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-sm text-ocean-200 hover:bg-white/5"
+          >
+            {copied === "badge" ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+            {copied === "badge" ? "Copied" : "Copy the code"}
+          </button>
         </div>
       </section>
 

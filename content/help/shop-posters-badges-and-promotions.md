@@ -13,8 +13,8 @@ The **Promotions** tab in your [shop dashboard](/help/shop-dashboard-overview) i
 Three sections:
 
 - **Posters**: two printable PDFs, each with your shop name and QR code
-- **Your website**: a badge you can paste onto your own site
-- **Tell your customers**: a ready-made post and your page link to copy
+- **Tell your customers**: a ready-made post and your page link to copy, with a preview of how your link looks when shared
+- **Your website**: a badge you can paste onto your own site, once
 
 ## How do I download a poster?
 1. Open **Promotions** in your shop dashboard. Each poster shows a preview of exactly what will print, with your shop name and QR code.
