@@ -11,14 +11,12 @@ type Shop = {
   name: string;
   city: string | null;
   state: string | null;
-  claimed_by: string | null;
-  cover_url?: string | null;
   logo_url?: string | null;
 };
 
 async function getShop(slug: string): Promise<Shop | null> {
-  // Banner and logo columns arrive with step 61; fall back without them.
-  for (const cols of ["id, name, city, state, claimed_by, cover_url, logo_url", "id, name, city, state, claimed_by"]) {
+  // The logo column arrives with step 61; fall back without it.
+  for (const cols of ["id, name, city, state, logo_url", "id, name, city, state"]) {
     const { data, error } = await supabasePublic
       .from("fish_stores")
       .select(cols)
@@ -30,7 +28,7 @@ async function getShop(slug: string): Promise<Shop | null> {
   return null;
 }
 
-/** Fetch a photo and hand it to the renderer inline. Anything odd is skipped, never fatal. */
+/** Fetch the logo and hand it to the renderer inline. Anything odd is skipped, never fatal. */
 async function inlineImage(url: string | null | undefined): Promise<string | null> {
   if (!url) return null;
   try {
@@ -39,7 +37,7 @@ async function inlineImage(url: string | null | undefined): Promise<string | nul
     const type = (res.headers.get("content-type") || "").split(";")[0].trim();
     if (type !== "image/jpeg" && type !== "image/png") return null;
     const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length > 6_000_000) return null;
+    if (buf.length > 4_000_000) return null;
     return `data:${type};base64,${buf.toString("base64")}`;
   } catch {
     return null;
@@ -61,29 +59,15 @@ async function loadFont(text: string): Promise<ArrayBuffer | null> {
   }
 }
 
-function initials(name: string) {
-  return (
-    name
-      .replace(/['\u2019]/g, "")
-      .replace(/[^A-Za-z0-9 ]/g, " ")
-      .split(/\s+/)
-      .filter((w) => w && !/^(the|and|of)$/i.test(w))
-      .slice(0, 2)
-      .map((w) => w[0]!.toUpperCase())
-      .join("") || "?"
-  );
-}
-
-function Star({ fill }: { fill: number }) {
-  // fill: 0 to 1, how much of this star is gold
+function Star({ fill, size = 26 }: { fill: number; size?: number }) {
   const pts = "12,1.5 15.1,8.3 22.5,9.1 16.9,14.1 18.5,21.4 12,17.6 5.5,21.4 7.1,14.1 1.5,9.1 8.9,8.3";
   return (
-    <div style={{ position: "relative", display: "flex", width: 34, height: 34 }}>
-      <svg width="34" height="34" viewBox="0 0 24 24" style={{ position: "absolute", top: 0, left: 0 }}>
-        <polygon points={pts} fill="rgba(255,255,255,0.25)" />
+    <div style={{ position: "relative", display: "flex", width: size, height: size }}>
+      <svg width={size} height={size} viewBox="0 0 24 24" style={{ position: "absolute", top: 0, left: 0 }}>
+        <polygon points={pts} fill="rgba(194,228,250,0.18)" />
       </svg>
-      <div style={{ position: "absolute", top: 0, left: 0, width: 34 * fill, height: 34, overflow: "hidden", display: "flex" }}>
-        <svg width="34" height="34" viewBox="0 0 24 24">
+      <div style={{ position: "absolute", top: 0, left: 0, width: size * fill, height: size, overflow: "hidden", display: "flex" }}>
+        <svg width={size} height={size} viewBox="0 0 24 24">
           <polygon points={pts} fill="#fbbf24" />
         </svg>
       </div>
@@ -91,51 +75,42 @@ function Star({ fill }: { fill: number }) {
   );
 }
 
+// Center of the logo and its sonar rings.
+const CX = 905;
+const CY = 315;
+const RINGS: [number, number][] = [
+  [158, 0.22],
+  [214, 0.14],
+  [282, 0.09],
+  [362, 0.06],
+  [455, 0.04],
+];
+
 /**
- * The picture Facebook, texts and X show when someone shares a shop's page:
- * the shop's banner (or its newest photo), its logo, its name, town and
- * stars. Built fresh for each shop so every share shows off that shop.
+ * The picture Facebook, texts and X show when someone shares a shop's page.
+ * Dark and minimal: a teal glow and sonar rings behind the shop's logo (or our
+ * fish mark if they haven't added one), the
+ * shop's name big on the left, and a small Underground Aquarium mark.
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const shop = await getShop(slug);
   if (!shop) return new Response("Not found", { status: 404 });
 
-  // Background: the banner, or the newest photo the shop has shared.
-  let bgUrl = shop.cover_url ?? null;
-  if (!bgUrl) {
-    const { data: post } = await supabasePublic
-      .from("store_posts")
-      .select("images")
-      .eq("store_id", shop.id)
-      .not("images", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    bgUrl = ((post as { images?: string[] | null } | null)?.images ?? [])[0] ?? null;
-  }
-  if (!bgUrl) {
-    const { data: ph } = await supabasePublic
-      .from("store_photos")
-      .select("url")
-      .eq("store_id", shop.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    bgUrl = (ph as { url?: string } | null)?.url ?? null;
-  }
-
   const { data: reviewRows } = await supabasePublic.from("store_reviews").select("rating").eq("store_id", shop.id);
   const ratings = ((reviewRows ?? []) as { rating: number }[]).map((r) => r.rating);
   const count = ratings.length;
   const avg = count ? ratings.reduce((a, b) => a + b, 0) / count : null;
 
-  const [bg, logo] = await Promise.all([inlineImage(bgUrl), inlineImage(shop.logo_url)]);
-
+  const logo = await inlineImage(shop.logo_url);
   const place = [shop.city, shop.state].filter(Boolean).join(", ");
   const name = shop.name;
-  const nameSize = name.length <= 16 ? 78 : name.length <= 24 ? 66 : name.length <= 34 ? 54 : 44;
-  const font = await loadFont(`${name}${initials(name)}UNDERGROUND AQUARIUM`);
+  const nameSize =
+    name.length <= 12 ? 92 : name.length <= 18 ? 78 : name.length <= 26 ? 64 : name.length <= 36 ? 54 : 44;
+  const reviewText = count ? `${avg!.toFixed(1)}  ·  ${count} REVIEW${count === 1 ? "" : "S"}` : "";
+  const font = await loadFont(
+    `${name}${place.toUpperCase()}${reviewText}UNDERGROUND AQUARIUMundergroundaquarium.com0123456789.·`
+  );
   const display = font ? "Cinzel" : "sans-serif";
 
   return new ImageResponse(
@@ -146,188 +121,160 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
           height: H,
           display: "flex",
           position: "relative",
-          background: "linear-gradient(135deg, #0b3a5c 0%, #062238 45%, #020b18 100%)",
-          fontFamily: "sans-serif",
+          overflow: "hidden",
+          background: "#020b18",
+          fontFamily: display,
           color: "white",
         }}
       >
-        {bg ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={bg} alt="" width={W} height={H} style={{ position: "absolute", top: 0, left: 0, width: W, height: H, objectFit: "cover" }} />
-        ) : (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: W,
-              height: H,
-              display: "flex",
-              background:
-                "radial-gradient(ellipse at 15% 0%, rgba(52,211,153,0.35) 0%, transparent 55%), radial-gradient(ellipse at 95% 100%, rgba(56,189,248,0.30) 0%, transparent 60%)",
-            }}
-          />
-        )}
-
-        {!bg &&
-          [
-            [980, 90, 150],
-            [1090, 260, 70],
-            [880, 300, 44],
-            [1010, 420, 100],
-            [760, 150, 30],
-            [1140, 520, 38],
-            [640, 60, 22],
-          ].map(([x, y, r], i) => (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                left: x - r,
-                top: y - r,
-                width: r * 2,
-                height: r * 2,
-                borderRadius: 999,
-                display: "flex",
-                border: "2px solid rgba(125,196,240,0.28)",
-                background: "radial-gradient(circle at 30% 30%, rgba(194,228,250,0.22) 0%, rgba(194,228,250,0.03) 60%)",
-              }}
-            />
-          ))}
-
-        {/* Darken the bottom so the name always reads, whatever the photo. */}
+        {/* Glow behind the logo */}
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            width: W,
-            height: H,
+            left: CX - 560,
+            top: CY - 460,
+            width: 1120,
+            height: 920,
             display: "flex",
-            background: bg
-              ? "linear-gradient(180deg, rgba(2,11,24,0.25) 0%, rgba(2,11,24,0.15) 35%, rgba(2,11,24,0.85) 72%, rgba(2,11,24,0.96) 100%)"
-              : "linear-gradient(180deg, rgba(2,11,24,0) 40%, rgba(2,11,24,0.6) 100%)",
+            background:
+              "radial-gradient(ellipse at center, rgba(20,184,166,0.42) 0%, rgba(14,116,144,0.20) 32%, rgba(2,11,24,0) 68%)",
+          }}
+        />
+        {/* A faint cool wash top left, for depth */}
+        <div
+          style={{
+            position: "absolute",
+            left: -300,
+            top: -320,
+            width: 900,
+            height: 700,
+            display: "flex",
+            background: "radial-gradient(ellipse at center, rgba(59,130,246,0.16) 0%, rgba(2,11,24,0) 65%)",
           }}
         />
 
-        {/* Small brand mark, top left */}
+        {/* Sonar rings */}
+        {RINGS.map(([r, a], i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: CX - r,
+              top: CY - r,
+              width: r * 2,
+              height: r * 2,
+              borderRadius: 999,
+              display: "flex",
+              border: `1.5px solid rgba(153,246,228,${a})`,
+            }}
+          />
+        ))}
+
+        {/* The shop's logo */}
         <div
           style={{
             position: "absolute",
-            top: 36,
-            left: 48,
+            left: CX - 118,
+            top: CY - 118,
+            width: 236,
+            height: 236,
+            borderRadius: 999,
+            overflow: "hidden",
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            padding: "10px 18px",
-            borderRadius: 999,
-            background: "rgba(2,11,24,0.72)",
-            border: "1px solid rgba(125,196,240,0.35)",
+            justifyContent: "center",
+            border: "2px solid rgba(204,251,241,0.55)",
+            background: "linear-gradient(145deg, #0f766e 0%, #0b3a5c 55%, #06243a 100%)",
+            boxShadow: "0 0 90px rgba(45,212,191,0.45), 0 20px 60px rgba(0,0,0,0.6)",
           }}
         >
-          <div style={{ display: "flex", fontFamily: display, fontSize: 20, letterSpacing: 3, color: "#c2e4fa" }}>
-            UNDERGROUND AQUARIUM
-          </div>
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt="" width={236} height={236} style={{ width: 236, height: 236, objectFit: "cover" }} />
+          ) : (
+            // No logo yet: our fish mark.
+            <svg width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="#99f6e4" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z" />
+              <path d="M18 12v.5" />
+              <path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33" />
+            </svg>
+          )}
         </div>
 
-        {/* Logo, name, town, stars */}
+        {/* Brand mark, top left */}
+        <div style={{ position: "absolute", left: 80, top: 72, display: "flex", alignItems: "center", gap: 14 }}>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5eead4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z" />
+            <path d="M18 12v.5" />
+            <path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33" />
+          </svg>
+          <div style={{ display: "flex", fontSize: 19, letterSpacing: 6, color: "#c2e4fa" }}>UNDERGROUND AQUARIUM</div>
+        </div>
+
+        {/* Name, place, rating */}
         <div
           style={{
             position: "absolute",
-            left: 48,
-            right: 48,
-            bottom: 44,
+            left: 80,
+            top: 0,
+            width: 600,
+            height: H,
             display: "flex",
-            alignItems: "center",
-            gap: 36,
+            flexDirection: "column",
+            justifyContent: "center",
           }}
         >
           <div
             style={{
-              width: 184,
-              height: 184,
-              flexShrink: 0,
-              borderRadius: 999,
-              border: "6px solid #34d399",
-              overflow: "hidden",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "linear-gradient(135deg, #059669 0%, #0b3a5c 100%)",
-              boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+              fontSize: nameSize,
+              lineHeight: 1.06,
+              color: "white",
+              textShadow: "0 4px 30px rgba(0,0,0,0.5)",
             }}
           >
-            {logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logo} alt="" width={172} height={172} style={{ width: 172, height: 172, objectFit: "cover" }} />
-            ) : (
-              <div style={{ display: "flex", fontFamily: display, fontSize: 70, color: "white" }}>{initials(name)}</div>
-            )}
+            {name}
           </div>
-
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                display: "flex",
-                alignSelf: "flex-start",
-                marginBottom: 14,
-                padding: "6px 16px",
-                borderRadius: 999,
-                background: "#34d399",
-                color: "#022c22",
-                fontSize: 22,
-                fontWeight: 700,
-                letterSpacing: 2,
-              }}
-            >
-              LOCAL FISH STORE
+          <div
+            style={{
+              display: "flex",
+              marginTop: 30,
+              width: 72,
+              height: 3,
+              borderRadius: 3,
+              background: "linear-gradient(90deg, #2dd4bf 0%, #38bdf8 100%)",
+            }}
+          />
+          {place && (
+            <div style={{ display: "flex", marginTop: 26, fontSize: 24, letterSpacing: 4, color: "#9fd7f5" }}>
+              {place.toUpperCase()}
             </div>
-            <div
-              style={{
-                display: "flex",
-                fontFamily: display,
-                fontSize: nameSize,
-                lineHeight: 1.05,
-                color: "white",
-                textShadow: "0 3px 18px rgba(0,0,0,0.6)",
-              }}
-            >
-              {name}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 16, fontSize: 30, color: "#c2e4fa" }}>
-              {place && <div style={{ display: "flex" }}>{place}</div>}
-              {shop.claimed_by && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "6px 16px",
-                    borderRadius: 999,
-                    background: "rgba(16,185,129,0.25)",
-                    border: "1px solid rgba(52,211,153,0.6)",
-                    color: "#a7f3d0",
-                    fontSize: 24,
-                  }}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24">
-                    <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#a7f3d0" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Owner managed
-                </div>
-              )}
-            </div>
-            {avg != null && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16 }}>
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <Star key={i} fill={Math.max(0, Math.min(1, avg - i))} />
-                ))}
-                <div style={{ display: "flex", marginLeft: 12, fontSize: 28, color: "white" }}>
-                  {`${avg.toFixed(1)} · ${count} review${count === 1 ? "" : "s"}`}
-                </div>
+          )}
+          {avg != null && (
+            <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 18 }}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Star key={i} fill={Math.max(0, Math.min(1, avg - i))} />
+              ))}
+              <div style={{ display: "flex", marginLeft: 14, fontSize: 21, letterSpacing: 2, color: "rgba(255,255,255,0.85)" }}>
+                {reviewText}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
+
+        {/* Address, bottom left */}
+        <div
+          style={{
+            position: "absolute",
+            left: 80,
+            bottom: 60,
+            display: "flex",
+            fontSize: 17,
+            letterSpacing: 4,
+            color: "rgba(194,228,250,0.5)",
+          }}
+        >
+          undergroundaquarium.com
         </div>
       </div>
     ),

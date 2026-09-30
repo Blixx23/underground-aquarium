@@ -152,10 +152,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     .from("store_reviews")
     .select("id", { count: "exact", head: true })
     .eq("store_id", store.id);
-  // Each shop shares its own card: banner or newest photo, logo, name, stars.
-  // The version changes when the banner, logo, name or review count does,
+  // Each shop shares its own designed card: logo, name, town and stars.
+  // The version changes when the logo, name, town or review count does,
   // so Facebook and friends fetch the new picture instead of an old copy.
-  const stamp = [store.name, store.cover_url ?? "", store.logo_url ?? "", reviews ?? 0].join("|");
+  const stamp = [store.name, place, store.logo_url ?? "", reviews ?? 0].join("|");
   let h = 5381;
   for (let i = 0; i < stamp.length; i++) h = ((h << 5) + h + stamp.charCodeAt(i)) >>> 0;
   const shareImage = {

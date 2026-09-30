@@ -3,7 +3,7 @@ title: Your banner, logo and photos
 category: For store owners
 summary: How to add a banner and logo to your shop page, how to share photos in posts, where your older gallery photos show, and how to remove photos.
 order: 40
-keywords: shop photos, store pictures, upload images, storefront photo, tank photos, gallery, delete photo, remove picture, heic, iphone photos, banner, cover photo, logo, profile picture, shop branding
+keywords: share preview, link preview, facebook preview, shop photos, store pictures, upload images, storefront photo, tank photos, gallery, delete photo, remove picture, heic, iphone photos, banner, cover photo, logo, profile picture, shop branding
 pages: /my/shops/[slug]/photos, /stores/[slug]
 ---
 
@@ -45,6 +45,11 @@ Any normal image from a phone or camera, including iPhone photos (HEIC). We conv
 ## How do I remove a photo?
 - **A photo in a post:** tap the pencil on the post, tap the **X** on the photo, then **Save**.
 - **A gallery photo:** open **Banner & photos** in your dashboard and tap the **X** on the photo, then confirm.
+
+## What shows when someone shares my page?
+When your page link is shared on Facebook, in a text or on X, it shows a card we design for your shop: your shop name, your town and your star rating, with your logo (or the Underground Aquarium fish if you haven't added one) glowing on the right, and the Underground Aquarium mark. Your banner and photos aren't used, so wording on them never clashes with the card.
+
+If you change your logo, the card updates. Facebook remembers old previews, so for a link that was already shared, paste it into Facebook's Sharing Debugger and press **Scrape Again**.
 
 ## Can customers add photos to my page?
 No. On a claimed page, the only thing customers add is reviews.
