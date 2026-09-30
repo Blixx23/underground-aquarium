@@ -4,6 +4,7 @@ import { ExternalLink, ArrowLeft } from "lucide-react";
 import { requireOwnedStore } from "@/lib/stores/owner";
 import ShopNav from "@/components/stores/ShopNav";
 import ShopVisibilityToggle from "@/components/stores/ShopVisibilityToggle";
+import ShopTypeToggle from "@/components/stores/ShopTypeToggle";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export default async function ShopAdminLayout({
@@ -20,9 +21,12 @@ export default async function ShopAdminLayout({
   const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
   const isAdmin = Boolean(me?.is_admin);
   let listed = true;
+  let wholesale = false;
   if (isAdmin) {
     const { data: st } = await supabaseAdmin.from("fish_stores").select("status").eq("id", store.id).maybeSingle();
-    listed = (st as { status?: string } | null)?.status === "published";
+    const status = (st as { status?: string } | null)?.status;
+    listed = status === "published";
+    wholesale = status === "wholesale";
   }
 
   // Back link: owners with several shops go to their list; an admin looking
@@ -39,7 +43,9 @@ export default async function ShopAdminLayout({
   }
   const back =
     !isOwner && isAdmin
-      ? { href: "/admin/shops", label: "All shops (admin)" }
+      ? wholesale
+        ? { href: "/admin/wholesale", label: "Wholesale list (admin)" }
+        : { href: "/admin/shops", label: "All shops (admin)" }
       : ownedCount > 1
         ? { href: "/my/shops?list=1", label: "All my shops" }
         : null;
@@ -79,7 +85,8 @@ export default async function ShopAdminLayout({
             <p className="text-sm text-ocean-400">{[store.city, store.state].filter(Boolean).join(", ")}</p>
           </div>
           <div className="flex flex-wrap items-start gap-2">
-            {isAdmin && <ShopVisibilityToggle storeId={store.id} visible={listed} />}
+            {isAdmin && !wholesale && <ShopVisibilityToggle storeId={store.id} visible={listed} />}
+            {isAdmin && <ShopTypeToggle storeId={store.id} wholesale={wholesale} />}
             <Link
               href={`/stores/${store.slug}`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 px-3.5 py-2 text-sm text-ocean-200 transition-colors hover:bg-white/5"

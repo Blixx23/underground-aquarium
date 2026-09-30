@@ -5,6 +5,8 @@ import { Store, LayoutDashboard, ExternalLink, UserRound } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import ShopVisibilityToggle from "@/components/stores/ShopVisibilityToggle";
 import AdminShopSearch from "@/components/admin/AdminShopSearch";
+import ShopTypeToggle from "@/components/stores/ShopTypeToggle";
+import MoveToWholesale from "@/components/admin/MoveToWholesale";
 
 export const metadata: Metadata = { title: "Admin · All shops" };
 export const dynamic = "force-dynamic";
@@ -88,7 +90,7 @@ export default async function AdminShopsPage({
           <Store className="h-7 w-7 text-amber-300" /> All shops
         </h1>
         <p className="mb-6 text-sm text-ocean-400">
-          Find any shop, open its dashboard, or show and hide it in the directory. Only admins can hide a shop.
+          Find any shop, open its dashboard, or show and hide it in the directory. Only admins can hide a shop. Switch a business to Wholesale supply to move it to the Wholesale list. Wholesale-only businesses go to the Wholesale list.
         </p>
 
         <Suspense fallback={<div className="mb-4 h-[46px] rounded-xl border border-ocean-700 bg-ocean-900" />}>
@@ -165,6 +167,8 @@ export default async function AdminShopsPage({
                 </div>
                 <div className="flex flex-wrap items-start gap-2">
                   <ShopVisibilityToggle storeId={s.id} visible={s.status === "published"} />
+                  <ShopTypeToggle storeId={s.id} wholesale={false} />
+                  <MoveToWholesale storeId={s.id} name={s.name} />
                   {s.slug && (
                     <>
                       <Link

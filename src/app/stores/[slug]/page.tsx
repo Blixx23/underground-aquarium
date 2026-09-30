@@ -668,7 +668,13 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
       <div className="mx-auto max-w-5xl">
         {!hidden && <StoreTracker storeId={store.id} />}
 
-        {hidden && (
+        {hidden && store.status === "wholesale" && (
+          <div className="mb-4 rounded-2xl border border-violet-400/40 bg-violet-400/10 px-4 py-3 text-sm text-violet-100">
+            <span className="font-semibold">Wholesale supply.</span> This business is on your Wholesale list, not in Shops.
+            Only you can see this page, and it gets no shop emails.
+          </div>
+        )}
+        {hidden && store.status !== "wholesale" && (
           <div className="mb-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
             <span className="font-semibold">Hidden from Shops.</span> Only you can see this page. Visitors, search engines
             and Facebook get &quot;not found&quot; until the shop is shown again.

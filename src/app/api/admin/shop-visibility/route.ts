@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { stopShopOutreach } from "@/lib/email/stopShopOutreach";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message + hint }, { status: 500 });
   }
   if (!data) return NextResponse.json({ error: "Shop not found." }, { status: 404 });
+
+  // Hidden shops get no shop emails, starting now, not at the next campaign run.
+  if (!body.visible) await stopShopOutreach([body.storeId], "Shop hidden from the directory");
 
   revalidatePath("/stores");
   // The homepage shop count and top cities.
