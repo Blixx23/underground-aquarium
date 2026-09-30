@@ -19,7 +19,7 @@ The heart fills in and turns coral, and the number beside it goes up by one. Tha
 If you tap the heart while signed out, a small note appears under it: "Sign in to favorite".
 
 ## What does following a store do?
-When the shop's owner posts an update (a new shipment, a sale, an event), you get a notification titled "[Shop] posted an update". The notification shows the update's title if it has one, or "Tap to see what's new at the shop." Tapping it opens the shop's page, where the update is under **From the shop**.
+When the shop's owner posts an update (a new shipment, a sale, an event), you get a notification titled "[Shop] posted an update". The notification shows the update's title if it has one, or "Tap to see what's new at the shop." Tapping it opens the shop's page, where the update is at the top of the **Posts** tab.
 
 Shops only post updates once someone from the shop has claimed the page. You can follow an unclaimed shop too, but you won't hear anything from it until it's claimed and the owner starts posting.
 

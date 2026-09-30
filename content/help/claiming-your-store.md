@@ -46,7 +46,7 @@ You'll see this if the claim link is incomplete or was changed (for example, cut
 Our team reviews claims by hand, usually the same day. We may contact you at the email you gave if we need more to go on. Once approved, the shop appears under [My shops](/my/shops) and its page shows **Owner managed** with a green check.
 
 ## How will I know my claim was approved?
-Check [My shops](/my/shops). When your shop appears there, you're in. Your shop's public page will also show a **You manage this shop** box with **Open your shop dashboard**. If a day or two has passed and nothing has changed, email support@undergroundaquarium.com with your shop's name and the email on your account.
+Check [My shops](/my/shops). When your shop appears there, you're in. Your shop's public page will also show a **Shop dashboard** button, and you can add your banner and logo right there. If a day or two has passed and nothing has changed, email support@undergroundaquarium.com with your shop's name and the email on your account.
 
 ## What can I do once my claim is approved?
 From your [shop dashboard](/help/shop-dashboard-overview) you can:

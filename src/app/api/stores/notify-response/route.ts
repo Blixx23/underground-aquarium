@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       type: "review_response",
       title: `${store.name} responded`,
       body: "The shop replied to your review. Tap to see what they said.",
-      link: `/stores/${store.slug}`,
+      link: `/stores/${store.slug}?tab=reviews`,
     });
 
     return NextResponse.json({ ok: true });

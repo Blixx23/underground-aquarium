@@ -1,61 +1,59 @@
 ---
-title: Adding photos of your shop
+title: Your banner, logo and photos
 category: For store owners
-summary: How to add up to 8 photos to your shop's page from the Photos tab, what happens to large or iPhone photos, how to remove them and where they show.
+summary: How to add a banner and logo to your shop page, how to share photos in posts, where your older gallery photos show, and how to remove photos.
 order: 40
-keywords: shop photos, store pictures, upload images, storefront photo, tank photos, gallery, delete photo, remove picture, heic, iphone photos, reorder photos
+keywords: shop photos, store pictures, upload images, storefront photo, tank photos, gallery, delete photo, remove picture, heic, iphone photos, banner, cover photo, logo, profile picture, shop branding
 pages: /my/shops/[slug]/photos, /stores/[slug]
 ---
 
-Photos show customers what to expect before they drive over: your storefront, your tanks, your best livestock. You add them from the **Photos** tab of your [shop dashboard](/help/shop-dashboard-overview). Only the shop's owner can add photos.
+Your shop page looks like a business page on a social network: a wide **banner** across the top, your round **logo** next to your name, and your photos in your posts and on the **Photos** tab. Only the shop's owner can add any of these.
 
-## How do I add photos to my shop page?
-1. Open [My shops](/my/shops), tap your shop, then open **Photos**.
-2. Tap **Add photos**.
-3. Pick one or more images from your phone or computer. You can select several at once.
+## How do I add a banner?
+From your public page:
 
-A spinner shows while they upload. Each photo appears in the grid as soon as it's done.
+1. Open your shop's page while signed in.
+2. Tap **Add a banner** in the corner of the banner.
+3. Pick a photo.
 
-## How many photos can I add?
-Up to 8 in total. If you pick more than you have room for, only the first ones that fit are added. Once you have 8, the **Add photos** button disappears. Remove one to make room.
+Or from your dashboard: open [My shops](/my/shops), open **Banner & photos**, and tap **Upload a banner**.
+
+The banner is wide, so wide photos work best: your storefront, a full tank wall, or your sign. Until you add one, your page shows a plain ocean banner with your shop's name.
+
+## How do I add a logo?
+On your public page, tap the camera button on the round picture next to your name. Or open **Banner & photos** in your dashboard and tap **Upload a logo**. Square logos look best. Your logo also shows on every post you make. Until you add one, your page shows your shop's initials.
+
+## How do I change or remove my banner or logo?
+To change one, upload a new photo the same way. To remove one, open **Banner & photos** in your dashboard and tap **Remove** under it. Your page goes back to the standard banner or your initials.
+
+## How do I share photos now?
+Put them in a post. Open the **Posts** tab on your page (or **Posts** in your dashboard), tap the post box, add up to 4 photos with some words, and tap **Post**. See [Posting shop updates](/help/shop-updates).
+
+Every photo you post also collects on your **Photos** tab, newest first, so customers can browse them all in one place.
+
+## What happened to the photos I added before?
+They're still on your page. Photos you added to your old gallery show:
+
+- as posts on your timeline, one for each day you added them, saying "[Shop] added 8 photos", dated the day you added them
+- on your **Photos** tab, with everything else
+
+Nothing was deleted or moved. You can still see them, and remove any you don't want, under **Gallery photos** in **Banner & photos**.
 
 ## What kind of photos work?
-Any normal image from a phone or camera, including iPhone photos (HEIC). Before uploading, we convert each photo to a JPEG, fix sideways rotation and shrink it so its longest side is at most 2,000 pixels. Small web-ready images are kept as they are. You don't need to resize anything first.
-
-Good shots to add:
-
-- The storefront, so people recognize it from the street
-- Wide shots of your tank walls or coral frag tanks
-- Close-ups of livestock you're known for
-- The inside of the shop, so first-timers know what they're walking into
-
-Photos display as squares in the grid, so keep the subject near the middle.
+Any normal image from a phone or camera, including iPhone photos (HEIC). We convert each photo to a JPEG, fix sideways rotation and shrink it so its longest side is at most 2,000 pixels. You don't need to resize anything first.
 
 ## How do I remove a photo?
-On the **Photos** tab, tap the **X** in the corner of the photo. It's removed right away, with no confirmation and no undo. Re-upload it if you removed the wrong one.
-
-## Where do my photos appear?
-In the **Photos** section of your public page, below **Spotted in stock**. They show in a grid, and tapping one opens it full size in a new tab. If you have no photos, the section doesn't appear on your page at all.
-
-## Can I add captions or change the order?
-No. Photos show in the order you added them, and there's no caption field. To change the order, remove photos and add them back in the order you want.
-
-## Do photos help my shop get found?
-Photos make your page more useful to customers, and "Add a few photos of your tanks and storefront" appears in **Needs your attention** on your Overview until you add one. Your weekly report also nudges you if you have none.
-
-## Are shop photos the same as photos on updates?
-No. Shop photos are the permanent gallery on your page. Photos you attach to an update (up to 4 per update) belong to that update and show under **From the shop**. See [Posting shop updates](/help/shop-updates).
+- **A photo in a post:** tap the pencil on the post, tap the **X** on the photo, then **Save**.
+- **A gallery photo:** open **Banner & photos** in your dashboard and tap the **X** on the photo, then confirm.
 
 ## Can customers add photos to my page?
-No. Only the shop's owner can add photos to the gallery. Customers can post text sightings in **Spotted in stock** and leave reviews.
+No. On a claimed page, the only thing customers add is reviews.
 
 ## Common problems
-**The Add photos button is missing.** You already have 8 photos. Remove one first.
+**The Add a banner button isn't on my page.** Sign in with the account that manages the shop.
 
-**A photo failed to upload.** An error message appears under the button. Try again on a stronger connection, or try a different photo. If a particular photo never works, take a screenshot of it and upload the screenshot.
+**My banner or logo didn't save.** A message appears under the button. Try again on a stronger connection or with a different photo. If it keeps happening, email support@undergroundaquarium.com.
 
-**My photo is sideways.** We correct rotation automatically in most cases. If one still looks wrong, rotate it in your phone's photo app, save it, and upload it again.
+**My banner is cropped.** The banner is wide and short, so tall photos lose their top and bottom. Pick a wide photo, or crop it wide on your phone first.
 
-**I removed a photo by mistake.** There's no undo. Upload it again from your device.
-
-**My photos don't show on my public page.** Refresh the page. If the grid is still missing, check the **Photos** tab to make sure they finished uploading.
+**My photo is sideways.** Rotate it in your phone's photo app, save it, and upload it again.

@@ -20,7 +20,7 @@ That's it. There's no sign-in, no form and no "are you sure" screen. Many email 
 Yes, one short email with the subject "You've been unsubscribed", saying you've been unsubscribed from our marketing and outreach emails and won't get any more of them. It also says that if you have an account with us, emails about your account and your messages will still arrive. It's only sent the first time, so clicking the link twice won't send two.
 
 ## What happens to my shop's page when I unsubscribe?
-Nothing. Your shop stays listed in the directory, and its page stays up so customers can still find your address, phone, hours and directions. Shoppers can still read and leave reviews, post stock sightings, follow the shop and suggest fixes. Unsubscribing only changes what we send to your inbox.
+Nothing. Your shop stays listed in the directory, and its page stays up so customers can still find your address, phone, hours and directions. Shoppers can still read and leave reviews, follow the shop and, while it's unclaimed, suggest fixes. Unsubscribing only changes what we send to your inbox.
 
 If the page has details that are wrong, you can still fix them (see below).
 

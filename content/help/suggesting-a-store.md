@@ -54,7 +54,7 @@ Yes. Suggest it first, since you can only claim a shop that's already in the dir
 Not from the site. There's no page listing your past suggestions. If you made a mistake, email support@undergroundaquarium.com with the shop's name and the correction.
 
 ## How do I check whether a store is already listed?
-Before suggesting, search [Fish stores](/stores) for the shop's name and also for its town. The search forgives small typos and shows nearby shops when a town has none, so if it's listed nearby under a slightly different name, you'll spot it. If it's listed but the details are wrong, use **Suggest a fix** on its page instead. See [Suggesting store fixes and sightings](/help/suggesting-store-fixes-and-sightings).
+Before suggesting, search [Fish stores](/stores) for the shop's name and also for its town. The search forgives small typos and shows nearby shops when a town has none, so if it's listed nearby under a slightly different name, you'll spot it. If it's listed but the details are wrong, use **Suggest a fix** on its page instead. See [Suggesting store fixes](/help/suggesting-store-fixes-and-sightings).
 
 ## Common problems
 **"Couldn't submit, please try again."** The suggestion didn't go through. Check your connection and tap **Submit suggestion** again. If it keeps failing, email the details to support@undergroundaquarium.com.

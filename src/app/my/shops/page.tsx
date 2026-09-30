@@ -88,7 +88,7 @@ export default async function MyShopsPage({
                   <Stat label="Views, 30 days" value={s.views30 ?? 0} Icon={Eye} />
                   <Stat label="Following" value={s.followers ?? 0} Icon={Heart} />
                   <Stat label="Reviews" value={s.reviews ?? 0} Icon={MessageSquare} />
-                  <Stat label="Updates" value={s.posts ?? 0} Icon={Newspaper} />
+                  <Stat label="Posts" value={s.posts ?? 0} Icon={Newspaper} />
                 </div>
               </Link>
             ))}

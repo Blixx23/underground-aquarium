@@ -61,7 +61,7 @@ There isn't a Report button inside conversations. If someone is harassing or sca
 3. For anything serious, email support@undergroundaquarium.com with their username.
 
 ## Can I report a store, review or event?
-There's no Report button on store reviews or events. Email support@undergroundaquarium.com with a link and a short explanation. To fix wrong store details (hours, address, phone), use the store page's fix suggestion instead. See [Suggesting store fixes and sightings](/help/suggesting-store-fixes-and-sightings).
+There's no Report button on store reviews or events. Email support@undergroundaquarium.com with a link and a short explanation. To fix wrong store details (hours, address, phone), use the store page's fix suggestion instead. See [Suggesting store fixes](/help/suggesting-store-fixes-and-sightings).
 
 ## What happens after I report something?
 1. Your report lands in our moderators' queue with the reason, your details and a link to the item.

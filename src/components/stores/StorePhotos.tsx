@@ -58,6 +58,7 @@ export default function StorePhotos({
   }
 
   async function remove(id: string) {
+    if (!confirm("Remove this photo from your page?")) return;
     setPhotos((p) => p.filter((x) => x.id !== id));
     await supabase.from("store_photos").delete().eq("id", id);
   }

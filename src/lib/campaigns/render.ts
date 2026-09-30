@@ -19,7 +19,7 @@ export type CampaignVars = {
 
 export const PLACEHOLDERS: { token: string; means: string }[] = [
   { token: "{{shop_name}}", means: "the shop's name" },
-  { token: "{{whats_happening}}", means: "a true sentence about their own shop: views, reviews or sightings" },
+  { token: "{{whats_happening}}", means: "a true sentence about their own shop: views or reviews" },
   { token: "{{whats_missing}}", means: "what's visibly missing from their page, or nothing if it's complete" },
   { token: "{{claim_link}}", means: "one-press claim link, signed, no form to fill in" },
   { token: "{{page_url}}", means: "a plain link to the shop's page" },

@@ -13,7 +13,8 @@ Once your claim is approved, everything for running your shop's page lives in yo
 Any of these work:
 
 - Go to [My shops](/my/shops) and tap your shop.
-- On your shop's public page, tap **Open your shop dashboard** in the **You manage this shop** box.
+- On your shop's public page, tap **Shop dashboard** under your shop's name.
+- In the top bar, tap the green **My Shop** button (on a phone, it's in the menu and on your **Me** page).
 - From your profile page, tap **My shops** under **Your stuff**.
 - In your account settings menu, tap **Your shops** ("Shops you manage").
 - Tap the button in any shop alert email, such as **Open your shop dashboard** or **Reply to this review**.
@@ -42,8 +43,8 @@ At the top you'll see "Shop dashboard", your shop's name and town, **All my shop
 |---|---|
 | **Overview** | What needs doing, shopper reports and your headline numbers |
 | **Insights** | Views, directions, calls and website visits, day by day |
-| **Updates** | Post restocks, sales and events to your followers |
-| **Photos** | Add or remove up to 8 photos |
+| **Posts** | Post restocks, sales and events with photos |
+| **Banner & photos** | Your banner, your logo and your older gallery photos |
 | **Hours & details** | Edit your address, phone, website, hours, description, what you carry and special hours |
 | **Reviews** | Read and reply to reviews. A yellow number shows how many still need a reply. |
 | **Promotions** | Free posters with your QR code, a website badge and share text |

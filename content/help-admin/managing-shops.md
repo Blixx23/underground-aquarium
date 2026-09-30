@@ -50,8 +50,8 @@ The menu on the left (a strip on phones) has seven tabs:
 
 - **Overview**: headline numbers for the shop. If the numbers can't load you see a "numbers unavailable" message.
 - **Insights**: the longer view of the same numbers.
-- **Updates**: post restocks, sales and events. See the note below about who gets notified.
-- **Photos**: add and remove shop photos.
+- **Posts**: post restocks, sales and events. See the note below about who gets notified.
+- **Banner & photos**: set the banner and logo, and remove old gallery photos.
 - **Hours & details**: press **Edit store** to change Street address, City, State, Phone, Website, Hours, Short description and What you carry, then **Save changes**. Underneath is a summary of Address, Phone, Website, Hours and About ("Not set" when empty), and a section for special hours on upcoming dates.
 - **Reviews**: every review, newest first, with a reply box. An amber count on the tab shows reviews with no reply yet.
 - **Promotions**: the shop's posters, badges and promotion kit.

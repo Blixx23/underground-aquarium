@@ -27,7 +27,7 @@ It's written to look like a letter, not an advert, because Gmail sorts mail into
 - an optional closing link (underlined, never a filled button) with its address underneath,
 - a footer: "You're getting this because your shop is listed in our free directory.", "**Unsubscribe** to stop these emails." and the postal address.
 
-The inbox preview line is the first real sentence of the email. The text can include true facts about the shop (views in the last month, reviews, sightings, what's missing from the page) through the placeholders; the code only uses figures from the shop's own page.
+The inbox preview line is the first real sentence of the email. The text can include true facts about the shop (views in the last month, reviews, what's missing from the page) through the placeholders; the code only uses figures from the shop's own page.
 
 It's sent from the bulk sender address (`RESEND_FROM_BULK`), and replies go to the campaign's reply address if one is set, otherwise to support@undergroundaquarium.com.
 

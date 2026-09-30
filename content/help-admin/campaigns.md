@@ -110,7 +110,7 @@ The first email's wait cannot be edited on this page.
 The page lists them under "Things you can drop into the subject or the body":
 
 - `{{shop_name}}`: the shop's name.
-- `{{whats_happening}}`: a true sentence about their own shop, such as how many people opened their page in the last month, recent reviews, or sightings.
+- `{{whats_happening}}`: a true sentence about their own shop, such as how many people opened their page in the last month, or recent reviews.
 - `{{whats_missing}}`: what is visibly missing from their page (hours, photos, a description), or nothing if it's complete.
 - `{{claim_link}}`: the one-press claim link, signed for that shop, no form to fill in.
 - `{{page_url}}`: a plain link to the shop's page.

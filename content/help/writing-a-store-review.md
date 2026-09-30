@@ -67,7 +67,7 @@ No. Owners can reply, but they can't edit, hide or remove your review. Only you 
 - Say when you visited and what you went in for.
 - Be specific: the health of the livestock, how the tanks looked, how staff treated you, prices on things you bought.
 - Keep it to your own experience, and keep it civil. Reviews follow the [community rules](/help/community-rules).
-- Stock changes weekly, so for "they had X in today" posts, use **Spotted in stock** instead. See [Suggesting store fixes and sightings](/help/suggesting-store-fixes-and-sightings).
+- Stock changes weekly, so keep reviews about the shop itself rather than one day's stock.
 
 ## How is the star rating calculated?
 The rating is the plain average of every review's stars, shown to one decimal place (for example 4.3). Every review counts the same, whenever it was posted. The stars on the page fill in proportion, so 4.3 shows four full stars and a sliver of the fifth.

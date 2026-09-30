@@ -15,8 +15,8 @@ import {
 const TABS = [
   { seg: "", label: "Overview", Icon: LayoutDashboard },
   { seg: "insights", label: "Insights", Icon: BarChart3 },
-  { seg: "updates", label: "Updates", Icon: Newspaper },
-  { seg: "photos", label: "Photos", Icon: ImageIcon },
+  { seg: "updates", label: "Posts", Icon: Newspaper },
+  { seg: "photos", label: "Banner & photos", Icon: ImageIcon },
   { seg: "hours", label: "Hours & details", Icon: CalendarClock },
   { seg: "reviews", label: "Reviews", Icon: Star },
   { seg: "promotions", label: "Promotions", Icon: Megaphone },

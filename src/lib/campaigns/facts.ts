@@ -58,11 +58,6 @@ export function whatsHappening(f: ShopFacts, shop: string): string {
       ? `Somebody reviewed ${shop} on Underground Aquarium in the last month.`
       : `${f.reviews_30} people reviewed ${shop} on Underground Aquarium in the last month.`;
   }
-  if (f.sightings_30 > 0) {
-    return f.sightings_30 === 1
-      ? `Somebody posted what they spotted on your shelves this month.`
-      : `${f.sightings_30} people posted what they spotted on your shelves this month.`;
-  }
   if (f.reviews_total > 0) {
     const stars = f.rating ? ` It averages ${f.rating} out of 5.` : "";
     return `${shop} has ${f.reviews_total} review${f.reviews_total === 1 ? "" : "s"} on Underground Aquarium.${stars}`;
@@ -95,7 +90,6 @@ export function whatsMissing(f: ShopFacts): string {
 export function subjectHook(f: ShopFacts, shop: string): string {
   if (f.views_30 >= 10) return `${f.views_30} people looked up ${shop} last month`;
   if (f.reviews_30 > 0) return `A new review on your ${shop} page`;
-  if (f.sightings_30 > 0) return `Someone posted what they saw at ${shop}`;
   if (f.reviews_total > 0) return `Your ${shop} reviews on Underground Aquarium`;
   if (!f.has_hours) return `${shop} is listed without its hours`;
   return `Your ${shop} page on Underground Aquarium`;

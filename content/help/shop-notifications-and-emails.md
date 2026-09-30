@@ -65,7 +65,7 @@ The alert appears in your bell straight away. The matching email is sent within 
 Every independent fish store in our directory has a free page. If your shop publishes an email address (usually on its own website), we may write to it about that page. These emails:
 
 - Read like a short personal note, not a mass mailing
-- Tell you something true about your page that you can check, such as how many people opened it in the last month, recent reviews, or what shoppers spotted on your shelves
+- Tell you something true about your page that you can check, such as how many people opened it in the last month, or recent reviews
 - May point out what's missing, like hours, photos or a description
 - Include a personal claim link, so you can take over your page with one press. See [Claiming your store](/help/claiming-your-store).
 - End with "You're getting this because your shop is listed in our free directory." and an **Unsubscribe** link

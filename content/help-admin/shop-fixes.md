@@ -17,7 +17,7 @@ The badge on the menu and the "N waiting" pill on the card count fixes that are 
 The page heading is **Shop fixes**, with the line "Shoppers flagging wrong details. Open the shop, edit it, then mark it done." When nothing is open you see "Nothing waiting."
 
 ## What does a shopper see when they flag something?
-On the public shop page (/stores/[slug]) a signed-in member presses **Something wrong here? Suggest a fix**, picks what is wrong, writes a short note (at least 2 characters) and sends it. They then see "Thanks! We'll check it and update the page." Signed-out visitors are asked to sign in first. The member guide is [Suggesting store fixes and sightings](/help/suggesting-store-fixes-and-sightings).
+On the public page of an unclaimed shop (/stores/[slug]) a signed-in member presses **Something wrong here? Suggest a fix**, picks what is wrong, writes a short note (at least 2 characters) and sends it. They then see "Thanks! We'll check it and update the page." Signed-out visitors are asked to sign in first. Claimed shops don't show the button: their owner keeps the details. The member guide is [Suggesting store fixes](/help/suggesting-store-fixes-and-sightings).
 
 ## What does each fix card show?
 Fixes are listed oldest first, up to 200 at a time. Each card shows:

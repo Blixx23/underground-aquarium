@@ -122,9 +122,6 @@ The store directory lists independent aquarium shops, not big chains. **Shops Ne
 ### Claimed shop
 A store page the real owner has taken over. Claimed shops show a check badge ("Claimed by the owner") and can post updates, set hours, add photos and reply to reviews. Owners can claim their shop for free. See [Claiming your store](/help/claiming-your-store).
 
-### Spotted in stock
-Short notes from shoppers about what they saw at a store recently, like "Big batch of cherry shrimp". See [Suggesting store fixes and sightings](/help/suggesting-store-fixes-and-sightings).
-
 ### Suggest a fix
 The link on a store page for reporting wrong details, like hours or an address.
 
