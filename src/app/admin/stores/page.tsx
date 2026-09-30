@@ -106,7 +106,7 @@ export default async function AdminStoreClaimsPage({
 
   return (
     <main className="min-h-screen px-4 pt-28 pb-20 sm:px-6">
-      <div className={`mx-auto ${view === "approved" ? "max-w-6xl" : "max-w-3xl"}`}>
+      <div className={`mx-auto ${view === "approved" ? "max-w-5xl" : "max-w-3xl"}`}>
         <Link
           href="/admin"
           className="mb-6 inline-flex items-center gap-2 text-sm text-ocean-400 transition-colors hover:text-white"
@@ -140,8 +140,8 @@ export default async function AdminStoreClaimsPage({
         {view === "approved" ? (
           <>
             <p className="mb-3 text-sm text-ocean-400">
-              {owned.length} shop{owned.length === 1 ? "" : "s"} with an owner. Edit opens the shop&apos;s details;
-              View opens its public page.
+              {`${owned.length} shop${owned.length === 1 ? "" : "s"} with an owner.`} Edit opens the shop&apos;s
+              details; View opens its public page.
             </p>
             <OwnedShopsTable rows={owned} />
           </>
