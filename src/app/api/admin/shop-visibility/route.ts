@@ -40,6 +40,8 @@ export async function POST(req: Request) {
   if (!data) return NextResponse.json({ error: "Shop not found." }, { status: 404 });
 
   revalidatePath("/stores");
+  // The homepage shop count and top cities.
+  revalidatePath("/");
   if (data.slug) revalidatePath(`/stores/${data.slug}`);
   return NextResponse.json({ ok: true, visible: data.status === "published" });
 }

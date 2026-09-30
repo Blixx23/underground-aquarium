@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, Store, LayoutDashboard, ExternalLink, UserRound } from "lucide-react";
+import { Suspense } from "react";
+import { Store, LayoutDashboard, ExternalLink, UserRound } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import ShopVisibilityToggle from "@/components/stores/ShopVisibilityToggle";
+import AdminShopSearch from "@/components/admin/AdminShopSearch";
 
 export const metadata: Metadata = { title: "Admin · All shops" };
 export const dynamic = "force-dynamic";
@@ -89,21 +91,9 @@ export default async function AdminShopsPage({
           Find any shop, open its dashboard, or show and hide it in the directory. Only admins can hide a shop.
         </p>
 
-        <form action="/admin/shops" className="mb-4 flex gap-2">
-          {view !== "all" && <input type="hidden" name="view" value={view} />}
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-500" />
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder="Shop name, city or state"
-              className="w-full rounded-xl border border-ocean-700 bg-ocean-900 py-2.5 pl-9 pr-3 text-base text-white placeholder:text-ocean-500 sm:text-sm"
-            />
-          </div>
-          <button className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 text-sm font-medium text-amber-200 hover:bg-amber-400/20">
-            Search
-          </button>
-        </form>
+        <Suspense fallback={<div className="mb-4 h-[46px] rounded-xl border border-ocean-700 bg-ocean-900" />}>
+          <AdminShopSearch initial={q} />
+        </Suspense>
 
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {VIEWS.map((v) => (
@@ -127,7 +117,16 @@ export default async function AdminShopsPage({
 
         {rows.length === 0 ? (
           <p className="rounded-2xl border border-ocean-800/60 bg-ocean-950/40 px-4 py-6 text-center text-sm text-ocean-400">
-            No shops match that.
+            {q ? (
+              <>
+                No shops match &ldquo;{q}&rdquo;.{" "}
+                <Link href={view === "all" ? "/admin/shops" : `/admin/shops?view=${view}`} className="text-amber-200 underline hover:text-white">
+                  Show all
+                </Link>
+              </>
+            ) : (
+              "No shops here yet."
+            )}
           </p>
         ) : (
           <ul className="divide-y divide-ocean-800/60 overflow-hidden rounded-2xl border border-ocean-800/60 bg-ocean-950/40">
