@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 import { supabasePublic } from "@/lib/supabase/public";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { canSeeHiddenShop } from "@/lib/stores/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -12,17 +14,14 @@ type Shop = {
   city: string | null;
   state: string | null;
   logo_url?: string | null;
+  status?: string | null;
+  claimed_by?: string | null;
 };
 
 async function getShop(slug: string): Promise<Shop | null> {
   // The logo column arrives with step 61; fall back without it.
-  for (const cols of ["id, name, city, state, logo_url", "id, name, city, state"]) {
-    const { data, error } = await supabasePublic
-      .from("fish_stores")
-      .select(cols)
-      .eq("slug", slug)
-      .eq("status", "published")
-      .maybeSingle();
+  for (const cols of ["id, name, city, state, status, claimed_by, logo_url", "id, name, city, state, status, claimed_by"]) {
+    const { data, error } = await supabaseAdmin.from("fish_stores").select(cols).eq("slug", slug).maybeSingle();
     if (!error) return (data as unknown as Shop | null) ?? null;
   }
   return null;
@@ -96,8 +95,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const { slug } = await params;
   const shop = await getShop(slug);
   if (!shop) return new Response("Not found", { status: 404 });
+  // A hidden shop's card is only for its owner and admins (their dashboard
+  // preview). Facebook and everyone else get a 404 like the page itself.
+  const hidden = shop.status !== "published";
+  if (hidden && !(await canSeeHiddenShop(shop.claimed_by ?? null))) {
+    return new Response("Not found", { status: 404 });
+  }
+  const db = hidden ? supabaseAdmin : supabasePublic;
 
-  const { data: reviewRows } = await supabasePublic.from("store_reviews").select("rating").eq("store_id", shop.id);
+  const { data: reviewRows } = await db.from("store_reviews").select("rating").eq("store_id", shop.id);
   const ratings = ((reviewRows ?? []) as { rating: number }[]).map((r) => r.rating);
   const count = ratings.length;
   const avg = count ? ratings.reduce((a, b) => a + b, 0) / count : null;
@@ -282,7 +288,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       width: W,
       height: H,
       ...(font ? { fonts: [{ name: "Cinzel", data: font, weight: 700 as const, style: "normal" as const }] } : {}),
-      headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" },
+      headers: {
+        "Cache-Control": hidden
+          ? "private, no-store"
+          : "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+      },
     }
   );
 }

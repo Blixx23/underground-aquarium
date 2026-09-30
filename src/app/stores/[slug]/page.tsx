@@ -18,6 +18,8 @@ import {
   Star,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { canSeeHiddenShop } from "@/lib/stores/viewer";
 import { createClient } from "@/lib/supabase/server";
 import ClaimStore from "../ClaimStore";
 import StoreReviews from "../StoreReviews";
@@ -75,6 +77,7 @@ type StoreRow = {
   source: string | null;
   cover_url?: string | null;
   logo_url?: string | null;
+  status?: string | null;
 };
 
 const STORE_COLS =
@@ -108,19 +111,16 @@ const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles
 async function getStore(slug: string) {
   // Newer columns (banner, logo, zip) may not exist on every database yet,
   // so try the fullest read first and fall back rather than 404ing.
+  // Read with the service client so a hidden shop is found too; who gets to
+  // see a hidden one is decided in visibleStore below.
   const tries = [
-    `${STORE_COLS}, postal_code, cover_url, logo_url`,
-    `${STORE_COLS}, cover_url, logo_url`,
-    `${STORE_COLS}, postal_code`,
-    STORE_COLS,
+    `${STORE_COLS}, status, postal_code, cover_url, logo_url`,
+    `${STORE_COLS}, status, cover_url, logo_url`,
+    `${STORE_COLS}, status, postal_code`,
+    `${STORE_COLS}, status`,
   ];
   for (const cols of tries) {
-    const { data, error } = await supabasePublic
-      .from("fish_stores")
-      .select(cols)
-      .eq("slug", slug)
-      .eq("status", "published")
-      .maybeSingle();
+    const { data, error } = await supabaseAdmin.from("fish_stores").select(cols).eq("slug", slug).maybeSingle();
     if (error) continue;
     const row = (data as unknown as StoreRow | null) ?? null;
     return row ? { ...row, address: tidyAddress(row.address) } : null;
@@ -128,12 +128,26 @@ async function getStore(slug: string) {
   return null;
 }
 
+/**
+ * The shop, if this visitor may see it. Published shops are for everyone.
+ * A hidden shop is only shown to its owner and site admins, so they can
+ * still check their page; everyone else gets a real 404.
+ */
+async function visibleStore(slug: string) {
+  const store = await getStore(slug);
+  if (!store) return null;
+  if (store.status === "published") return { store, hidden: false };
+  if (await canSeeHiddenShop(store.claimed_by)) return { store, hidden: true };
+  return null;
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const store = await getStore(slug);
+  const found = await visibleStore(slug);
   // Metadata resolves before the page streams, so this gives search engines
   // a real 404 instead of a 200 "not found" page.
-  if (!store) notFound();
+  if (!found) notFound();
+  const { store, hidden } = found;
 
   const place = [store.city, store.state].filter(Boolean).join(", ");
   // "Name: Aquarium Store in City, ST" matches both "name + city" searches
@@ -168,7 +182,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `/stores/${store.slug}` },
-    robots: { index: !storeIsStub({ ...store, reviews }), follow: true },
+    robots: hidden ? { index: false, follow: false } : { index: !storeIsStub({ ...store, reviews }), follow: true },
     openGraph: {
       title: store.name,
       description,
@@ -191,8 +205,12 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   const rawTab = (await searchParams).tab;
   const tab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : "posts";
 
-  const store = await getStore(slug);
-  if (!store) notFound();
+  const found = await visibleStore(slug);
+  if (!found) notFound();
+  const { store, hidden } = found;
+  // A hidden shop's own rows may be out of reach for public reads, so its
+  // owner's view reads them with the service client.
+  const db = hidden ? supabaseAdmin : supabasePublic;
 
   const supabase = await createClient();
   const {
@@ -202,7 +220,7 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   const claimed = !!store.claimed_by;
 
   // Followers: total count + whether the current user follows this shop
-  const { count: favoriteCount } = await supabasePublic
+  const { count: favoriteCount } = await db
     .from("store_favorites")
     .select("*", { count: "exact", head: true })
     .eq("fish_store_id", store.id);
@@ -219,7 +237,7 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   }
 
   // Reviews
-  const { data: reviewRows } = await supabasePublic
+  const { data: reviewRows } = await db
     .from("store_reviews")
     .select("id,user_id,rating,body,created_at,edited_at")
     .eq("store_id", store.id)
@@ -237,7 +255,7 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   if (user) authorIds.add(user.id);
   let nameById = new Map<string, string>();
   if (authorIds.size > 0) {
-    const { data: profs } = await supabasePublic
+    const { data: profs } = await db
       .from("profiles")
       .select("id,username,full_name")
       .in("id", Array.from(authorIds));
@@ -255,7 +273,7 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   const reviewIds = reviewList.map((r) => r.id);
   let respByReview = new Map<string, string>();
   if (reviewIds.length > 0) {
-    const { data: resps } = await supabasePublic
+    const { data: resps } = await db
       .from("review_responses")
       .select("review_id,body")
       .in("review_id", reviewIds);
@@ -277,14 +295,14 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   const currentUserName = user ? nameById.get(user.id) ?? null : null;
 
   // The shop's posts. Photos on posts came later; without that column, still show the text.
-  const withPhotos = await supabasePublic
+  const withPhotos = await db
     .from("store_posts")
     .select("id,title,body,images,created_at")
     .eq("store_id", store.id)
     .order("created_at", { ascending: false });
   let postRows: unknown[] | null = withPhotos.data;
   if (withPhotos.error) {
-    const retry = await supabasePublic
+    const retry = await db
       .from("store_posts")
       .select("id,title,body,created_at")
       .eq("store_id", store.id)
@@ -304,13 +322,13 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   const nearby = await getNearbyStores(store.lat ?? null, store.lng ?? null, store.id);
 
   const [{ data: photoRows }, { data: specialRows }] = await Promise.all([
-    supabasePublic
+    db
       .from("store_photos")
       .select("id, url, caption, created_at")
       .eq("store_id", store.id)
       .order("sort")
       .order("created_at"),
-    supabasePublic
+    db
       .from("store_special_hours")
       .select("id, day, closed, note")
       .eq("store_id", store.id)
@@ -648,7 +666,14 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <div className="mx-auto max-w-5xl">
-        <StoreTracker storeId={store.id} />
+        {!hidden && <StoreTracker storeId={store.id} />}
+
+        {hidden && (
+          <div className="mb-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+            <span className="font-semibold">Hidden from Shops.</span> Only you can see this page. Visitors, search engines
+            and Facebook get &quot;not found&quot; until the shop is shown again.
+          </div>
+        )}
 
         <Link
           href={store.state && store.city ? cityPath(store.state, store.city) : "/stores"}
