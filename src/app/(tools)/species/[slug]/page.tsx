@@ -62,10 +62,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const ogTitle = `${s.common_name} — Care Guide & Profile`;
   const url = `/species/${slug}`;
 
-  // A member's cover photo, when there is one, is the share image.
+  // Shared links show our designed card with the fish's name, key numbers
+  // and a member's photo. The version changes with the cover photo, so
+  // Facebook fetches the new card when a better photo is picked.
   const { data: photoRows } = await supabasePublic.rpc("public_species_photos", { p_slug: slug });
   const cover = ((photoRows ?? []) as SpeciesPhoto[])[0] ?? null;
-  const images = cover ? [{ url: cover.url, width: cover.width, height: cover.height, alt: s.common_name }] : undefined;
+  let h = 5381;
+  const stamp = `${s.common_name}|${cover?.url ?? ""}`;
+  for (let i = 0; i < stamp.length; i++) h = ((h << 5) + h + stamp.charCodeAt(i)) >>> 0;
+  const cardUrl = `/api/species/${slug}/share-image?v=${h.toString(36)}`;
+  const images = [{ url: cardUrl, width: 1200, height: 630, alt: `${s.common_name} care guide` }];
 
   return {
     // What people search: "cardinal tetra care", "cardinal tetra tank size".
@@ -77,14 +83,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       description,
       url,
       type: "article",
-      siteName: "UndergroundAquarium",
-      ...(images ? { images } : {}),
+      siteName: "Underground Aquarium",
+      images,
     },
     twitter: {
-      card: images ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: ogTitle,
       description,
-      ...(images ? { images: [images[0].url] } : {}),
+      images: [cardUrl],
     },
   };
 }

@@ -10,6 +10,17 @@ export const metadata: Metadata = {
   description:
     "Care guides for 400+ freshwater aquarium fish, shrimp and snails: tank size, temperature, pH, adult size, temperament and diet, with photos from real keepers.",
   alternates: { canonical: "/species" },
+  // Shared links show our designed Fish Species card, with real members' fish.
+  openGraph: {
+    title: "Fish Species: care guides with photos from real keepers",
+    description:
+      "Tank size, temperature, diet and tankmates for 400+ freshwater fish, shrimp and snails, with photos from real keepers' tanks.",
+    url: "/species",
+    siteName: "Underground Aquarium",
+    type: "website",
+    images: [{ url: "/api/species/share-image", width: 1200, height: 630, alt: "Fish Species on Underground Aquarium" }],
+  },
+  twitter: { card: "summary_large_image", images: ["/api/species/share-image"] },
 };
 
 export default async function SpeciesPage() {
