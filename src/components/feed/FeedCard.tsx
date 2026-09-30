@@ -503,7 +503,7 @@ function Photos({
     return (
       <button type="button" onClick={() => tap(0)} className="block w-full bg-ocean-950" aria-label="Open photo">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={shown[0]} alt={alt} loading="lazy" className="max-h-[560px] w-full object-cover" />
+        <WholePhoto src={shown[0]} alt={alt} className="aspect-[4/5] max-h-[560px] sm:aspect-[4/3]" />
       </button>
     );
   }
@@ -519,7 +519,7 @@ function Photos({
           className={`relative block min-h-0 overflow-hidden ${shown.length === 3 && i === 0 ? "row-span-2" : ""}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt={`${alt} (${i + 1})`} loading="lazy" className="h-full w-full object-cover" />
+          <WholePhoto src={src} alt={`${alt} (${i + 1})`} className="h-full" />
           {extra > 0 && i === shown.length - 1 && (
             <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-2xl font-semibold text-white">
               +{extra}
@@ -528,6 +528,28 @@ function Photos({
         </button>
       ))}
     </div>
+  );
+}
+
+/**
+ * A photo shown whole, never trimmed: it sits centered in its box over a
+ * soft blurred copy of itself, so tall and wide photos both stay
+ * recognizable and every tile keeps its size.
+ */
+function WholePhoto({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
+  return (
+    <span className={`relative block w-full overflow-hidden bg-ocean-950 ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} loading="lazy" className="relative h-full w-full object-contain" />
+    </span>
   );
 }
 

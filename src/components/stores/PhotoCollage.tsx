@@ -2,7 +2,8 @@
 
 /**
  * A post's photos, always in the same 4:3 frame so every post is the same
- * size no matter what was uploaded. One photo shows whole, centered over a
+ * size no matter what was uploaded. Photos are never trimmed: each shows
+ * whole over a blurred copy of itself. One photo shows whole, centered over a
  * soft blurred copy of itself. Two sit side by side, three get one big and
  * two small, four or more get one wide on top and three below (with "+N" on
  * the last when there are more). Tapping any photo calls onOpen.
@@ -26,12 +27,21 @@ export default function PhotoCollage({
       className={`group relative block h-full w-full overflow-hidden bg-ocean-950 ${className}`}
       aria-label={`Open photo ${i + 1} of ${images.length}`}
     >
+      {/* Whole photo, never trimmed, over a soft blurred copy of itself. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={images[i]}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
+      />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={images[i]}
         alt={alt}
         loading="lazy"
-        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+        className="relative h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
       />
       {extra ? (
         <span className="absolute inset-0 flex items-center justify-center bg-black/55 font-display text-3xl text-white">
