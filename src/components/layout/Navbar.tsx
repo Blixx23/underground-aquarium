@@ -233,7 +233,6 @@ export default function Navbar() {
     (user?.user_metadata?.username as string | undefined) ||
     user?.email?.split("@")[0] ||
     "Account";
-  const firstName = displayName.split(" ")[0];
   const publicHref = me?.username ? `/u/${me.username}` : "/profile";
 
   async function handleSignOut() {
@@ -381,22 +380,22 @@ export default function Navbar() {
           {user && hasShop && (
             <Link
               href={myShops.href}
+              title={myShops.label}
               aria-label={
                 myShops.unanswered > 0
                   ? `${myShops.label}, ${myShops.unanswered} review${myShops.unanswered === 1 ? "" : "s"} to answer`
                   : myShops.label
               }
               className={cn(
-                "relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                "relative flex h-9 w-9 items-center justify-center rounded-full border transition-colors",
                 onShop
                   ? "border-emerald-400/70 bg-emerald-500/25 text-white"
-                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:border-emerald-400/70 hover:bg-emerald-500/20 hover:text-white"
+                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:border-emerald-400/70 hover:bg-emerald-500/20 hover:text-white"
               )}
             >
-              <Store className="h-4 w-4 text-emerald-300" />
-              {myShops.label}
+              <Store className="h-4 w-4" />
               {myShops.unanswered > 0 && (
-                <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-amber-400 px-1 text-[11px] font-semibold leading-none text-ocean-950">
+                <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-amber-400 px-1 text-[11px] font-semibold leading-none text-ocean-950 ring-2 ring-ocean-950">
                   {myShops.unanswered > 9 ? "9+" : myShops.unanswered}
                 </span>
               )}
@@ -405,15 +404,6 @@ export default function Navbar() {
           <NotificationBell />
           {user ? (
             <>
-              {MY_LISTINGS_ENABLED && (
-                <Link
-                  href="/my/listings"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-ocean-300 hover:text-white transition-colors"
-                  aria-label="My listings"
-                >
-                  <ClipboardList className="w-4 h-4" />
-                </Link>
-              )}
               <MessageBell />
               <div
                 className="relative"
@@ -425,10 +415,10 @@ export default function Navbar() {
                   onClick={() => setDropdown(dropdown === "__account" ? null : "__account")}
                   className="flex items-center gap-2 py-1.5 pl-2 pr-3 text-sm text-ocean-200 hover:text-white transition-colors"
                   aria-haspopup="menu"
+                  aria-label="Your account"
                   aria-expanded={dropdown === "__account"}
                 >
-                  <Avatar name={displayName} src={me?.avatar_url ?? null} society={inSociety} size={28} />
-                  <span className="max-w-[9rem] truncate">{firstName}</span>
+                  <Avatar name={displayName} src={me?.avatar_url ?? null} society={inSociety} size={30} />
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
                 {dropdown === "__account" && (
