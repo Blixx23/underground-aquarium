@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 const STORE_TYPES = [
   "freshwater",
@@ -34,7 +33,6 @@ export default function EditStore({
   store: StoreData;
   isOwner: boolean;
 }) {
-  const [supabase] = useState(() => createClient());
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [address, setAddress] = useState(store.address ?? "");
@@ -61,24 +59,31 @@ export default function EditStore({
     setBusy(true);
     setError(null);
     try {
-      const { error: updateError } = await supabase
-        .from("fish_stores")
-        .update({
-          address: address.trim() || null,
-          city: city.trim() || null,
-          state: state.trim() || null,
-          phone: phone.trim() || null,
-          website: website.trim() || null,
-          hours: hours.trim() || null,
-          description: description.trim() || null,
+      // Saved through the server, which checks you own the shop or are an
+      // admin, so a save never quietly does nothing.
+      const res = await fetch("/api/stores/details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeId: store.id,
+          address,
+          city,
+          state,
+          phone,
+          website,
+          hours,
+          description,
           tags,
-        })
-        .eq("id", store.id);
-      if (updateError) throw updateError;
+        }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(j?.error || "Couldn't save your changes. Please try again.");
+      }
       setOpen(false);
       router.refresh();
-    } catch {
-      setError("Couldn't save your changes. Please try again.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save your changes. Please try again.");
     } finally {
       setBusy(false);
     }
