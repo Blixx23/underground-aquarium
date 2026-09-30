@@ -17,11 +17,12 @@ Three sections:
 - **Tell your customers**: a ready-made post and your page link to copy
 
 ## How do I download a poster?
-1. Open **Promotions** in your shop dashboard.
-2. Pick a poster and tap **Download PDF** for the standard version, or **Dark** for the dark version.
-3. The PDF downloads to your device. Print it or send it to a print shop.
+1. Open **Promotions** in your shop dashboard. Each poster shows a preview of exactly what will print, with your shop name and QR code.
+2. Tap a poster to see it full size. Tap outside it or the **X** to close.
+3. Pick **Light** or **Dark** under the poster. The preview changes to match.
+4. Tap **Download** (or **Download PDF** in the full-size view). Print it or send it to a print shop.
 
-Each poster is a full US Letter page, "with your shop name across the top and your QR code in the middle," written for someone already standing in your shop. The standard version is plain white paper and light on ink, made for an ordinary inkjet. The **Dark** version is meant for a print shop or showing on a screen.
+Each poster is a full US Letter page with your shop name across the top and your QR code in the middle, written for someone already standing in your shop. **Light** is plain white paper and light on ink, made for an ordinary inkjet. **Dark** is meant for a print shop or showing on a screen.
 
 ## What do the four posters say?
 | Poster | Call to action | Suggested spot | Printed bullets |
@@ -50,7 +51,7 @@ Yes. The QR code goes to your page, not to a copy of your details, so edits to y
 The badge is 240 by 64 pixels and links to your shop's page. Tapping it opens your page, and those visits count toward your page views.
 
 ## How do I share my page on social media?
-Under **Tell your customers** ("Ready to paste into Facebook, Instagram or a text."), there's a short post:
+Under **Tell your customers** you'll see the picture people get when your link is shared on Facebook, in a text or on X: your shop name, town, stars and logo on a dark card. Under it there's a short post:
 
 "We're on Underground Aquarium. Our hours, directions, shop news and reviews are all there:" followed by your page link.
 
@@ -66,7 +67,9 @@ No. The posters, badge and share text are free, as many copies as you like. Ther
 The page suggests a spot for each: "Save us to your phone" by the door or register, "Know what just came in" above the tanks, "Leave us a review" at the register where customers are happy with what they just bought, and "Free help with your tank" by the starter kits.
 
 ## Common problems
-**Download PDF doesn't seem to do anything.** Check your downloads folder, or your browser's download bar. On a phone, the PDF may open in a new view with a share or save button.
+**The preview says "Preview isn't available here."** Your browser couldn't draw it, but the download still works. Tap **Download** and open the file.
+
+**Download doesn't seem to do anything.** Check your downloads folder, or your browser's download bar. On a phone, the PDF may open in a new view with a share or save button.
 
 **"No such shop." when downloading.** Your shop page isn't currently shown in the directory. Email support@undergroundaquarium.com.
 
