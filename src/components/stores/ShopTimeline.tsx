@@ -30,6 +30,35 @@ export type TimelineItem = TimelinePost | TimelineAlbum;
 const MAX_PHOTOS = 4;
 const BUCKET = "store-post-images";
 
+/**
+ * Post text trimmed to 5 lines with "See more", so a long post doesn't make
+ * its card taller than the rest.
+ */
+function PostText({ text, withTitle }: { text: string; withTitle: boolean }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > 280 || text.split("\n").length > 5;
+  return (
+    <div className={withTitle ? "mt-1" : "mt-3"}>
+      <p
+        className={`whitespace-pre-wrap text-[15px] leading-relaxed text-ocean-100 ${
+          long && !open ? "line-clamp-5" : ""
+        }`}
+      >
+        {text}
+      </p>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="mt-1 text-sm font-medium text-emerald-300 hover:text-emerald-200"
+        >
+          {open ? "See less" : "See more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 const dateFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
@@ -449,12 +478,8 @@ export default function ShopTimeline({
                   </div>
                 )}
               </div>
-              {it.title && <h3 className="mt-3 font-medium text-white">{it.title}</h3>}
-              {it.body && (
-                <p className={`whitespace-pre-wrap text-[15px] leading-relaxed text-ocean-100 ${it.title ? "mt-1" : "mt-3"}`}>
-                  {it.body}
-                </p>
-              )}
+              {it.title && <h3 className="mt-3 line-clamp-2 font-medium text-white">{it.title}</h3>}
+              {it.body && <PostText text={it.body} withTitle={!!it.title} />}
             </div>
             <div className={imgs.length ? "mt-3" : "pb-4"}>
               <PhotoCollage
