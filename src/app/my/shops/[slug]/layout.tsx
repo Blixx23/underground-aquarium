@@ -25,7 +25,27 @@ export default async function ShopAdminLayout({
     listed = (st as { status?: string } | null)?.status === "published";
   }
 
+  // Back link: owners with several shops go to their list; an admin looking
+  // at someone else's shop goes back to the admin list; one-shop owners
+  // don't need one.
+  const isOwner = store.claimed_by === user.id;
+  let ownedCount = 0;
+  if (isOwner) {
+    const { count } = await supabaseAdmin
+      .from("fish_stores")
+      .select("id", { count: "exact", head: true })
+      .eq("claimed_by", user.id);
+    ownedCount = count ?? 0;
+  }
+  const back =
+    !isOwner && isAdmin
+      ? { href: "/admin/shops", label: "All shops (admin)" }
+      : ownedCount > 1
+        ? { href: "/my/shops?list=1", label: "All my shops" }
+        : null;
+
   // Reviews still waiting on a reply, so the menu can nag gently.
+
   const { data: reviewRows } = await supabase
     .from("store_reviews")
     .select("id")
@@ -43,12 +63,14 @@ export default async function ShopAdminLayout({
   return (
     <main className="min-h-screen px-4 pt-24 pb-20 sm:px-6 sm:pt-28">
       <div className="mx-auto max-w-6xl">
-        <Link
-          href="/my/shops"
-          className="mb-4 inline-flex items-center gap-2 text-sm text-ocean-400 transition-colors hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" /> All my shops
-        </Link>
+        {back && (
+          <Link
+            href={back.href}
+            className="mb-4 inline-flex items-center gap-2 text-sm text-ocean-400 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" /> {back.label}
+          </Link>
+        )}
 
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-ocean-800/60 pb-5">
           <div>

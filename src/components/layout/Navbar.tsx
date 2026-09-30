@@ -27,6 +27,8 @@ import {
   Tag,
   Egg,
   LifeBuoy,
+  Store,
+  ChevronRight,
 } from "lucide-react";
 import Avatar from "@/components/profile/Avatar";
 import type { User } from "@supabase/supabase-js";
@@ -35,6 +37,7 @@ import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
 import MessageBell from "./MessageBell";
 import SearchModal, { openSiteSearch } from "@/components/search/SearchModal";
+import { useMyShops } from "@/lib/hooks/useMyShops";
 import {
   MY_LISTINGS_ENABLED,
   POST_AD_PATH,
@@ -117,6 +120,10 @@ export default function Navbar() {
     return pathname === base || pathname.startsWith(base + "/");
   }
   const [open, setOpen] = useState(false);
+  // Shop owners get their dashboard one tap away, in emerald.
+  const myShops = useMyShops();
+  const hasShop = myShops.shops.length > 0;
+  const onShop = pathname.startsWith("/my/shops");
 
   // Only one phone menu at a time: opening this one closes the bottom bar's
   // Create sheet, and tapping anything on the bottom bar closes this one.
@@ -371,6 +378,30 @@ export default function Navbar() {
           >
             <Search className="w-4 h-4" />
           </button>
+          {user && hasShop && (
+            <Link
+              href={myShops.href}
+              aria-label={
+                myShops.unanswered > 0
+                  ? `${myShops.label}, ${myShops.unanswered} review${myShops.unanswered === 1 ? "" : "s"} to answer`
+                  : myShops.label
+              }
+              className={cn(
+                "relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                onShop
+                  ? "border-emerald-400/70 bg-emerald-500/25 text-white"
+                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:border-emerald-400/70 hover:bg-emerald-500/20 hover:text-white"
+              )}
+            >
+              <Store className="h-4 w-4 text-emerald-300" />
+              {myShops.label}
+              {myShops.unanswered > 0 && (
+                <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-amber-400 px-1 text-[11px] font-semibold leading-none text-ocean-950">
+                  {myShops.unanswered > 9 ? "9+" : myShops.unanswered}
+                </span>
+              )}
+            </Link>
+          )}
           <NotificationBell />
           {user ? (
             <>
@@ -417,6 +448,26 @@ export default function Navbar() {
                       </span>
                     </Link>
                     <div className="my-1 h-px bg-ocean-800/70" />
+                    {hasShop && (
+                      <>
+                        <Link
+                          href={myShops.href}
+                          onClick={() => setDropdown(null)}
+                          className="flex items-center gap-2.5 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-100 hover:bg-emerald-500/20 hover:text-white"
+                        >
+                          <Store className="w-4 h-4 text-emerald-300" />
+                          <span className="min-w-0 flex-1 truncate">
+                            {myShops.shops.length === 1 ? myShops.shops[0].name : "My shops"}
+                          </span>
+                          {myShops.unanswered > 0 && (
+                            <span className="rounded-full bg-amber-400 px-1.5 text-[10px] font-semibold text-ocean-950">
+                              {myShops.unanswered}
+                            </span>
+                          )}
+                        </Link>
+                        <div className="my-1 h-px bg-ocean-800/70" />
+                      </>
+                    )}
                     {[
                       { href: "/profile", label: "Dashboard & settings", Icon: Settings },
                       { href: "/feed", label: "The Feed", Icon: Newspaper },
@@ -509,6 +560,34 @@ export default function Navbar() {
             <Crown className="h-5 w-5 shrink-0 text-amber-300" />
             <span className="font-display text-base text-amber-200">The Society</span>
           </Link>
+          {user && hasShop && (
+            <Link
+              href={myShops.href}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "-mt-2 mb-4 flex items-center gap-3 rounded-xl border px-4 py-3.5 active:bg-emerald-500/20",
+                onShop ? "border-emerald-400/60 bg-emerald-500/20" : "border-emerald-500/35 bg-emerald-500/[0.09]"
+              )}
+            >
+              <Store className="h-5 w-5 shrink-0 text-emerald-300" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-base text-emerald-100">{myShops.label}</span>
+                <span className="block truncate text-xs text-emerald-200/60">
+                  {myShops.unanswered > 0
+                    ? `${myShops.unanswered} review${myShops.unanswered === 1 ? "" : "s"} waiting on a reply`
+                    : myShops.shops.length === 1
+                      ? myShops.shops[0].name
+                      : "Updates, photos, hours and reviews"}
+                </span>
+              </span>
+              {myShops.unanswered > 0 && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-400 px-1.5 text-[11px] font-semibold text-ocean-950">
+                  {myShops.unanswered > 9 ? "9+" : myShops.unanswered}
+                </span>
+              )}
+              <ChevronRight className="h-4 w-4 shrink-0 text-emerald-300/70" />
+            </Link>
+          )}
           <p className="px-2 pb-2 font-mono text-[11px] uppercase tracking-widest text-ocean-500">Explore</p>
           <div className="grid grid-cols-2 gap-2">
             {EXPLORE.map(({ href, label, Icon }) => (

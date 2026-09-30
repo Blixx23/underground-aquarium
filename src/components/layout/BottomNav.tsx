@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Newspaper, Tag, Plus, MessageCircle, MessagesSquare, User as UserIcon, PenSquare, X } from "lucide-react";
+import { Newspaper, Tag, Plus, MessageCircle, MessagesSquare, User as UserIcon, PenSquare, X, Store } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
 import { POST_AD_PATH } from "@/lib/config";
 import { useUnreadMessages } from "@/lib/hooks/useUnreadMessages";
+import { useMyShops } from "@/lib/hooks/useMyShops";
 
 /** Pages where a bottom bar would get in the way (sign-in, a chat's reply box). */
 const HIDE_ON = [/^\/login/, /^\/register/, /^\/forgot-password/, /^\/auth\//, /^\/messages\/.+/, /^\/admin/];
@@ -27,6 +28,7 @@ export default function BottomNav() {
   const [inSociety, setInSociety] = useState(false);
   const [sheet, setSheet] = useState(false);
   const unread = useUnreadMessages();
+  const myShops = useMyShops();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -81,6 +83,17 @@ export default function BottomNav() {
       active ? "text-white" : "text-ocean-400"
     }`;
 
+  // Shop owners get "Post a shop update" first, in emerald. One shop goes
+  // straight to its Updates page; more than one goes to the shop list.
+  const shopPost =
+    myShops.shops.length > 0
+      ? {
+          href: myShops.shops.length === 1 ? `/my/shops/${myShops.shops[0].slug}/updates` : "/my/shops",
+          label: "Post a shop update",
+          sub: "Restocks, sales and events. Your followers get notified",
+        }
+      : null;
+
   const postOptions = [
     { href: "/feed?compose=1", label: "Post to the feed", sub: "Photos, a question, what's new in your tanks", Icon: PenSquare },
     { href: POST_AD_PATH, label: "Post a free ad", sub: "Sell or give away fish, plants and gear", Icon: Tag },
@@ -109,6 +122,21 @@ export default function BottomNav() {
               </button>
             </div>
             <div className="space-y-1">
+              {shopPost && (
+                <Link
+                  href={shopPost.href}
+                  onClick={() => setSheet(false)}
+                  className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] px-3 py-3 active:bg-emerald-500/20"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/25">
+                    <Store className="h-5 w-5 text-emerald-200" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-medium text-emerald-50">{shopPost.label}</span>
+                    <span className="block truncate text-xs text-emerald-200/60">{shopPost.sub}</span>
+                  </span>
+                </Link>
+              )}
               {postOptions.map(({ href, label, sub, Icon }) => (
                 <Link
                   key={href}
@@ -172,9 +200,15 @@ export default function BottomNav() {
           <Link href={user ? "/profile" : "/login"} className={tab(is("/profile", "/trophies", "/account"))}>
             {me ? (
               <span
-                className={`rounded-full ${is("/profile", "/trophies", "/account") ? "ring-2 ring-white" : ""}`}
+                className={`relative rounded-full ${is("/profile", "/trophies", "/account") ? "ring-2 ring-white" : ""}`}
               >
                 <Avatar name={me.name} src={me.avatar} society={inSociety} size={24} />
+                {myShops.unanswered > 0 && (
+                  <span
+                    aria-label={`${myShops.unanswered} shop review${myShops.unanswered === 1 ? "" : "s"} to answer`}
+                    className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-400 ring-2 ring-ocean-950"
+                  />
+                )}
               </span>
             ) : (
               <UserIcon className="h-6 w-6" strokeWidth={1.8} />

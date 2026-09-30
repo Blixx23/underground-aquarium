@@ -13,6 +13,7 @@ import {
   ScrollText,
   Wrench,
   Droplets,
+  ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
@@ -103,6 +104,29 @@ export default async function ProfilePage({
     | null;
   const inSociety = Boolean(card?.is_member);
 
+  // Shops this person manages. my_stores counts unanswered reviews too;
+  // if it isn't there, fall back to a plain read with no counts.
+  type MyShop = { slug: string; name: string; unanswered: number };
+  let myShops: MyShop[] = [];
+  {
+    const { data: ms, error: msErr } = await supabase.rpc("my_stores");
+    if (!msErr && Array.isArray(ms)) {
+      myShops = (ms as { slug: string; name: string; unanswered?: number | null }[]).map((s) => ({
+        slug: s.slug,
+        name: s.name,
+        unanswered: Number(s.unanswered ?? 0),
+      }));
+    } else {
+      const { data: rows } = await supabase
+        .from("fish_stores")
+        .select("slug, name")
+        .eq("claimed_by", user.id)
+        .order("name");
+      myShops = ((rows ?? []) as { slug: string; name: string }[]).map((s) => ({ ...s, unanswered: 0 }));
+    }
+  }
+  const shopUnanswered = myShops.reduce((n, s) => n + s.unanswered, 0);
+
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const isAdmin = Boolean(profile?.is_admin);
 
@@ -116,7 +140,7 @@ export default async function ProfilePage({
           ? [{ href: `/u/${profile.username}`, label: "Public profile", Icon: ExternalLink }]
           : []),
         { href: "/my/listings", label: "My listings", Icon: Store },
-        { href: "/my/shops", label: "My shops", Icon: Store },
+        ...(myShops.length === 0 ? [{ href: "/my/shops", label: "My shops", Icon: Store }] : []),
         { href: "#tanks", label: "My tanks", Icon: Fish },
         { href: "/trophies", label: "Trophies", Icon: Trophy },
         ...(inSociety ? [{ href: "/society/certificates", label: "Certificates", Icon: ScrollText }] : []),
@@ -246,6 +270,62 @@ export default async function ProfilePage({
             </span>
           </span>
         </Link>
+
+        {/* Your shop: owners see it right under their name, in emerald. */}
+        {myShops.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-emerald-500/35 bg-gradient-to-r from-emerald-500/[0.12] to-transparent p-2">
+            <p className="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-widest text-emerald-400">
+              {myShops.length === 1 ? "Your shop" : "Your shops"}
+            </p>
+            {myShops.map((s) => (
+              <Link
+                key={s.slug}
+                href={`/my/shops/${s.slug}`}
+                className="flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-emerald-500/10"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
+                  <Store className="h-5 w-5 text-emerald-300" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium text-emerald-50">{s.name}</span>
+                  <span className="block truncate text-sm text-emerald-100/60">
+                    {s.unanswered > 0
+                      ? `${s.unanswered} review${s.unanswered === 1 ? "" : "s"} waiting on a reply`
+                      : "Post an update, photos, hours, reviews"}
+                  </span>
+                </span>
+                {s.unanswered > 0 && (
+                  <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-ocean-950">
+                    {s.unanswered}
+                  </span>
+                )}
+                <ChevronRight className="h-4 w-4 shrink-0 text-emerald-300/70" />
+              </Link>
+            ))}
+            {shopUnanswered === 0 && myShops.length === 1 && (
+              <div className="flex flex-wrap gap-2 px-3 pb-2">
+                <Link
+                  href={`/my/shops/${myShops[0].slug}/updates`}
+                  className="rounded-full bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
+                >
+                  Post an update
+                </Link>
+                <Link
+                  href={`/my/shops/${myShops[0].slug}/hours`}
+                  className="rounded-full border border-emerald-500/40 px-3.5 py-1.5 text-xs text-emerald-100 transition-colors hover:bg-emerald-500/10"
+                >
+                  Edit hours
+                </Link>
+                <Link
+                  href={`/my/shops/${myShops[0].slug}/photos`}
+                  className="rounded-full border border-emerald-500/40 px-3.5 py-1.5 text-xs text-emerald-100 transition-colors hover:bg-emerald-500/10"
+                >
+                  Add photos
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Your stuff, tools, settings */}
         {groups.map((g) => (

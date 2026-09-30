@@ -23,7 +23,12 @@ type Row = {
   last_post: string | null;
 };
 
-export default async function MyShopsPage() {
+export default async function MyShopsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ list?: string }>;
+}) {
+  const showList = (await searchParams).list === "1";
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,6 +37,9 @@ export default async function MyShopsPage() {
 
   const { data } = await supabase.rpc("my_stores");
   const shops = (data ?? []) as Row[];
+
+  // Most owners have one shop, so the list is just an extra tap.
+  if (shops.length === 1 && !showList) redirect(`/my/shops/${shops[0].slug}`);
 
   return (
     <main className="min-h-screen px-4 pt-24 pb-20 sm:px-6 sm:pt-28">
