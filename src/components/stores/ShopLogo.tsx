@@ -19,6 +19,7 @@ export default function ShopLogo({
 }) {
   const initials =
     name
+      .replace(/['\u2019]/g, "")
       .replace(/[^A-Za-z0-9 ]/g, " ")
       .split(/\s+/)
       .filter((w) => w && !/^(the|and|of)$/i.test(w))

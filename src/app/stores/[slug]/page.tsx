@@ -152,18 +152,36 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     .from("store_reviews")
     .select("id", { count: "exact", head: true })
     .eq("store_id", store.id);
-  const image = store.cover_url || store.logo_url || undefined;
+  // Each shop shares its own card: banner or newest photo, logo, name, stars.
+  // The version changes when the banner, logo, name or review count does,
+  // so Facebook and friends fetch the new picture instead of an old copy.
+  const stamp = [store.name, store.cover_url ?? "", store.logo_url ?? "", reviews ?? 0].join("|");
+  let h = 5381;
+  for (let i = 0; i < stamp.length; i++) h = ((h << 5) + h + stamp.charCodeAt(i)) >>> 0;
+  const shareImage = {
+    url: `/api/stores/${store.slug}/share-image?v=${h.toString(36)}`,
+    width: 1200,
+    height: 630,
+    alt: `${store.name}${place ? `, ${place}` : ""} on Underground Aquarium`,
+  };
   return {
     title,
     description,
     alternates: { canonical: `/stores/${store.slug}` },
     robots: { index: !storeIsStub({ ...store, reviews }), follow: true },
     openGraph: {
-      title,
+      title: store.name,
       description,
       url: `/stores/${store.slug}`,
+      siteName: "Underground Aquarium",
       type: "website",
-      ...(image ? { images: [{ url: image }] } : {}),
+      images: [shareImage],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: store.name,
+      description,
+      images: [shareImage.url],
     },
   };
 }
