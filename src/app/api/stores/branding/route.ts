@@ -28,7 +28,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Something was missing. Please try again." }, { status: 400 });
     }
 
-    const ownStorage = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/store-photos/`;
+    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "");
+    const ownStorage = `${supabaseUrl}/storage/v1/object/public/store-photos/`;
     if (url !== null && !url.startsWith(ownStorage)) {
       return NextResponse.json({ error: "That photo has to be uploaded here first." }, { status: 400 });
     }
