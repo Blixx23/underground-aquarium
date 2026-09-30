@@ -1,0 +1,241 @@
+/*
+ * Shop Owners Lounge: generated from the matching public forum page.
+ * Reads as the signed-in person (the database only lets shop owners and
+ * admins see this category), is never cached, and is never indexed.
+ */
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { ArrowLeft, MessageSquare, Pin, PenLine } from "lucide-react";
+import VoteControl from "@/components/forum/VoteControl";
+import ForumSearchBar from "@/components/forum/ForumSearchBar";
+
+export const dynamic = "force-dynamic";
+
+const LOUNGE = "shop-owners";
+
+type Params = {
+  params?: Promise<Record<string, never>>;
+  searchParams: Promise<{ sort?: string }>;
+};
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return "";
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  const s = Math.floor((Date.now() - t) / 1000);
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo}mo ago`;
+  return `${Math.floor(mo / 12)}y ago`;
+}
+
+async function getCategory(slug: string) {
+  const { data } = await (await createClient())
+    .from("forum_categories")
+    .select("id, slug, name, description, is_public")
+    .eq("slug", slug)
+    .maybeSingle();
+  return data;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const category = LOUNGE;
+  const cat = await getCategory(category);
+  if (!cat) return { title: "Forum" };
+
+  // A category with a few real threads is a useful page on its own.
+  const { count } = await (await createClient())
+    .from("forum_threads")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", cat.id)
+    .is("hidden_at", null);
+
+  return {
+    title: `${cat.name} Forum: Questions & Answers`,
+    description:
+      (cat.description ? `${cat.description} ` : "") +
+      `Ask a question or browse answers from fellow fish keepers on Underground Aquarium.`,
+    alternates: { canonical: `/forums/${category}` },
+    robots: { index: false, follow: false },
+  };
+}
+
+export default async function CategoryPage({ searchParams }: Params) {
+  const category = LOUNGE;
+  const { sort = "active" } = await searchParams;
+  const cat = await getCategory(category);
+  if (!cat) notFound();
+
+  let query = (await createClient())
+    .from("forum_threads")
+    .select(
+      "id, slug, title, score, reply_count, is_pinned, created_at, last_activity_at, author_id"
+    )
+    .eq("category_id", cat.id)
+    .is("hidden_at", null)
+    .order("is_pinned", { ascending: false });
+  if (sort === "unanswered") {
+    query = query.eq("reply_count", 0).order("created_at", { ascending: false });
+  } else if (sort === "new") {
+    query = query.order("created_at", { ascending: false });
+  } else if (sort === "top") {
+    query = query
+      .order("score", { ascending: false })
+      .order("created_at", { ascending: false });
+  } else {
+    query = query.order("last_activity_at", { ascending: false });
+  }
+
+  const { data: threadsData } = await query;
+  const threads = threadsData ?? [];
+
+  const threadIds = threads.map((t) => t.id as string);
+  const opByThread: Record<string, string> = {};
+  if (threadIds.length > 0) {
+    const { data: ops } = await (await createClient())
+      .from("forum_posts")
+      .select("id, thread_id")
+      .eq("is_op", true)
+      .in("thread_id", threadIds);
+    for (const o of ops ?? []) {
+      opByThread[o.thread_id as string] = o.id as string;
+    }
+  }
+
+  const authorIds = Array.from(
+    new Set(
+      threads
+        .map((t) => t.author_id as string | null)
+        .filter((x): x is string => Boolean(x))
+    )
+  );
+  const nameById: Record<string, { username: string | null; full_name: string | null }> = {};
+  if (authorIds.length > 0) {
+    const { data: profs } = await (await createClient())
+      .from("profiles")
+      .select("id, username, full_name")
+      .in("id", authorIds);
+    for (const p of profs ?? []) {
+      nameById[p.id as string] = {
+        username: p.username as string | null,
+        full_name: p.full_name as string | null,
+      };
+    }
+  }
+  const authorLabel = (id: string | null) => {
+    if (!id) return "a member";
+    const n = nameById[id];
+    return n?.username ? `@${n.username}` : n?.full_name || "a member";
+  };
+
+  const tab = (key: string, label: string) => (
+    <Link
+      href={`/forums/${category}?sort=${key}`}
+      className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
+        sort === key
+          ? "bg-ocean-700 text-white"
+          : "text-ocean-400 hover:text-ocean-200"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+
+  return (
+    <main className="min-h-screen pt-28 pb-20 px-6">
+      <div className="max-w-3xl mx-auto">
+        <Link
+          href="/forums"
+          className="inline-flex items-center gap-1.5 text-sm text-ocean-400 hover:text-ocean-200 transition-colors mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" /> Forums
+        </Link>
+
+        <div className="flex items-end justify-between gap-3 flex-wrap mb-6">
+          <div>
+            <h1 className="font-display text-3xl text-white mb-1">{cat.name}</h1>
+            {cat.description && (
+              <p className="text-ocean-400">{cat.description}</p>
+            )}
+          </div>
+          <Link
+            href={`/forums/${category}/new`}
+            className="inline-flex items-center gap-2 rounded-full bg-ocean-700 px-4 py-2 text-sm font-medium text-white hover:bg-ocean-600 transition-colors"
+          >
+            <PenLine className="w-4 h-4" /> New post
+          </Link>
+        </div>
+
+        <div className="mb-4">
+          <ForumSearchBar />
+        </div>
+
+        <div className="flex items-center gap-1 rounded-xl bg-ocean-900/60 border border-ocean-800/60 p-1 w-fit mb-4">
+          {tab("active", "Active")}
+          {tab("new", "New")}
+          {tab("top", "Top")}
+          {tab("unanswered", "Unanswered")}
+        </div>
+
+        {threads.length === 0 ? (
+          <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-10 text-center text-ocean-400">
+            {sort === "unanswered"
+              ? "Nothing waiting on a reply here."
+              : "No threads here yet. Start the first one."}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {threads.map((t) => {
+              const url = `/forums/${category}/${t.slug}`;
+              const opId = opByThread[t.id as string];
+              return (
+                <article
+                  key={t.id as string}
+                  className="flex gap-3 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-4 hover:border-ocean-700 transition-colors"
+                >
+                  {opId ? (
+                    <VoteControl
+                      postId={opId}
+                      initialScore={(t.score as number) ?? 0}
+                    />
+                  ) : (
+                    <div className="w-6" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <Link href={url}>
+                      <h3 className="text-white font-medium leading-snug hover:text-ocean-100">
+                        {t.title}
+                      </h3>
+                    </Link>
+                    <p className="text-xs text-ocean-500 mt-1 flex items-center gap-1.5">
+                      {t.is_pinned && <Pin className="w-3 h-3 text-amber-300" />}
+                      Posted by {authorLabel(t.author_id as string | null)} ·{" "}
+                      {timeAgo(t.created_at as string)}
+                    </p>
+                    <Link
+                      href={url}
+                      className="inline-flex items-center gap-1.5 text-xs text-ocean-400 hover:text-ocean-200 mt-2"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />{" "}
+                      {(t.reply_count as number) > 0
+                        ? `${t.reply_count} ${(t.reply_count as number) === 1 ? "comment" : "comments"}`
+                        : "Be the first to reply"}
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

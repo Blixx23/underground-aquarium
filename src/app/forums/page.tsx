@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MessagesSquare, ChevronRight, MessageSquareDashed, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import ShopOwnersLoungeCard from "@/components/forum/ShopOwnersLoungeCard";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
 
 export const revalidate = 120;
@@ -56,6 +57,9 @@ export default async function ForumsIndex() {
             Ask the forums
           </Link>
         </div>
+
+        {/* Shop owners and admins only; everyone else never sees it. */}
+        <ShopOwnersLoungeCard />
 
         <div className="mb-3">
           <ForumSearchBar />

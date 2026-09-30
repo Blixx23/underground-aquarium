@@ -92,3 +92,6 @@ There is no button for it on this screen. The only **Remove current owner** cont
 **The owner's email is missing from the row.** The owner's account has no email address the admin tools can read. Use their profile instead.
 
 **My shop isn't in the list.** Only the first 60 matches show. Search by name. If it still isn't there, it may be a member suggestion still waiting on [New shops](/admin/help/new-shops-queue).
+
+## The Shop Owners Lounge
+The forum category `shop-owners` (added by step62) is owners-only: the database only shows it to people who manage a claimed shop and to admins. It is marked not public, so the feed, forum search, sitemap and search engines never include it. Owners see it pinned at the top of /forums with a glow. To moderate it, use the usual forum tools; admins can read and post there like owners.

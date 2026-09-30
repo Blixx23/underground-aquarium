@@ -83,7 +83,9 @@ export async function POST(req: Request) {
     .select("id, slug, is_public")
     .eq("slug", categorySlug)
     .maybeSingle();
-  if (!cat || !cat.is_public) {
+  // The database only returns categories you're allowed to post in (public
+  // ones, plus the Shop Owners Lounge for shop owners and admins).
+  if (!cat) {
     return NextResponse.json({ error: "Category not found." }, { status: 404 });
   }
 
