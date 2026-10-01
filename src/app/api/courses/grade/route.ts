@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
+import { questionsToAsk } from "@/lib/courses/quiz";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
   // Verify the section belongs to a published course
   const { data: section } = await supabaseAdmin
     .from("course_sections")
-    .select("id, course_id, courses(is_published, pass_percent)")
+    .select("id, title, course_id, courses(is_published, pass_percent)")
     .eq("id", sectionId)
     .maybeSingle();
 
@@ -46,10 +47,15 @@ export async function POST(req: Request) {
   const courseId = (section as { course_id: string }).course_id;
 
   // Grade against the hidden answer key (service role can read correct_index)
-  const { data: questions } = await supabaseAdmin
+  // Only the questions the lesson actually shows are graded (see
+  // questionsToAsk): same ordering as the learn page, so they always match.
+  const { data: allQuestions } = await supabaseAdmin
     .from("course_questions")
     .select("id, correct_index")
-    .eq("section_id", sectionId);
+    .eq("section_id", sectionId)
+    .order("sort_order", { ascending: true })
+    .order("id", { ascending: true });
+  const questions = questionsToAsk((section as { title?: string }).title, allQuestions ?? []);
 
   const wrongQuestionIds: string[] = [];
   for (const q of questions ?? []) {

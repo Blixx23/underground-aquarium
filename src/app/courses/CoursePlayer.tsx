@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Lock,
@@ -110,6 +110,16 @@ export default function CoursePlayer({
   const [error, setError] = useState<string | null>(null);
   const [courseDone, setCourseDone] = useState(courseAlreadyDone);
   const [summary, setSummary] = useState(courseAlreadyDone);
+  // A short "nice work" line shown at the top of the section you were just
+  // moved on to, so passing a quiz is never silent.
+  const [flash, setFlash] = useState<string | null>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+
+  function scrollToTop() {
+    requestAnimationFrame(() =>
+      topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    );
+  }
 
   const total = sections.length;
   const doneCount = completed.size;
@@ -138,6 +148,7 @@ export default function CoursePlayer({
     setAnswers({});
     setWrong(new Set());
     setError(null);
+    setFlash(null);
   }
 
   function pick(qId: string, oi: number) {
@@ -169,9 +180,30 @@ export default function CoursePlayer({
       if (data.passed) {
         setCompleted((prev) => new Set(prev).add(section.id));
         setWrong(new Set());
+        setAnswers({});
         if (data.courseCompleted) setCourseDone(true);
+        // Move straight on. Before, a passed quiz just swapped in a small
+        // "Section complete" box further down the page, which read as if
+        // nothing had happened.
+        if (!lastSection) {
+          setActive(active + 1);
+          setFlash(`Nice work, “${section.title}” complete.`);
+          scrollToTop();
+        } else if (data.courseCompleted) {
+          setSummary(true);
+          scrollToTop();
+        }
       } else {
-        setWrong(new Set<string>(data.wrongQuestionIds || []));
+        const ids: string[] = data.wrongQuestionIds || [];
+        setWrong(new Set<string>(ids));
+        // Bring the first wrong answer into view so it's obvious what to fix.
+        if (ids.length) {
+          requestAnimationFrame(() =>
+            document
+              .getElementById(`q-${ids[0]}`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" })
+          );
+        }
       }
     } catch {
       setError("Network error — please try again.");
@@ -181,7 +213,7 @@ export default function CoursePlayer({
   }
 
   return (
-    <div className="grid lg:grid-cols-[260px_1fr] gap-8">
+    <div ref={topRef} className="grid lg:grid-cols-[260px_1fr] gap-8 scroll-mt-28">
       {/* Section rail */}
       <aside className="lg:sticky lg:top-28 lg:self-start">
         <div className="flex items-center justify-between mb-3">
@@ -292,6 +324,11 @@ export default function CoursePlayer({
           </div>
         ) : (
           <>
+            {flash && (
+              <p className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-200 mb-5">
+                <Check className="w-4 h-4 shrink-0" /> {flash}
+              </p>
+            )}
             <p className="text-xs font-mono uppercase tracking-[0.2em] text-ocean-400 mb-2">
               Section {active + 1} of {total}
             </p>
@@ -417,6 +454,7 @@ export default function CoursePlayer({
                     return (
                       <div
                         key={q.id}
+                        id={`q-${q.id}`}
                         className={
                           isWrong
                             ? "rounded-xl border border-coral-500/40 bg-coral-500/5 p-4"

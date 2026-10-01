@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Award, ScrollText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CoursePlayer from "../../CoursePlayer";
+import { questionsToAsk } from "@/lib/courses/quiz";
 
 export const dynamic = "force-dynamic";
 
@@ -81,7 +82,8 @@ export default async function CoursePage({
       .from("course_questions")
       .select("id, section_id, prompt, options, sort_order")
       .in("section_id", sectionIds)
-      .order("sort_order", { ascending: true });
+      .order("sort_order", { ascending: true })
+      .order("id", { ascending: true });
     for (const q of questionRows ?? []) {
       (qBySection[q.section_id] ||= []).push({
         id: q.id,
@@ -100,7 +102,7 @@ export default async function CoursePage({
     video_url: s.video_url,
     image_url: s.image_url ?? null,
     sort_order: s.sort_order,
-    questions: qBySection[s.id] ?? [],
+    questions: questionsToAsk(s.title, qBySection[s.id] ?? []),
   }));
 
   // Progress for this user
