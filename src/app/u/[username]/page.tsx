@@ -12,7 +12,6 @@ import {
   ChevronRight,
   MessageCircle,
   Medal,
-  ShieldCheck,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
@@ -299,29 +298,25 @@ export default async function PublicProfilePage({ params, searchParams }: Params
                   {displayName}
                 </h1>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <p className="text-sm text-ocean-400">@{handle}</p>
-                {society && (
-                  <Link
-                    href={SOCIETY_PATH}
-                    title="Member of the Underground Aquarium Society"
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-400/40 bg-amber-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-200 transition-colors hover:border-amber-300 hover:text-amber-100"
-                  >
-                    <ShieldCheck className="h-4 w-4 text-amber-300" />
-                    Society Member
-                  </Link>
-                )}
+              {/* One title only, the highest earned. Everything else lives in the
+                  Courses and Trophies tabs, so this line never stacks up. Society
+                  membership already shows in the gold avatar ring and the Society bar. */}
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm">
+                <span className="text-ocean-400">@{handle}</span>
                 {masteredCourse && (
-                  <Link
-                    href={`${base}?tab=courses`}
-                    title={`Passed the 100-question ${masteredCourse.title} exam`}
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-300/70 bg-gradient-to-r from-amber-600/40 via-amber-400/25 to-amber-600/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.35)] transition-colors hover:border-amber-200 hover:text-white"
-                  >
-                    <Medal className="h-4 w-4 text-amber-300" />
-                    {masteredCourse.badge_title}
-                  </Link>
+                  <>
+                    <span className="text-ocean-700">·</span>
+                    <Link
+                      href={`${base}?tab=courses`}
+                      title={`Passed the 100-question ${masteredCourse.title} exam`}
+                      className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-amber-300 transition-colors hover:text-amber-200"
+                    >
+                      <Medal className="h-3.5 w-3.5" />
+                      {masteredCourse.badge_title}
+                    </Link>
+                  </>
                 )}
-              </div>
+              </p>
             </div>
           </div>
 
