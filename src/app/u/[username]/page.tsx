@@ -12,6 +12,7 @@ import {
   ChevronRight,
   MessageCircle,
   Medal,
+  ShieldCheck,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
@@ -297,10 +298,19 @@ export default async function PublicProfilePage({ params, searchParams }: Params
                 >
                   {displayName}
                 </h1>
-                {society && <SocietySeal size={26} className="h-[26px] w-[26px] shrink-0" />}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 <p className="text-sm text-ocean-400">@{handle}</p>
+                {society && (
+                  <Link
+                    href={SOCIETY_PATH}
+                    title="Member of the Underground Aquarium Society"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-400/40 bg-amber-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-200 transition-colors hover:border-amber-300 hover:text-amber-100"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-amber-300" />
+                    Society Member
+                  </Link>
+                )}
                 {masteredCourse && (
                   <Link
                     href={`${base}?tab=courses`}
