@@ -30,6 +30,7 @@ type CourseRow = {
   subtitle: string | null;
   est_minutes: number;
   badge_title: string;
+  cover_image?: string | null;
   level?: string | null;
   members_only?: boolean | null;
 };
@@ -47,7 +48,7 @@ export default async function CoursesPage({
 
   // level and members_only arrive with course_levels.sql; until then every
   // course reads as an open beginner course.
-  const baseCols = "id, slug, title, subtitle, est_minutes, badge_title";
+  const baseCols = "id, slug, title, subtitle, est_minutes, badge_title, cover_image";
   const withLevels = await supabase
     .from("courses")
     .select(`${baseCols}, level, members_only`)
@@ -79,8 +80,9 @@ export default async function CoursesPage({
     : false;
   const ids = courses.map((c) => c.id);
 
-  // Lesson counts
+  // Lesson counts, and which lesson belongs to which course (for progress)
   const lessonCount: Record<string, number> = {};
+  const courseOfSection: Record<string, string> = {};
   if (ids.length) {
     const { data: secs } = await supabase
       .from("course_sections")
@@ -88,6 +90,22 @@ export default async function CoursesPage({
       .in("course_id", ids);
     for (const s of secs ?? []) {
       lessonCount[s.course_id] = (lessonCount[s.course_id] ?? 0) + 1;
+      courseOfSection[s.id] = s.course_id;
+    }
+  }
+
+  // How far the signed-in member is through each course
+  const doneLessons: Record<string, number> = {};
+  const sectionIds = Object.keys(courseOfSection);
+  if (user && sectionIds.length) {
+    const { data: prog } = await supabase
+      .from("course_section_progress")
+      .select("section_id")
+      .eq("user_id", user.id)
+      .in("section_id", sectionIds);
+    for (const p of prog ?? []) {
+      const cid = courseOfSection[p.section_id];
+      if (cid) doneLessons[cid] = (doneLessons[cid] ?? 0) + 1;
     }
   }
 
@@ -175,78 +193,90 @@ export default async function CoursesPage({
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             {courses.map((c) => {
               const isDone = completed.has(c.id);
               const lessons = lessonCount[c.id] ?? 0;
+              const done = doneLessons[c.id] ?? 0;
+              const inProgress = !isDone && done > 0;
               const locked = !!c.members_only && !membersAccess;
               return (
                 <Link
                   key={c.id}
                   href={`/courses/${c.slug}`}
-                  className={`group block card-deep rounded-2xl p-6 sm:p-8 transition-all ${
-                    c.members_only ? "ring-1 ring-amber-500/30" : ""
+                  className={`group flex flex-col overflow-hidden rounded-2xl border bg-ocean-900/40 transition-colors ${
+                    c.members_only
+                      ? "border-amber-500/30 hover:border-amber-400/60"
+                      : isDone
+                      ? "border-emerald-500/30 hover:border-emerald-400/60"
+                      : "border-ocean-800/60 hover:border-ocean-500"
                   }`}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-                    {/* Emblem */}
-                    <div className="relative w-16 h-16 shrink-0">
-                      <div
-                        className={
-                          "absolute inset-0 rounded-full animate-glow-pulse " +
-                          (isDone ? "bg-emerald-500/20" : "bg-ocean-600/25")
-                        }
-                      />
-                      <div className="relative z-10 flex items-center justify-center w-full h-full">
-                        {isDone ? (
-                          <BadgeCheck className="w-7 h-7 text-emerald-300" />
-                        ) : (
-                          <GraduationCap className="w-7 h-7 text-ocean-200" />
-                        )}
+                  {/* Cover */}
+                  <div className="relative">
+                    {c.cover_image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.cover_image} alt="" className="aspect-video w-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="flex aspect-video w-full items-center justify-center bg-gradient-to-br from-ocean-900 to-ocean-950">
+                        <GraduationCap className="h-10 w-10 text-ocean-600" />
                       </div>
-                    </div>
+                    )}
+                    {isDone && (
+                      <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-600/90 px-3 py-1 text-xs font-medium text-white">
+                        <BadgeCheck className="h-3.5 w-3.5" /> Completed
+                      </span>
+                    )}
+                    {locked && (
+                      <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-medium text-ocean-950">
+                        <Lock className="h-3.5 w-3.5" /> Members only
+                      </span>
+                    )}
+                    {inProgress && lessons > 0 && (
+                      <div className="absolute inset-x-0 bottom-0 h-1 bg-ocean-950/70">
+                        <div className="h-full bg-emerald-400" style={{ width: `${(done / lessons) * 100}%` }} />
+                      </div>
+                    )}
+                  </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 text-xs font-mono uppercase tracking-[0.2em] text-ocean-400">
-                        <Award className="w-3.5 h-3.5" />
-                        {c.badge_title}
-                      </div>
-                      <h2 className="font-display text-2xl text-white group-hover:text-ocean-100 transition-colors">
-                        {c.title}
-                      </h2>
-                      {c.subtitle && (
-                        <p className="text-ocean-300 mt-1">{c.subtitle}</p>
+                  {/* Body */}
+                  <div className="flex flex-1 flex-col p-5">
+                    <p
+                      className={`mb-1 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.18em] ${
+                        c.members_only ? "text-amber-300/90" : isDone ? "text-emerald-300/90" : "text-amber-300/80"
+                      }`}
+                    >
+                      <Award className="h-3.5 w-3.5" /> {c.badge_title}
+                    </p>
+                    <h2 className="font-display text-2xl leading-tight text-white group-hover:text-ocean-100">
+                      {c.title}
+                    </h2>
+                    {c.subtitle && <p className="mt-1 text-sm text-ocean-300">{c.subtitle}</p>}
+
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ocean-400">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" /> ~{c.est_minutes} min
+                      </span>
+                      {lessons > 0 && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <ScrollText className="h-3.5 w-3.5" /> {lessons} lessons
+                        </span>
                       )}
-                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-sm text-ocean-400">
-                        <span className="inline-flex items-center gap-1.5">
-                          <Clock className="w-4 h-4" /> ~{c.est_minutes} min
-                        </span>
-                        {lessons > 0 && (
-                          <span className="inline-flex items-center gap-1.5">
-                            <ScrollText className="w-4 h-4" /> {lessons} lessons
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1.5">
-                          <Award className="w-4 h-4" /> Certificate + badge
-                        </span>
-                      </div>
                     </div>
 
-                    {/* CTA */}
-                    <div className="shrink-0">
+                    <div className="mt-auto pt-5">
                       {isDone ? (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 text-emerald-200 px-5 py-2.5 text-sm font-medium">
-                          <BadgeCheck className="w-4 h-4" /> Completed
+                        <span className="inline-flex items-center gap-2 text-sm text-emerald-300">
+                          <BadgeCheck className="h-4 w-4" /> Review course
                         </span>
                       ) : locked ? (
-                        <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-200 px-5 py-2.5 text-sm font-medium">
-                          <Lock className="w-4 h-4" /> Members only
+                        <span className="inline-flex items-center gap-2 text-sm text-amber-300">
+                          <Lock className="h-4 w-4" /> Join the Society to take this class
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-ocean-600 group-hover:bg-ocean-500 text-white px-5 py-2.5 text-sm font-medium transition-colors">
-                          Start course
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors group-hover:bg-emerald-500">
+                          {inProgress ? `Continue · ${done}/${lessons}` : "Start course, free"}
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                         </span>
                       )}
                     </div>
