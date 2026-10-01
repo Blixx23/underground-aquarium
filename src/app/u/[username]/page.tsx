@@ -24,6 +24,7 @@ import BubbleBadge from "@/components/bubbles/BubbleBadge";
 import TrophyShowcase from "@/components/trophies/TrophyShowcase";
 import type { TrophyRow } from "@/lib/trophies";
 import SocietySeal from "@/components/society/SocietySeal";
+import SocietyMark from "@/components/society/SocietyMark";
 import FollowButton from "@/components/FollowButton";
 import Avatar from "@/components/profile/Avatar";
 import Feed from "@/components/feed/Feed";
@@ -297,6 +298,16 @@ export default async function PublicProfilePage({ params, searchParams }: Params
                 >
                   {displayName}
                 </h1>
+                {society && (
+                  <Link
+                    href={SOCIETY_PATH}
+                    title={`Underground Aquarium Society member${memberNo ? ` · ${memberNo}` : ""}`}
+                    aria-label="Underground Aquarium Society member"
+                    className="shrink-0 rounded-full transition-transform hover:scale-110"
+                  >
+                    <SocietyMark size={32} className="drop-shadow-[0_0_8px_rgba(217,160,60,0.45)]" />
+                  </Link>
+                )}
               </div>
               {/* One title only, the highest earned. Everything else lives in the
                   Courses and Trophies tabs, so this line never stacks up. Society
