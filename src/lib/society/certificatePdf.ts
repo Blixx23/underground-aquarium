@@ -52,6 +52,8 @@ export type CertificateInput = {
   signaturePng?: Uint8Array | null;
   signerName?: string;
   signerRole?: string;
+  /** A mastery exam: gold foil frame, "Certificate of Mastery" and a medal instead of the seal. */
+  mastery?: boolean;
 };
 
 const W = 792;
@@ -65,6 +67,11 @@ const BRASS_LIGHT: RGB = rgb(0.78, 0.63, 0.33);
 const IVORY: RGB = rgb(0.985, 0.97, 0.935);
 /** Underground Aquarium blue, a touch deeper like fountain-pen ink. */
 const PEN: RGB = rgb(0.05, 0.25, 0.42);
+/** Gold leaf, for mastery certificates. */
+const GOLD: RGB = rgb(0.85, 0.66, 0.2);
+const GOLD_DEEP: RGB = rgb(0.58, 0.4, 0.07);
+const GOLD_LIGHT: RGB = rgb(0.98, 0.87, 0.5);
+const RIBBON: RGB = rgb(0.05, 0.2, 0.36);
 
 function b64(s: string): Uint8Array {
   return Uint8Array.from(Buffer.from(s, "base64"));
@@ -221,7 +228,7 @@ function seal(page: PDFPage, cx: number, cy: number, r: number, fonts: { caps: P
   arcText(page, bottomText, cx, cy, 79 * k, fonts.caps, 10.5 * k, BRASS, 1.8 * k, true);
 
   for (const side of [-1, 1]) {
-    diamond(page, cx + side * 75 * k, cy, 4.2 * k, BRASS);
+    diamond(page, cx + side * 75 * k, cy, 6 * k, BRASS);
   }
 
   // Fish and waves. The fish is the site icon, on its own 24-unit grid,
@@ -263,14 +270,120 @@ function frame(page: PDFPage) {
   page.drawRectangle({ x: 27, y: 27, width: W - 54, height: H - 54, borderColor: BRASS_LIGHT, borderWidth: 0.8 });
   page.drawRectangle({ x: 33, y: 33, width: W - 66, height: H - 66, borderColor: BRASS_LIGHT, borderWidth: 0.35, borderOpacity: 0.7 });
   for (const [x, y] of [[27, 27], [W - 27, 27], [27, H - 27], [W - 27, H - 27]]) {
-    diamond(page, x, y, 4.5, BRASS);
+    diamond(page, x, y, 7.5, BRASS);
   }
 }
 
 function rule(page: PDFPage, y: number, half: number) {
-  page.drawLine({ start: { x: W / 2 - half, y }, end: { x: W / 2 - 9, y }, thickness: 0.7, color: BRASS_LIGHT });
-  diamond(page, W / 2, y, 3.8, BRASS);
-  page.drawLine({ start: { x: W / 2 + 9, y }, end: { x: W / 2 + half, y }, thickness: 0.7, color: BRASS_LIGHT });
+  page.drawLine({ start: { x: W / 2 - half, y }, end: { x: W / 2 - 13, y }, thickness: 0.8, color: BRASS_LIGHT });
+  diamond(page, W / 2, y, 6, BRASS);
+  diamond(page, W / 2 - half - 6, y, 2.6, BRASS_LIGHT);
+  diamond(page, W / 2 + half + 6, y, 2.6, BRASS_LIGHT);
+  page.drawLine({ start: { x: W / 2 + 13, y }, end: { x: W / 2 + half, y }, thickness: 0.8, color: BRASS_LIGHT });
+}
+
+/** Gold-leaf frame for mastery: a wide foil band with a light sheen line through it. */
+function goldFrame(page: PDFPage) {
+  page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: IVORY });
+  page.drawRectangle({ x: 16, y: 16, width: W - 32, height: H - 32, borderColor: GOLD_DEEP, borderWidth: 12 });
+  page.drawRectangle({ x: 16, y: 16, width: W - 32, height: H - 32, borderColor: GOLD, borderWidth: 8 });
+  page.drawRectangle({ x: 16, y: 16, width: W - 32, height: H - 32, borderColor: GOLD_LIGHT, borderWidth: 2 });
+  page.drawRectangle({ x: 30, y: 30, width: W - 60, height: H - 60, borderColor: GOLD_DEEP, borderWidth: 1.2 });
+  page.drawRectangle({ x: 35, y: 35, width: W - 70, height: H - 70, borderColor: GOLD, borderWidth: 0.5, borderOpacity: 0.8 });
+  for (const [x, y] of [[30, 30], [W - 30, 30], [30, H - 30], [W - 30, H - 30]]) {
+    diamond(page, x, y, 12, GOLD_DEEP);
+    diamond(page, x, y, 9, GOLD);
+    diamond(page, x, y, 4, GOLD_LIGHT);
+  }
+  // A small gold diamond centred on each side of the inner frame.
+  for (const [x, y] of [[W / 2, 30], [W / 2, H - 30], [30, H / 2], [W - 30, H / 2]]) {
+    diamond(page, x, y, 7, GOLD_DEEP);
+    diamond(page, x, y, 4.5, GOLD_LIGHT);
+  }
+}
+
+/**
+ * The mastery medal: a gold sunburst disc on two ribbon tails, with a laurel
+ * wreath, the fish and a star. Takes the seal's place on mastery certificates.
+ */
+function medal(page: PDFPage, cx: number, cy: number, r: number, fonts: { caps: PDFFont }) {
+  const Y = (v: number) => -v; // drawSvgPath's y axis points down
+
+  // Ribbon tails, behind the disc.
+  for (const side of [-1, 1]) {
+    const x0 = cx + side * r * 0.32;
+    const x1 = cx + side * r * 0.95;
+    const yTop = cy - r * 0.35;
+    const yBot = cy - r * 1.32;
+    const w = r * 0.42;
+    const pts = [
+      [x0 - w / 2, yTop],
+      [x0 + w / 2, yTop],
+      [x1 + w / 2, yBot],
+      [x1, yBot + r * 0.16],
+      [x1 - w / 2, yBot],
+    ];
+    const d = pts.map(([x, y], i) => `${i ? "L" : "M"} ${x} ${Y(y)}`).join(" ") + " Z";
+    page.drawSvgPath(d, { x: 0, y: 0, color: RIBBON, borderColor: GOLD, borderWidth: 1.2 });
+  }
+
+  // Sunburst rays.
+  const rays = 36;
+  for (let i = 0; i < rays; i++) {
+    const a0 = (i / rays) * Math.PI * 2;
+    const a1 = ((i + 0.5) / rays) * Math.PI * 2;
+    const a2 = ((i + 1) / rays) * Math.PI * 2;
+    const p = (a: number, rr: number) => `${cx + rr * Math.cos(a)} ${Y(cy + rr * Math.sin(a))}`;
+    page.drawSvgPath(`M ${p(a0, r * 0.95)} L ${p(a1, r * 1.12)} L ${p(a2, r * 0.95)} Z`, { x: 0, y: 0, color: GOLD_DEEP });
+  }
+
+  // The disc, layered for a struck-metal look.
+  page.drawCircle({ x: cx, y: cy, size: r, color: GOLD_DEEP });
+  page.drawCircle({ x: cx, y: cy, size: r * 0.95, color: GOLD });
+  page.drawCircle({ x: cx, y: cy, size: r * 0.9, borderColor: GOLD_LIGHT, borderWidth: 1.4 });
+  page.drawCircle({ x: cx, y: cy, size: r * 0.66, color: GOLD_LIGHT, borderColor: GOLD_DEEP, borderWidth: 1.6 });
+  page.drawCircle({ x: cx, y: cy, size: r * 0.6, color: GOLD });
+
+  arcText(page, "FOUNDATIONS MASTER", cx, cy, r * 0.76, fonts.caps, r * 0.13, GOLD_DEEP, r * 0.02, false);
+  arcText(page, "UNDERGROUND AQUARIUM", cx, cy, r * 0.84, fonts.caps, r * 0.105, GOLD_DEEP, r * 0.015, true);
+
+  // Laurel wreath curving up both sides from the bottom, leaves angled outward.
+  for (const deg of [206, 222, 238, 254]) {
+    for (const side of [-1, 1]) {
+      const d = side < 0 ? deg : 540 - deg;
+      const a = (d * Math.PI) / 180;
+      page.drawEllipse({
+        x: cx + r * 0.48 * Math.cos(a),
+        y: cy + r * 0.48 * Math.sin(a),
+        xScale: r * 0.035,
+        yScale: r * 0.08,
+        color: GOLD_DEEP,
+        rotate: degrees(side < 0 ? d + 28 : d - 28),
+      });
+    }
+  }
+
+  // Fish (the site icon) in the middle.
+  const fishK = (r * 0.5) / 24;
+  for (const d of [
+    "M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z",
+    "M18 12v.5",
+    "M16 17.93a9.77 9.77 0 0 1 0-11.86",
+    "M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33",
+    "M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4",
+    "m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98",
+  ]) {
+    page.drawSvgPath(d, { x: cx - 12 * fishK, y: cy + 12 * fishK - r * 0.04, scale: fishK, borderColor: GOLD_DEEP, borderWidth: 2.2 });
+  }
+
+  // Star above the fish.
+  const star: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 === 0 ? r * 0.11 : r * 0.045;
+    star.push(`${i ? "L" : "M"} ${cx + rr * Math.cos(a)} ${Y(cy + r * 0.34 - rr * Math.sin(a))}`);
+  }
+  page.drawSvgPath(star.join(" ") + " Z", { x: 0, y: 0, color: GOLD_DEEP });
 }
 
 export async function buildCertificatePdf(input: CertificateInput): Promise<Uint8Array> {
@@ -298,7 +411,9 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
   const boldExt = await pdf.embedFont(b64(GARAMOND_600_EXT), { subset: true });
   const titleFace = await pdf.embedFont(b64(GARAMOND_500_ITALIC), { subset: true });
 
-  frame(page);
+  const mastery = isCourse && !!input.mastery;
+  if (mastery) goldFrame(page);
+  else frame(page);
   const C = W / 2;
 
   // ---- Heading ----
@@ -311,10 +426,12 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
       : input.kind === "species"
         ? "BREEDER CERTIFICATION"
         : input.kind === "course"
-          ? "CERTIFICATE OF COMPLETION"
+          ? mastery
+            ? "CERTIFICATE OF MASTERY"
+            : "CERTIFICATE OF COMPLETION"
           : "CERTIFICATE OF ACHIEVEMENT";
   const hSize = fit(caps, heading, 31, W - 200, 22, 2);
-  text(page, heading, C, 462, caps, hSize, INK, 2 * (hSize / 31));
+  text(page, heading, C, 462, caps, hSize, mastery ? GOLD_DEEP : INK, 2 * (hSize / 31));
 
   // ---- Recipient ----
   text(page, "This is to certify that", C, 424, italic, 17, SOFT);
@@ -352,6 +469,13 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
       memberNo ? `Member No. ${memberNo}` : null,
     ].filter(Boolean).join("   ·   ");
     text(page, detail, C, input.detail ? 246 : 262, serif, 13, SOFT);
+  } else if (input.kind === "course" && mastery) {
+    text(page, "has completed every beginner course and passed the Foundations Mastery exam,", C, 332, serif, 14.5, SOFT);
+    text(page, "and is hereby recognized as a", C, 313, serif, 14.5, SOFT);
+    const t = input.detail ?? input.title ?? "";
+    const tSize = fit(titleFace, t, 40, W - 220, 24);
+    text(page, t, C, 277, titleFace, tSize, GOLD_DEEP);
+    text(page, "100-question mastery exam   ·   Underground Aquarium Courses", C, 254, serif, 12.5, SOFT);
   } else if (input.kind === "course") {
     text(page, "has successfully completed the course", C, 328, serif, 16, SOFT);
     const title = input.title ?? "";
@@ -378,7 +502,8 @@ export async function buildCertificatePdf(input: CertificateInput): Promise<Uint
   const leftC = 96 + colW / 2;
   const rightC = W - 96 - colW / 2;
 
-  seal(page, C, 168, 60, { caps }, isCourse ? "COURSES · EST. 2026" : "SOCIETY · EST. 2026");
+  if (mastery) medal(page, C, 170, 54, { caps });
+  else seal(page, C, 168, 60, { caps }, isCourse ? "COURSES · EST. 2026" : "SOCIETY · EST. 2026");
 
   const dateStr = input.issuedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   text(page, dateStr, leftC, LINE_Y + 9, italic, 19, INK);

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildCertificatePdf } from "@/lib/society/certificatePdf";
 import { SOCIETY_SLUG } from "@/lib/config";
+import { isMasterySlug } from "@/lib/courses/mastery";
 
 // pdf-lib needs Node, not the edge runtime.
 export const runtime = "nodejs";
@@ -106,7 +107,15 @@ export async function GET(request: NextRequest) {
     signaturePng = null;
   }
 
+  // Mastery exams get the gold certificate with a medal.
+  let mastery = false;
+  if (kind === "course" && courseId) {
+    const { data: c } = await supabase.from("courses").select("slug").eq("id", courseId).maybeSingle();
+    mastery = isMasterySlug(c?.slug as string | undefined);
+  }
+
   const pdf = await buildCertificatePdf({
+    mastery,
     kind: cert.kind,
     recipientName: cert.recipient_name,
     memberNumber: cert.member_number,

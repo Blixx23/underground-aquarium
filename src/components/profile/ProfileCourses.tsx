@@ -162,7 +162,7 @@ export default function ProfileCourses({
                   </Link>
                   <div className="p-5">
                     <div className="flex items-start gap-3">
-                      <Medal id={`p-${c.slug}`} />
+                      <Medal id={`p-${c.slug}`} className="h-16 w-14" />
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-amber-300">{c.badge_title}</p>
                         <Link href={`/courses/${c.slug}`} className="block truncate text-white hover:text-ocean-100">

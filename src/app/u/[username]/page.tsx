@@ -304,7 +304,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
                     title={`${masteredCourse.badge_title}: passed the ${masteredCourse.title} exam`}
                     className="shrink-0"
                   >
-                    <MasteryEmblem size={28} className="drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]" />
+                    <MasteryEmblem size={40} className="drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
                   </Link>
                 )}
               </div>
