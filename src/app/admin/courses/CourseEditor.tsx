@@ -15,9 +15,10 @@ import {
   X,
   ExternalLink,
   ListChecks,
+  ImageIcon,
 } from "lucide-react";
-import { normaliseVideoUrl, videoHint, isVideoFile } from "@/lib/courses/video";
 import SectionQuestions from "./SectionQuestions";
+import LessonMedia, { type LessonMediaValue } from "./LessonMedia";
 
 export type EditorCourse = {
   id: string;
@@ -46,6 +47,7 @@ export type EditorSection = {
   content: string | null;
   has_video: boolean;
   video_url: string | null;
+  image_url: string | null;
   sort_order: number;
   questionCount?: number;
   questions?: EditorQuestion[];
@@ -54,9 +56,18 @@ export type EditorSection = {
 type Draft = {
   title: string;
   content: string;
-  has_video: boolean;
-  video_url: string;
+  media: LessonMediaValue;
 };
+
+const EMPTY_MEDIA: LessonMediaValue = { mode: "none", image_url: "", video_url: "" };
+
+function mediaFor(s: EditorSection): LessonMediaValue {
+  return {
+    mode: s.has_video ? "video" : s.image_url ? "image" : "none",
+    image_url: s.image_url ?? "",
+    video_url: s.video_url ?? "",
+  };
+}
 
 async function post(url: string, payload: Record<string, unknown>) {
   const res = await fetch(url, {
@@ -97,9 +108,9 @@ export default function CourseEditor({
   const [draft, setDraft] = useState<Draft>({
     title: "",
     content: "",
-    has_video: false,
-    video_url: "",
+    media: EMPTY_MEDIA,
   });
+  const [mediaBusy, setMediaBusy] = useState(false);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [secErr, setSecErr] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -137,8 +148,7 @@ export default function CourseEditor({
     setDraft({
       title: s.title,
       content: s.content ?? "",
-      has_video: !!s.has_video,
-      video_url: s.video_url ?? "",
+      media: mediaFor(s),
     });
     setOpenId(s.id);
   }
@@ -166,18 +176,25 @@ export default function CourseEditor({
   async function saveSection(id: string) {
     setSecErr(null);
     setRowBusy(id);
-    const video_url = draft.has_video ? draft.video_url.trim() || null : null;
+    // A lesson shows one visual: an image, a video, or nothing. Whatever
+    // isn't the chosen kind is cleared so the player never has to guess.
+    const { mode } = draft.media;
+    const has_video = mode === "video";
+    const video_url = has_video ? draft.media.video_url.trim() || null : null;
+    const image_url = mode === "image" ? draft.media.image_url.trim() || null : null;
     try {
-      await post("/api/admin/course-sections", {
+      const res = await post("/api/admin/course-sections", {
         action: "update",
         id,
         fields: {
           title: draft.title.trim() || "Untitled",
           content: draft.content,
-          has_video: draft.has_video,
+          has_video,
           video_url,
+          image_url,
         },
       });
+      const savedVideoUrl = (res?.video_url as string | null | undefined) ?? video_url;
       setSections((prev) =>
         prev.map((s) =>
           s.id === id
@@ -185,8 +202,9 @@ export default function CourseEditor({
                 ...s,
                 title: draft.title.trim() || "Untitled",
                 content: draft.content,
-                has_video: draft.has_video,
-                video_url,
+                has_video,
+                video_url: savedVideoUrl,
+                image_url,
               }
             : s
         )
@@ -413,9 +431,11 @@ export default function CourseEditor({
                       <h3 className="truncate font-medium text-white">
                         {s.title}
                       </h3>
-                      {s.has_video && (
+                      {s.has_video ? (
                         <Film className="w-3.5 h-3.5 text-ocean-400 shrink-0" />
-                      )}
+                      ) : s.image_url ? (
+                        <ImageIcon className="w-3.5 h-3.5 text-ocean-400 shrink-0" />
+                      ) : null}
                     </div>
                     <p className="text-xs text-ocean-500 mt-0.5 inline-flex items-center gap-1">
                       <ListChecks className="w-3 h-3" />
@@ -491,79 +511,16 @@ export default function CourseEditor({
                         className={input + " font-body leading-relaxed"}
                       />
                     </div>
-                    <label className="inline-flex items-center gap-2 text-sm text-ocean-200 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={draft.has_video}
-                        onChange={(e) =>
-                          setDraft({ ...draft, has_video: e.target.checked })
-                        }
-                        className="accent-ocean-500 w-4 h-4"
-                      />
-                      This lesson has a video
-                    </label>
-                    {draft.has_video && (() => {
-                      const hint = videoHint(draft.video_url);
-                      const resolved = normaliseVideoUrl(draft.video_url);
-                      const changed =
-                        !!resolved && resolved !== draft.video_url.trim();
-                      return (
-                        <div>
-                          <label className={label}>Video link</label>
-                          <input
-                            value={draft.video_url}
-                            onChange={(e) =>
-                              setDraft({ ...draft, video_url: e.target.value })
-                            }
-                            placeholder="Paste any YouTube link, or a direct .mp4 address"
-                            className={input}
-                          />
-                          <p
-                            className={
-                              "text-xs mt-1.5 " +
-                              (hint.ok ? "text-ocean-500" : "text-amber-400")
-                            }
-                          >
-                            {hint.text}
-                          </p>
-
-                          {/* Show what will actually be stored, because a
-                              YouTube watch link silently fails to embed and
-                              there is no way to tell from the page. */}
-                          {changed && (
-                            <p className="text-xs text-ocean-600 mt-1 break-all">
-                              Saved as{" "}
-                              <span className="text-ocean-300">{resolved}</span>
-                            </p>
-                          )}
-
-                          {resolved && hint.ok && (
-                            <div className="mt-3 rounded-xl overflow-hidden border border-ocean-800/60 bg-ocean-950 aspect-video max-w-md">
-                              {isVideoFile(resolved) ? (
-                                <video
-                                  src={resolved}
-                                  className="w-full h-full bg-black"
-                                  controls
-                                  preload="metadata"
-                                />
-                              ) : (
-                                <iframe
-                                  src={resolved}
-                                  title="Preview"
-                                  className="w-full h-full"
-                                  allow="encrypted-media; picture-in-picture"
-                                  allowFullScreen
-                                />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
+                    <LessonMedia
+                      sectionId={s.id}
+                      value={draft.media}
+                      onChange={(media) => setDraft({ ...draft, media })}
+                      onBusyChange={setMediaBusy}
+                    />
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => saveSection(s.id)}
-                        disabled={busy}
+                        disabled={busy || mediaBusy}
                         className="inline-flex items-center gap-2 rounded-full bg-ocean-600 hover:bg-ocean-500 px-5 py-2 text-sm font-medium text-white transition-colors disabled:opacity-60"
                       >
                         {busy ? (

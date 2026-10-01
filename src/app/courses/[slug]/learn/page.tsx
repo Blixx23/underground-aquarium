@@ -19,6 +19,7 @@ type Section = {
   content: string;
   has_video: boolean;
   video_url: string | null;
+  image_url: string | null;
   sort_order: number;
   questions: Question[];
 };
@@ -66,7 +67,7 @@ export default async function CoursePage({
 
   const { data: sectionRows } = await supabase
     .from("course_sections")
-    .select("id, title, content, has_video, video_url, sort_order")
+    .select("id, title, content, has_video, video_url, image_url, sort_order")
     .eq("course_id", course.id)
     .order("sort_order", { ascending: true });
 
@@ -97,6 +98,7 @@ export default async function CoursePage({
     content: s.content ?? "",
     has_video: !!s.has_video,
     video_url: s.video_url,
+    image_url: s.image_url ?? null,
     sort_order: s.sort_order,
     questions: qBySection[s.id] ?? [],
   }));

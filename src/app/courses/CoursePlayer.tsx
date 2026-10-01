@@ -30,6 +30,7 @@ type Section = {
   content: string;
   has_video: boolean;
   video_url: string | null;
+  image_url: string | null;
   sort_order: number;
   questions: Question[];
 };
@@ -341,6 +342,19 @@ export default function CoursePlayer({
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Lesson visual: shown when the lesson has no video */}
+            {!section.has_video && section.image_url && (
+              <div className="mb-6 rounded-2xl overflow-hidden border border-ocean-800/60 bg-ocean-950">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={section.image_url}
+                  alt={section.title}
+                  className="w-full h-auto block"
+                  loading="lazy"
+                />
               </div>
             )}
 

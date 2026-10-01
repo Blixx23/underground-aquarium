@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { normaliseVideoUrl } from "@/lib/courses/video";
 
-const ALLOWED_FIELDS = ["title", "content", "video_url", "has_video", "sort_order"];
+const ALLOWED_FIELDS = ["title", "content", "video_url", "has_video", "image_url", "sort_order"];
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         has_video: false,
         sort_order,
       })
-      .select("id, title, content, has_video, video_url, sort_order")
+      .select("id, title, content, has_video, video_url, image_url, sort_order")
       .maybeSingle();
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -84,6 +84,10 @@ export async function POST(req: Request) {
     if ("video_url" in update) {
       update.video_url = normaliseVideoUrl(update.video_url as string | null);
     }
+    if ("image_url" in update) {
+      const raw = typeof update.image_url === "string" ? update.image_url.trim() : "";
+      update.image_url = raw || null;
+    }
     if (Object.keys(update).length === 0) {
       return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
     }
@@ -94,7 +98,10 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      video_url: "video_url" in update ? update.video_url : undefined,
+    });
   }
 
   if (action === "delete") {

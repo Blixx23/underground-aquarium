@@ -44,7 +44,7 @@ export default async function AdminCourseEditPage({
 
   const { data: sectionRows } = await supabaseAdmin
     .from("course_sections")
-    .select("id, title, content, has_video, video_url, sort_order")
+    .select("id, title, content, has_video, video_url, image_url, sort_order")
     .eq("course_id", id)
     .order("sort_order", { ascending: true });
   const secs = (sectionRows ?? []) as EditorSection[];
