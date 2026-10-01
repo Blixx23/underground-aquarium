@@ -6,7 +6,6 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import ShopVisibilityToggle from "@/components/stores/ShopVisibilityToggle";
 import AdminShopSearch from "@/components/admin/AdminShopSearch";
 import ShopTypeToggle from "@/components/stores/ShopTypeToggle";
-import MoveToWholesale from "@/components/admin/MoveToWholesale";
 
 export const metadata: Metadata = { title: "Admin · All shops" };
 export const dynamic = "force-dynamic";
@@ -168,7 +167,6 @@ export default async function AdminShopsPage({
                 <div className="flex flex-wrap items-start gap-2">
                   <ShopVisibilityToggle storeId={s.id} visible={s.status === "published"} />
                   <ShopTypeToggle storeId={s.id} wholesale={false} />
-                  <MoveToWholesale storeId={s.id} name={s.name} />
                   {s.slug && (
                     <>
                       <Link
