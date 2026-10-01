@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
-import { questionsToAsk } from "@/lib/courses/quiz";
+import { questionsToAsk, isExamSection, EXAM_PASS_PERCENT } from "@/lib/courses/quiz";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -77,16 +77,40 @@ export async function POST(req: Request) {
     if (answers[q.id] !== q.correct_index) wrongQuestionIds.push(q.id);
   }
 
-  // How much of it you have to get right. Courses default to 100.
-  const passPercent = Math.min(100, Math.max(1, Number(passPercentRaw ?? 100)));
+  // How much of it you have to get right. Lesson checks default to 100
+  // (fix it until it's right). A final exam is graded once at 80%.
+  const isExam = isExamSection(section.title as string);
+  const passPercent = isExam
+    ? EXAM_PASS_PERCENT
+    : Math.min(100, Math.max(1, Number(passPercentRaw ?? 100)));
 
   const total = (questions ?? []).length;
   const correct = total - wrongQuestionIds.length;
   // No questions on a section means reading it is the whole requirement.
   const scored = total === 0 ? 100 : Math.round((correct / total) * 100);
 
+  // Exams: record every attempt, and once it's graded show the right answer
+  // for anything missed (the attempt is already on file, so nothing to game).
+  let correctAnswers: Record<string, number> | undefined;
+  if (isExam) {
+    correctAnswers = Object.fromEntries((questions ?? []).map((q) => [q.id, q.correct_index as number]));
+    const { error: attemptErr } = await supabaseAdmin.from("course_exam_attempts").insert({
+      user_id: user.id,
+      course_id: courseId,
+      section_id: sectionId,
+      correct,
+      total,
+      score: scored,
+      passed: scored >= passPercent,
+      answers,
+    });
+    if (attemptErr) console.error("course_exam_attempts insert failed", attemptErr.message);
+  }
+
   if (scored < passPercent) {
     return NextResponse.json({
+      exam: isExam,
+      correctAnswers,
       passed: false,
       wrongQuestionIds,
       correct,
@@ -143,6 +167,8 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
+    exam: isExam,
+    correctAnswers,
     passed: true,
     courseCompleted,
     certificateCode,

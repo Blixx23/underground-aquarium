@@ -17,3 +17,6 @@ export function isExamSection(title: string | null | undefined): boolean {
 export function questionsToAsk<T>(sectionTitle: string | null | undefined, questions: T[]): T[] {
   return isExamSection(sectionTitle) ? questions : questions.slice(0, LESSON_QUIZ_QUESTIONS);
 }
+
+/** Final exams are graded once, scored, and recorded. This is the pass mark. */
+export const EXAM_PASS_PERCENT = 80;

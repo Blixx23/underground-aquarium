@@ -17,6 +17,7 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { isVideoFile, normaliseVideoUrl } from "@/lib/courses/video";
+import { isExamSection } from "@/lib/courses/quiz";
 
 type Question = {
   id: string;
@@ -117,6 +118,16 @@ export default function CoursePlayer({
   // moved on to, so passing a quiz is never silent.
   const [flash, setFlash] = useState<string | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  // Final exams are graded once and scored instead of "fix it until right".
+  const [examResult, setExamResult] = useState<{
+    correct: number;
+    total: number;
+    scored: number;
+    passPercent: number;
+    passed: boolean;
+    courseCompleted: boolean;
+    correctAnswers: Record<string, number>;
+  } | null>(null);
 
   function scrollToTop() {
     requestAnimationFrame(() =>
@@ -131,7 +142,13 @@ export default function CoursePlayer({
   const unlocked = active === 0 || completed.has(sections[active - 1].id);
   const allAnswered = section.questions.every((q) => answers[q.id] != null);
   const lastSection = active === total - 1;
-  const submitLabel = lastSection ? "Finish & get certified" : "Complete section";
+  const isExam = isExamSection(section.title);
+  const examLocked = isExam && examResult !== null;
+  const submitLabel = isExam
+    ? "Submit exam"
+    : lastSection
+    ? "Finish & get certified"
+    : "Complete section";
   const certHref = `/courses/${courseSlug}/certificate`;
 
   const stepStates = useMemo(
@@ -153,9 +170,11 @@ export default function CoursePlayer({
     setRight(new Set());
     setError(null);
     setFlash(null);
+    setExamResult(null);
   }
 
   function pick(qId: string, oi: number) {
+    if (examLocked) return;
     setAnswers((prev) => ({ ...prev, [qId]: oi }));
     setError(null);
     // Changing an answer clears its green/red until the next check.
@@ -188,6 +207,26 @@ export default function CoursePlayer({
       setRight(
         new Set<string>(section.questions.map((q) => q.id).filter((id) => !wrongIds.includes(id)))
       );
+      if (data.exam) {
+        // Graded once: show the score, the right answers, and stay here.
+        setExamResult({
+          correct: data.correct,
+          total: data.total,
+          scored: data.scored,
+          passPercent: data.passPercent,
+          passed: !!data.passed,
+          courseCompleted: !!data.courseCompleted,
+          correctAnswers: data.correctAnswers || {},
+        });
+        if (data.passed) {
+          setCompleted((prev) => new Set(prev).add(section.id));
+          if (data.courseCompleted) setCourseDone(true);
+        }
+        requestAnimationFrame(() =>
+          document.getElementById("exam-result")?.scrollIntoView({ behavior: "smooth", block: "center" })
+        );
+        return;
+      }
       if (data.passed) {
         // Let the green show for a moment before moving on.
         await new Promise((r) => setTimeout(r, 1100));
@@ -414,7 +453,7 @@ export default function CoursePlayer({
             </div>
 
             {/* Quiz / completion */}
-            {isDone ? (
+            {isDone && !examResult ? (
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6">
                 <p className="flex items-center gap-2 text-emerald-200 font-medium">
                   <Check className="w-5 h-5" /> Section complete
@@ -483,8 +522,10 @@ export default function CoursePlayer({
                         </p>
                         {isWrong && (
                           <p className="flex items-center gap-1.5 text-xs text-coral-200 mt-1.5">
-                            <AlertCircle className="w-3.5 h-3.5" /> Not quite, pick
-                            another answer
+                            <AlertCircle className="w-3.5 h-3.5" />{" "}
+                            {examLocked
+                              ? "Missed. The right answer is in green."
+                              : "Not quite, pick another answer"}
                           </p>
                         )}
                         {isRight && (
@@ -495,7 +536,11 @@ export default function CoursePlayer({
                         <div className="space-y-2 mt-3">
                           {q.options.map((opt, oi) => {
                             const selected = answers[q.id] === oi;
-                            const tone = !selected
+                            const isAnswer =
+                              examLocked && isWrong && examResult?.correctAnswers[q.id] === oi;
+                            const tone = isAnswer
+                              ? "right"
+                              : !selected
                               ? "idle"
                               : isWrong
                               ? "wrong"
@@ -506,6 +551,7 @@ export default function CoursePlayer({
                               <button
                                 key={oi}
                                 onClick={() => pick(q.id, oi)}
+                                disabled={examLocked}
                                 className={
                                   "w-full text-left rounded-xl border px-4 py-2.5 text-sm transition-colors " +
                                   (tone === "right"
@@ -547,7 +593,7 @@ export default function CoursePlayer({
                   })}
                 </div>
 
-                {wrong.size > 0 && (
+                {wrong.size > 0 && !isExam && (
                   <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-coral-500/40 bg-coral-500/10 px-4 py-3 text-sm text-coral-100">
                     <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                     <span>
@@ -559,6 +605,79 @@ export default function CoursePlayer({
                 )}
                 {error && <p className="text-sm text-coral-200 mt-5">{error}</p>}
 
+                {examResult ? (
+                  <div
+                    id="exam-result"
+                    className={
+                      "mt-6 rounded-2xl border p-6 " +
+                      (examResult.passed
+                        ? "border-emerald-500/40 bg-emerald-500/10"
+                        : "border-coral-500/40 bg-coral-500/10")
+                    }
+                  >
+                    <p
+                      className={
+                        "text-xs font-mono uppercase tracking-[0.2em] mb-2 " +
+                        (examResult.passed ? "text-emerald-300" : "text-coral-200")
+                      }
+                    >
+                      {examResult.passed ? "Passed" : "Not passed yet"}
+                    </p>
+                    <p className="font-display text-4xl text-white">
+                      {examResult.correct} / {examResult.total}
+                      <span className="text-ocean-300 text-2xl ml-3">{examResult.scored}%</span>
+                    </p>
+                    <p className="text-ocean-200 text-sm mt-2">
+                      {examResult.passed
+                        ? examResult.total - examResult.correct > 0
+                          ? `You missed ${examResult.total - examResult.correct}. The right answers are marked in green above.`
+                          : "A perfect score."
+                        : `You need ${examResult.passPercent}% to pass. Check the answers in green above, then take it again.`}
+                    </p>
+                    <div className="flex flex-wrap gap-3 mt-5">
+                      {examResult.passed ? (
+                        examResult.courseCompleted ? (
+                          <>
+                            <Link
+                              href={certHref}
+                              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 text-sm font-medium transition-colors"
+                            >
+                              <Award className="w-4 h-4" /> View your certificate
+                            </Link>
+                            <button
+                              onClick={() => {
+                                setExamResult(null);
+                                setSummary(true);
+                                scrollToTop();
+                              }}
+                              className="inline-flex items-center gap-2 rounded-full border border-ocean-700 text-ocean-200 hover:text-white hover:border-ocean-500 px-5 py-2.5 text-sm transition-colors"
+                            >
+                              Finish course <ArrowRight className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <p className="text-sm text-ocean-300">
+                            Finish the remaining lessons to earn your certificate.
+                          </p>
+                        )
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setExamResult(null);
+                            setAnswers({});
+                            setWrong(new Set());
+                            setRight(new Set());
+                            scrollToTop();
+                          }}
+                          className="inline-flex items-center gap-2 rounded-full bg-ocean-600 hover:bg-ocean-500 text-white px-5 py-2.5 text-sm font-medium transition-colors"
+                        >
+                          Retake exam
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
                 <button
                   onClick={submitSection}
                   disabled={!allAnswered || submitting}
@@ -575,6 +694,8 @@ export default function CoursePlayer({
                   <p className="text-xs text-ocean-500 mt-2">
                     Answer every question to continue.
                   </p>
+                )}
+                  </>
                 )}
               </div>
             )}
