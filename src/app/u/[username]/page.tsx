@@ -16,6 +16,7 @@ import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice } from "@/lib/marketplace/listings";
 import Certifications, { type Certification } from "@/components/profile/Certifications";
+import CourseMedals from "@/components/profile/CourseMedals";
 import ReportButton from "@/components/ReportButton";
 import BlockButton from "@/components/BlockButton";
 import BubbleBadge from "@/components/bubbles/BubbleBadge";
@@ -164,6 +165,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
     viewerFollow,
     { count: trophyCount },
     viewerBlock,
+    { data: medalData },
   ] = await Promise.all([
     supabasePublic.rpc("society_public_card", { p_user: profile.id }),
     supabasePublic.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
@@ -192,7 +194,28 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           .eq("blocked_id", profile.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    supabasePublic
+      .from("course_completions")
+      .select("completed_at, courses(slug, title, badge_title, is_published)")
+      .eq("user_id", profile.id)
+      .order("completed_at", { ascending: true }),
   ]);
+
+  // One medal per finished course, oldest first, for the row under the stats.
+  type MedalRow = {
+    completed_at: string;
+    courses:
+      | { slug: string; title: string; badge_title: string; is_published: boolean }
+      | { slug: string; title: string; badge_title: string; is_published: boolean }[]
+      | null;
+  };
+  const medals: Certification[] = ((medalData ?? []) as MedalRow[])
+    .map((r) => {
+      const c = Array.isArray(r.courses) ? r.courses[0] : r.courses;
+      if (!c || !c.is_published) return null;
+      return { slug: c.slug, title: c.title, badge_title: c.badge_title, completed_at: r.completed_at };
+    })
+    .filter((x): x is Certification => x !== null);
 
   let card = ((Array.isArray(cardData) ? cardData[0] : cardData) ?? null) as SocietyCard | null;
   // society_public_card arrives with the feed (step 44). Until it's there,
@@ -346,6 +369,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
               <span className="font-semibold text-amber-300">{trophyCount ?? 0}</span> trophies
             </Link>
           </div>
+          <CourseMedals rows={medals} isMe={isMe} />
         </div>
 
         {/* Tabs */}
