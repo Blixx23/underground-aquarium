@@ -11,12 +11,12 @@ import {
   Tag,
   ChevronRight,
   MessageCircle,
+  Medal,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice } from "@/lib/marketplace/listings";
 import ProfileCourses, { type ProfileCourse } from "@/components/profile/ProfileCourses";
-import MasteryEmblem from "@/components/courses/MasteryEmblem";
 import { isMasterySlug } from "@/lib/courses/mastery";
 import ReportButton from "@/components/ReportButton";
 import BlockButton from "@/components/BlockButton";
@@ -298,17 +298,20 @@ export default async function PublicProfilePage({ params, searchParams }: Params
                   {displayName}
                 </h1>
                 {society && <SocietySeal size={26} className="h-[26px] w-[26px] shrink-0" />}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <p className="text-sm text-ocean-400">@{handle}</p>
                 {masteredCourse && (
                   <Link
                     href={`${base}?tab=courses`}
-                    title={`${masteredCourse.badge_title}: passed the ${masteredCourse.title} exam`}
-                    className="shrink-0"
+                    title={`Passed the 100-question ${masteredCourse.title} exam`}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-300/70 bg-gradient-to-r from-amber-600/40 via-amber-400/25 to-amber-600/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.35)] transition-colors hover:border-amber-200 hover:text-white"
                   >
-                    <MasteryEmblem size={40} className="drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
+                    <Medal className="h-4 w-4 text-amber-300" />
+                    {masteredCourse.badge_title}
                   </Link>
                 )}
               </div>
-              <p className="text-sm text-ocean-400">@{handle}</p>
             </div>
           </div>
 
