@@ -26,25 +26,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing section." }, { status: 400 });
   }
 
-  // Verify the section belongs to a published course
+  // Verify the section belongs to a published course. Looked up in plain
+  // separate queries: the old embedded join also asked for courses.pass_percent,
+  // and when that column doesn't exist the whole query fails, so every quiz
+  // answered "Section not found." no matter what you picked.
   const { data: section } = await supabaseAdmin
     .from("course_sections")
-    .select("id, title, course_id, courses(is_published, pass_percent)")
+    .select("id, title, course_id")
     .eq("id", sectionId)
     .maybeSingle();
-
-  const published =
-    section &&
-    (Array.isArray((section as { courses?: unknown }).courses)
-      ? ((section as { courses: { is_published: boolean }[] }).courses[0]
-          ?.is_published ?? false)
-      : ((section as { courses?: { is_published?: boolean } }).courses
-          ?.is_published ?? false));
-
-  if (!section || !published) {
+  if (!section) {
     return NextResponse.json({ error: "Section not found." }, { status: 404 });
   }
-  const courseId = (section as { course_id: string }).course_id;
+  const courseId = section.course_id as string;
+
+  const { data: course } = await supabaseAdmin
+    .from("courses")
+    .select("is_published")
+    .eq("id", courseId)
+    .maybeSingle();
+  if (!course?.is_published) {
+    return NextResponse.json({ error: "Section not found." }, { status: 404 });
+  }
+
+  // Optional per-course pass mark. If the column isn't there, the error is
+  // ignored and the course needs 100%, which is how every course has worked.
+  let passPercentRaw: number | null = null;
+  {
+    const { data: pp, error: ppErr } = await supabaseAdmin
+      .from("courses")
+      .select("pass_percent")
+      .eq("id", courseId)
+      .maybeSingle();
+    if (!ppErr) passPercentRaw = (pp as { pass_percent?: number | null } | null)?.pass_percent ?? null;
+  }
 
   // Grade against the hidden answer key (service role can read correct_index)
   // Only the questions the lesson actually shows are graded (see
@@ -55,21 +70,15 @@ export async function POST(req: Request) {
     .eq("section_id", sectionId)
     .order("sort_order", { ascending: true })
     .order("id", { ascending: true });
-  const questions = questionsToAsk((section as { title?: string }).title, allQuestions ?? []);
+  const questions = questionsToAsk(section.title as string, allQuestions ?? []);
 
   const wrongQuestionIds: string[] = [];
   for (const q of questions ?? []) {
     if (answers[q.id] !== q.correct_index) wrongQuestionIds.push(q.id);
   }
 
-  // How much of it you have to get right. Courses default to 100, which
-  // is how every course behaved before this existed, so nothing changes
-  // unless a course deliberately sets a lower mark.
-  const coursesField = (section as { courses?: unknown }).courses;
-  const courseRow = (Array.isArray(coursesField) ? coursesField[0] : coursesField) as
-    | { pass_percent?: number | null }
-    | undefined;
-  const passPercent = Math.min(100, Math.max(1, Number(courseRow?.pass_percent ?? 100)));
+  // How much of it you have to get right. Courses default to 100.
+  const passPercent = Math.min(100, Math.max(1, Number(passPercentRaw ?? 100)));
 
   const total = (questions ?? []).length;
   const correct = total - wrongQuestionIds.length;

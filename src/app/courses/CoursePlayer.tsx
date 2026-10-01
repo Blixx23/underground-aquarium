@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  X,
   Lock,
   Check,
   Clapperboard,
@@ -106,6 +107,8 @@ export default function CoursePlayer({
   );
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [wrong, setWrong] = useState<Set<string>>(new Set());
+  // Questions graded right on the last check, shown green until changed.
+  const [right, setRight] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [courseDone, setCourseDone] = useState(courseAlreadyDone);
@@ -147,6 +150,7 @@ export default function CoursePlayer({
     setActive(i);
     setAnswers({});
     setWrong(new Set());
+    setRight(new Set());
     setError(null);
     setFlash(null);
   }
@@ -154,13 +158,15 @@ export default function CoursePlayer({
   function pick(qId: string, oi: number) {
     setAnswers((prev) => ({ ...prev, [qId]: oi }));
     setError(null);
-    if (wrong.has(qId)) {
-      setWrong((prev) => {
-        const n = new Set(prev);
-        n.delete(qId);
-        return n;
-      });
-    }
+    // Changing an answer clears its green/red until the next check.
+    const drop = (prev: Set<string>) => {
+      if (!prev.has(qId)) return prev;
+      const n = new Set(prev);
+      n.delete(qId);
+      return n;
+    };
+    setWrong(drop);
+    setRight(drop);
   }
 
   async function submitSection() {
@@ -177,9 +183,17 @@ export default function CoursePlayer({
         setError(data?.error || "Something went wrong. Try again.");
         return;
       }
+      const wrongIds: string[] = data.wrongQuestionIds || [];
+      setWrong(new Set<string>(wrongIds));
+      setRight(
+        new Set<string>(section.questions.map((q) => q.id).filter((id) => !wrongIds.includes(id)))
+      );
       if (data.passed) {
+        // Let the green show for a moment before moving on.
+        await new Promise((r) => setTimeout(r, 1100));
         setCompleted((prev) => new Set(prev).add(section.id));
         setWrong(new Set());
+        setRight(new Set());
         setAnswers({});
         if (data.courseCompleted) setCourseDone(true);
         // Move straight on. Before, a passed quiz just swapped in a small
@@ -194,8 +208,7 @@ export default function CoursePlayer({
           scrollToTop();
         }
       } else {
-        const ids: string[] = data.wrongQuestionIds || [];
-        setWrong(new Set<string>(ids));
+        const ids = wrongIds;
         // Bring the first wrong answer into view so it's obvious what to fix.
         if (ids.length) {
           requestAnimationFrame(() =>
@@ -451,14 +464,18 @@ export default function CoursePlayer({
                 <div className="space-y-5">
                   {section.questions.map((q, qi) => {
                     const isWrong = wrong.has(q.id);
+                    const isRight = right.has(q.id);
                     return (
                       <div
                         key={q.id}
                         id={`q-${q.id}`}
                         className={
-                          isWrong
-                            ? "rounded-xl border border-coral-500/40 bg-coral-500/5 p-4"
-                            : ""
+                          "rounded-xl border p-4 transition-colors " +
+                          (isWrong
+                            ? "border-coral-500/50 bg-coral-500/5"
+                            : isRight
+                            ? "border-emerald-500/50 bg-emerald-500/5"
+                            : "border-transparent")
                         }
                       >
                         <p className="font-medium text-white">
@@ -466,20 +483,36 @@ export default function CoursePlayer({
                         </p>
                         {isWrong && (
                           <p className="flex items-center gap-1.5 text-xs text-coral-200 mt-1.5">
-                            <AlertCircle className="w-3.5 h-3.5" /> Not quite — pick
+                            <AlertCircle className="w-3.5 h-3.5" /> Not quite, pick
                             another answer
+                          </p>
+                        )}
+                        {isRight && (
+                          <p className="flex items-center gap-1.5 text-xs text-emerald-200 mt-1.5">
+                            <Check className="w-3.5 h-3.5" /> Correct
                           </p>
                         )}
                         <div className="space-y-2 mt-3">
                           {q.options.map((opt, oi) => {
                             const selected = answers[q.id] === oi;
+                            const tone = !selected
+                              ? "idle"
+                              : isWrong
+                              ? "wrong"
+                              : isRight
+                              ? "right"
+                              : "picked";
                             return (
                               <button
                                 key={oi}
                                 onClick={() => pick(q.id, oi)}
                                 className={
                                   "w-full text-left rounded-xl border px-4 py-2.5 text-sm transition-colors " +
-                                  (selected
+                                  (tone === "right"
+                                    ? "border-emerald-400 bg-emerald-500/15 text-white"
+                                    : tone === "wrong"
+                                    ? "border-coral-400 bg-coral-500/15 text-white"
+                                    : tone === "picked"
                                     ? "border-ocean-400 bg-ocean-800/60 text-white"
                                     : "border-ocean-800/60 bg-ocean-900/40 text-ocean-200 hover:border-ocean-600")
                                 }
@@ -488,14 +521,20 @@ export default function CoursePlayer({
                                   <span
                                     className={
                                       "flex items-center justify-center w-4 h-4 rounded-full border " +
-                                      (selected
+                                      (tone === "right"
+                                        ? "border-emerald-300 bg-emerald-400"
+                                        : tone === "wrong"
+                                        ? "border-coral-300 bg-coral-400"
+                                        : tone === "picked"
                                         ? "border-ocean-300 bg-ocean-400"
                                         : "border-ocean-600")
                                     }
                                   >
-                                    {selected && (
+                                    {tone === "wrong" ? (
+                                      <X className="w-2.5 h-2.5 text-ocean-950" />
+                                    ) : selected ? (
                                       <Check className="w-2.5 h-2.5 text-ocean-950" />
-                                    )}
+                                    ) : null}
                                   </span>
                                   {opt}
                                 </span>
