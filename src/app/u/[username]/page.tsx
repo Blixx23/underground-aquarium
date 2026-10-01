@@ -16,7 +16,7 @@ import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice } from "@/lib/marketplace/listings";
 import Certifications, { type Certification } from "@/components/profile/Certifications";
-import CourseMedals from "@/components/profile/CourseMedals";
+import ProfileCourses, { type ProfileCourse } from "@/components/profile/ProfileCourses";
 import ReportButton from "@/components/ReportButton";
 import BlockButton from "@/components/BlockButton";
 import BubbleBadge from "@/components/bubbles/BubbleBadge";
@@ -86,6 +86,7 @@ const TABS = [
   { key: "feed", label: "Feed" },
   { key: "tanks", label: "Tanks" },
   { key: "listings", label: "Listings" },
+  { key: "courses", label: "Courses" },
   { key: "trophies", label: "Trophies" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -196,26 +197,35 @@ export default async function PublicProfilePage({ params, searchParams }: Params
       : Promise.resolve({ data: null }),
     supabasePublic
       .from("course_completions")
-      .select("completed_at, courses(slug, title, badge_title, is_published)")
+      .select("completed_at, courses(slug, title, subtitle, badge_title, cover_image, is_published)")
       .eq("user_id", profile.id)
       .order("completed_at", { ascending: true }),
   ]);
 
-  // One medal per finished course, oldest first, for the row under the stats.
-  type MedalRow = {
-    completed_at: string;
-    courses:
-      | { slug: string; title: string; badge_title: string; is_published: boolean }
-      | { slug: string; title: string; badge_title: string; is_published: boolean }[]
-      | null;
+  // Finished courses, oldest first, for the Courses tab (and its count).
+  type CourseInfo = {
+    slug: string;
+    title: string;
+    subtitle: string | null;
+    badge_title: string;
+    cover_image: string | null;
+    is_published: boolean;
   };
-  const medals: Certification[] = ((medalData ?? []) as MedalRow[])
+  type MedalRow = { completed_at: string; courses: CourseInfo | CourseInfo[] | null };
+  const completedCourses: ProfileCourse[] = ((medalData ?? []) as MedalRow[])
     .map((r) => {
       const c = Array.isArray(r.courses) ? r.courses[0] : r.courses;
       if (!c || !c.is_published) return null;
-      return { slug: c.slug, title: c.title, badge_title: c.badge_title, completed_at: r.completed_at };
+      return {
+        slug: c.slug,
+        title: c.title,
+        subtitle: c.subtitle,
+        badge_title: c.badge_title,
+        cover_image: c.cover_image,
+        completed_at: r.completed_at,
+      };
     })
-    .filter((x): x is Certification => x !== null);
+    .filter((x): x is NonNullable<typeof x> => x !== null);
 
   let card = ((Array.isArray(cardData) ? cardData[0] : cardData) ?? null) as SocietyCard | null;
   // society_public_card arrives with the feed (step 44). Until it's there,
@@ -369,13 +379,19 @@ export default async function PublicProfilePage({ params, searchParams }: Params
               <span className="font-semibold text-amber-300">{trophyCount ?? 0}</span> trophies
             </Link>
           </div>
-          <CourseMedals rows={medals} isMe={isMe} />
         </div>
 
         {/* Tabs */}
         <nav className="mt-8 flex gap-1 overflow-x-auto border-b border-ocean-800/60">
           {TABS.map((t) => {
-            const count = t.key === "tanks" ? tankCount : t.key === "listings" ? listingCount : null;
+            const count =
+              t.key === "tanks"
+                ? tankCount
+                : t.key === "listings"
+                ? listingCount
+                : t.key === "courses"
+                ? completedCourses.length
+                : null;
             const active = tab === t.key;
             return (
               <Link
@@ -414,6 +430,14 @@ export default async function PublicProfilePage({ params, searchParams }: Params
           )}
           {tab === "tanks" && <TanksTab profileId={profile.id} name={displayName} />}
           {tab === "listings" && <ListingsTab profileId={profile.id} name={displayName} />}
+          {tab === "courses" && (
+            <CoursesTab
+              name={displayName}
+              isMe={isMe}
+              viewerId={viewer?.id ?? null}
+              completed={completedCourses}
+            />
+          )}
           {tab === "trophies" && <TrophiesTab profileId={profile.id} name={displayName} isMe={isMe} />}
         </div>
 
@@ -627,6 +651,55 @@ async function ListingsTab({ profileId, name }: { profileId: string; name: strin
         </Link>
       ))}
     </div>
+  );
+}
+
+async function CoursesTab({
+  name,
+  isMe,
+  viewerId,
+  completed,
+}: {
+  name: string;
+  isMe: boolean;
+  viewerId: string | null;
+  completed: ProfileCourse[];
+}) {
+  // Which of these the person looking has finished, so they get "You've
+  // earned this one too" instead of an invite. On your own profile, also the
+  // published courses you haven't finished yet.
+  const [{ data: viewerRows }, { data: allCourses }] = await Promise.all([
+    viewerId && !isMe
+      ? supabasePublic.from("course_completions").select("courses(slug)").eq("user_id", viewerId)
+      : Promise.resolve({ data: [] as { courses: unknown }[] }),
+    isMe
+      ? supabasePublic
+          .from("courses")
+          .select("slug, title, subtitle, badge_title, cover_image")
+          .eq("is_published", true)
+          .order("sort_order", { ascending: true })
+      : Promise.resolve({ data: [] as ProfileCourse[] }),
+  ]);
+
+  const viewerCompleted = ((viewerRows ?? []) as { courses: unknown }[])
+    .map((r) => {
+      const c = (Array.isArray(r.courses) ? r.courses[0] : r.courses) as { slug?: string } | null;
+      return c?.slug ?? null;
+    })
+    .filter((x): x is string => !!x);
+
+  const done = new Set(completed.map((c) => c.slug));
+  const notYet = ((allCourses ?? []) as ProfileCourse[]).filter((c) => !done.has(c.slug));
+
+  return (
+    <ProfileCourses
+      name={name}
+      isMe={isMe}
+      signedIn={!!viewerId}
+      completed={completed}
+      viewerCompleted={viewerCompleted}
+      notYet={notYet}
+    />
   );
 }
 
