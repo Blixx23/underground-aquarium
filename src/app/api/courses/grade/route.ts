@@ -4,6 +4,14 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { questionsToAsk, isExamSection, EXAM_PASS_PERCENT } from "@/lib/courses/quiz";
 import { canTakeMembersCourses, courseAccessInfo } from "@/lib/courses/access";
+import {
+  isMasterySlug,
+  MASTERY_COOLDOWN_HOURS,
+  MASTERY_GRACE_SECONDS,
+  MASTERY_PASS_PERCENT,
+  MASTERY_TOPICS,
+} from "@/lib/courses/mastery";
+import { getMasteryStatus } from "@/lib/courses/masteryStatus";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -14,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Please sign in." }, { status: 401 });
   }
 
-  let body: { sectionId?: string; answers?: Record<string, number> };
+  let body: { sectionId?: string; answers?: Record<string, number>; sessionId?: string };
   try {
     body = await req.json();
   } catch {
@@ -43,11 +51,17 @@ export async function POST(req: Request) {
 
   const { data: course } = await supabaseAdmin
     .from("courses")
-    .select("is_published")
+    .select("is_published, slug")
     .eq("id", courseId)
     .maybeSingle();
   if (!course?.is_published) {
     return NextResponse.json({ error: "Section not found." }, { status: 404 });
+  }
+
+  // Mastery exams have their own rules: unlock check, server-timed session,
+  // graded once, answers never revealed on a fail.
+  if (isMasterySlug(course.slug as string)) {
+    return gradeMastery(user.id, courseId, sectionId, answers, body.sessionId);
   }
 
   // Society classes can only be taken by members in good standing.
@@ -186,5 +200,172 @@ export async function POST(req: Request) {
     total,
     scored,
     passPercent,
+  });
+}
+
+async function gradeMastery(
+  userId: string,
+  courseId: string,
+  sectionId: string,
+  answers: Record<string, number>,
+  sessionId: string | undefined
+) {
+  const status = await getMasteryStatus(userId);
+  if (!status || status.sectionId !== sectionId) {
+    return NextResponse.json({ error: "Exam not found." }, { status: 404 });
+  }
+  if (status.passed) {
+    return NextResponse.json({ error: "You've already passed this exam." }, { status: 409 });
+  }
+  if (!status.unlocked) {
+    return NextResponse.json({ error: "Finish every beginner course to unlock this exam." }, { status: 403 });
+  }
+  if (!sessionId) {
+    return NextResponse.json({ error: "Start the exam before submitting." }, { status: 400 });
+  }
+
+  const { data: session } = await supabaseAdmin
+    .from("course_exam_sessions")
+    .select("id, user_id, section_id, started_at, expires_at, submitted_at, focus_losses")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (!session || session.user_id !== userId || session.section_id !== sectionId) {
+    return NextResponse.json({ error: "This exam session isn't valid." }, { status: 403 });
+  }
+  if (session.submitted_at) {
+    return NextResponse.json({ error: "This exam was already submitted." }, { status: 409 });
+  }
+  const now = new Date();
+  if (now.getTime() > new Date(session.expires_at).getTime() + MASTERY_GRACE_SECONDS * 1000) {
+    // Too late to count: close it out so it can't be reused.
+    await supabaseAdmin.from("course_exam_sessions").update({ submitted_at: now.toISOString() }).eq("id", sessionId);
+    return NextResponse.json({ error: "Time ran out before this exam was submitted." }, { status: 410 });
+  }
+
+  // Claim the session once, so a double-click or replay can't grade it twice.
+  const { data: claimed } = await supabaseAdmin
+    .from("course_exam_sessions")
+    .update({ submitted_at: now.toISOString() })
+    .eq("id", sessionId)
+    .is("submitted_at", null)
+    .select("id")
+    .maybeSingle();
+  if (!claimed) {
+    return NextResponse.json({ error: "This exam was already submitted." }, { status: 409 });
+  }
+
+  const { data: qs } = await supabaseAdmin
+    .from("course_questions")
+    .select("id, prompt, options, correct_index, topic, explanation")
+    .eq("section_id", sectionId);
+  const questions = (qs ?? []) as {
+    id: string;
+    prompt: string;
+    options: string[];
+    correct_index: number;
+    topic: string | null;
+    explanation: string | null;
+  }[];
+
+  const { data: pp, error: ppErr } = await supabaseAdmin
+    .from("courses")
+    .select("pass_percent")
+    .eq("id", courseId)
+    .maybeSingle();
+  const passPercent = Math.min(
+    100,
+    Math.max(1, Number((!ppErr && (pp as { pass_percent?: number | null } | null)?.pass_percent) || MASTERY_PASS_PERCENT))
+  );
+
+  const total = questions.length;
+  const byTopic: Record<string, { correct: number; total: number }> = {};
+  const missed: typeof questions = [];
+  for (const q of questions) {
+    const key = q.topic ?? "other";
+    byTopic[key] ??= { correct: 0, total: 0 };
+    byTopic[key].total++;
+    if (answers[q.id] === q.correct_index) byTopic[key].correct++;
+    else missed.push(q);
+  }
+  const correct = total - missed.length;
+  const scored = total === 0 ? 0 : Math.round((correct / total) * 1000) / 10;
+  const passed = scored >= passPercent;
+  const durationSeconds = Math.round((now.getTime() - new Date(session.started_at).getTime()) / 1000);
+
+  const { error: attemptErr } = await supabaseAdmin.from("course_exam_attempts").insert({
+    user_id: userId,
+    course_id: courseId,
+    section_id: sectionId,
+    correct,
+    total,
+    score: Math.floor(scored),
+    passed,
+    answers,
+    session_id: sessionId,
+    focus_losses: Number(session.focus_losses) || 0,
+    duration_seconds: durationSeconds,
+  });
+  if (attemptErr) console.error("mastery attempt insert failed", attemptErr.message);
+
+  const breakdown = Object.entries(byTopic).map(([key, v]) => ({
+    topic: key,
+    label: MASTERY_TOPICS[key] ?? key,
+    correct: v.correct,
+    total: v.total,
+  }));
+
+  if (!passed) {
+    return NextResponse.json({
+      passed: false,
+      correct,
+      total,
+      scored,
+      passPercent,
+      breakdown,
+      retryAt: new Date(now.getTime() + MASTERY_COOLDOWN_HOURS * 3600_000).toISOString(),
+    });
+  }
+
+  await supabaseAdmin
+    .from("course_section_progress")
+    .upsert({ user_id: userId, section_id: sectionId }, { onConflict: "user_id,section_id" });
+
+  let certificateCode: string | null = null;
+  const { data: existing } = await supabaseAdmin
+    .from("course_completions")
+    .select("certificate_code")
+    .eq("user_id", userId)
+    .eq("course_id", courseId)
+    .maybeSingle();
+  if (existing) {
+    certificateCode = existing.certificate_code;
+  } else {
+    const { data: inserted } = await supabaseAdmin
+      .from("course_completions")
+      .insert({ user_id: userId, course_id: courseId })
+      .select("certificate_code")
+      .maybeSingle();
+    certificateCode = inserted?.certificate_code ?? null;
+    await awardBubbles(userId, "course_completed", `course_${courseId}`);
+  }
+
+  // Passed: the attempt is on file and can't be retaken, so it's safe to
+  // explain anything that was missed.
+  const review = missed.map((q) => ({
+    prompt: q.prompt,
+    yourAnswer: typeof answers[q.id] === "number" ? q.options[answers[q.id]] ?? null : null,
+    correctAnswer: q.options[q.correct_index],
+    explanation: q.explanation,
+  }));
+
+  return NextResponse.json({
+    passed: true,
+    correct,
+    total,
+    scored,
+    passPercent,
+    breakdown,
+    review,
+    certificateCode,
   });
 }

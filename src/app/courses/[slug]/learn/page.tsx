@@ -2,10 +2,19 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Award, ScrollText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import CoursePlayer from "../../CoursePlayer";
 import { questionsToAsk } from "@/lib/courses/quiz";
 import { canTakeMembersCourses, courseAccessInfo } from "@/lib/courses/access";
 import { SOCIETY_PATH } from "@/lib/config";
+import MasteryExam from "@/components/courses/MasteryExam";
+import {
+  isMasterySlug,
+  MASTERY_COOLDOWN_HOURS,
+  MASTERY_PASS_PERCENT,
+  MASTERY_TIME_LIMIT_MIN,
+} from "@/lib/courses/mastery";
+import { getMasteryStatus } from "@/lib/courses/masteryStatus";
 import SocietySeal from "@/components/society/SocietySeal";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +77,68 @@ export default async function CoursePage({
     .maybeSingle();
 
   if (!course) notFound();
+
+  // The mastery exam has its own page: locked until every beginner course
+  // is done, then a timed, graded-once test.
+  if (isMasterySlug(course.slug)) {
+    const status = await getMasteryStatus(user?.id ?? null);
+    if (!status || !status.sectionId) notFound();
+    // Questions only reach the browser once the exam is actually open to this
+    // person. They're read with the service client because the public can't
+    // read mastery questions at all (see mastery_exam.sql), and the answer
+    // key (correct_index) is never selected.
+    const canSee = status.unlocked && !status.passed && !status.retryAt;
+    const { data: qRows } = canSee
+      ? await supabaseAdmin.from("course_questions").select("id, prompt, options").eq("section_id", status.sectionId)
+      : { data: [] as { id: string; prompt: string; options: string[] }[] };
+    const masteryQuestions = canSee
+      ? (qRows ?? []).map((q) => ({ id: q.id as string, prompt: q.prompt as string, options: (q.options ?? []) as string[] }))
+      : [];
+    let profileHref: string | null = null;
+    if (user) {
+      const { data: me } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
+      if (me?.username) profileHref = `/u/${me.username}`;
+    }
+    let passPercent = MASTERY_PASS_PERCENT;
+    {
+      const { data: pp, error: ppErr } = await supabase.from("courses").select("pass_percent").eq("id", course.id).maybeSingle();
+      const v = !ppErr ? (pp as { pass_percent?: number | null } | null)?.pass_percent : null;
+      if (v) passPercent = v;
+    }
+    return (
+      <main className="min-h-screen pt-28 pb-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <Link
+            href="/courses"
+            className="inline-flex items-center gap-2 text-sm text-ocean-400 hover:text-white transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" /> Courses
+          </Link>
+          <MasteryExam
+            title={course.title}
+            badgeTitle={course.badge_title}
+            sectionId={status.sectionId}
+            questions={masteryQuestions}
+            status={{
+              unlocked: status.unlocked,
+              passed: status.passed,
+              retryAt: status.retryAt,
+              bestScore: status.bestScore,
+              attempts: status.attempts,
+              requirements: status.requirements,
+              openSession: status.openSession,
+            }}
+            signedIn={!!user}
+            passPercent={passPercent}
+            timeLimitMin={MASTERY_TIME_LIMIT_MIN}
+            cooldownHours={MASTERY_COOLDOWN_HOURS}
+            certHref={`/courses/${course.slug}/certificate`}
+            profileHref={profileHref}
+          />
+        </div>
+      </main>
+    );
+  }
 
   // Society classes: members in good standing (and admins) only.
   const access = await courseAccessInfo(course.id);

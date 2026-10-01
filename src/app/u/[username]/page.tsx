@@ -16,6 +16,8 @@ import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice } from "@/lib/marketplace/listings";
 import ProfileCourses, { type ProfileCourse } from "@/components/profile/ProfileCourses";
+import MasteryEmblem from "@/components/courses/MasteryEmblem";
+import { isMasterySlug } from "@/lib/courses/mastery";
 import ReportButton from "@/components/ReportButton";
 import BlockButton from "@/components/BlockButton";
 import BubbleBadge from "@/components/bubbles/BubbleBadge";
@@ -225,6 +227,7 @@ export default async function PublicProfilePage({ params, searchParams }: Params
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
+  const masteredCourse = completedCourses.find((c) => isMasterySlug(c.slug)) ?? null;
 
   let card = ((Array.isArray(cardData) ? cardData[0] : cardData) ?? null) as SocietyCard | null;
   // society_public_card arrives with the feed (step 44). Until it's there,
@@ -295,6 +298,15 @@ export default async function PublicProfilePage({ params, searchParams }: Params
                   {displayName}
                 </h1>
                 {society && <SocietySeal size={26} className="h-[26px] w-[26px] shrink-0" />}
+                {masteredCourse && (
+                  <Link
+                    href={`${base}?tab=courses`}
+                    title={`${masteredCourse.badge_title}: passed the ${masteredCourse.title} exam`}
+                    className="shrink-0"
+                  >
+                    <MasteryEmblem size={28} className="drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]" />
+                  </Link>
+                )}
               </div>
               <p className="text-sm text-ocean-400">@{handle}</p>
             </div>
@@ -692,6 +704,7 @@ async function CoursesTab({
 
   return (
     <ProfileCourses
+      masteryCourse={((allCourses ?? []) as ProfileCourse[]).find((c) => isMasterySlug(c.slug)) ?? null}
       name={name}
       isMe={isMe}
       signedIn={!!viewerId}

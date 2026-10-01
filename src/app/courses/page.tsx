@@ -13,6 +13,9 @@ import { COURSE_GROUPS, courseGroup, type CourseGroup } from "@/lib/courses/leve
 import { canTakeMembersCourses } from "@/lib/courses/access";
 import SocietySeal from "@/components/society/SocietySeal";
 import { SOCIETY_PATH } from "@/lib/config";
+import MasteryEmblem from "@/components/courses/MasteryEmblem";
+import { isMasterySlug } from "@/lib/courses/mastery";
+import { getMasteryStatus } from "@/lib/courses/masteryStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +67,11 @@ export default async function CoursesPage({
     courseData = data;
   }
 
-  const allCourses = (courseData ?? []) as CourseRow[];
+  const rows = (courseData ?? []) as CourseRow[];
+  // The mastery exam gets its own glowing tile, not a regular card.
+  const masteryCourse = rows.find((c) => isMasterySlug(c.slug)) ?? null;
+  const allCourses = rows.filter((c) => !isMasterySlug(c.slug));
+  const mastery = masteryCourse ? await getMasteryStatus(user?.id ?? null) : null;
 
   // The menu only lists groups that have a course in them.
   const groups = COURSE_GROUPS.map((g) => ({
@@ -285,6 +292,68 @@ export default async function CoursesPage({
               );
             })}
           </div>
+        )}
+
+        {masteryCourse && mastery && activeGroup?.key === courseGroup(masteryCourse) && (
+          <Link
+            href={`/courses/${masteryCourse.slug}`}
+            className="group relative mt-8 block rounded-3xl bg-gradient-to-r from-amber-400 via-emerald-300 to-amber-400 p-[1.5px] shadow-[0_0_60px_rgba(251,191,36,0.22)] transition-shadow hover:shadow-[0_0_80px_rgba(251,191,36,0.35)]"
+          >
+            <div className="relative overflow-hidden rounded-[calc(1.5rem-1.5px)] bg-ocean-950 px-6 py-8 sm:px-10">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_10%,rgba(251,191,36,0.16),transparent_55%)]" />
+              <div className="relative flex flex-col items-center gap-6 sm:flex-row">
+                <MasteryEmblem
+                  size={112}
+                  muted={!mastery.unlocked && !mastery.passed}
+                  className={mastery.unlocked || mastery.passed ? "drop-shadow-[0_0_22px_rgba(251,191,36,0.5)]" : ""}
+                />
+                <div className="flex-1 text-center sm:text-left">
+                  <p className="font-mono text-xs uppercase tracking-[0.3em] text-amber-300">
+                    {mastery.passed ? "Mastered" : "The final beginner test"}
+                  </p>
+                  <h2 className="mt-1 font-display text-3xl text-amber-50">{masteryCourse.title}</h2>
+                  {masteryCourse.subtitle && <p className="mt-1 text-ocean-300">{masteryCourse.subtitle}</p>}
+                  {!mastery.passed && !mastery.unlocked && (
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between text-xs text-ocean-400">
+                        <span>Complete every beginner course to unlock</span>
+                        <span className="font-mono">
+                          {mastery.requirements.filter((r) => r.done).length}/{mastery.requirements.length}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ocean-900">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-300"
+                          style={{
+                            width: `${
+                              mastery.requirements.length
+                                ? (mastery.requirements.filter((r) => r.done).length / mastery.requirements.length) * 100
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0">
+                  {mastery.passed ? (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-ocean-950">
+                      <BadgeCheck className="h-4 w-4" /> {masteryCourse.badge_title}
+                    </span>
+                  ) : mastery.unlocked ? (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-ocean-950 group-hover:bg-amber-300">
+                      Take the exam <ArrowRight className="h-4 w-4" />
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-ocean-700 px-5 py-2.5 text-sm text-ocean-300">
+                      <Lock className="h-4 w-4" /> Locked
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Link>
         )}
       </div>
     </main>

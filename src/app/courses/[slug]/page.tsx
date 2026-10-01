@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { isMasterySlug } from "@/lib/courses/mastery";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -57,6 +58,7 @@ export default async function CourseLandingPage({
     .eq("is_published", true)
     .maybeSingle();
   if (!course) notFound();
+  if (isMasterySlug(course.slug)) redirect(`/courses/${course.slug}/learn`);
 
   const { data: sectionRows } = await supabase
     .from("course_sections")

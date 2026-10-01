@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Award, BadgeCheck, GraduationCap } from "lucide-react";
+import MasteryEmblem from "@/components/courses/MasteryEmblem";
+import { isMasterySlug } from "@/lib/courses/mastery";
 
 export type ProfileCourse = {
   slug: string;
@@ -59,9 +61,10 @@ export default function ProfileCourses({
   name,
   isMe,
   signedIn,
-  completed,
+  completed: completedAll,
   viewerCompleted,
   notYet,
+  masteryCourse = null,
 }: {
   name: string;
   isMe: boolean;
@@ -71,11 +74,61 @@ export default function ProfileCourses({
   viewerCompleted: string[];
   /** Only used on your own profile: published courses you haven't finished. */
   notYet: ProfileCourse[];
+  /** The mastery exam's course info, used for the "not yet" teaser on your own profile. */
+  masteryCourse?: ProfileCourse | null;
 }) {
   const viewerHas = new Set(viewerCompleted);
+  const mastered = completedAll.find((c) => isMasterySlug(c.slug)) ?? null;
+  const completed = completedAll.filter((c) => !isMasterySlug(c.slug));
+  notYet = notYet.filter((c) => !isMasterySlug(c.slug));
 
   return (
     <div>
+      {mastered && (
+        <div className="mb-8 rounded-3xl bg-gradient-to-r from-amber-400 via-emerald-300 to-amber-400 p-[1.5px] shadow-[0_0_60px_rgba(251,191,36,0.25)]">
+          <div className="relative overflow-hidden rounded-[calc(1.5rem-1.5px)] bg-ocean-950 px-6 py-8 sm:px-10">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(251,191,36,0.18),transparent_55%)]" />
+            <div className="relative flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
+              <MasteryEmblem size={120} className="shrink-0 drop-shadow-[0_0_24px_rgba(251,191,36,0.55)]" />
+              <div className="flex-1">
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-amber-300">Mastery</p>
+                <h2 className="mt-1 font-display text-3xl text-amber-50 sm:text-4xl">{mastered.badge_title}</h2>
+                <p className="mt-2 text-ocean-200">
+                  {isMe ? "You" : name} completed every beginner course and passed the 100-question {mastered.title} exam.
+                </p>
+                {mastered.completed_at && (
+                  <p className="mt-1 text-sm text-ocean-500">
+                    Earned{" "}
+                    {new Date(mastered.completed_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                  </p>
+                )}
+              </div>
+              <div className="shrink-0">
+                {isMe ? (
+                  <Link
+                    href={`/courses/${mastered.slug}/certificate`}
+                    className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-ocean-950 hover:bg-amber-300"
+                  >
+                    <Award className="h-4 w-4" /> View certificate
+                  </Link>
+                ) : viewerHas.has(mastered.slug) ? (
+                  <p className="inline-flex items-center gap-2 text-sm text-emerald-300">
+                    <BadgeCheck className="h-4 w-4" /> You&apos;ve mastered it too
+                  </p>
+                ) : (
+                  <Link
+                    href="/courses"
+                    className="inline-flex items-center gap-2 rounded-full border border-amber-300/40 px-5 py-2.5 text-sm text-amber-100 hover:border-amber-200"
+                  >
+                    Start the beginner path <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {completed.length === 0 ? (
         <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-10 text-center">
           <Award className="mx-auto mb-3 h-8 w-8 text-ocean-500" />
@@ -146,6 +199,22 @@ export default function ProfileCourses({
             })}
           </div>
         </>
+      )}
+
+      {isMe && !mastered && masteryCourse && (
+        <Link
+          href={`/courses/${masteryCourse.slug}`}
+          className="mt-10 flex items-center gap-4 rounded-2xl border border-amber-500/25 bg-amber-500/[0.04] p-5 transition-colors hover:border-amber-400/50"
+        >
+          <MasteryEmblem size={56} muted className="shrink-0" />
+          <span className="flex-1">
+            <span className="block font-display text-lg text-amber-50">{masteryCourse.title}</span>
+            <span className="block text-sm text-ocean-400">
+              Finish every beginner course, then pass the 100-question exam to earn {masteryCourse.badge_title}.
+            </span>
+          </span>
+          <ArrowRight className="h-5 w-5 text-amber-300" />
+        </Link>
       )}
 
       {isMe && notYet.length > 0 && (
