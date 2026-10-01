@@ -31,7 +31,7 @@ import {
 } from "@/lib/trophies";
 import { SOCIETY_PATH } from "@/lib/config";
 
-const ICON: Record<string, typeof Tag> = {
+export const TROPHY_ICON: Record<string, typeof Tag> = {
   classifieds: Tag,
   forums: MessagesSquare,
   feed: Newspaper,
@@ -71,7 +71,8 @@ export default function TrophyCabinet({
   /** Limit to site or Society trophies. */
   scope?: "site" | "society";
 }) {
-  const [filter, setFilter] = useState<Filter>("all");
+  // Opens on what you've earned; the other filters show what's left to earn.
+  const [filter, setFilter] = useState<Filter>(scope ? "all" : "earned");
   const isMember = rows[0]?.is_member ?? false;
 
   const series = useMemo(() => {
@@ -113,8 +114,8 @@ export default function TrophyCabinet({
           <div className="flex gap-1 rounded-xl border border-ocean-800/60 bg-ocean-900/40 p-1 text-sm">
             {(
               [
-                ["all", "All"],
                 ["earned", "Earned"],
+                ["all", "All"],
                 ["site", "Site"],
                 ["society", "Society"],
               ] as [Filter, string][]
@@ -152,7 +153,7 @@ export default function TrophyCabinet({
         <div className="space-y-7">
           {categories.map((cat) => {
             const list = shown.filter((s) => s.category === cat);
-            const Icon = ICON[cat] ?? Trophy;
+            const Icon = TROPHY_ICON[cat] ?? Trophy;
             const society = cat.startsWith("society");
             return (
               <section key={cat}>
@@ -208,7 +209,7 @@ function SeriesCard({ s, isSelf, isMember }: { s: TrophySeries; isSelf: boolean;
   const shown: TrophyRow = s.top ?? s.steps[0];
   const style = TIER_STYLE[shown.tier];
   const earned = Boolean(s.top);
-  const Icon = ICON[s.category] ?? Trophy;
+  const Icon = TROPHY_ICON[s.category] ?? Trophy;
   const society = s.scope === "society";
 
   // Founding numbers: a non-member sees the idea, not five locked brackets.

@@ -15,12 +15,11 @@ import {
 import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice } from "@/lib/marketplace/listings";
-import Certifications, { type Certification } from "@/components/profile/Certifications";
 import ProfileCourses, { type ProfileCourse } from "@/components/profile/ProfileCourses";
 import ReportButton from "@/components/ReportButton";
 import BlockButton from "@/components/BlockButton";
 import BubbleBadge from "@/components/bubbles/BubbleBadge";
-import TrophyCabinet from "@/components/trophies/TrophyCabinet";
+import TrophyShowcase from "@/components/trophies/TrophyShowcase";
 import type { TrophyRow } from "@/lib/trophies";
 import SocietySeal from "@/components/society/SocietySeal";
 import FollowButton from "@/components/FollowButton";
@@ -705,30 +704,10 @@ async function CoursesTab({
 
 async function TrophiesTab({ profileId, name, isMe }: { profileId: string; name: string; isMe: boolean }) {
   const { supabase } = await getViewer();
-  const [{ data: trophyRows }, { data: certData }, breederCerts] = await Promise.all([
+  const [{ data: trophyRows }, breederCerts] = await Promise.all([
     supabase.rpc("get_trophy_case", { p_user: profileId }),
-    supabasePublic
-      .from("course_completions")
-      .select("completed_at, courses(slug, title, badge_title, is_published)")
-      .eq("user_id", profileId)
-      .order("completed_at", { ascending: false }),
     getBreederCerts(profileId),
   ]);
-
-  type Row = {
-    completed_at: string;
-    courses:
-      | { slug: string; title: string; badge_title: string; is_published: boolean }
-      | { slug: string; title: string; badge_title: string; is_published: boolean }[]
-      | null;
-  };
-  const certs: Certification[] = ((certData ?? []) as Row[])
-    .map((r) => {
-      const c = Array.isArray(r.courses) ? r.courses[0] : r.courses;
-      if (!c || !c.is_published) return null;
-      return { slug: c.slug, title: c.title, badge_title: c.badge_title, completed_at: r.completed_at };
-    })
-    .filter((x): x is Certification => x !== null);
 
   return (
     <div>
@@ -746,13 +725,8 @@ async function TrophiesTab({ profileId, name, isMe }: { profileId: string; name:
           <BreederCerts certs={breederCerts} />
         </div>
       )}
-      <TrophyCabinet rows={(trophyRows ?? []) as TrophyRow[]} isSelf={false} earnedOnly />
-      {certs.length === 0 && breederCerts.length === 0 && !trophyRows?.length && (
-        <p className="text-sm text-ocean-400">{name} hasn&apos;t earned anything yet.</p>
-      )}
-      <div className="-mt-2">
-        <Certifications rows={certs} heading="Course certificates" />
-      </div>
+      {/* Course certificates live in the Courses tab now. */}
+      <TrophyShowcase rows={(trophyRows ?? []) as TrophyRow[]} name={name} isSelf={isMe} />
     </div>
   );
 }
