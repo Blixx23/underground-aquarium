@@ -12,7 +12,7 @@ export function isMasterySlug(slug: string | null | undefined): boolean {
 }
 
 /** Pass mark, unless the course row sets its own pass_percent. */
-export const MASTERY_PASS_PERCENT = 90;
+export const MASTERY_PASS_PERCENT = 80;
 /** Time allowed once the exam starts. */
 export const MASTERY_TIME_LIMIT_MIN = 120;
 /** Wait after a failed attempt before trying again. */

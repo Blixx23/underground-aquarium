@@ -671,6 +671,34 @@ export default function MasteryExam({
             )}
           </div>
         </div>
+
+        {!status.passed && (
+          <div className="relative mt-10 border-t border-amber-500/20 pt-8">
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-amber-300">Why this one matters</p>
+            <h3 className="mt-2 font-display text-2xl text-amber-50">Passing this exam is a real accomplishment</h3>
+            <div className="mt-4 grid gap-6 text-ocean-200 md:grid-cols-2">
+              <p>
+                This isn&apos;t a quiz you click through. Foundations Mastery covers the entire beginner path: setting up a
+                tank, the nitrogen cycle, choosing fish, water chemistry, fish health, buying healthy fish and live plants,
+                all in one sitting.
+              </p>
+              <p>
+                The questions are built around real situations, and the wrong answers are the mistakes beginners actually
+                make, so they sound right if you only skimmed. The clock keeps running if you go looking things up, and if
+                you don&apos;t pass, you won&apos;t see the answers and you&apos;ll wait a day to try again.
+              </p>
+              <p>
+                Most fish keepers learn these lessons the hard way, by losing fish. Passing means you learned them first,
+                and that the fish in your care have a keeper who knows what they need.
+              </p>
+              <p>
+                Only members who finish every beginner course can even attempt it. Pass, and the{" "}
+                <span className="text-amber-200">{badgeTitle}</span> emblem goes on your profile for good, where the whole
+                community can see it.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </Glow>
   );
