@@ -6,8 +6,13 @@ import {
   ScrollText,
   ArrowRight,
   BadgeCheck,
+  Lock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { COURSE_GROUPS, courseGroup, type CourseGroup } from "@/lib/courses/levels";
+import { canTakeMembersCourses } from "@/lib/courses/access";
+import SocietySeal from "@/components/society/SocietySeal";
+import { SOCIETY_PATH } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -25,21 +30,53 @@ type CourseRow = {
   subtitle: string | null;
   est_minutes: number;
   badge_title: string;
+  level?: string | null;
+  members_only?: boolean | null;
 };
 
-export default async function CoursesPage() {
+export default async function CoursesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ level?: string }>;
+}) {
+  const wantedLevel = (await searchParams).level;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: courseData } = await supabase
+  // level and members_only arrive with course_levels.sql; until then every
+  // course reads as an open beginner course.
+  const baseCols = "id, slug, title, subtitle, est_minutes, badge_title";
+  const withLevels = await supabase
     .from("courses")
-    .select("id, slug, title, subtitle, est_minutes, badge_title")
+    .select(`${baseCols}, level, members_only`)
     .eq("is_published", true)
     .order("sort_order", { ascending: true });
+  let courseData: unknown[] | null = withLevels.data;
+  if (withLevels.error) {
+    const { data } = await supabase
+      .from("courses")
+      .select(baseCols)
+      .eq("is_published", true)
+      .order("sort_order", { ascending: true });
+    courseData = data;
+  }
 
-  const courses = (courseData ?? []) as CourseRow[];
+  const allCourses = (courseData ?? []) as CourseRow[];
+
+  // The menu only lists groups that have a course in them.
+  const groups = COURSE_GROUPS.map((g) => ({
+    ...g,
+    courses: allCourses.filter((c) => courseGroup(c) === g.key),
+  })).filter((g) => g.courses.length > 0);
+  const activeGroup =
+    groups.find((g) => g.key === wantedLevel) ?? groups[0] ?? null;
+  const courses = activeGroup?.courses ?? [];
+  const isSocietyGroup = activeGroup?.key === ("society" as CourseGroup);
+  const membersAccess = groups.some((g) => g.key === "society")
+    ? await canTakeMembersCourses()
+    : false;
   const ids = courses.map((c) => c.id);
 
   // Lesson counts
@@ -79,6 +116,57 @@ export default async function CoursesPage() {
           a badge for your profile.
         </p>
 
+        {/* Level menu: only the levels that have courses */}
+        {groups.length > 0 && (
+          <nav className="mb-6 flex gap-1 overflow-x-auto border-b border-ocean-800/60">
+            {groups.map((g) => {
+              const active = g.key === activeGroup?.key;
+              const society = g.key === "society";
+              return (
+                <Link
+                  key={g.key}
+                  href={g.key === groups[0].key ? "/courses" : `/courses?level=${g.key}`}
+                  scroll={false}
+                  className={`relative inline-flex items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors ${
+                    active
+                      ? society
+                        ? "text-amber-200"
+                        : "text-white"
+                      : society
+                      ? "text-amber-300/70 hover:text-amber-200"
+                      : "text-ocean-400 hover:text-white"
+                  }`}
+                >
+                  {society && <SocietySeal size={16} className="h-4 w-4" />}
+                  {g.label}
+                  <span className="text-ocean-500">{g.courses.length}</span>
+                  {active && (
+                    <span
+                      className={`absolute inset-x-3 -bottom-px h-0.5 rounded-full ${
+                        society ? "bg-amber-400" : "bg-ocean-400"
+                      }`}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
+        {activeGroup && (
+          <p className={`mb-6 text-sm ${isSocietyGroup ? "text-amber-100/70" : "text-ocean-400"}`}>
+            {activeGroup.blurb}
+            {isSocietyGroup && !membersAccess && (
+              <>
+                {" "}
+                <Link href={SOCIETY_PATH} className="text-amber-300 hover:text-amber-200">
+                  Join the Society
+                </Link>{" "}
+                to take them.
+              </>
+            )}
+          </p>
+        )}
+
         {courses.length === 0 ? (
           <div className="card-deep rounded-2xl p-10 text-center">
             <GraduationCap className="w-8 h-8 text-ocean-400 mx-auto mb-3" />
@@ -91,11 +179,14 @@ export default async function CoursesPage() {
             {courses.map((c) => {
               const isDone = completed.has(c.id);
               const lessons = lessonCount[c.id] ?? 0;
+              const locked = !!c.members_only && !membersAccess;
               return (
                 <Link
                   key={c.id}
                   href={`/courses/${c.slug}`}
-                  className="group block card-deep rounded-2xl p-6 sm:p-8 transition-all"
+                  className={`group block card-deep rounded-2xl p-6 sm:p-8 transition-all ${
+                    c.members_only ? "ring-1 ring-amber-500/30" : ""
+                  }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center gap-6">
                     {/* Emblem */}
@@ -147,6 +238,10 @@ export default async function CoursesPage() {
                       {isDone ? (
                         <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 text-emerald-200 px-5 py-2.5 text-sm font-medium">
                           <BadgeCheck className="w-4 h-4" /> Completed
+                        </span>
+                      ) : locked ? (
+                        <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-200 px-5 py-2.5 text-sm font-medium">
+                          <Lock className="w-4 h-4" /> Members only
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-2 rounded-full bg-ocean-600 group-hover:bg-ocean-500 text-white px-5 py-2.5 text-sm font-medium transition-colors">

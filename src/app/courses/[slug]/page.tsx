@@ -11,6 +11,8 @@ import {
   Film,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { canTakeMembersCourses, courseAccessInfo } from "@/lib/courses/access";
+import { SOCIETY_PATH } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -83,12 +85,18 @@ export default async function CourseLandingPage({
     courseDone = !!comp;
   }
 
+  // Society classes: show the overview to everyone, but only members can start.
+  const access = await courseAccessInfo(course.id);
+  const membersLocked = access.members_only && !(await canTakeMembersCourses());
+
   const completedCount = completedIds.size;
   const inProgress = completedCount > 0 && !courseDone;
-  const learnHref = `/courses/${course.slug}/learn`;
+  const learnHref = membersLocked ? SOCIETY_PATH : `/courses/${course.slug}/learn`;
   const certHref = `/courses/${course.slug}/certificate`;
 
-  const cta = courseDone ? (
+  const cta = membersLocked ? (
+    <>Join the Society to take this class</>
+  ) : courseDone ? (
     <>
       <BookOpen className="w-5 h-5" /> Review the course
     </>

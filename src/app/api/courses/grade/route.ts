@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { questionsToAsk, isExamSection, EXAM_PASS_PERCENT } from "@/lib/courses/quiz";
+import { canTakeMembersCourses, courseAccessInfo } from "@/lib/courses/access";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -47,6 +48,12 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (!course?.is_published) {
     return NextResponse.json({ error: "Section not found." }, { status: 404 });
+  }
+
+  // Society classes can only be taken by members in good standing.
+  const access = await courseAccessInfo(courseId);
+  if (access.members_only && !(await canTakeMembersCourses())) {
+    return NextResponse.json({ error: "This class is for Society members." }, { status: 403 });
   }
 
   // Optional per-course pass mark. If the column isn't there, the error is

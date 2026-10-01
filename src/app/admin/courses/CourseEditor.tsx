@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import SectionQuestions from "./SectionQuestions";
 import LessonMedia, { type LessonMediaValue } from "./LessonMedia";
+import { COURSE_LEVELS, LEVEL_LABEL, normaliseLevel } from "@/lib/courses/levels";
 
 export type EditorCourse = {
   id: string;
@@ -31,6 +32,8 @@ export type EditorCourse = {
   cover_image: string | null;
   is_published: boolean;
   sort_order: number;
+  level?: string | null;
+  members_only?: boolean | null;
 };
 
 export type EditorQuestion = {
@@ -98,6 +101,8 @@ export default function CourseEditor({
     badge_title: course.badge_title,
     cover_image: course.cover_image ?? "",
     is_published: course.is_published,
+    level: normaliseLevel(course.level),
+    members_only: !!course.members_only,
   });
   const [savingMeta, setSavingMeta] = useState(false);
   const [metaSaved, setMetaSaved] = useState(false);
@@ -131,6 +136,8 @@ export default function CourseEditor({
           badge_title: meta.badge_title.trim() || "Certified",
           cover_image: meta.cover_image.trim() || null,
           is_published: meta.is_published,
+          level: meta.level,
+          members_only: meta.members_only,
         },
       });
       setMetaSaved(true);
@@ -319,6 +326,31 @@ export default function CourseEditor({
               }
               className={input}
             />
+          </div>
+          <div>
+            <label className={label}>Level</label>
+            <select
+              value={meta.level}
+              onChange={(e) => setMeta({ ...meta, level: normaliseLevel(e.target.value) })}
+              className={input}
+            >
+              {COURSE_LEVELS.map((l) => (
+                <option key={l} value={l}>
+                  {LEVEL_LABEL[l]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end">
+            <label className="inline-flex items-center gap-2 pb-2 text-sm text-ocean-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={meta.members_only}
+                onChange={(e) => setMeta({ ...meta, members_only: e.target.checked })}
+                className="accent-amber-500 w-4 h-4"
+              />
+              Society members only
+            </label>
           </div>
           <div className="sm:col-span-2">
             <label className={label}>Subtitle</label>

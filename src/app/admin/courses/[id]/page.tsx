@@ -33,13 +33,17 @@ export default async function AdminCourseEditPage({
     .maybeSingle();
   if (!profile?.is_admin) notFound();
 
-  const { data: course } = await supabaseAdmin
+  const courseCols =
+    "id, slug, title, subtitle, description, est_minutes, badge_title, cover_image, is_published, sort_order";
+  // level / members_only arrive with course_levels.sql.
+  let { data: course, error: courseErr } = await supabaseAdmin
     .from("courses")
-    .select(
-      "id, slug, title, subtitle, description, est_minutes, badge_title, cover_image, is_published, sort_order"
-    )
+    .select(`${courseCols}, level, members_only`)
     .eq("id", id)
     .maybeSingle();
+  if (courseErr) {
+    ({ data: course } = await supabaseAdmin.from("courses").select(courseCols).eq("id", id).maybeSingle());
+  }
   if (!course) notFound();
 
   const { data: sectionRows } = await supabaseAdmin

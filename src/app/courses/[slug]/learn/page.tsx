@@ -4,6 +4,9 @@ import { ArrowLeft, Clock, Award, ScrollText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CoursePlayer from "../../CoursePlayer";
 import { questionsToAsk } from "@/lib/courses/quiz";
+import { canTakeMembersCourses, courseAccessInfo } from "@/lib/courses/access";
+import { SOCIETY_PATH } from "@/lib/config";
+import SocietySeal from "@/components/society/SocietySeal";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +68,28 @@ export default async function CoursePage({
     .maybeSingle();
 
   if (!course) notFound();
+
+  // Society classes: members in good standing (and admins) only.
+  const access = await courseAccessInfo(course.id);
+  if (access.members_only && !(await canTakeMembersCourses())) {
+    return (
+      <main className="min-h-screen pt-28 pb-20 px-6">
+        <div className="max-w-xl mx-auto text-center rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-10">
+          <SocietySeal size={56} className="mx-auto mb-4 h-14 w-14" />
+          <h1 className="font-display text-3xl text-amber-50 mb-2">{course.title}</h1>
+          <p className="text-amber-100/70 mb-6">
+            This class is for Underground Aquarium Society members.
+          </p>
+          <Link
+            href={user ? SOCIETY_PATH : `/login?redirect=/courses/${slug}/learn`}
+            className="inline-flex items-center gap-2 rounded-full bg-amber-500 hover:bg-amber-400 px-6 py-2.5 text-sm font-medium text-ocean-950 transition-colors"
+          >
+            {user ? "Join the Society" : "Sign in"}
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   const { data: sectionRows } = await supabase
     .from("course_sections")

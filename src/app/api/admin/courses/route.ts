@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { normaliseLevel } from "@/lib/courses/levels";
 
 const ALLOWED_FIELDS = [
   "title",
@@ -12,6 +13,8 @@ const ALLOWED_FIELDS = [
   "cover_image",
   "is_published",
   "sort_order",
+  "level",
+  "members_only",
 ];
 
 export async function POST(req: Request) {
@@ -96,6 +99,8 @@ export async function POST(req: Request) {
     for (const key of ALLOWED_FIELDS) {
       if (key in fields) update[key] = fields[key];
     }
+    if ("level" in update) update.level = normaliseLevel(update.level);
+    if ("members_only" in update) update.members_only = Boolean(update.members_only);
     if ("slug" in update) {
       const newSlug = String(update.slug).trim().toLowerCase();
       if (!newSlug) {
