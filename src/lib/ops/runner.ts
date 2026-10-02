@@ -7,6 +7,7 @@ import { runTool, toolsFor, type RunState } from "@/lib/ops/tools";
 import { hasNewActivity } from "@/lib/ops/wake";
 import { emailReport } from "@/lib/ops/brief";
 import { WORKERS, type WorkerDef, type WorkerKey } from "@/lib/ops/workers";
+import { setupNote } from "@/lib/ops/setup";
 
 /**
  * Runs one worker: checks it's allowed to run, gives it its job, memory and
@@ -187,7 +188,8 @@ export async function runWorker(
   deadline: number = Date.now() + OPS_LIMITS.requestBudgetMs
 ): Promise<RunOutcome> {
   const w = WORKERS[key];
-  if (w.needs) return { worker: key, status: "skipped", reason: w.needsNote ?? "Not connected yet." };
+  const missing = setupNote(w);
+  if (missing) return { worker: key, status: "skipped", reason: missing };
   if (!opsConfigured().claude) return { worker: key, status: "skipped", reason: "ANTHROPIC_API_KEY isn't set in Vercel." };
   if (deadline - Date.now() < OPS_LIMITS.minStartMs) return { worker: key, status: "skipped", reason: "Not enough time left in this request." };
 
@@ -251,7 +253,7 @@ export async function runWorker(
     return { worker: key, status: "error", reason: runErr?.message ?? "Couldn't start a run." };
   }
 
-  const state: RunState = { runId: run.id, worker: w, queries: 0, scorecard: [], nothingNeeded: false, findingsCreated: 0 };
+  const state: RunState = { runId: run.id, worker: w, queries: 0, scorecard: [], nothingNeeded: false, findingsCreated: 0, fetches: 0 };
   let usage = ZERO_USAGE;
   let report = "";
   let status: "done" | "error" = "done";

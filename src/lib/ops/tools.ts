@@ -3,11 +3,15 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { OPS_LIMITS } from "@/lib/ops/config";
 import type { ToolDef } from "@/lib/ops/claude";
 import type { WorkerDef } from "@/lib/ops/workers";
+import { createReplyDraft, listSupportEmails, readSupportEmail, threadAnswered } from "@/lib/ops/gmail";
+import { checkLinks, fetchPage, listSitePages } from "@/lib/ops/siteCheck";
+import { getHelpArticles } from "@/lib/help/content";
 
 /**
  * The tools an agent can use. Every one of them reads, or writes only to
  * the team's own tables (memory, findings, scorecards). None of them can
- * change member data, send email or touch money.
+ * change member data, send email or touch money. The Support Desk can save
+ * Gmail drafts (never send), and QA can load public pages of the site.
  */
 
 export type RunState = {
@@ -17,7 +21,23 @@ export type RunState = {
   scorecard: unknown[];
   nothingNeeded: boolean;
   findingsCreated: number;
+  /** Pages QA has loaded this run. */
+  fetches: number;
 };
+
+const MAX_FETCHES = 60;
+
+/** "Jane Smith <jane@x.com>" becomes "Jane Smith": the agent doesn't need the address. */
+function senderName(from: string): string {
+  const name = from.replace(/<[^>]*>/g, "").replace(/"/g, "").trim();
+  return name || "a member";
+}
+
+async function seenIds(ids: string[]): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const { data } = await supabaseAdmin.from("ops_support_seen").select("message_id").in("message_id", ids);
+  return new Set((data ?? []).map((r) => r.message_id as string));
+}
 
 const KINDS = ["queue", "message", "data", "bug", "decision", "idea"];
 const RISKS = ["low", "medium", "high"];
@@ -64,6 +84,80 @@ export function toolsFor(worker: WorkerDef): ToolDef[] {
       },
     },
   ];
+
+
+  if (worker.key === "support") {
+    tools.push(
+      {
+        name: "list_new_support_emails",
+        description: "New emails to support@ from the last 7 days that haven't been handled yet and aren't already answered.",
+        input_schema: { type: "object", properties: {} },
+      },
+      {
+        name: "read_support_email",
+        description: "Read one support email (the new message only, without the quoted history).",
+        input_schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+      },
+      {
+        name: "search_help",
+        description: "Search the site's help articles. Returns the best matches with their slugs and summaries.",
+        input_schema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] },
+      },
+      {
+        name: "read_help",
+        description: "Read one help article in full by its slug.",
+        input_schema: { type: "object", properties: { slug: { type: "string" } }, required: ["slug"] },
+      },
+      {
+        name: "draft_reply",
+        description:
+          "Save a reply to one support email as a Gmail draft for Chris to review and send. Plain text, signed " +
+          "\"Chris\nUnderground Aquarium\". Also files a ticket so Chris sees it on the AI team page.",
+        input_schema: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            reply: { type: "string" },
+            topic: { type: "string", description: "A few words: what the email was about." },
+          },
+          required: ["id", "reply", "topic"],
+        },
+      },
+      {
+        name: "skip_email",
+        description:
+          "Mark a support email handled without a draft: spam, automated mail, or something you're sending to Chris " +
+          "as a finding instead (file that finding with create_finding, kind decision, risk high).",
+        input_schema: {
+          type: "object",
+          properties: { id: { type: "string" }, reason: { type: "string" } },
+          required: ["id", "reason"],
+        },
+      }
+    );
+  }
+
+  if (worker.key === "qa") {
+    tools.push(
+      {
+        name: "list_site_pages",
+        description:
+          "What the sitemap lists. With no section: a count and examples per section. With a section like \"/stores\": a spread-out sample of up to 20 of its pages.",
+        input_schema: { type: "object", properties: { section: { type: "string" } } },
+      },
+      {
+        name: "fetch_page",
+        description:
+          "Load one page of the live site as a signed-out visitor. Returns status, load time, redirects, title, a text excerpt and any retired or broken-looking words it spotted.",
+        input_schema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
+      },
+      {
+        name: "check_links",
+        description: "Load a page and test up to 25 of its internal links. Returns the ones that are broken.",
+        input_schema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
+      }
+    );
+  }
 
   if (worker.key === "reviewer") {
     tools.push({
@@ -293,6 +387,97 @@ export async function runTool(
           })
           .eq("id", f.id);
         return error ? { content: error.message, isError: true } : { content: "Recorded." };
+      }
+      case "list_new_support_emails": {
+        const recent = await listSupportEmails(7, 25);
+        const seen = await seenIds(recent.map((m) => m.id));
+        const fresh = recent.filter((m) => !seen.has(m.id));
+        const out: { id: string; from: string; subject: string; date: string; snippet: string }[] = [];
+        for (const m of fresh.slice(0, 10)) {
+          if (await threadAnswered(m.threadId)) {
+            await supabaseAdmin.from("ops_support_seen").upsert({ message_id: m.id, thread_id: m.threadId, action: "already_answered" });
+            continue;
+          }
+          const e = await readSupportEmail(m.id);
+          out.push({ id: e.id, from: senderName(e.from), subject: e.subject, date: e.date, snippet: e.snippet });
+        }
+        return { content: out.length ? JSON.stringify(out) : "No new support email." };
+      }
+      case "read_support_email": {
+        const e = await readSupportEmail(str(input.id));
+        return {
+          content: JSON.stringify({ id: e.id, from: senderName(e.from), subject: e.subject, date: e.date, message: e.body }),
+        };
+      }
+      case "search_help": {
+        const words = str(input.query, 200).toLowerCase().split(/\W+/).filter((x) => x.length > 2);
+        const scored = getHelpArticles("member")
+          .map((a) => {
+            const hay = `${a.title} ${a.summary ?? ""} ${(a.keywords ?? []).join(" ")}`.toLowerCase();
+            return { a, score: words.reduce((n, wd) => n + (hay.includes(wd) ? 1 : 0), 0) };
+          })
+          .filter((x) => x.score > 0)
+          .sort((x, y) => y.score - x.score)
+          .slice(0, 6);
+        return {
+          content: scored.length
+            ? JSON.stringify(scored.map(({ a }) => ({ slug: a.slug, title: a.title, summary: a.summary })))
+            : "No matching help articles.",
+        };
+      }
+      case "read_help": {
+        const a = getHelpArticles("member").find((x) => x.slug === str(input.slug, 200));
+        return a
+          ? { content: `# ${a.title}\n${a.body.slice(0, 8000)}` }
+          : { content: "No help article with that slug.", isError: true };
+      }
+      case "draft_reply": {
+        const id = str(input.id);
+        const reply = str(input.reply, 5000);
+        if (!reply) return { content: "The reply is empty.", isError: true };
+        const seen = await seenIds([id]);
+        if (seen.has(id)) return { content: "Already handled.", isError: true };
+        const e = await readSupportEmail(id);
+        const draftId = await createReplyDraft(e, reply);
+        await supabaseAdmin
+          .from("ops_support_seen")
+          .upsert({ message_id: e.id, thread_id: e.threadId, action: "drafted", draft_id: draftId });
+        await supabaseAdmin.from("ops_findings").insert({
+          worker_key: w.key,
+          role: "support",
+          kind: "message",
+          risk: "medium",
+          title: `Reply drafted: ${str(input.topic, 120) || e.subject}`.slice(0, 200),
+          detail: `**From:** ${senderName(e.from)}\n**Subject:** ${e.subject}\n\n**Their message:**\n${e.body.slice(0, 1500)}\n\n**Draft reply (in your Gmail Drafts):**\n${reply}`,
+          suggested_action: "Open Gmail Drafts, check the reply, edit if needed and send.",
+          evidence: `Gmail message ${e.id}`,
+          link: "https://mail.google.com/mail/u/0/#drafts",
+          run_id: state.runId,
+        });
+        state.findingsCreated++;
+        return { content: "Draft saved in Gmail and filed for Chris." };
+      }
+      case "skip_email": {
+        const id = str(input.id);
+        await supabaseAdmin
+          .from("ops_support_seen")
+          .upsert({ message_id: id, action: `skipped: ${str(input.reason, 200)}` });
+        return { content: "Marked handled." };
+      }
+      case "list_site_pages": {
+        if (state.fetches >= MAX_FETCHES) return { content: "Page limit reached. Write your report.", isError: true };
+        state.fetches++;
+        return { content: JSON.stringify(await listSitePages(str(input.section, 100) || undefined)).slice(0, OPS_LIMITS.maxResultChars) };
+      }
+      case "fetch_page": {
+        if (state.fetches >= MAX_FETCHES) return { content: "Page limit reached. Write your report.", isError: true };
+        state.fetches++;
+        return { content: JSON.stringify(await fetchPage(str(input.path, 500))) };
+      }
+      case "check_links": {
+        if (state.fetches >= MAX_FETCHES - 5) return { content: "Page limit reached. Write your report.", isError: true };
+        state.fetches += 5;
+        return { content: JSON.stringify(await checkLinks(str(input.path, 500))) };
       }
       default:
         return { content: `Unknown tool ${name}.`, isError: true };

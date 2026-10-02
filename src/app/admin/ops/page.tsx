@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { opsConfigured } from "@/lib/ops/config";
 import { WORKERS, WORKER_ORDER } from "@/lib/ops/workers";
+import { setupNote } from "@/lib/ops/setup";
 import OpsConsole, { type OpsData } from "./OpsConsole";
 
 export const metadata: Metadata = { title: "Admin · AI team" };
@@ -120,7 +121,7 @@ export default async function AdminOpsPage() {
       name: def.name,
       schedule: def.schedule,
       model: def.model.includes("haiku") ? "Haiku" : "Sonnet",
-      needsNote: def.needs ? def.needsNote ?? "Not connected yet." : null,
+      needsNote: setupNote(def),
       about: def.about,
       lastResult: lastResult(latestByWorker.get(key)),
       enabled: Boolean(row?.enabled),

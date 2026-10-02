@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { runWorker } from "@/lib/ops/runner";
 import { openFixIssue } from "@/lib/ops/github";
 import { isWorkerKey, WORKERS } from "@/lib/ops/workers";
+import { setupNote } from "@/lib/ops/setup";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -60,8 +61,9 @@ export async function POST(req: Request) {
       if (!isWorkerKey(body.key) || typeof body.enabled !== "boolean") {
         return NextResponse.json({ error: "Which worker?" }, { status: 400 });
       }
-      if (body.enabled && WORKERS[body.key].needs) {
-        return NextResponse.json({ error: WORKERS[body.key].needsNote }, { status: 400 });
+      const missing = body.enabled ? setupNote(WORKERS[body.key]) : null;
+      if (missing) {
+        return NextResponse.json({ error: missing }, { status: 400 });
       }
       const { error } = await supabaseAdmin.from("ops_workers").update({ enabled: body.enabled, updated_at: now }).eq("key", body.key);
       return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true });

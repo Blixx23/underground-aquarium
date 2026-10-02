@@ -16,7 +16,8 @@ The AI team is a set of digital workers that read the site every day, keep score
 - **Partnerships** (Tuesdays): works the shop outreach pipeline and drafts follow-up emails for you to send.
 - **Weekly review** (Mondays): four-week trends, the team's cost and usefulness, one recommendation. On the first Monday of the month it also tidies every worker's memory.
 - **AI reviewer** (after runs): checks new findings before you see them. Approves, rejects with a reason, or passes to you.
-- **Support Desk** and **QA / Site Health** are listed but need Gmail or the GitHub routine connected first.
+- **Support Desk** (8:20 am, 12:20 pm, 4:20 pm, only when new support email arrives): reads new email to support@, answers from the help docs, and saves reply drafts in your Gmail Drafts. It never sends. Anything about money, accounts, legal or safety comes to you as a high-risk finding with no draft. Needs Gmail connected (below).
+- **QA / Site Health** (Wednesdays at 9 am): loads the main pages and a sample of shops, species, listings and courses as a signed-out visitor, checks links, and files anything broken, slow or out of date (old fee or checkout wording, family plans and so on). Pages under /my, /account and /admin redirecting to login is expected.
 
 Only the morning session is switched on at the start. Turn the others on from **The team** on /admin/ops.
 
@@ -50,6 +51,21 @@ Bug findings show a **Fix with Claude** button once the GitHub token is set up. 
 - **ANTHROPIC_API_KEY** in Vercel (Settings, Environment Variables), then redeploy. Without it nothing runs and the page shows a warning.
 - **ops_team_setup.sql** run once in the Supabase SQL Editor. Without it the page says the tables are missing.
 - For Fix with Claude: **OPS_GITHUB_TOKEN** in Vercel (a fine-grained GitHub token with Issues read and write on the repo), plus the Claude GitHub App installed on the repo and **ANTHROPIC_API_KEY** added as a GitHub Actions secret.
+
+## How do I connect Gmail for the Support Desk?
+It uses a Google service account that can read your mailbox and save drafts. Nothing in the code can send.
+
+1. In Google Cloud Console (console.cloud.google.com), create a project, open APIs and Services, Library, and enable the **Gmail API**.
+2. Open IAM and Admin, Service Accounts, and create one (for example ua-support-desk). It needs no roles. Open it, go to Keys, Add key, JSON. A key file downloads.
+   - If Google says key creation is disabled, your organization has the "Disable service account key creation" policy on. In IAM and Admin, Organization Policies, find it and turn enforcement off for this project, then try again.
+3. Copy the service account's **Unique ID** (a long number on its details page).
+4. In the Google Admin console (admin.google.com): Security, Access and data control, API controls, Manage domain-wide delegation, Add new. Paste the Unique ID and these scopes, comma separated: https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/gmail.compose
+5. In Vercel, add **GOOGLE_SERVICE_ACCOUNT_JSON** with the entire contents of the key file, then redeploy. If support@ mail lands in a mailbox other than chris@, also add **OPS_GMAIL_USER** with that address.
+6. On /admin/ops, turn the Support Desk on and press Run now.
+
+Drafts are addressed from support@. For Gmail to keep that, support@ must be set up under Gmail Settings, Accounts, "Send mail as"; otherwise Gmail uses chris@.
+
+The gmail.compose scope technically allows sending, but the site's code has no send function at all; every reply waits for you in Drafts.
 
 ## Can the workers see private information?
 No. They query through a read-only database login that is blocked from emails, phone numbers, addresses, payment details, tokens and private message bodies. Each query is limited to one SELECT, 50 rows and 10 seconds, and each run to 15 queries.

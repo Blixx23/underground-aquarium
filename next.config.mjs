@@ -23,6 +23,9 @@ const nextConfig = {
     "/admin/help": ["./content/help-admin/**"],
     "/admin/help/[slug]": ["./content/help-admin/**"],
     "/admin/help/search-index.json": ["./content/help-admin/**"],
+    // The AI team's Support Desk answers from the member help docs.
+    "/api/cron/ops/[job]": ["./content/help/**"],
+    "/api/admin/ops": ["./content/help/**"],
   },
   // Old WordPress addresses Google still crawls. Species links (/fish/...)
   // are matched in src/app/fish/[slug]/route.ts, events in
