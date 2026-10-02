@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import TrendPanel from "./TrendPanel";
+import SectionTabs from "@/components/admin/SectionTabs";
 
 export const metadata: Metadata = { title: "Admin · Shop stats" };
 export const dynamic = "force-dynamic";
@@ -214,10 +215,11 @@ export default async function AdminShopStatsPage({ searchParams }: { searchParam
   return (
     <main className="min-h-screen px-6 pb-20 pt-28">
       <div className="mx-auto max-w-5xl">
+        <SectionTabs current="/admin/shop-stats" />
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 font-display text-3xl text-white">
-              <BarChart3 className="h-7 w-7 text-sky-300" /> Shop stats
+              <BarChart3 className="h-7 w-7 text-sky-300" /> Stats
             </h1>
             <p className="text-ocean-400">Every shop in the directory, compared with the {days} days before.</p>
           </div>

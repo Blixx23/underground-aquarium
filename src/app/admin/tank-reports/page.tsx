@@ -4,6 +4,7 @@ import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import AdminTankReportsList, { type QueueTankReport } from "./AdminTankReportsList";
+import SectionTabs from "@/components/admin/SectionTabs";
 
 export const metadata: Metadata = { title: "Admin · Tank reports" };
 
@@ -115,7 +116,8 @@ export default async function AdminTankReportsPage() {
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="font-display text-3xl text-white mb-1">Tank reports</h1>
+        <SectionTabs current="/admin/tank-reports" />
+        <h1 className="font-display text-3xl text-white mb-1">Reports</h1>
         <p className="text-ocean-400 mb-8">
           Community tanks members flagged with &quot;Report this tank&quot;.
           Open the tank to look, then make it private if it shouldn&apos;t be

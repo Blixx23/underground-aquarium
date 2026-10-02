@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Activity, UserPlus, Users, MailCheck, MailWarning } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import DayBars from "@/components/stats/DayBars";
+import SectionTabs from "@/components/admin/SectionTabs";
 
 export const metadata: Metadata = { title: "Admin · Site stats" };
 export const dynamic = "force-dynamic";
@@ -105,8 +106,9 @@ export default async function SiteStatsPage() {
   return (
     <main>
       <div>
+        <SectionTabs current="/admin/site-stats" />
         <h1 className="mb-1 flex items-center gap-3 font-display text-3xl text-white">
-          <Activity className="h-7 w-7 text-amber-300" /> Site stats
+          <Activity className="h-7 w-7 text-amber-300" /> Stats
         </h1>
         <p className="mb-6 text-sm text-ocean-400">Who&apos;s joining Underground Aquarium. Days are Pacific time.</p>
 

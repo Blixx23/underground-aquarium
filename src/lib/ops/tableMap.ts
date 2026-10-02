@@ -1,4 +1,20 @@
 import { SOCIETY_SLUG } from "@/lib/config";
+import { ADMIN_SECTIONS } from "@/lib/admin/sections";
+
+/** Built from lib/admin/sections.ts, so a new admin queue reaches the agents automatically. */
+const MODERATION_QUEUES = [
+  '## Moderation queues (what "waiting on Chris" means; the morning session gets live counts)',
+  ...ADMIN_SECTIONS.flatMap((s) =>
+    (s.queues ?? []).map((q) => {
+      const parts = [
+        ...(q.where ?? []).map(([c, v]) => `${c} = ${typeof v === "string" ? `'${v}'` : v}`),
+        ...(q.whereIn ? [`${q.whereIn[0]} in (${q.whereIn[1].map((v) => `'${v}'`).join(", ")})`] : []),
+        ...(q.society ? ["Society club only"] : []),
+      ];
+      return `- ${q.label}: ${q.table} where ${parts.join(" and ")}. Handled at ${q.href ?? s.href}.`;
+    })
+  ),
+].join("\n");
 
 /**
  * The one-page map of the database the agents read before they query.
@@ -53,13 +69,7 @@ You can also look up columns: select column_name from information_schema.columns
 - tanks (public community tanks: name, is_public, score, updated_at), tank_comments, tank_votes.
 - events: title, status ('pending' = waiting for approval), starts_at, city, state. event_rsvps.
 
-## Moderation queues (what "waiting on Chris" means)
-- reports: status 'open' (target_type, reason, target_url, created_at).
-- tank_reports: status 'open'.
-- feedback: status 'new' or 'in_progress' (kind, message, page_url).
-- species_suggestions, species_photos, species_videos, glossary_suggestions: status 'pending'.
-- store_claims 'pending', store_edit_suggestions 'open', fish_stores 'pending', events 'pending'.
-- club_members for the Society with status 'pending'.
+${MODERATION_QUEUES}
 
 ## Learning
 - courses (slug, title, level, is_published, members_only), course_completions (user_id, course_id, completed_at),
@@ -81,13 +91,12 @@ You can also look up columns: select column_name from information_schema.columns
   ops_memory, ops_workers.
 `.trim();
 
-/** Where things are handled, so a finding can link straight to the right page. */
-export const ADMIN_LINKS = `
-Admin pages to link findings to (paths on ${"https://www.undergroundaquarium.com"}):
-/admin/reports (flagged posts and members), /admin/tank-reports, /admin/feedback, /admin/species (suggested fish),
-/admin/species-photos, /admin/species-videos, /admin/glossary, /admin/stores (store claims),
-/admin/store-fixes, /admin/pending-shops (member-suggested shops), /admin/shops, /admin/wholesale,
-/admin/events, /admin/email (queue and failures), /admin/campaigns, /admin/site-stats, /admin/shop-stats,
-/admin/courses, /c/${SOCIETY_SLUG}/admin (Society roster and dues). Public pages: /forums/..., /fish/<slug>,
-/aquarium-stores and /stores/<slug>, /marketplace/<state>/<region>, /listing/<slug>.
-`.trim();
+/** Where things are handled, so a finding can link straight to the right page. Built from lib/admin/sections.ts. */
+export const ADMIN_LINKS = [
+  "Admin pages to link findings to (paths on https://www.undergroundaquarium.com):",
+  ...ADMIN_SECTIONS.filter((s) => s.href !== "/admin").flatMap((s) => [
+    `${s.href} (${s.label}: ${s.about})`,
+    ...(s.also ?? []).map((a) => `${a.href} (${s.label}, ${a.label} tab)`),
+  ]),
+  "Public pages: /forums/..., /fish/<slug>, /aquarium-stores and /stores/<slug>, /marketplace/<state>/<region>, /listing/<slug>.",
+].join("\n");

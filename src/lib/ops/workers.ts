@@ -28,7 +28,6 @@ export type WorkerDef = {
   maxQueries?: number;
   /** On a schedule, wait at least this long after the last run. */
   minGapHours?: number;
-  /** Can't run until this is connected. */
   /** Plain-English summary for the AI team page: what it does, and what on and off mean. */
   about: { job: string; whenOn: string; whenOff: string };
   /** Emails its report to Chris when it finishes. */
@@ -55,7 +54,8 @@ const MORNING: WorkerDef = {
   maxQueries: 25,
   emailsReport: true,
   job: `You do three jobs in one session, in this order.
-COO: check every moderation and admin queue, email delivery and anything stuck. List what's new and what's waiting too long.
+COO: check every admin queue (live counts are in your context), email delivery and anything stuck. List what's new and
+what's waiting too long, with the admin link.
 Analyst: record yesterday's numbers (Pacific day) and compare them with the site's normal: sign-ups, active members,
 new Society members and dues, Society renewals coming due in the next 30 days, new listings, marketplace messages,
 forum threads and replies, course completions, shop claims and new shop reviews.
@@ -68,7 +68,7 @@ Chief of Staff: read the open findings from the whole team and write Chris's mor
     "Chris spends 5 minutes on the brief and knows exactly what to do today",
   ],
   checklist: [
-    "Count every queue in the map's 'Moderation queues' section, with the oldest item's age",
+    "Admin queues: use the live counts you're given (no need to query them). Flag any queue whose oldest item is over 48 hours",
     "Email: sends and failures in the last 24 hours, anything queued for over an hour, whether sending is paused",
     "Yesterday's numbers vs the 28-day daily average (one query per area, grouped by day)",
     "Society members whose paid_through falls in the next 30 days",

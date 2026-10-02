@@ -8,6 +8,7 @@ import { hasNewActivity } from "@/lib/ops/wake";
 import { emailReport } from "@/lib/ops/brief";
 import { WORKERS, type WorkerDef, type WorkerKey } from "@/lib/ops/workers";
 import { setupNote } from "@/lib/ops/setup";
+import { queueStatus } from "@/lib/admin/pending";
 
 /**
  * Runs one worker: checks it's allowed to run, gives it its job, memory and
@@ -80,6 +81,29 @@ type FindingRow = {
   rating_note: string | null;
   created_at: string;
 };
+
+/** Live counts for every admin queue in lib/admin/sections.ts, for the morning session. */
+async function queuesText(): Promise<string> {
+  const queues = await queueStatus(true);
+  return queues
+    .map((q) => `- ${q.label}: ${q.count} waiting${q.oldestHours !== null ? `, oldest ${q.oldestHours}h` : ""} (${q.href})`)
+    .join("\n");
+}
+
+/**
+ * Tables the database map doesn't mention yet, for the weekly review, so a
+ * new feature's tables don't stay invisible to the team.
+ */
+async function unmappedTables(): Promise<string[]> {
+  const { data, error } = await supabaseAdmin.rpc("ops_query", {
+    q: "select string_agg(table_name, ',' order by table_name) as t from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'",
+    max_rows: 1,
+  });
+  if (error) return [];
+  const row = (Array.isArray(data) ? data[0] : null) as { t?: string | null } | null;
+  const names = (row?.t ?? "").split(",").filter(Boolean);
+  return names.filter((n) => !new RegExp(`\\b${n}\\b`).test(TABLE_MAP));
+}
 
 async function buildContext(w: WorkerDef, lastRunAt: string | null): Promise<string> {
   const since30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
@@ -159,6 +183,9 @@ async function buildContext(w: WorkerDef, lastRunAt: string | null): Promise<str
 
   const lr = lastRun as { report: string | null; scorecard: unknown; started_at: string } | null;
 
+  const queues = w.key === "morning" ? await queuesText() : "";
+  const unmapped = w.key === "weekly" ? await unmappedTables() : [];
+
   return [
     `Now: ${today} (Pacific).`,
     `Your last run: ${ago(lastRunAt)}${lastRunAt ? ` (${lastRunAt})` : ""}.`,
@@ -166,6 +193,10 @@ async function buildContext(w: WorkerDef, lastRunAt: string | null): Promise<str
     `## ${w.key === "reviewer" ? "Findings to review" : teamWide ? "Open team findings" : "Your open findings"}\n${findText}`,
     w.key === "reviewer" ? "" : `## Chris's recent ratings of your findings\n${fbText}`,
     w.key === "reviewer" ? "" : `## Your track record (30 days)\n${acted} acted on, ${ignored} ignored or rated not useful, ${(mine30 ?? []).length} filed.`,
+    queues ? `## Admin queues right now (live counts)\n${queues}` : "",
+    unmapped.length
+      ? `## Tables the database map doesn't describe yet\n${unmapped.join(", ")}\nIf any of these hold something waiting on Chris or worth tracking, file ONE 'bug' finding (low risk) listing them, saying they should be added to src/lib/ops/tableMap.ts, and to src/lib/admin/sections.ts if they're a queue. Skip it if an open finding already covers them.`
+      : "",
     lr?.report ? `## Your last report\n${lr.report.slice(0, 2500)}` : "",
     lr?.scorecard && Array.isArray(lr.scorecard) && lr.scorecard.length ? `## Your last scorecard\n${JSON.stringify(lr.scorecard).slice(0, 1500)}` : "",
     "Do your job now.",

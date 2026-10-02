@@ -1,80 +1,87 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { SOCIETY_SLUG, SOCIETY_CLUB_PATH } from "@/lib/config";
+import { SOCIETY_SLUG } from "@/lib/config";
+import { ADMIN_SECTIONS, type Queue } from "@/lib/admin/sections";
 
 /**
- * How many things are waiting on an admin, keyed by the page that handles
- * them. The layout uses it for the nav badges and the dashboard uses it for
- * the cards, so it's wrapped in cache(): one render, one set of queries.
+ * How many things are waiting on an admin. Every queue comes from
+ * ADMIN_SECTIONS (lib/admin/sections.ts), so a queue added there is counted
+ * here, badged in the menu, shown on the dashboard and handed to the AI
+ * team's morning session without touching this file.
  *
- * A table that doesn't exist yet counts as zero rather than breaking the
- * whole admin area.
+ * A table or column that doesn't exist counts as zero rather than breaking
+ * the admin area.
  */
 export type PendingCounts = Record<string, number>;
 
-type Filter = [column: string, value: string | boolean];
+export type QueueStatus = {
+  label: string;
+  /** The menu item it belongs to. */
+  section: string;
+  /** Where it's handled. */
+  href: string;
+  count: number;
+  /** Hours the oldest waiting item has been waiting, when known. */
+  oldestHours: number | null;
+};
 
-async function countWhere(table: string, filters: Filter[], anyOf?: [string, string[]]): Promise<number> {
+const societyId = cache(async (): Promise<string | null> => {
+  const { data } = await supabaseAdmin.from("clubs").select("id").eq("slug", SOCIETY_SLUG).maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+});
+
+// Loose typing on purpose: each queue names its own table and columns.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function filtered(q: any, queue: Queue, society: string | null) {
+  for (const [col, value] of queue.where ?? []) q = q.eq(col, value);
+  if (queue.whereIn) q = q.in(queue.whereIn[0], queue.whereIn[1]);
+  if (queue.society) q = q.eq("club_id", society);
+  return q;
+}
+
+async function measure(queue: Queue, society: string | null, withAge: boolean): Promise<{ count: number; oldestHours: number | null }> {
+  if (queue.society && !society) return { count: 0, oldestHours: null };
   try {
-    let q = supabaseAdmin.from(table).select("id", { count: "exact", head: true });
-    for (const [col, value] of filters) q = q.eq(col, value);
-    if (anyOf) q = q.in(anyOf[0], anyOf[1]);
-    const { count, error } = await q;
-    if (error) return 0;
-    return count ?? 0;
+    const { count, error } = await filtered(
+      supabaseAdmin.from(queue.table).select("id", { count: "exact", head: true }),
+      queue,
+      society
+    );
+    if (error) return { count: 0, oldestHours: null };
+    const n = count ?? 0;
+    if (!withAge || n === 0) return { count: n, oldestHours: null };
+
+    const col = queue.since ?? "created_at";
+    const { data } = await filtered(supabaseAdmin.from(queue.table).select(col), queue, society)
+      .order(col, { ascending: true, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    const at = data?.[col] as string | null | undefined;
+    const oldestHours = at ? Math.max(0, Math.round((Date.now() - new Date(at).getTime()) / 3_600_000)) : null;
+    return { count: n, oldestHours };
   } catch {
-    return 0;
+    return { count: 0, oldestHours: null };
   }
 }
 
+async function measureAll(withAge: boolean): Promise<QueueStatus[]> {
+  const society = await societyId();
+  const jobs = ADMIN_SECTIONS.flatMap((s) =>
+    (s.queues ?? []).map(async (q): Promise<QueueStatus> => {
+      const m = await measure(q, society, withAge);
+      return { label: q.label, section: s.href, href: q.href ?? s.href, ...m };
+    })
+  );
+  return Promise.all(jobs);
+}
+
+/** Every queue with its count (and, for the AI team, how long the oldest item has waited). */
+export const queueStatus = cache(async (withAge = false): Promise<QueueStatus[]> => measureAll(withAge));
+
+/** Waiting counts keyed by menu item, for badges and the dashboard. */
 export const adminPending = cache(async (): Promise<PendingCounts> => {
-  const { data: society } = await supabaseAdmin
-    .from("clubs")
-    .select("id")
-    .eq("slug", SOCIETY_SLUG)
-    .maybeSingle();
-
-  const [
-    members, courses, species, photos, videos, glossary, claims, fixes, reports, feedback, emailFailed,
-    events, newShops, tankReports, aiTeam,
-  ] =
-    await Promise.all([
-      society ? countWhere("club_members", [["club_id", society.id as string], ["status", "pending"]]) : 0,
-      countWhere("courses", [["is_published", false]]),
-      countWhere("species_suggestions", [["status", "pending"]]),
-      countWhere("species_photos", [["status", "pending"]]),
-      countWhere("species_videos", [["status", "pending"]]),
-      countWhere("glossary_suggestions", [["status", "pending"]]),
-      countWhere("store_claims", [["status", "pending"]]),
-      countWhere("store_edit_suggestions", [["status", "open"]]),
-      countWhere("reports", [["status", "open"]]),
-      countWhere("feedback", [], ["status", ["new", "in_progress"]]),
-      countWhere("email_queue", [["status", "failed"]]),
-      // Community events and member-suggested shops both wait as "pending".
-      countWhere("events", [["status", "pending"]]),
-      countWhere("fish_stores", [["status", "pending"]]),
-      // tank_reports.status arrives with step 58; before that this is zero.
-      countWhere("tank_reports", [["status", "open"]]),
-      // Findings from the AI team waiting on a decision.
-      countWhere("ops_findings", [], ["status", ["new", "open"]]),
-    ]);
-
-  return {
-    [`${SOCIETY_CLUB_PATH}/admin`]: members,
-    "/admin/courses": courses,
-    "/admin/species": species,
-    "/admin/species-photos": photos,
-    "/admin/species-videos": videos,
-    "/admin/glossary": glossary,
-    "/admin/stores": claims,
-    "/admin/store-fixes": fixes,
-    "/admin/reports": reports,
-    "/admin/feedback": feedback,
-    "/admin/email": emailFailed,
-    "/admin/events": events,
-    "/admin/pending-shops": newShops,
-    "/admin/tank-reports": tankReports,
-    "/admin/ops": aiTeam,
-  };
+  const out: PendingCounts = {};
+  for (const q of await queueStatus(false)) out[q.section] = (out[q.section] ?? 0) + q.count;
+  return out;
 });
