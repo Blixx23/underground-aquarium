@@ -1,0 +1,42 @@
+name: Claude fixer
+
+# The AI team's "Fix with Claude" button opens an issue that mentions @claude.
+# This workflow wakes Claude Code on that issue: it reads the codebase, makes
+# the fix on a new branch and links a pull request. Vercel builds a preview of
+# the branch. Nothing goes live until Chris merges the pull request.
+# You can also mention @claude in any issue or pull request comment.
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude')) ||
+      (github.event_name != 'issues' && contains(github.event.comment.body, '@claude'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--max-turns 40 --model claude-sonnet-5-5"
+          settings: '{"includeCoAuthoredBy": false}'

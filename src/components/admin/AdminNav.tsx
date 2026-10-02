@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Mail, Megaphone, Store, Wrench, Flag, Fish, BookOpen,
   GraduationCap, Droplets, MessageSquare, Users, Camera, Clapperboard, BarChart3, Activity, LifeBuoy,
-  CalendarDays, MapPin, ShieldAlert, Warehouse,
+  CalendarDays, MapPin, ShieldAlert, Warehouse, Bot,
 } from "lucide-react";
 import { SOCIETY_CLUB_PATH } from "@/lib/config";
 
 const LINKS = [
   { href: "/admin", label: "Dashboard", sub: "Everything waiting on you", Icon: LayoutDashboard, exact: true },
+  { href: "/admin/ops", label: "AI team", sub: "Briefs, findings, workers", Icon: Bot },
   { href: "/admin/email", label: "Email", sub: "Queue, health and delivery", Icon: Mail },
   { href: "/admin/campaigns", label: "Campaigns", sub: "Sequences and who is in them", Icon: Megaphone },
   { href: "/admin/site-stats", label: "Site stats", sub: "Sign-ups and members", Icon: Activity },

@@ -39,6 +39,26 @@
     {
       "path": "/api/cron/shop-alerts",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/ops/morning",
+      "schedule": "30 13 * * *"
+    },
+    {
+      "path": "/api/cron/ops/activity",
+      "schedule": "0 15,19,23 * * *"
+    },
+    {
+      "path": "/api/cron/ops/weekly",
+      "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/cron/ops/cmo",
+      "schedule": "30 14 * * 1"
+    },
+    {
+      "path": "/api/cron/ops/partnerships",
+      "schedule": "0 15 * * 2"
     }
   ]
 }

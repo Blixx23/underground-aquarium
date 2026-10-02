@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   ShieldCheck, Users, ArrowRight, GraduationCap, Fish, Flag, Droplets,
   BookOpen, Store, Wrench, Mail, Megaphone, MessageSquare, Camera, Clapperboard, BarChart3, Activity,
-  CalendarDays, MapPin, ShieldAlert,
+  CalendarDays, MapPin, ShieldAlert, Bot,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SOCIETY_NAME, SOCIETY_CLUB_PATH } from "@/lib/config";
@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 type Card = { href: string; label: string; description: string; Icon: LucideIcon; countable?: boolean };
 
 const CARDS: Card[] = [
+  { href: "/admin/ops", label: "AI team", description: "Your digital workers: the morning brief and findings to approve", Icon: Bot, countable: true },
   { href: "/admin/email", label: "Email", description: "Queue, delivery and health for everything we send", Icon: Mail, countable: true },
   { href: "/admin/campaigns", label: "Campaigns", description: "Email sequences and the shops walking through them", Icon: Megaphone },
   { href: `${SOCIETY_CLUB_PATH}/admin`, label: "Society", description: `Roster, dues, officers and applications for ${SOCIETY_NAME}`, Icon: Users, countable: true },

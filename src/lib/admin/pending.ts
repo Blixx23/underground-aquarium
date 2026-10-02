@@ -37,7 +37,7 @@ export const adminPending = cache(async (): Promise<PendingCounts> => {
 
   const [
     members, courses, species, photos, videos, glossary, claims, fixes, reports, feedback, emailFailed,
-    events, newShops, tankReports,
+    events, newShops, tankReports, aiTeam,
   ] =
     await Promise.all([
       society ? countWhere("club_members", [["club_id", society.id as string], ["status", "pending"]]) : 0,
@@ -56,6 +56,8 @@ export const adminPending = cache(async (): Promise<PendingCounts> => {
       countWhere("fish_stores", [["status", "pending"]]),
       // tank_reports.status arrives with step 58; before that this is zero.
       countWhere("tank_reports", [["status", "open"]]),
+      // Findings from the AI team waiting on a decision.
+      countWhere("ops_findings", [], ["status", ["new", "open"]]),
     ]);
 
   return {
@@ -73,5 +75,6 @@ export const adminPending = cache(async (): Promise<PendingCounts> => {
     "/admin/events": events,
     "/admin/pending-shops": newShops,
     "/admin/tank-reports": tankReports,
+    "/admin/ops": aiTeam,
   };
 });
