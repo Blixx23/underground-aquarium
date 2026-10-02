@@ -43,7 +43,12 @@ export default function AdminNav({ pending = {} }: { pending?: Record<string, nu
       </nav>
 
       <aside className="hidden lg:block">
-        <nav aria-label="Admin" className="sticky top-24">
+        {/* Scrolls on its own when the menu is taller than the window, so the
+            bottom items are always reachable without scrolling the page. */}
+        <nav
+          aria-label="Admin"
+          className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
+        >
           <p className="mb-3 px-3 font-mono text-[11px] uppercase tracking-widest text-amber-300/70">Admin</p>
           {GROUPS.map((g) => (
             <div key={g.key} className="mb-4">
