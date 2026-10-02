@@ -24,3 +24,6 @@ osm-superseded.json
 
 store-contacts.csv
 store-contacts-progress.json
+
+# Private company documents (systems map, handover packet). Never push these to GitHub.
+Company Docs/
