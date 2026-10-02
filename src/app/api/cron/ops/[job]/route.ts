@@ -13,7 +13,6 @@ export const maxDuration = 300;
  *   /api/cron/ops/weekly        Monday 7 am: the weekly review
  *   /api/cron/ops/cmo           Monday 7:30 am: the week's marketing
  *   /api/cron/ops/partnerships  Tuesday 8 am: the shop pipeline
- *   /api/cron/ops/support       8:20 am, 12:20 pm, 4:20 pm: Support Desk (only if new support email)
  *   /api/cron/ops/qa            Wednesday 9 am: QA / Site Health
  * Each worker checks its own switch, the monthly cap and whether there's anything new.
  */
@@ -42,10 +41,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ job: str
       break;
     case "partnerships":
       results.push(await runWorker("partnerships", "schedule", deadline));
-      results.push(await reviewIfDue(deadline));
-      break;
-    case "support":
-      results.push(await runWorker("support", "schedule", deadline));
       results.push(await reviewIfDue(deadline));
       break;
     case "qa":

@@ -1,0 +1,27 @@
+const fs = require("fs"); const path = require("path");
+const realFetch = global.fetch; const { fileURLToPath } = require("url");
+const img = fs.readFileSync(path.join(__dirname, "../../public/event-default.jpg"));
+global.fetch = async (u) => { const s = String(u && u.href ? u.href : u);
+  if (s.startsWith("data:")) return realFetch(u);
+  if (s.startsWith("file:")) return new Response(fs.readFileSync(fileURLToPath(s)));
+  if (s.includes("fonts.googleapis") && s.includes("Crimson")) return new Response("src: url(https://font.test/i.woff) format('truetype');");
+  if (s.includes("fonts.googleapis")) return new Response("src: url(https://font.test/c.woff) format('truetype');");
+  if (s.includes("font.test/i")) return new Response(fs.readFileSync(path.join(__dirname, "crimson-italic.woff")));
+  if (s.includes("font.test")) return new Response(fs.readFileSync(path.join(__dirname, "cinzel.woff")));
+  return new Response(img, { headers: { "content-type": "image/jpeg" } }); };
+(async () => {
+  global.__MOCK__ = { "species:count": 412, "species_photos:many": [{species_id:"a",url:"x1"},{species_id:"b",url:"x2"},{species_id:"c",url:"x3"}] };
+  let r = await require("./sp-section.cjs").GET();
+  fs.writeFileSync("sp2-section.png", Buffer.from(await r.arrayBuffer())); console.log("section", r.status);
+  global.__MOCK__ = { "species:count": 412, "species_photos:many": [] };
+  delete require.cache[require.resolve("./sp-section.cjs")];
+  r = await require("./sp-section.cjs").GET();
+  fs.writeFileSync("sp2-section-nophotos.png", Buffer.from(await r.arrayBuffer())); console.log("section-nophotos", r.status);
+  global.__MOCK__ = { "species:one": { common_name: "Cardinal Tetra", scientific_name: "Paracheirodon axelrodi", max_size_in: 2, min_tank_gal: 20, temp_min_f: 73, temp_max_f: 81, care_level: "moderate" }, "rpc:public_species_photos": [] };
+  r = await require("./sp-species.cjs").GET(new Request("http://x"), { params: Promise.resolve({ slug: "cardinal-tetra" }) });
+  fs.writeFileSync("sp2-species.png", Buffer.from(await r.arrayBuffer())); console.log("species", r.status);
+  global.__MOCK__ = { "species:one": { common_name: "Bristlenose Pleco", scientific_name: "Ancistrus cf. cirrhosus", max_size_in: 5, min_tank_gal: 29, temp_min_f: 72, temp_max_f: 80, care_level: "easy" }, "rpc:public_species_photos": [{ url: "p" }] };
+  delete require.cache[require.resolve("./sp-species.cjs")];
+  r = await require("./sp-species.cjs").GET(new Request("http://x"), { params: Promise.resolve({ slug: "bn" }) });
+  fs.writeFileSync("sp2-species-photo.png", Buffer.from(await r.arrayBuffer())); console.log("species-photo", r.status);
+})().catch((e) => { console.error(e); process.exit(1); });

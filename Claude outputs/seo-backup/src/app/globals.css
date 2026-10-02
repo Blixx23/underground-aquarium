@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Cinzel Decorative', Georgia, serif;
+  --font-body: 'Crimson Pro', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; padding: 0; margin: 0; }
+/*
+ * overflow-x must be `clip`, never `hidden`.
+ *
+ * On iOS Safari, `overflow: hidden` on the body turns the body into a
+ * scroll container, and `position: fixed` then anchors to the body instead
+ * of the screen — so the bottom tab bar sits at the end of the document and
+ * scrolls away with the page. `clip` cuts off sideways overflow the same
+ * way without creating a scroll container, so fixed bars stay put.
+ */
+html { scroll-behavior: smooth; overflow-x: clip; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 18px; line-height: 1.7; overflow-x: clip; overflow-wrap: break-word; }
+
+/* ===================================================================
+   MOBILE FIT — keeps every page inside the screen on phones.
+
+   1. No zoom-in on tap. iPhones zoom the page when you tap a text box
+      whose font is under 16px, and never zoom back out, which leaves
+      the page sitting off the edge until you pinch it. Every input,
+      dropdown and text area is at least 16px on touch screens and
+      narrow windows, whatever size class a component gives it, so new
+      forms are covered automatically.
+   2. Nothing wider than the screen. Media, embeds and code blocks can
+      never push past the edge, and long unbroken text (links, emails,
+      handles) wraps instead of stretching the page.
+   =================================================================== */
+@media (pointer: coarse), (max-width: 767px) {
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), select, textarea):not([class*="text-lg"]):not([class*="text-xl"]):not([class*="text-2xl"]):not([class*="text-3xl"]) {
+    font-size: 16px !important;
+  }
+}
+img, video, iframe, canvas, embed, object { max-width: 100%; }
+pre { max-width: 100%; overflow-x: auto; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #020b18; }
+::-webkit-scrollbar-thumb { background: #1264a0; border-radius: 3px; }
+::selection { background: rgba(26,130,204,0.35); color: #edf7fe; }
+.noise::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.water-shimmer { background: linear-gradient(90deg, transparent 0%, rgba(26,130,204,0.08) 25%, rgba(58,163,232,0.12) 50%, rgba(26,130,204,0.08) 75%, transparent 100%); background-size: 200% 100%; animation: shimmer 4s linear infinite; }
+.glow-text { text-shadow: 0 0 40px rgba(58,163,232,0.5), 0 0 80px rgba(26,130,204,0.25); }
+.card-deep { background: rgba(7,34,54,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(26,130,204,0.15); }
+.card-deep:hover { border-color: rgba(26,130,204,0.4); box-shadow: 0 0 30px rgba(26,130,204,0.1); }
+.bubble { position: absolute; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(58,163,232,0.4), rgba(26,130,204,0.1)); border: 1px solid rgba(58,163,232,0.3); animation: bubble var(--duration, 4s) ease-in-out infinite; animation-delay: var(--delay, 0s); }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes fadeUp { 0% { opacity: 0; transform: translateY(24px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes bubble { 0% { transform: translateY(0) scale(1); opacity: 0.6; } 50% { transform: translateY(-20px) scale(1.05); opacity: 0.9; } 100% { transform: translateY(-40px) scale(0.8); opacity: 0; } }
+@keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(26,130,204,0.3); } 50% { box-shadow: 0 0 40px rgba(26,130,204,0.6); } }
+@layer utilities { .font-display { font-family: var(--font-display) !important; } .font-body { font-family: var(--font-body); } .font-mono { font-family: var(--font-mono); } }
+
+/* Ambient rising bubbles */
+@keyframes bubbleRise {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  8%   { opacity: 0.5; }
+  85%  { opacity: 0.25; }
+  100% { transform: translateY(-110vh) translateX(20px) scale(0.4); opacity: 0; }
+}
+.uw-bubble {
+  position: absolute;
+  bottom: -50px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(199,228,250,0.5), rgba(58,163,232,0.1));
+  border: 1px solid rgba(125,196,240,0.2);
+  animation-name: bubbleRise;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+/* ===================================================================
+   LEGIBILITY PASS — subtle, sitewide, fully reversible.
+   Lifts dim form text, placeholders, and muted secondary text a notch,
+   and gives inputs/dropdowns a faint edge so they read clearly on the
+   dark theme. To revert: delete everything below this line.
+   =================================================================== */
+
+/* Native dropdown menus (where the browser honors option styling) */
+select option,
+select optgroup {
+  background-color: #07223a;
+  color: #e8f4ff;
+}
+
+/* Faint inner edge so fields and dropdowns are visible on the dark bg */
+select,
+input,
+textarea {
+  box-shadow: inset 0 0 0 1px rgba(125, 196, 240, 0.14);
+}
+
+/* Brighter placeholders */
+::placeholder {
+  color: #7ea7c6 !important;
+  opacity: 1 !important;
+}
+
+/* Nudge the two dimmest muted-text shades up a notch (secondary text,
+   helper lines, captions). Brighter, still clearly "muted". */
+.text-ocean-600 { color: #6f9cc0 !important; }
+.text-ocean-500 { color: #83aed2 !important; }

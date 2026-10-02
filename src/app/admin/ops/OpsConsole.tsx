@@ -271,13 +271,13 @@ export default function OpsConsole({ data }: { data: OpsData }) {
                   <span className="font-semibold uppercase tracking-wide">When on: </span>
                   {w.about.whenOn}
                 </p>
-                <p className={!w.enabled || w.needsNote ? "text-amber-200/90" : "text-ocean-500"}>
+                <p className={!w.enabled && !w.needsNote ? "text-amber-200/90" : "text-ocean-500"}>
                   <span className="font-semibold uppercase tracking-wide">When off: </span>
                   {w.about.whenOff}
                 </p>
               </div>
               {w.needsNote ? (
-                <p className="mt-3 text-xs text-amber-200/80">{w.needsNote}</p>
+                <p className="mt-3 rounded-lg bg-sky-500/10 px-3 py-2 text-xs text-sky-200">{w.needsNote}</p>
               ) : (
                 <>
                   <div className="mt-3 rounded-lg bg-ocean-950/50 px-3 py-2 text-xs text-ocean-300">

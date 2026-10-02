@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": "../..",
+    "paths": {
+      "@/*": ["src/*"],
+      "pdfjs-dist": ["/usr/local/lib/node_modules_global/lib/node_modules/pdfjs-dist/types/src/pdf.d.ts"]
+    }
+  },
+  "include": ["../../next-env.d.ts", "../../src/components/stores/PdfPreview.tsx", "../../src/components/stores/PromoKit.tsx"]
+}
