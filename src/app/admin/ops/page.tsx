@@ -12,6 +12,20 @@ export const dynamic = "force-dynamic";
  * each worker's switch and track record, the run log and what the team
  * remembers. The admin layout already restricts this to admins.
  */
+/** One plain line on how a worker's latest run went: its report's opening line, or the error. */
+function lastResult(run?: { status: string; report: string | null; error: string | null }): string | null {
+  if (!run) return null;
+  if (run.status === "error") return `Didn't finish: ${run.error ?? "unknown error"}`;
+  // The first real sentence: skip headings and table rows.
+  const line = (run.report ?? "")
+    .split("\n")
+    .filter((l) => !/^\s*(#|\|)/.test(l))
+    .map((l) => l.replace(/^[>\-*\d.)\s]+/, "").replace(/\*\*/g, "").trim())
+    .find((l) => l.length > 0);
+  if (!line) return null;
+  return line.length > 180 ? line.slice(0, 177) + "..." : line;
+}
+
 export default async function AdminOpsPage() {
   const monthStart = new Date();
   monthStart.setUTCDate(1);
@@ -70,10 +84,22 @@ export default async function AdminOpsPage() {
 
   const setupMissing = Boolean(settingsRes.error) || !settingsRes.data;
 
-  // Each worker's track record over 30 days: how many findings Chris acted on.
-  const { data: recent } = setupMissing
-    ? { data: [] }
-    : await supabaseAdmin.from("ops_findings").select("worker_key, status, rating").gt("created_at", since30);
+  // Each worker's track record over 30 days, and how its latest run went.
+  const [{ data: recent }, { data: lastRuns }] = setupMissing
+    ? [{ data: [] }, { data: [] }]
+    : await Promise.all([
+        supabaseAdmin.from("ops_findings").select("worker_key, status, rating").gt("created_at", since30),
+        supabaseAdmin
+          .from("ops_runs")
+          .select("worker_key, status, report, error, started_at")
+          .in("status", ["done", "error"])
+          .order("started_at", { ascending: false })
+          .limit(100),
+      ]);
+  const latestByWorker = new Map<string, { status: string; report: string | null; error: string | null }>();
+  for (const r of lastRuns ?? []) {
+    if (!latestByWorker.has(r.worker_key)) latestByWorker.set(r.worker_key, r);
+  }
 
   const spendByWorker: Record<string, number> = {};
   let spent = 0;
@@ -95,6 +121,8 @@ export default async function AdminOpsPage() {
       schedule: def.schedule,
       model: def.model.includes("haiku") ? "Haiku" : "Sonnet",
       needsNote: def.needs ? def.needsNote ?? "Not connected yet." : null,
+      about: def.about,
+      lastResult: lastResult(latestByWorker.get(key)),
       enabled: Boolean(row?.enabled),
       lastRunAt: (row?.last_run_at as string | null) ?? null,
       lastStatus: (row?.last_status as string | null) ?? null,

@@ -41,6 +41,8 @@ export type OpsData = {
     schedule: string;
     model: string;
     needsNote: string | null;
+    about: { job: string; whenOn: string; whenOff: string };
+    lastResult: string | null;
     enabled: boolean;
     lastRunAt: string | null;
     lastStatus: string | null;
@@ -80,6 +82,15 @@ function when(iso: string | null): string {
 }
 
 const dollars = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+/** The worker's last status in plain words. */
+const STATUS_WORDS: Record<string, string> = {
+  done: "finished",
+  "all quiet": "finished, nothing needed you",
+  quiet: "stayed asleep, nothing new",
+  capped: "stopped, monthly cap reached",
+  error: "didn't finish",
+};
 
 function Markdown({ children }: { children: string }) {
   return (
@@ -254,17 +265,35 @@ export default function OpsConsole({ data }: { data: OpsData }) {
                   </button>
                 )}
               </div>
+              <p className="mt-3 text-sm text-ocean-200">{w.about.job}</p>
+              <div className="mt-3 space-y-1.5 text-xs">
+                <p className={w.enabled && !w.needsNote ? "text-emerald-200" : "text-ocean-500"}>
+                  <span className="font-semibold uppercase tracking-wide">When on: </span>
+                  {w.about.whenOn}
+                </p>
+                <p className={!w.enabled || w.needsNote ? "text-amber-200/90" : "text-ocean-500"}>
+                  <span className="font-semibold uppercase tracking-wide">When off: </span>
+                  {w.about.whenOff}
+                </p>
+              </div>
               {w.needsNote ? (
                 <p className="mt-3 text-xs text-amber-200/80">{w.needsNote}</p>
               ) : (
                 <>
-                  <p className="mt-3 text-xs text-ocean-400">
-                    Last run {when(w.lastRunAt)}
-                    {w.lastStatus ? ` · ${w.lastStatus}` : ""} · {dollars(w.spentCents)} this month
-                  </p>
-                  <p className="text-xs text-ocean-400">
-                    30 days: {w.filed30} findings, {w.acted30} acted on
-                  </p>
+                  <div className="mt-3 rounded-lg bg-ocean-950/50 px-3 py-2 text-xs text-ocean-300">
+                    <p>
+                      <span className="text-ocean-500">Last run:</span> {when(w.lastRunAt)}
+                      {w.lastStatus ? ` · ${STATUS_WORDS[w.lastStatus] ?? w.lastStatus}` : ""} · {dollars(w.spentCents)} this month
+                    </p>
+                    {w.lastResult && (
+                      <p className="mt-1 text-ocean-200">
+                        <span className="text-ocean-500">Result:</span> {w.lastResult}
+                      </p>
+                    )}
+                    <p className="mt-1">
+                      <span className="text-ocean-500">30 days:</span> {w.filed30} findings, {w.acted30} acted on
+                    </p>
+                  </div>
                   <button
                     onClick={() => act(`r-${w.key}`, { action: "run", key: w.key })}
                     disabled={busy !== null || w.running}

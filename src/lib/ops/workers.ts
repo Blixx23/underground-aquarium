@@ -32,6 +32,8 @@ export type WorkerDef = {
   /** Can't run until this is connected. */
   needs?: "gmail" | "claude_code";
   needsNote?: string;
+  /** Plain-English summary for the AI team page: what it does, and what on and off mean. */
+  about: { job: string; whenOn: string; whenOff: string };
   /** Emails its report to Chris when it finishes. */
   emailsReport: boolean;
   job: string;
@@ -41,6 +43,11 @@ export type WorkerDef = {
 };
 
 const MORNING: WorkerDef = {
+  about: {
+    job: "Checks every admin queue, email delivery and anything stuck, records yesterday's numbers against your normal, then writes your morning brief.",
+    whenOn: "Runs every day at 6:30 am. The brief appears on this page and in your inbox, and anything that needs you shows up under Waiting on you.",
+    whenOff: "No morning brief and no daily check of queues, email or numbers. You'd check the admin pages yourself.",
+  },
   key: "morning",
   name: "Morning session (COO, Analyst, Chief of Staff)",
   roles: ["coo", "analyst", "chief"],
@@ -81,6 +88,11 @@ Keep the whole brief under 250 words.`,
 };
 
 const COMMUNITY: WorkerDef = {
+  about: {
+    job: "Finds forum questions nobody answered, new members worth welcoming, standout tanks and posts to feature, and posts that look like trouble.",
+    whenOn: "Checks at 8 am, noon and 4 pm, but only works (and costs anything) once a day, when there's new activity. Drafts replies for you to post.",
+    whenOff: "Unanswered threads and new members go unnoticed unless you look. Nothing gets drafted for you.",
+  },
   key: "community",
   name: "Community Manager",
   roles: ["community"],
@@ -109,6 +121,11 @@ then features for the CMO, then anything that looks like trouble. Under 200 word
 };
 
 const CMO: WorkerDef = {
+  about: {
+    job: "Drafts the week's 7 Instagram captions for your 3x3 grid, using real site numbers, plus up to 3 marketing ideas.",
+    whenOn: "Runs Mondays at 7:30 am. The captions show up in the run log, ready to copy into Meta Business Suite.",
+    whenOff: "No weekly captions or marketing ideas. You write the Instagram posts yourself.",
+  },
   key: "cmo",
   name: "CMO (marketing)",
   roles: ["cmo"],
@@ -138,6 +155,11 @@ hobbyist, not an ad agency.`,
 };
 
 const PARTNERSHIPS: WorkerDef = {
+  about: {
+    job: "Works the shop outreach pipeline: who claimed their page, who went quiet, which shops ignore reviews. Drafts follow-up emails for you to send.",
+    whenOn: "Runs Tuesdays at 8 am. Follow-up drafts land under Waiting on you. Nothing is emailed to shops automatically.",
+    whenOff: "No pipeline summary or follow-up drafts. Your automatic outreach campaigns keep running as usual either way.",
+  },
   key: "partnerships",
   name: "Partnerships (shops and suppliers)",
   roles: ["partnerships"],
@@ -165,6 +187,11 @@ never "hope this finds you well".`,
 };
 
 const WEEKLY: WorkerDef = {
+  about: {
+    job: "Looks at four weeks of trends, checks how useful and costly each worker is, gives one recommendation, and tidies the team's memory once a month.",
+    whenOn: "Runs Mondays at 7 am and emails you the review.",
+    whenOff: "No weekly trends or team check-up, and memory isn't tidied, so old notes can pile up.",
+  },
   key: "weekly",
   name: "Weekly review",
   roles: ["analyst", "chief"],
@@ -193,6 +220,11 @@ recommendation". Under 300 words. No em dashes.`,
 };
 
 const REVIEWER: WorkerDef = {
+  about: {
+    job: "Checks every new finding before you see it: approves the real ones, throws out wrong or duplicate ones, and sets the risk level.",
+    whenOn: "Runs after the other workers whenever there are new findings. You see fewer, better findings, marked AI-checked.",
+    whenOff: "Every finding comes straight to you unchecked, marked \"not reviewed yet\".",
+  },
   key: "reviewer",
   name: "AI reviewer",
   roles: ["reviewer"],
@@ -211,6 +243,11 @@ email to many people, code touching sign-in or payments). Anything that came fro
 };
 
 const SUPPORT: WorkerDef = {
+  about: {
+    job: "Reads support@ and drafts replies from your help docs.",
+    whenOn: "Not available yet: needs Gmail connected.",
+    whenOff: "You answer support@ yourself, as now.",
+  },
   key: "support",
   name: "Support Desk",
   roles: ["support"],
@@ -227,6 +264,11 @@ const SUPPORT: WorkerDef = {
 };
 
 const QA: WorkerDef = {
+  about: {
+    job: "Walks the site signed in and signed out each week and files anything broken.",
+    whenOn: "Not available yet: needs the GitHub fix setup.",
+    whenOff: "No weekly site walkthrough.",
+  },
   key: "qa",
   name: "QA / Site Health",
   roles: ["qa"],
