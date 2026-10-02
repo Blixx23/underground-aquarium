@@ -2,7 +2,8 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { dedupKey, unsubscribeUrlFor } from "@/lib/email/queue";
 import { normaliseEmail } from "@/lib/email/address";
-import { suppressedSet } from "@/lib/email/suppress";
+import { suppress, suppressedSet } from "@/lib/email/suppress";
+import { checkDomains, domainOf, type DomainCheck } from "@/lib/email/mx";
 import { getEmailSettings } from "@/lib/email/settings";
 import { letterShell } from "@/lib/email/shell";
 import { previewLine, renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
@@ -56,9 +57,26 @@ export type PlanResult = {
   recycled: number;
   skipped: number;
   budget: number;
+  /** Addresses whose domain can't receive mail, put on the do-not-email list instead of sent. */
+  undeliverable: number;
 };
 
 const day = 86_400_000;
+
+/**
+ * Put addresses with dead domains on the do-not-email list as "invalid",
+ * so nothing is ever sent to them. On a dry run, only count.
+ */
+async function blockDead(checks: Map<string, DomainCheck>, dry: boolean): Promise<number> {
+  const dead = [...checks].filter(([, c]) => c === "dead").map(([email]) => email);
+  if (dry) return dead.length;
+  for (let i = 0; i < dead.length; i += 20) {
+    await Promise.all(
+      dead.slice(i, i + 20).map((email) => suppress(email, "invalid", `No mail server for ${domainOf(email)}`))
+    );
+  }
+  return dead.length;
+}
 
 /**
  * Enrol every shop that belongs in this campaign and isn't in it yet.
@@ -68,8 +86,8 @@ const day = 86_400_000;
  * and the ones already sitting there. A trigger would only ever catch
  * the first of those, and would go stale the moment an import ran.
  */
-async function enrolAudience(campaign: Campaign, dry = false): Promise<number> {
-  if (campaign.audience !== "unclaimed_shops") return 0;
+async function enrolAudience(campaign: Campaign, dry = false): Promise<{ added: number; dead: number }> {
+  if (campaign.audience !== "unclaimed_shops") return { added: 0, dead: 0 };
 
   const { data: already } = await supabaseAdmin
     .from("email_campaign_enrollments")
@@ -96,22 +114,28 @@ async function enrolAudience(campaign: Campaign, dry = false): Promise<number> {
     if (page.length < pageSize) break;
   }
 
-  const fresh = rows.filter((r) => !have.has(r.store_id));
-  if (fresh.length === 0) return 0;
+  const unseen = rows.filter((r) => !have.has(r.store_id));
+  if (unseen.length === 0) return { added: 0, dead: 0 };
 
   // Never enrol an address we already promised not to write to. Campaign
   // mail is marketing, so an unsubscribe or a bounce both keep them out.
-  const blocked = await suppressedSet(fresh.map((r) => r.email), "marketing");
+  const blocked = await suppressedSet(unseen.map((r) => r.email), "marketing");
+  const open = unseen.filter((r) => !blocked.has(normaliseEmail(r.email)));
+
+  // Only enrol addresses whose domain has a mail server. Dead ones go on
+  // the do-not-email list; ones we couldn't check yet wait for next run.
+  const checks = await checkDomains(open.map((r) => r.email));
+  const dead = await blockDead(checks, dry);
+  const fresh = open.filter((r) => checks.get(normaliseEmail(r.email)) === "ok");
 
   // A dry run only counts. It must never write, or "What would a run
   // do?" would quietly do it.
-  if (dry) return fresh.filter((r) => !blocked.has(normaliseEmail(r.email))).length;
+  if (dry) return { added: fresh.length, dead };
 
   let added = 0;
   for (let i = 0; i < fresh.length; i += 500) {
     const slice = fresh
       .slice(i, i + 500)
-      .filter((r) => !blocked.has(normaliseEmail(r.email)))
       .map((r) => ({
         campaign_id: campaign.id,
         store_id: r.store_id,
@@ -124,7 +148,7 @@ async function enrolAudience(campaign: Campaign, dry = false): Promise<number> {
     if (error) throw new Error(error.message);
     added += slice.length;
   }
-  return added;
+  return { added, dead };
 }
 
 /**
@@ -249,10 +273,12 @@ async function todaysBudget(): Promise<number> {
  * treating it as a duplicate of the last one.
  */
 export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; limit?: number } = {}): Promise<PlanResult> {
-  const out: PlanResult = { enrolled: 0, stopped: 0, queued: 0, finished: 0, recycled: 0, skipped: 0, budget: 0 };
+  const out: PlanResult = { enrolled: 0, stopped: 0, queued: 0, finished: 0, recycled: 0, skipped: 0, budget: 0, undeliverable: 0 };
 
   // On a dry run both of these only count; nothing is written anywhere.
-  out.enrolled = await enrolAudience(campaign, Boolean(opts.dry));
+  const enrol = await enrolAudience(campaign, Boolean(opts.dry));
+  out.enrolled = enrol.added;
+  out.undeliverable = enrol.dead;
   const stoppedIds = await stopTheFinished(campaign, Boolean(opts.dry));
   out.stopped = stoppedIds.size;
 
@@ -299,6 +325,12 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
   // on their own page in about two seconds.
   const facts = await factsFor(storeIds);
 
+  // Shops enrolled before domain checks existed (and domains that have
+  // died since) get checked here, right before anything is queued.
+  // Dead ones are blocked now and come off the list on the next run.
+  const domainChecks = await checkDomains(due.map((e) => e.email), { budgetMs: 10_000 });
+  out.undeliverable += await blockDead(domainChecks, Boolean(opts.dry));
+
   /** What happens to an enrolment once its step is dealt with. */
   function afterStep(e: Enrollment, justSent: boolean): Record<string, unknown> {
     const now = new Date();
@@ -330,6 +362,13 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
   }
 
   for (const e of due) {
+    // Dead domain: blocked above, never queued. Couldn't check: leave it
+    // exactly as it is and try again next run.
+    if (domainChecks.get(normaliseEmail(e.email)) !== "ok") {
+      out.skipped++;
+      continue;
+    }
+
     const step = byNumber.get(e.next_step);
     const store = e.store_id ? storeById.get(e.store_id) : undefined;
 
