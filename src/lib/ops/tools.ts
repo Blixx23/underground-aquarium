@@ -164,8 +164,9 @@ export async function runTool(
   try {
     switch (name) {
       case "query_database": {
-        if (state.queries >= OPS_LIMITS.maxQueries) {
-          return { content: `Query limit reached (${OPS_LIMITS.maxQueries}). Write your report with what you have.`, isError: true };
+        const limit = w.maxQueries ?? OPS_LIMITS.maxQueries;
+        if (state.queries >= limit) {
+          return { content: `Query limit reached (${limit}). Write your report with what you have.`, isError: true };
         }
         state.queries++;
         const { data, error } = await supabaseAdmin.rpc("ops_query", { q: str(input.sql), max_rows: 50 });

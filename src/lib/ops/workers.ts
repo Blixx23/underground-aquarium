@@ -25,6 +25,8 @@ export type WorkerDef = {
   model: OpsModel;
   /** Only runs on a schedule when something changed since its last run. */
   wakeOnActivity: boolean;
+  /** Database queries allowed per run, if different from the default. */
+  maxQueries?: number;
   /** On a schedule, wait at least this long after the last run. */
   minGapHours?: number;
   /** Can't run until this is connected. */
@@ -45,6 +47,8 @@ const MORNING: WorkerDef = {
   schedule: "Daily, 6:30 am",
   model: OPS_MODELS.smart,
   wakeOnActivity: false,
+  // Three jobs in one session need more room than one.
+  maxQueries: 25,
   emailsReport: true,
   job: `You do three jobs in one session, in this order.
 COO: check every moderation and admin queue, email delivery and anything stuck. List what's new and what's waiting too long.

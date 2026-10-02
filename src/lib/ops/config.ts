@@ -23,10 +23,10 @@ export const CACHE_WRITE_MULTIPLIER = 1.25;
 
 /** Hard limits on every run, so a confused agent can't run up a bill. */
 export const OPS_LIMITS = {
-  /** Database queries an agent may run in one session. */
+  /** Database queries an agent may run in one session (a worker can set its own). */
   maxQueries: 15,
   /** Round trips to Claude in one session. */
-  maxTurns: 24,
+  maxTurns: 30,
   /** Longest single reply from Claude. */
   maxOutputTokens: 4000,
   /** Time one request may use in total (Vercel stops the function at 300s). */
