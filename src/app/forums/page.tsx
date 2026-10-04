@@ -4,14 +4,16 @@ import { MessagesSquare, ChevronRight, MessageSquareDashed, PenLine } from "luci
 import { supabasePublic } from "@/lib/supabase/public";
 import ShopOwnersLoungeCard from "@/components/forum/ShopOwnersLoungeCard";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 120;
 
 export const metadata: Metadata = {
-  title: "Forums",
+  title: "Aquarium Forums: Ask Real Fish Keepers",
   description:
-    "Aquarium keeping discussions — beginner help, fish health, planted tanks, saltwater, breeding, and gear.",
+    "Ask real fish keepers. Aquarium discussions on beginner help, fish health, planted tanks, saltwater, breeding and gear.",
   alternates: { canonical: "/forums" },
+  ...shareMeta({ path: "/forums", alt: "Underground Aquarium forums" }),
 };
 
 export default async function ForumsIndex() {

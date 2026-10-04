@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import HelpArticleView from "@/components/help/HelpArticleView";
 import { getHelpArticle, getHelpArticles } from "@/lib/help/content";
 import { breadcrumbJsonLd, ldJson, SITE } from "@/lib/marketplace/seo";
+import { shareMeta } from "@/lib/seo/share";
 
 export const dynamicParams = false;
 
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description: a.summary,
     alternates: { canonical: `/help/${a.slug}` },
-    openGraph: { title, description: a.summary, url: `${SITE}/help/${a.slug}`, type: "article" },
+    ...shareMeta({ path: `/help/${a.slug}`, alt: a.title, type: "article" }),
   };
 }
 

@@ -3,12 +3,14 @@ import HelpIndexView from "@/components/help/HelpIndexView";
 import StillStuck from "@/components/help/StillStuck";
 import { getHelpArticles } from "@/lib/help/content";
 import { HELP_CATEGORIES } from "@/lib/help/types";
+import { shareMeta } from "@/lib/seo/share";
 
 export const metadata: Metadata = {
   title: "Help Center",
   description:
     "Answers for Underground Aquarium: posting free classifieds, messaging, forums, the Society, Tank Builder, Water Check, fish stores and your account.",
   alternates: { canonical: "/help" },
+  ...shareMeta({ path: "/help", alt: "Underground Aquarium help center" }),
 };
 
 // Built once per deploy from content/help/*.md. Member help only: admin

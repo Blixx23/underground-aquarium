@@ -4,6 +4,7 @@ import Feed from "@/components/feed/Feed";
 import HotForums from "@/components/forum/HotForums";
 import { fetchFeed, type FeedScope } from "@/lib/feed";
 import { getViewer } from "@/lib/feedViewer";
+import { shareMeta } from "@/lib/seo/share";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   description:
     "What the Underground Aquarium community is breeding, building and selling right now.",
   alternates: { canonical: "/feed" },
+  ...shareMeta({ path: "/feed", alt: "The Underground Aquarium community feed" }),
 };
 
 /**

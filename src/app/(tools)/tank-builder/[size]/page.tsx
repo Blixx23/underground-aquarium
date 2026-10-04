@@ -9,6 +9,7 @@ import { fitLists, stockPlans } from "@/lib/tankBuilder/plans";
 import { TANK_SIZES, filledWeightLb, sizeBySlug, waterWeightLb } from "@/lib/tankBuilder/sizes";
 import { buildPath } from "@/lib/tankBuilder/share";
 import { breadcrumbJsonLd, ldJson, SITE } from "@/lib/marketplace/seo";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 3600;
 export const dynamicParams = false;
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `/tank-builder/${t.slug}` },
-    openGraph: { title, description, url: `${SITE}/tank-builder/${t.slug}`, type: "article" },
+    ...shareMeta({ path: `/tank-builder/${t.slug}`, alt: `${t.gallons} gallon tank stocking ideas`, type: "article" }),
   };
 }
 

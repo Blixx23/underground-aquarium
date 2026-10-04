@@ -6,6 +6,7 @@ import { supabasePublic } from "@/lib/supabase/public";
 import StoreDirectory from "./StoreDirectory";
 import SuggestStore from "./SuggestStore";
 import OsmCredit from "@/components/stores/OsmCredit";
+import { shareMeta } from "@/lib/seo/share";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
   description:
     "Find local aquarium and fish stores near you. Search by name, city, or specialty, see what each shop carries, and get directions.",
   alternates: { canonical: "/stores" },
+  ...shareMeta({ path: "/stores", alt: "Local fish stores near you" }),
 };
 
 type StoreRow = {

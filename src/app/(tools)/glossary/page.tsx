@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import GlossaryExplorer from "@/components/glossary/GlossaryExplorer";
 import { supabasePublic } from "@/lib/supabase/public";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 3600;
 
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   description:
     "200+ aquarium and fishkeeping terms in plain English, from ammonia and cycling to ich and KH. Searchable, with fixes and common questions for each.",
   alternates: { canonical: "/glossary" },
+  ...shareMeta({ path: "/glossary", alt: "Aquarium glossary, 200+ fishkeeping terms" }),
 };
 
 export default async function GlossaryPage() {

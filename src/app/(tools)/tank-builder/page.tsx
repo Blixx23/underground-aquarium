@@ -5,6 +5,7 @@ import { loadBuilderSpecies } from "@/lib/tankBuilder/species";
 import { computeEquipment } from "@/lib/tankBuilder/engine";
 import { TANK_SIZES, filledWeightLb } from "@/lib/tankBuilder/sizes";
 import { breadcrumbJsonLd, ldJson, SITE } from "@/lib/marketplace/seo";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 3600;
 
@@ -16,12 +17,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: "/tank-builder" },
-  openGraph: {
-    title: `Tank Builder: ${TITLE}`,
-    description: DESCRIPTION,
-    url: `${SITE}/tank-builder`,
-    type: "website",
-  },
+  ...shareMeta({ path: "/tank-builder", alt: "Tank Builder, a free aquarium stocking tool" }),
 };
 
 const FAQ: { q: string; a: string }[] = [

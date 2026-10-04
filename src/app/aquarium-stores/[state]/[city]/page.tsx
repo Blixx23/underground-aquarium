@@ -16,6 +16,7 @@ import {
   type PlaceStore,
   type City,
 } from "@/lib/stores/places";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 3600;
 
@@ -80,6 +81,7 @@ export async function generateMetadata({
       c.state
     )}: ${names}. Addresses, phone numbers, hours and reviews, plus shops nearby.`,
     alternates: { canonical: cityPath(c.state, c.name) },
+    ...shareMeta({ path: cityPath(c.state, c.name), alt: `Aquarium stores in ${c.name}, ${c.state}` }),
   };
 }
 

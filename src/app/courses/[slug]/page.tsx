@@ -11,32 +11,89 @@ import {
   Check,
   Film,
 } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { supabasePublic } from "@/lib/supabase/public";
+import { shareMeta, shareCardUrl } from "@/lib/seo/share";
+import { breadcrumbJsonLd, ldJson, SITE } from "@/lib/marketplace/seo";
+import ShareButton from "@/app/events/ShareButton";
 import { canTakeMembersCourses, courseAccessInfo } from "@/lib/courses/access";
 import { SOCIETY_PATH } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
+type CourseMetaRow = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  est_minutes: number | null;
+  cover_image?: string | null;
+  members_only?: boolean | null;
+};
+
+/** The course plus what search and share cards need. Tolerates older columns. */
+async function loadCourseMeta(slug: string): Promise<{ course: CourseMetaRow; lessons: number } | null> {
+  const base = "id, title, subtitle, description, est_minutes";
+  let course: CourseMetaRow | null = null;
+  for (const cols of [`${base}, cover_image, members_only`, `${base}, cover_image`, base]) {
+    const { data, error } = await supabasePublic
+      .from("courses")
+      .select(cols)
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
+    if (!error) {
+      course = (data as unknown as CourseMetaRow | null) ?? null;
+      break;
+    }
+  }
+  if (!course) return null;
+  const { count } = await supabasePublic
+    .from("course_sections")
+    .select("id", { count: "exact", head: true })
+    .eq("course_id", course.id);
+  return { course, lessons: count ?? 0 };
+}
+
+const clip = (s: string, n = 158) => (s.length > n ? `${s.slice(0, n - 3).trimEnd()}...` : s);
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
-}) {
+}): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data: course } = await supabase
-    .from("courses")
-    .select("title, subtitle, description")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle();
-  if (!course) return { title: "Course" };
+  const found = await loadCourseMeta(slug);
+  if (!found) return { title: "Course" };
+  const { course, lessons } = found;
+  const society = Boolean(course.members_only);
+
+  // "Nitrogen Cycle: Free Aquarium Course" matches how people search for a
+  // topic plus "course"; the layout adds "| Underground Aquarium".
+  const title = society ? `${course.title}: Society Aquarium Class` : `${course.title}: Free Aquarium Course`;
+  const facts = [
+    lessons ? `${lessons} lessons` : null,
+    course.est_minutes ? `about ${course.est_minutes} minutes` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const lead = (course.description ?? course.subtitle ?? "").replace(/\s+/g, " ").trim();
+  const tail = society
+    ? `A Society class${facts ? `: ${facts}` : ""}, with a certificate and profile badge.`
+    : `Free online course${facts ? `: ${facts}` : ""}. Pass the quizzes to earn a certificate and profile badge.`;
+  const description = clip(lead ? `${lead} ${tail}` : tail);
+
   return {
-    // The layout adds "| Underground Aquarium"; don't say it twice.
-    title: `${course.title}: Free Aquarium Course`,
-    description:
-      course.description ?? course.subtitle ?? undefined,
+    title,
+    description,
     alternates: { canonical: `/courses/${slug}` },
+    ...shareMeta({
+      path: `/courses/${slug}`,
+      // The course's own cover when it has one, else our card with its facts.
+      image: course.cover_image || null,
+      alt: `${course.title}, ${society ? "a Society class" : "a free aquarium course"} on Underground Aquarium`,
+    }),
   };
 }
 
@@ -112,8 +169,53 @@ export default async function CourseLandingPage({
     </>
   );
 
+  // Lets Google show this as a course in search (Course info and course
+  // lists), with the provider, cost, workload and what it covers.
+  const meta = await loadCourseMeta(slug);
+  const pageUrl = `${SITE}/courses/${course.slug}`;
+  const cover = meta?.course.cover_image || null;
+  const courseLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "@id": `${pageUrl}#course`,
+    name: course.title,
+    description: course.description ?? course.subtitle ?? course.title,
+    url: pageUrl,
+    image: cover ? (cover.startsWith("http") ? cover : `${SITE}${cover}`) : `${SITE}${shareCardUrl(`/courses/${course.slug}`)}`,
+    inLanguage: "en",
+    isAccessibleForFree: !access.members_only,
+    educationalLevel: access.members_only ? "Society" : access.level.charAt(0).toUpperCase() + access.level.slice(1),
+    educationalCredentialAwarded: "Certificate of Completion",
+    numberOfLessons: sections.length || undefined,
+    provider: {
+      "@type": "Organization",
+      "@id": `${SITE}/#organization`,
+      name: "Underground Aquarium",
+      sameAs: `${SITE}/`,
+    },
+    offers: access.members_only
+      ? { "@type": "Offer", category: "Subscription", url: `${SITE}${SOCIETY_PATH}` }
+      : { "@type": "Offer", category: "Free", price: 0, priceCurrency: "USD", availability: "https://schema.org/InStock", url: pageUrl },
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode: "Online",
+      ...(course.est_minutes ? { courseWorkload: `PT${course.est_minutes}M` } : {}),
+    },
+    ...(sections.length
+      ? {
+          syllabusSections: sections.map((s) => ({ "@type": "Syllabus", name: s.title })),
+        }
+      : {}),
+  };
+  const crumbs = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Courses", path: "/courses" },
+    { name: course.title, path: `/courses/${course.slug}` },
+  ]);
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson([courseLd, crumbs]) }} />
       <div className="max-w-3xl mx-auto">
         <Link
           href="/courses"
@@ -124,7 +226,7 @@ export default async function CourseLandingPage({
 
         {/* Hero */}
         <p className="text-xs font-mono uppercase tracking-[0.3em] text-ocean-400 mb-3">
-          Underground Aquarium · Free course
+          Underground Aquarium · {access.members_only ? "Society class" : "Free course"}
         </p>
         <h1 className="font-display text-4xl sm:text-5xl text-white glow-text mb-4">
           {course.title}
@@ -157,6 +259,7 @@ export default async function CourseLandingPage({
           >
             {cta}
           </Link>
+          <ShareButton url={pageUrl} title={`${course.title}, ${access.members_only ? "a Society class" : "a free aquarium course"} on Underground Aquarium`} />
           {courseDone && (
             <Link
               href={certHref}

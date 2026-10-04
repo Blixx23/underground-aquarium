@@ -16,14 +16,16 @@ import { CATEGORIES } from "@/lib/marketplace/categories";
 import NearMeButton, {
   type LocatableRegion,
 } from "@/components/marketplace/NearMeButton";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Free Aquarium Classifieds — Buy, Sell & Give Away Locally",
+  title: "Free Aquarium Classifieds: Buy, Sell & Give Away Locally",
   description:
     "Post aquarium fish, plants, coral, tanks and gear for free. Browse local listings by state and metro area, and deal with keepers near you.",
   alternates: { canonical: "/marketplace" },
+  ...shareMeta({ path: "/marketplace", alt: "Free aquarium classifieds near you" }),
 };
 
 export default async function MarketplacePage() {

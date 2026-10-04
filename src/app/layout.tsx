@@ -49,12 +49,13 @@ export const metadata: Metadata = {
   description:
     "Free local classifieds for aquarium keepers. Buy, sell and trade live fish, shrimp, snails, plants, coral, tanks and gear with people near you. No fees, no commission.",
   keywords: ["aquarium classifieds", "buy fish near me", "sell aquarium fish", "aquarium fish for sale", "aquatic plants for sale", "shrimp for sale", "aquarium trade"],
+  // No title, description or url here on purpose: every page's own title and
+  // description fill those in, so a shared link shows what was shared rather
+  // than the homepage. Pages with a picture of their own set it with shareMeta().
   openGraph: {
-    title: "Buy, sell & trade aquarium fish and gear near you",
-    description: "Free local classifieds for aquarium keepers. Live fish welcome.",
-    url: "https://www.undergroundaquarium.com",
     siteName: "Underground Aquarium",
     type: "website",
+    locale: "en_US",
     images: [
       {
         url: "/og-default.png",
@@ -64,9 +65,9 @@ export const metadata: Metadata = {
       },
     ],
   },
+  // The picture comes from openGraph, so a page's own picture shows on X too.
   twitter: {
     card: "summary_large_image",
-    images: ["/og-default.png"],
   },
   robots: { index: true, follow: true },
 };

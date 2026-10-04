@@ -7,14 +7,41 @@ import SocietySeal from "@/components/society/SocietySeal";
 import VerifyForm from "@/components/verify/VerifyForm";
 import CopyLinkButton from "@/components/verify/CopyLinkButton";
 import { parseCode } from "@/lib/certificates/code";
+import { shareMeta } from "@/lib/seo/share";
 import { SOC_EYEBROW, SOC_GLOW } from "@/lib/society/theme";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Certificate record | Underground Aquarium Registry",
-  robots: { index: false, follow: false },
-};
+/**
+ * A shared certificate link shows the certificate itself: what was earned,
+ * who earned it, and that it's verified. Still kept out of search results.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ code: string }> }): Promise<Metadata> {
+  const { code: raw } = await params;
+  const parsed = parseCode(decodeURIComponent(raw));
+  const robots = { index: false, follow: false };
+  if (parsed.state !== "valid" && parsed.state !== "legacy") return { title: "Certificate Record", robots };
+  const { data } = await supabasePublic.rpc("verify_certificate", { p_code: parsed.code });
+  const r = ((data as CertRecord[] | null) ?? [])[0];
+  if (!r || r.status !== "valid") return { title: "Certificate Record", robots };
+
+  const awarded =
+    r.kind === "membership"
+      ? "Underground Aquarium Society Member"
+      : r.kind === "species"
+        ? `Certified ${r.title ?? ""} Breeder`
+        : r.kind === "course"
+          ? `${r.title ?? "Course"} Certificate`
+          : r.title ?? r.program_name;
+  return {
+    title: `${awarded}: ${r.recipient_name}`,
+    description: `Verified: ${r.recipient_name} earned ${
+      r.kind === "course" ? `the ${r.title ?? ""} course certificate` : awarded
+    } from Underground Aquarium on ${longDate(r.issued_at)}. Certificate ${r.code}.`,
+    robots,
+    ...shareMeta({ path: `/verify/${encodeURIComponent(raw)}`, alt: `${awarded}, awarded to ${r.recipient_name}` }),
+  };
+}
 
 type CertRecord = {
   code: string;

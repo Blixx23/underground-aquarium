@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { POST_AD_PATH } from "@/lib/config";
+import { shareMeta } from "@/lib/seo/share";
 
 const TITLE = "Where to Sell Aquarium Fish Locally (Without Getting Your Listing Pulled)";
 const DESC =
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   title: "Where to Sell Aquarium Fish Locally",
   description: DESC,
   alternates: { canonical: "/where-to-sell-aquarium-fish" },
-  openGraph: { title: TITLE, description: DESC, url: "/where-to-sell-aquarium-fish", type: "article" },
+  ...shareMeta({ path: "/where-to-sell-aquarium-fish", alt: "Where to sell aquarium fish" }),
 };
 
 const FAQ = [

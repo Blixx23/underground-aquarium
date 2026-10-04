@@ -8,6 +8,7 @@ import { breadcrumbJsonLd, itemListJsonLd, ldJson } from "@/lib/marketplace/seo"
 import { LISTING_COLUMNS, type Listing } from "@/lib/marketplace/listings";
 import ListingsBrowser from "@/components/marketplace/ListingsBrowser";
 import { POST_AD_PATH } from "@/lib/config";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 60;
 
@@ -27,6 +28,7 @@ export async function generateMetadata({
     title: `Aquarium Fish for Sale in ${r.name}, ${r.state_code} | ${n > 0 ? `${n} Local Listing${n === 1 ? "" : "s"}` : "Free Classifieds"}`,
     description: `${n > 0 ? `${n} aquarium ${n === 1 ? "listing" : "listings"} near ${r.name} right now. ` : ""}Buy, sell and trade fish, shrimp, coral, plants, tanks and equipment with hobbyists in ${r.name}, ${r.state_name}. Free to post, no fees.`,
     alternates: { canonical: regionHref(r) },
+    ...shareMeta({ path: regionHref(r), alt: `Aquarium fish for sale in ${r.name}, ${r.state_code}` }),
     // An empty area is a thin page; keep it out of Google until someone posts.
     ...(n === 0 ? { robots: { index: false, follow: true } } : {}),
   };

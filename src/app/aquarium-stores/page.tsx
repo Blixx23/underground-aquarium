@@ -10,6 +10,7 @@ import {
   cityPath,
   STATE_NAMES,
 } from "@/lib/stores/places";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 3600;
 
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   description:
     "Search independent aquarium and tropical fish stores across the US by city, state or name. Addresses, phone numbers, hours and reviews.",
   alternates: { canonical: "/aquarium-stores" },
+  ...shareMeta({ path: "/aquarium-stores", alt: "Find an aquarium store near you" }),
 };
 
 export default async function FindAStorePage() {

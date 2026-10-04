@@ -7,6 +7,7 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import RelatedGuides from "@/components/discover/RelatedGuides";
 import { relatedThreads } from "@/lib/discover";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 3600;
 
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title,
     description: term.definition,
-    openGraph: { title, description: term.definition, url: `/glossary/${slug}`, type: "article" },
+    ...shareMeta({ path: `/glossary/${slug}`, alt: `${term.term}, aquarium glossary`, type: "article" }),
     alternates: { canonical: `/glossary/${slug}` },
   };
 }

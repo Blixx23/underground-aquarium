@@ -8,6 +8,7 @@ import {
   countFor,
   regionHref,
 } from "@/lib/marketplace/regions";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 300;
 
@@ -24,6 +25,7 @@ export async function generateMetadata({
     title: `Aquarium Fish for Sale in ${group.name} | ${group.listingCount > 0 ? `${group.listingCount} Local Listing${group.listingCount === 1 ? "" : "s"}` : "Free Classifieds"}`,
     description: `${group.listingCount > 0 ? `${group.listingCount} aquarium ${group.listingCount === 1 ? "listing" : "listings"} across ${group.name} right now. ` : ""}Buy, sell and trade fish, shrimp, coral, plants, tanks and gear with hobbyists in ${group.name}, by metro area. Free to post.`,
     alternates: { canonical: `/marketplace/${group.code.toLowerCase()}` },
+    ...shareMeta({ path: `/marketplace/${group.code.toLowerCase()}`, alt: `Aquarium fish for sale in ${group.name}` }),
     ...(group.listingCount === 0 ? { robots: { index: false, follow: true } } : {}),
   };
 }

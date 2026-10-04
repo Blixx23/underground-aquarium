@@ -17,11 +17,14 @@ import SocietySeal from "@/components/society/SocietySeal";
 import VerifyForm from "@/components/verify/VerifyForm";
 import { CERTIFICATE_PROGRAMS } from "@/lib/certificates/code";
 import { SOC_EYEBROW, SOC_CARD, SOC_RULE, SOC_GLOW } from "@/lib/society/theme";
+import { shareMeta } from "@/lib/seo/share";
 
 export const metadata: Metadata = {
-  title: "Certificate Registry | Underground Aquarium",
+  title: "Certificate Registry",
+  alternates: { canonical: "/verify" },
   description:
     "Verify any certificate issued by Underground Aquarium: memberships, breeder titles, courses and professional certifications.",
+  ...shareMeta({ path: "/verify", alt: "Underground Aquarium certificate registry" }),
 };
 
 const PROGRAM_ICON: Record<string, typeof Fish> = {

@@ -12,6 +12,7 @@ import {
   STATE_NAMES,
   STORES_BASE,
 } from "@/lib/stores/places";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 3600;
 
@@ -40,6 +41,7 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
       top ? `, including shops in ${top}` : ""
     }. Addresses, phone numbers and reviews.`,
     alternates: { canonical: statePath(d.code) },
+    ...shareMeta({ path: statePath(d.code), alt: `Aquarium stores in ${name}` }),
   };
 }
 

@@ -28,14 +28,16 @@ import {
   SOC_GLOW,
 } from "@/lib/society/theme";
 import SocietySeal from "@/components/society/SocietySeal";
+import { shareMeta } from "@/lib/seo/share";
 
 // The roster and dues figures change, but not by the second.
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: `${SOCIETY_NAME} — join the national aquarium society`,
+  title: `${SOCIETY_NAME}: Join the National Aquarium Society`,
   description:
     "One aquarium society, nationwide, open to anyone who keeps fish. A judged breeder award program, a permanent species registry, and recognition that somebody actually verified.",
+  ...shareMeta({ path: "/society", alt: "The Underground Aquarium Society" }),
 };
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;

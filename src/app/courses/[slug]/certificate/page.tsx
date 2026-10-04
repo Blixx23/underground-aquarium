@@ -7,7 +7,7 @@ import CertificateActions from "../../CertificateActions";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Certificate — Underground Aquarium",
+  title: "Your Certificate",
   robots: { index: false },
 };
 
@@ -42,6 +42,20 @@ export default async function CertificatePage({
   if (!completion) redirect(`/courses/${slug}`);
 
   const pdfUrl = `/api/society/certificate?kind=course&course=${course.id}`;
+
+  // The certificate's registry code, for a share link anyone can open. It's
+  // issued the first time the PDF is made, so it may not exist on a first visit.
+  const { data: issued } = await supabase
+    .from("society_certificates")
+    .select("code")
+    .eq("user_id", user.id)
+    .eq("kind", "course")
+    .eq("title", course.title)
+    .eq("status", "valid")
+    .limit(1)
+    .maybeSingle();
+  const certCode = (issued as { code?: string } | null)?.code ?? null;
+  const shareUrl = certCode ? `https://www.undergroundaquarium.com/verify/${certCode}` : null;
 
   return (
     <main className="min-h-screen px-4 pt-24 pb-20 sm:px-6 sm:pt-28">
@@ -88,7 +102,7 @@ export default async function CertificatePage({
         </p>
 
         <div className="mt-8">
-          <CertificateActions />
+          <CertificateActions shareUrl={shareUrl} shareTitle={`I earned the ${course.title} certificate on Underground Aquarium`} />
         </div>
       </div>
     </main>

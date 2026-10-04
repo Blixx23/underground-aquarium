@@ -5,6 +5,7 @@ import { ArrowLeft, MessageSquare, Pin, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import VoteControl from "@/components/forum/VoteControl";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
+import { shareMeta } from "@/lib/seo/share";
 
 export const revalidate = 60;
 
@@ -61,6 +62,7 @@ export async function generateMetadata({
       (cat.description ? `${cat.description} ` : "") +
       `Ask a question or browse answers from fellow fish keepers on Underground Aquarium.`,
     alternates: { canonical: `/forums/${category}` },
+    ...shareMeta({ path: `/forums/${category}`, alt: `${cat.name} forum on Underground Aquarium` }),
     robots: { index: (count ?? 0) >= 3, follow: true },
   };
 }

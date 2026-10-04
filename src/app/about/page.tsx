@@ -3,11 +3,13 @@ import Link from "next/link";
 import { Tag, Store, BookOpen, Newspaper, Wrench, Trophy, MessagesSquare } from "lucide-react";
 import SocietySeal from "@/components/society/SocietySeal";
 import { SOCIETY_PATH } from "@/lib/config";
+import { shareMeta } from "@/lib/seo/share";
 
 export const metadata: Metadata = {
   title: "About",
   description:
     "Underground Aquarium is free classifieds, a care library, forums and a feed for aquarium hobbyists, a directory of real local fish stores, and home of the Underground Aquarium Society.",
+  ...shareMeta({ path: "/about", alt: "About Underground Aquarium" }),
 };
 
 export default function AboutPage() {

@@ -8,7 +8,10 @@ import {
   BadgeCheck,
   Lock,
 } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { shareMeta } from "@/lib/seo/share";
+import { ldJson, SITE } from "@/lib/marketplace/seo";
 import { COURSE_GROUPS, courseGroup, type CourseGroup } from "@/lib/courses/levels";
 import { canTakeMembersCourses } from "@/lib/courses/access";
 import SocietySeal from "@/components/society/SocietySeal";
@@ -19,11 +22,12 @@ import { getMasteryStatus } from "@/lib/courses/masteryStatus";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Free Aquarium Courses for Beginners",
   alternates: { canonical: "/courses" },
   description:
     "Free, guided aquarium courses from Underground Aquarium. Learn the hobby the right way, pass the quizzes, and earn a certificate and a profile badge.",
+  ...shareMeta({ path: "/courses", alt: "Free aquarium courses on Underground Aquarium" }),
 };
 
 type CourseRow = {
@@ -126,8 +130,28 @@ export default async function CoursesPage({
     for (const c of comps ?? []) completed.add(c.course_id);
   }
 
+  // Every course as a list, so Google can show them as a course carousel.
+  const courseListLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: allCourses.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: {
+        "@type": "Course",
+        url: `${SITE}/courses/${c.slug}`,
+        name: c.title,
+        description: c.subtitle ?? c.title,
+        provider: { "@type": "Organization", name: "Underground Aquarium", sameAs: `${SITE}/` },
+      },
+    })),
+  };
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
+      {allCourses.length > 0 && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(courseListLd) }} />
+      )}
       <div className="max-w-4xl mx-auto">
         <p className="text-xs font-mono uppercase tracking-[0.3em] text-ocean-400 mb-3">
           Underground Aquarium

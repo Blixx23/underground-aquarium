@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import EventsList, { type EventCard } from "./EventsList";
+import { shareMeta } from "@/lib/seo/share";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
   description:
     "Aquarium society meetings, fish and frag swaps, auctions, expos and shop events across the US. Find one near you or post your own for free.",
   alternates: { canonical: "/events" },
+  ...shareMeta({ path: "/events", alt: "Aquarium events, swaps and auctions near you" }),
 };
 
 type EventRow = {
