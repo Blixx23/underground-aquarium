@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useForumViewer } from "@/lib/forum/useForumViewer";
@@ -12,6 +12,7 @@ import {
   tooLongMessage,
 } from "@/lib/forum/limits";
 import CharCounter from "@/components/forum/CharCounter";
+import MentionPicker from "@/components/mentions/MentionPicker";
 
 /**
  * Wraps one forum post (the opener or a reply) and adds Edit and Delete for
@@ -50,6 +51,7 @@ export default function EditablePost({
   const viewer = useForumViewer();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(body);
+  const boxRef = useRef<HTMLTextAreaElement>(null);
   const [draftTitle, setDraftTitle] = useState(title ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,12 +168,16 @@ export default function EditablePost({
               />
             </>
           )}
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={isOp ? 10 : 4}
-            className={`${inputClass} resize-y`}
-          />
+          <div className="relative">
+            <textarea
+              ref={boxRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={isOp ? 10 : 4}
+              className={`${inputClass} resize-y`}
+            />
+            <MentionPicker inputRef={boxRef} value={draft} onChange={setDraft} />
+          </div>
           {error && <p className="mt-1 text-xs text-coral-300">{error}</p>}
           <div className="mt-2 flex items-center gap-3">
             <button

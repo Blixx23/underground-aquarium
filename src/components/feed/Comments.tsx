@@ -8,6 +8,8 @@ import Avatar from "@/components/profile/Avatar";
 import SocietySeal from "@/components/society/SocietySeal";
 import { timeAgo, type FeedComment, type FeedKind } from "@/lib/feed";
 import { goToLogin, takeDraft } from "@/lib/loginRedirect";
+import MentionPicker, { sendMentions } from "@/components/mentions/MentionPicker";
+import MentionText from "@/components/mentions/MentionText";
 
 const REPLIES_SHOWN = 2;
 
@@ -113,6 +115,7 @@ export default function Comments({
     });
     if (err) setError(err.message);
     else {
+      if (text.includes("@")) sendMentions({ kind: "comment", item_kind: kind, item_id: postId });
       if (replyTo) setExpanded((s) => new Set(s).add(replyTo.parent_id ?? replyTo.id));
       setBody("");
       setReplyTo(null);
@@ -170,7 +173,7 @@ export default function Comments({
               {c.author_name}
               {c.author_society && <SocietySeal size={12} className="h-3 w-3" />}
             </Link>
-            <p className="whitespace-pre-wrap break-words text-[14px] leading-snug text-slate-200">{c.body}</p>
+            <p className="whitespace-pre-wrap break-words text-[14px] leading-snug text-slate-200"><MentionText text={c.body} /></p>
             {c.like_count > 0 && (
               <span className="absolute -bottom-2.5 right-1 inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#0b2238] px-1.5 py-0.5 text-[11px] text-slate-300 shadow">
                 <Heart className="h-3 w-3 fill-coral-400 text-coral-400" />
@@ -265,6 +268,7 @@ export default function Comments({
             </p>
           )}
           <div className="flex items-end gap-2">
+            <div className="relative flex-1">
             <textarea
               ref={box}
               value={body}
@@ -278,8 +282,10 @@ export default function Comments({
               rows={1}
               maxLength={1000}
               placeholder={replyTo ? `Reply to ${replyTo.author_name.split(" ")[0]}…` : "Write a comment…"}
-              className="min-h-[42px] flex-1 resize-none rounded-2xl border border-ocean-800/60 bg-ocean-900/60 px-3.5 py-2.5 text-base text-white placeholder-slate-500 focus:border-ocean-500 focus:outline-none sm:text-sm"
+              className="block min-h-[42px] w-full resize-none rounded-2xl border border-ocean-800/60 bg-ocean-900/60 px-3.5 py-2.5 text-base text-white placeholder-slate-500 focus:border-ocean-500 focus:outline-none sm:text-sm"
             />
+            <MentionPicker inputRef={box} value={body} onChange={setBody} />
+            </div>
             <button
               type="button"
               onClick={send}

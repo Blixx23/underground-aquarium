@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { goToLogin, takeDraft } from "@/lib/loginRedirect";
 import { MAX_REPLY, tooLongMessage } from "@/lib/forum/limits";
 import CharCounter from "@/components/forum/CharCounter";
+import MentionPicker from "@/components/mentions/MentionPicker";
 
 export default function ReplyBox({
   threadId,
@@ -21,6 +22,7 @@ export default function ReplyBox({
   const router = useRouter();
   const [open, setOpen] = useState(!compact);
   const [body, setBody] = useState("");
+  const boxRef = useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const draftKey = `reply:${threadId}:${parentId ?? "top"}`;
@@ -86,13 +88,17 @@ export default function ReplyBox({
   return (
     <div className={compact ? "mt-2" : "mb-6"}>
       {error && <p className="text-xs text-coral-300 mb-1">{error}</p>}
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder={placeholder}
-        rows={compact ? 2 : 3}
-        className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 resize-none"
-      />
+      <div className="relative">
+        <textarea
+          ref={boxRef}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={placeholder}
+          rows={compact ? 2 : 3}
+          className="w-full rounded-xl bg-ocean-900/60 border border-ocean-800/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:outline-none focus:border-ocean-500 resize-none"
+        />
+        <MentionPicker inputRef={boxRef} value={body} onChange={setBody} />
+      </div>
       <div className="flex items-center gap-3 mt-2">
         <button
           type="button"

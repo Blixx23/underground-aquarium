@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import {
   Fish,
@@ -149,6 +149,16 @@ export default async function PublicProfilePage({ params, searchParams }: Params
     .eq("username", username)
     .maybeSingle();
 
+  // @Mentions are typed by hand, so /u/Salmon868 should still find salmon868.
+  if (!profileData && /^[A-Za-z0-9_]{3,24}$/.test(username)) {
+    const { data: other } = await supabasePublic
+      .from("profiles")
+      .select("username")
+      .ilike("username", username.replace(/_/g, "\\_"))
+      .limit(1)
+      .maybeSingle();
+    if (other?.username && other.username !== username) permanentRedirect(`/u/${other.username}`);
+  }
   if (!profileData || profileData.deleted_at || profileData.suspended_at) notFound();
   const profile = profileData as unknown as Profile;
   const displayName = profile.full_name?.trim() || profile.username || "Aquarist";

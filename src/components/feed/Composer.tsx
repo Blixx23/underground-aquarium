@@ -8,6 +8,7 @@ import Avatar from "@/components/profile/Avatar";
 import SeasonMotif from "@/components/seasonal/SeasonMotif";
 import SeasonGarland from "@/components/seasonal/SeasonGarland";
 import { useSeason } from "@/lib/hooks/useSeason";
+import MentionPicker, { sendMentions } from "@/components/mentions/MentionPicker";
 
 const MAX_PHOTOS = 4;
 const MAX_CHARS = 2000;
@@ -42,6 +43,7 @@ export default function Composer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const boxRef = useRef<HTMLTextAreaElement>(null);
   const season = useSeason();
 
   const canPost = !busy && (body.trim().length > 0 || drafts.length > 0) && body.length <= MAX_CHARS;
@@ -81,6 +83,7 @@ export default function Composer({
         p_images: urls,
       });
       if (rpcErr) throw new Error(rpcErr.message);
+      if (body.includes("@")) sendMentions({ kind: "feed_post" });
 
       drafts.forEach((d) => URL.revokeObjectURL(d.preview));
       setBody("");
@@ -132,7 +135,9 @@ export default function Composer({
         </div>
       </div>
 
+      <div className="relative">
       <textarea
+        ref={boxRef}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={3}
@@ -140,6 +145,8 @@ export default function Composer({
         placeholder={`What's happening in your tanks${season?.composer.promptSuffix ?? ""}, ${name.split(" ")[0]}?`}
         className="block w-full resize-none rounded-xl border border-ocean-700/70 bg-ocean-950/70 px-3.5 py-3 text-base leading-relaxed text-white placeholder-ocean-500 outline-none transition-colors focus:border-ocean-400 sm:text-[15px]"
       />
+      <MentionPicker inputRef={boxRef} value={body} onChange={setBody} />
+      </div>
 
       {drafts.length > 0 && (
         <div className="mt-3 grid grid-cols-4 gap-2">

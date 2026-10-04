@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { checkPostMilestones } from "@/lib/bubbleMilestones";
 import { MAX_OPENER, MAX_TITLE, MIN_TITLE, tooLongMessage } from "@/lib/forum/limits";
+import { notifyMentions } from "@/lib/mentions.server";
 
 function slugify(s: string): string {
   return s
@@ -123,6 +124,15 @@ export async function POST(req: Request) {
     // Don't leave an empty thread behind.
     await supabase.from("forum_threads").delete().eq("id", thread.id);
     return NextResponse.json({ error: postErr.message }, { status: 500 });
+  }
+
+  if (cat.is_public) {
+    await notifyMentions({
+      authorId: user.id,
+      text,
+      link: `/forums/${cat.slug}/${slug}`,
+      where: `a new topic, “${title}”`,
+    });
   }
 
   await awardBubbles(user.id, "first_thread");

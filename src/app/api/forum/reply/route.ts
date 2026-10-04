@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { checkPostMilestones } from "@/lib/bubbleMilestones";
 import { MAX_REPLY, tooLongMessage } from "@/lib/forum/limits";
+import { notifyMentions } from "@/lib/mentions.server";
 
 export async function POST(req: Request) {
   let body: { thread_id?: string; parent_id?: string | null; body?: string };
@@ -104,6 +105,25 @@ export async function POST(req: Request) {
       });
     } catch {
       // ignore
+    }
+  }
+
+  // Anyone @tagged in the reply. Only in public categories, since a tagged
+  // member who can't open the Shop Owners Lounge would hit a dead end.
+  {
+    const { data: cat } = await supabaseAdmin
+      .from("forum_categories")
+      .select("slug, is_public")
+      .eq("id", thread.category_id)
+      .maybeSingle();
+    if (cat?.slug && cat.is_public && inserted?.id) {
+      await notifyMentions({
+        authorId: user.id,
+        text,
+        link: `/forums/${cat.slug}/${thread.slug}#post-${inserted.id}`,
+        where: thread.title ? `a reply on “${thread.title}”` : "a forum reply",
+        skip: [recipient],
+      });
     }
   }
 

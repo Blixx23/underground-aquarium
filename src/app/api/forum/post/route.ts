@@ -9,6 +9,7 @@ import {
   MIN_TITLE,
   tooLongMessage,
 } from "@/lib/forum/limits";
+import { notifyMentions } from "@/lib/mentions.server";
 
 // Editing and deleting forum posts.
 //
@@ -211,6 +212,25 @@ export async function PATCH(req: Request) {
   }
 
   await refreshPages(thread);
+
+  // Someone newly @tagged in the edit hears about it; people tagged before
+  // were already told, and notifyMentions won't tell them twice.
+  if (post.author_id) {
+    const { data: cat } = await supabaseAdmin
+      .from("forum_categories")
+      .select("slug, is_public")
+      .eq("id", thread.category_id)
+      .maybeSingle();
+    if (cat?.slug && cat.is_public) {
+      await notifyMentions({
+        authorId: post.author_id,
+        text,
+        link: post.is_op ? `/forums/${cat.slug}/${thread.slug}` : `/forums/${cat.slug}/${thread.slug}#post-${post.id}`,
+        where: "a forum post",
+      });
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
 

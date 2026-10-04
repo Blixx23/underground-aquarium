@@ -28,6 +28,8 @@ import PhotoViewer from "@/components/feed/PhotoViewer";
 import { formatPrice } from "@/lib/marketplace/listings";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { canCommentInFeed, feedItemPath, timeAgo, type FeedComment, type FeedItem } from "@/lib/feed";
+import MentionPicker, { sendMentions } from "@/components/mentions/MentionPicker";
+import MentionText from "@/components/mentions/MentionText";
 
 const ACTIVITY: Record<
   Exclude<FeedItem["kind"], "post">,
@@ -77,6 +79,7 @@ export default function FeedCard({
   const [edited, setEdited] = useState(Boolean(item.meta?.edited));
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.body ?? "");
+  const editRef = useRef<HTMLTextAreaElement>(null);
   const [saving, setSaving] = useState(false);
   const liking = useRef(false);
 
@@ -195,6 +198,7 @@ export default function FeedCard({
       return;
     }
     setBody(text);
+    if (text.includes("@")) sendMentions({ kind: "feed_post", id: item.id });
     setEdited(true);
     setEditing(false);
     setError(null);
@@ -316,7 +320,9 @@ export default function FeedCard({
         {isPost ? (
           editing ? (
             <div className="mt-3">
+              <div className="relative">
               <textarea
+                ref={editRef}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 maxLength={2000}
@@ -324,6 +330,8 @@ export default function FeedCard({
                 autoFocus
                 className="w-full resize-y rounded-xl border border-ocean-700/70 bg-ocean-950/70 px-3.5 py-2.5 text-base leading-relaxed text-white focus:border-ocean-500 focus:outline-none sm:text-[15px]"
               />
+              <MentionPicker inputRef={editRef} value={draft} onChange={setDraft} />
+              </div>
               <div className="mt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -345,7 +353,7 @@ export default function FeedCard({
             </div>
           ) : (
             body && (
-              <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ocean-50">{body}</p>
+              <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ocean-50"><MentionText text={body} /></p>
             )
           )
         ) : (

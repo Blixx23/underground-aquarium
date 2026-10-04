@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { linkMentionsInMarkdown } from "@/lib/mentions";
 
 // Server-rendered markdown for forum posts. react-markdown does NOT render raw
 // HTML (no rehype-raw here), so anything a user types as HTML is escaped —
@@ -73,7 +74,7 @@ export default function Markdown({ children }: { children: string }) {
           },
         }}
       >
-        {children}
+        {linkMentionsInMarkdown(children)}
       </ReactMarkdown>
     </div>
   );

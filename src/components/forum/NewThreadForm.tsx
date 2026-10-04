@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, PenLine, ImagePlus, X } from "lucide-react";
@@ -14,6 +14,7 @@ import {
   tooLongMessage,
 } from "@/lib/forum/limits";
 import CharCounter from "@/components/forum/CharCounter";
+import MentionPicker from "@/components/mentions/MentionPicker";
 
 const MAX_PHOTOS = 4;
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // checked before converting and shrinking
@@ -31,6 +32,7 @@ export default function NewThreadForm({
   const supabase = createClient();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const boxRef = useRef<HTMLTextAreaElement>(null);
   const [images, setImages] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -225,13 +227,17 @@ export default function NewThreadForm({
         <label className="block text-xs text-ocean-400">Body</label>
         <CharCounter length={body.trim().length} max={MAX_OPENER} />
       </div>
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="Share the details. Markdown supported."
-        rows={10}
-        className={`${inputClass} resize-y`}
-      />
+      <div className="relative">
+        <textarea
+          ref={boxRef}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Share the details. Type @ to mention a member. Markdown supported."
+          rows={10}
+          className={`${inputClass} resize-y`}
+        />
+        <MentionPicker inputRef={boxRef} value={body} onChange={setBody} />
+      </div>
 
       {/* Photos */}
       <label className="block text-xs text-ocean-400 mb-2 mt-4">

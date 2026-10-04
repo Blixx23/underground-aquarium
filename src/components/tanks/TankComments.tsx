@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import MentionPicker, { sendMentions } from "@/components/mentions/MentionPicker";
+import MentionText from "@/components/mentions/MentionText";
 
 type Comment = {
   id: string;
@@ -32,6 +34,7 @@ export default function TankComments({
   const [supabase] = useState(() => createClient());
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [body, setBody] = useState("");
+  const boxRef = useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +63,7 @@ export default function TankComments({
         },
       ]);
       setBody("");
+      if (text.includes("@")) sendMentions({ kind: "tank_comment", tank_id: tankId });
     } catch {
       setError("Couldn't post — please try again.");
     } finally {
@@ -133,7 +137,7 @@ export default function TankComments({
                   </div>
                 </div>
                 <p className="text-ocean-200 text-sm mt-1 whitespace-pre-wrap">
-                  {c.body}
+                  <MentionText text={c.body} />
                 </p>
               </div>
             );
@@ -143,13 +147,17 @@ export default function TankComments({
 
       {currentUserId ? (
         <div>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={3}
-            placeholder="Add a comment…"
-            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-ocean-400 focus:outline-none focus:border-emerald-500/40"
-          />
+          <div className="relative">
+            <textarea
+              ref={boxRef}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={3}
+              placeholder="Add a comment… (type @ to mention someone)"
+              className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-ocean-400 focus:outline-none focus:border-emerald-500/40"
+            />
+            <MentionPicker inputRef={boxRef} value={body} onChange={setBody} />
+          </div>
           {error && <p className="text-xs text-red-300 mt-2">{error}</p>}
           <div className="mt-2">
             <button

@@ -69,6 +69,7 @@ Changes save immediately. If one doesn't save you'll see "Couldn't save that. Tr
 | Switch | What it covers |
 | --- | --- |
 | **Feed likes** | Someone likes your post, tank, listing or comment |
+| **Mentions** | Someone tags you with @ in a post or comment |
 | **Feed comments** | Someone comments on your post or replies to your comment |
 | **Forum replies** | Someone replies to your post or comment |
 | **Trophies** | You earn a new trophy |
@@ -100,6 +101,7 @@ New messages don't use the bell at all. They show as a badge on the Messages ico
 | --- | --- | --- |
 | A like | Someone likes your feed post, tank, listing or comment | The liked item |
 | A comment or reply | Someone comments on your post or replies to your comment | The post |
+| **[Name] mentioned you** | Someone tags you with @ in a forum post, a feed post or a comment. See [Mentioning people](/help/mentioning-people) | That post or comment |
 | **New reply** "New reply on [thread]" | Someone replies to your forum thread or comment | That exact reply in the thread |
 | A trophy | You earn a trophy | Your [Trophies](/trophies) cabinet |
 | **You earned bubbles** | You earn 10 or more bubbles at once (small daily amounts don't notify) or our team awards bubbles | [Your profile](/profile) |
