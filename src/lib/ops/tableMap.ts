@@ -88,10 +88,11 @@ ${MODERATION_QUEUES}
   next_send_at, stop_reason, cycle).
 - email_settings: paused, bulk_paused, daily_bulk_cap.
 
-## Key dates (Admin > Dashboard > Key dates)
-- important_dates: renewals and deadlines Chris can't miss. title, due_on (date), category (legal, domain, money,
-  society, other), repeat_months (null = one-off), remind_days, remind_on (= due_on - remind_days; it shows on the
-  Dashboard from that day), done_at (null = still open), last_done_at. Mention any open date due within 14 days.
+## Renewals (Admin > Dashboard > Renewals)
+- renewals: everything that expires (domains, the DMCA agent, subscriptions, licenses). name, kind, provider,
+  expires_on (date, null = unknown), renew_months, auto_renew, cost_cents, remind_days, remind_on (= expires_on -
+  remind_days; it shows on the Dashboard from that day). Flag anything expiring within 14 days, anything already
+  expired, and rows with no expires_on.
 
 ## The AI team itself
 - ops_findings (your tickets: worker_key, kind, risk, status, title, created_at), ops_runs (past runs, cost_cents),

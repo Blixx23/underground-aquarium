@@ -76,17 +76,16 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   // Today
   {
     href: "/admin", label: "Dashboard", sub: "Everything waiting on you", group: "today", Icon: LayoutDashboard, exact: true,
-    about: "Everything waiting on you, in one place, plus the key dates you can't miss.",
+    about: "Everything waiting on you, in one place, plus everything that expires (domains, the DMCA agent, subscriptions).",
     tab: "Waiting",
-    also: [{ href: "/admin/dates", label: "Key dates" }],
+    also: [{ href: "/admin/renewals", label: "Renewals" }],
     queues: [
       {
-        label: "Key dates coming up",
-        table: "important_dates",
-        whereNull: ["done_at"],
+        label: "Renewals coming up",
+        table: "renewals",
         onOrBeforeToday: "remind_on",
         since: "remind_on",
-        href: "/admin/dates",
+        href: "/admin/renewals",
       },
     ],
   },
