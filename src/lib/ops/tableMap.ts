@@ -79,6 +79,7 @@ ${MODERATION_QUEUES}
 
 ## Species guide and content
 - species (common_name, slug, water_type, care_level), species_photos, species_videos,
+  species_suggestions (member species requests; status, ai_review = the AI check's verdict, ai_reviewed_at),
   glossary_terms, public_breeding_guides.
 
 ## Email

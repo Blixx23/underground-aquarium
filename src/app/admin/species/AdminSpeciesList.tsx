@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Loader2, Fish, Link2, Plus } from "lucide-react";
+import { Check, X, Loader2, Fish, Link2, Plus, Sparkles, RefreshCw } from "lucide-react";
+import { SPECIES_OPTIONS, type AiReview } from "@/lib/species/fields";
 
 // Matches the species_submission_thanks bubble rule (step69 SQL).
 const THANKS_BUBBLES = 10;
@@ -25,6 +26,8 @@ export type QueueSuggestion = {
   suggester_name: string | null;
   /** Library fish with overlapping names, best first. */
   matches: { slug: string; common_name: string }[];
+  /** The saved AI check, if it has run. */
+  ai: AiReview | null;
 };
 
 export type LibraryFish = {
@@ -35,25 +38,34 @@ export type LibraryFish = {
   group_name: string | null;
 };
 
-const OPTIONS = {
-  water_type: ["Freshwater", "Brackish"],
-  temperament: ["Peaceful", "Semi-aggressive", "Aggressive"],
-  social: ["Schooling", "Groups", "Social", "Pairs", "Solitary", "Colony", "Harem"],
-  swim_level: ["Top", "Mid-top", "Middle", "Mid-bottom", "Bottom", "All"],
-  diet: ["Omnivore", "Carnivore", "Herbivore"],
-  care_level: ["Beginner", "Intermediate", "Advanced", "Expert"],
-  suitability: ["Common", "Intermediate", "Advanced", "Expert", "Kept but not recommended"],
-  breeding_type: [
-    "Egg-scatterer",
-    "Egg-depositor",
-    "Egg-layer",
-    "Substrate spawner",
-    "Cave spawner",
-    "Mouthbrooder",
-    "Bubble-nester",
-    "Livebearer",
-  ],
-} as const;
+const OPTIONS = SPECIES_OPTIONS;
+
+// One AI check at a time: each reads the whole library, so ten requests
+// shouldn't fire ten big calls at once.
+let aiChain: Promise<unknown> = Promise.resolve();
+function queueAiCheck(id: string, force: boolean): Promise<AiReview> {
+  const run = aiChain.then(async () => {
+    const res = await fetch("/api/admin/species-suggestions/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, force }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { review?: AiReview; error?: string };
+    if (!res.ok || !data.review) throw new Error(data.error ?? "The AI check failed.");
+    return data.review;
+  });
+  aiChain = run.catch(() => undefined);
+  return run;
+}
+
+const VERDICT_LABEL: Record<AiReview["verdict"], { text: string; tone: string }> = {
+  already_listed: { text: "Already in the library", tone: "border-sky-400/40 bg-sky-500/10 text-sky-200" },
+  another_name: { text: "Another name for a fish we have", tone: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200" },
+  too_broad: { text: "Too broad: a group, not one species", tone: "border-amber-400/40 bg-amber-400/10 text-amber-200" },
+  add_new: { text: "New: add it to the library", tone: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200" },
+  turn_down: { text: "Turn it down", tone: "border-coral-400/40 bg-coral-500/10 text-coral-300" },
+  unsure: { text: "Not sure: check it yourself", tone: "border-white/15 bg-white/5 text-ocean-200" },
+};
 
 function whenLabel(iso: string | null): string {
   if (!iso) return "";
@@ -114,6 +126,9 @@ function Request({
   const [aliasQuery, setAliasQuery] = useState("");
   const [note, setNote] = useState("");
   const [thanks, setThanks] = useState(true);
+  const [ai, setAi] = useState<AiReview | null>(s.ai);
+  const [aiBusy, setAiBusy] = useState(!s.ai);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [f, setF] = useState<Record<string, string>>({
     common_name: s.common_name,
     scientific_name: s.scientific_name ?? "",
@@ -142,6 +157,42 @@ function Request({
     body: "",
   });
   const set = (k: string, v: string) => setF((cur) => ({ ...cur, [k]: v }));
+
+  function runAi(force: boolean) {
+    setAiBusy(true);
+    setAiError(null);
+    queueAiCheck(s.id, force)
+      .then(setAi)
+      .catch((e) => setAiError(e instanceof Error ? e.message : "The AI check failed."))
+      .finally(() => setAiBusy(false));
+  }
+
+  // Check every request that hasn't been checked yet, as soon as the page opens.
+  useEffect(() => {
+    if (!s.ai) runAi(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Put the AI's suggestion into the right form. Nothing is sent until the admin presses the button. */
+  function applySuggestion() {
+    if (!ai) return;
+    if (ai.verdict === "another_name" && ai.alias_slug) {
+      setAliasSlug(ai.alias_slug);
+      setMode("alias");
+    } else if (ai.verdict === "add_new") {
+      setF((cur) => ({ ...cur, ...(ai.species ?? {}) }));
+      setMode("create");
+    } else if (ai.member_reason) {
+      setNote(ai.member_reason);
+      setMode("dismiss");
+    }
+  }
+
+  // Alias choices: the name matches plus any fish the AI pointed to.
+  const aliasChoices = useMemo(() => {
+    const seen = new Set<string>();
+    return [...(ai?.matches ?? []), ...s.matches].filter((m) => (seen.has(m.slug) ? false : (seen.add(m.slug), true)));
+  }, [ai, s.matches]);
 
   const aliasOptions = useMemo(() => {
     const q = aliasQuery.trim().toLowerCase();
@@ -269,6 +320,83 @@ function Request({
         </div>
       </div>
 
+      <div className="mt-4 rounded-xl border border-violet-400/25 bg-violet-500/[0.06] p-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-violet-200">
+            <Sparkles className="h-3.5 w-3.5" /> AI check
+          </p>
+          {!aiBusy && (
+            <button
+              type="button"
+              onClick={() => runAi(true)}
+              className="inline-flex items-center gap-1 text-xs text-ocean-400 hover:text-white"
+            >
+              <RefreshCw className="h-3 w-3" /> Re-check
+            </button>
+          )}
+        </div>
+        {aiBusy ? (
+          <p className="inline-flex items-center gap-2 text-sm text-ocean-300">
+            <Loader2 className="h-4 w-4 animate-spin" /> Checking it against the whole species library…
+          </p>
+        ) : aiError ? (
+          <p className="text-sm text-coral-300">{aiError}</p>
+        ) : ai ? (
+          <div className="space-y-2 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${VERDICT_LABEL[ai.verdict].tone}`}>
+                {VERDICT_LABEL[ai.verdict].text}
+              </span>
+              <span className="text-xs text-ocean-500">{ai.confidence} confidence</span>
+              {(ai.identified_as.common_name || ai.identified_as.scientific_name) && (
+                <span className="text-xs text-ocean-300">
+                  Means: {ai.identified_as.common_name}
+                  {ai.identified_as.scientific_name ? <i> ({ai.identified_as.scientific_name})</i> : null}
+                </span>
+              )}
+            </div>
+            {ai.summary && <p className="text-ocean-200">{ai.summary}</p>}
+            {ai.matches.length > 0 && (
+              <ul className="space-y-0.5 text-xs text-ocean-300">
+                {ai.matches.map((m) => (
+                  <li key={m.slug}>
+                    <a href={`/species/${m.slug}`} target="_blank" className="text-emerald-300 hover:underline">
+                      {m.common_name}
+                    </a>{" "}
+                    <span className="text-ocean-500">({m.relation})</span>
+                    {m.why ? ` ${m.why}` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {ai.member_reason && ai.verdict !== "add_new" && ai.verdict !== "another_name" && (
+              <p className="text-xs text-ocean-400">
+                Reason they&apos;d see: <span className="text-ocean-200">{ai.member_reason}</span>
+              </p>
+            )}
+            {ai.double_check.length > 0 && (
+              <ul className="list-disc space-y-0.5 pl-4 text-xs text-amber-200/90">
+                {ai.double_check.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            )}
+            {ai.verdict !== "unsure" && (
+              <button
+                type="button"
+                onClick={applySuggestion}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-violet-500/80 px-4 py-1.5 text-xs font-semibold text-white hover:bg-violet-500"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Use this
+              </button>
+            )}
+            <p className="text-[11px] text-ocean-600">
+              Suggestion only. Nothing happens until you press the button below. Cost about {ai.cost_cents.toFixed(1)}¢.
+            </p>
+          </div>
+        ) : null}
+      </div>
+
       <div className="mt-4 flex flex-wrap gap-2">
         {(
           [
@@ -350,7 +478,7 @@ function Request({
             “{s.common_name}” gets added as another name, so people searching it find the right fish.
           </p>
           <div className="flex flex-wrap gap-2">
-            {s.matches.map((m) => (
+            {aliasChoices.map((m) => (
               <button
                 key={m.slug}
                 type="button"

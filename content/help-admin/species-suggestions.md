@@ -72,6 +72,23 @@ The database adds the member's name to that fish's other names, marks the reques
 
 **Known issue:** the page text says both actions give the requester 25 bubbles, but the server only hands out bubbles when the database reports the request as "added" (a new species). The member guide tells members that another-name results earn no bubbles. If you want to reward an another-name request, award the bubbles by hand on [Bubbles](/admin/help/bubbles-admin).
 
+## What does the AI check do?
+Every request gets an **AI check** box as soon as the page opens. It reads the member's name, scientific name and note, then checks them against the whole species library: common names, scientific names, other names, former names, trade codes, groups and variants. It catches misspellings and plurals ("Corydora" for Corydoras) and hobby nicknames ("pleco", "cory").
+
+It gives one verdict:
+- **Already in the library**: the fish and that name are already there.
+- **Another name for a fish we have**: the fish is there but this name isn't recorded yet.
+- **Too broad: a group, not one species**: they asked for a whole group like "Corydora" or "tetra" and the library has species in it.
+- **New: add it to the library**: a real freshwater species that isn't listed under any name.
+- **Turn it down**: saltwater, a plant, made up, or not an aquarium animal.
+- **Not sure: check it yourself**: with what to check.
+
+It also shows what it thinks they meant, the library fish that matter, the reason the member would see, anything to double-check, and what the check cost (usually a few cents).
+
+**Use this** puts the suggestion into the right form: picks the fish for **Another name for**, fills in the whole care sheet for **Add to library**, or writes the reason for **Turn down**. Nothing is sent until you check it and press the button. **Re-check** runs it again. Each check is saved, so it only runs once per request (that needs step70 SQL; without it the check runs again each time the page opens).
+
+The checks run one at a time, so with several requests waiting the later ones take a little longer to appear. If the box says the AI isn't set up, the ANTHROPIC_API_KEY setting is missing in Vercel.
+
 ## How do I turn a species request down?
 1. Press **Turn down**.
 2. Pick one of the ready-made reasons or write your own (up to 300 characters). A reason is required: the member sees it. An empty box shows "Pick or write a reason. The member sees it."
