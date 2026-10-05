@@ -22,10 +22,22 @@ export type Species = {
   swim_level: string | null;
   diet: string | null;
   fin_nipper: boolean | null;
+  /** False for fish that eat or uproot live plants. Optional so older selects still fit. */
+  plant_safe?: boolean | null;
   suitability: string | null;
 };
 
 export type StockItem = { species: Species; qty: number };
+
+/** The species columns the builder and Water Check read. */
+export const BUILDER_SPECIES_COLUMNS =
+  "slug, common_name, also_known_as, scientific_name, group_name, water_type, temp_min_f, temp_max_f, ph_min, ph_max, gh_min, gh_max, max_size_in, min_tank_gal, temperament, social, min_group_size, swim_level, diet, fin_nipper, plant_safe, suitability";
+
+/** A one-tap change the builder can make to clear an issue. */
+export type IssueFix =
+  | { label: string; type: "remove"; slug: string }
+  | { label: string; type: "qty"; slug: string; qty: number }
+  | { label: string; type: "gallons"; gallons: number };
 
 export type Issue = {
   level: "conflict" | "caution" | "note";
@@ -33,6 +45,7 @@ export type Issue = {
   detail: string;
   /** Species the issue is about, so the list can mark them. */
   slugs?: string[];
+  fixes?: IssueFix[];
 };
 
 export type Equipment = {
@@ -245,6 +258,15 @@ export function computeEquipment(
   return { heaterWattsLow, heaterWattsHigh, filterGphLow, filterGphHigh, heaterNote, heaterNeeded, setPointF };
 }
 
+/** Standard US tank sizes, smallest first. */
+export const COMMON_SIZES = [5, 10, 20, 29, 40, 55, 75, 90, 125, 150, 180, 220, 300];
+
+/** The first common size where this stock sits comfortably below the "near capacity" line. */
+function roomyTankSize(gallons: number, pct: number): number | null {
+  const need = (gallons * pct) / (STOCK_NEAR_PCT - 5);
+  return COMMON_SIZES.find((s) => s > gallons && s >= need) ?? null;
+}
+
 function list(names: string[]): string {
   if (names.length <= 1) return names.join("");
   if (names.length === 2) return `${names[0]} and ${names[1]}`;
@@ -276,6 +298,10 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         title: `${s.common_name} is tight in this tank`,
         detail: `${s.common_name} is usually kept in ${s.min_tank_gal}+ gallons, and ${gal} is on the small side. Fine short term or for a single fish, but a bigger tank should be the plan.`,
         slugs: [s.slug],
+        fixes: [
+          { label: `Try ${s.min_tank_gal} gallons`, type: "gallons", gallons: s.min_tank_gal },
+          { label: `Remove ${s.common_name}`, type: "remove", slug: s.slug },
+        ],
       });
     } else {
       issues.push({
@@ -283,6 +309,10 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         title: `${s.common_name} needs a much bigger tank`,
         detail: `${s.common_name} really needs around ${s.min_tank_gal} gallons. At ${gal} it would be stunted or constantly stressed. Hold off until you can size up.`,
         slugs: [s.slug],
+        fixes: [
+          { label: `Remove ${s.common_name}`, type: "remove", slug: s.slug },
+          { label: `Try ${s.min_tank_gal} gallons`, type: "gallons", gallons: s.min_tank_gal },
+        ],
       });
     }
   }
@@ -322,6 +352,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
             .map((s) => `${s.common_name} ${s.temp_min_f}-${s.temp_max_f}°F`)
             .join(", ")}.`,
       slugs: odd ? [odd.slug] : temp.known.map((s) => s.slug),
+      fixes: odd ? [{ label: `Remove ${odd.common_name}`, type: "remove", slug: odd.slug }] : undefined,
     });
   }
 
@@ -338,6 +369,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         ? `${odd.common_name} likes pH ${odd.ph_min}-${odd.ph_max}, which doesn't overlap with the others. Many fish settle into stable water fine, but it's worth knowing before you mix them.`
         : "Their ideal pH ranges don't overlap. Many fish settle into stable water fine, but it's worth knowing before you mix them.",
       slugs: odd ? [odd.slug] : ph.known.map((s) => s.slug),
+      fixes: odd ? [{ label: `Remove ${odd.common_name}`, type: "remove", slug: odd.slug }] : undefined,
     });
   }
 
@@ -351,7 +383,27 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
     });
   }
 
-  const hardness = overlap(species, (s) => s.gh_min, (s) => s.gh_max);
+  // Hardness: soft-water and hard-water fish (tetras with African cichlids)
+  // can pass the pH check yet still want very different water. A caution on
+  // its own, only a note when the pH warning above already says the same thing.
+  const gLo = (s: Species) => s.gh_min;
+  const gHi = (s: Species) => s.gh_max;
+  const hardness = overlap(species, gLo, gHi);
+  if (hardness.known.length > 1 && !hardness.range) {
+    const odd = oddOneOut(hardness.known, gLo, gHi);
+    const phFlagged = ph.known.length > 1 && !ph.range;
+    issues.push({
+      level: phFlagged ? "note" : "caution",
+      title: "Water hardness preferences differ",
+      detail: odd
+        ? `${odd.common_name} likes ${odd.gh_min}-${odd.gh_max} dGH, which doesn't overlap with the others. Soft-water and hard-water fish rarely do their best in the same tank.`
+        : `Their ideal hardness ranges don't overlap (${hardness.known
+            .map((s) => `${s.common_name} ${s.gh_min}-${s.gh_max} dGH`)
+            .join(", ")}). Soft-water and hard-water fish rarely do their best in the same tank.`,
+      slugs: odd ? [odd.slug] : hardness.known.map((s) => s.slug),
+      fixes: odd ? [{ label: `Remove ${odd.common_name}`, type: "remove", slug: odd.slug }] : undefined,
+    });
+  }
 
   // Schooling minimums
   for (const { species: s, qty } of stock) {
@@ -361,6 +413,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         title: `${s.common_name} needs a group`,
         detail: `Keep at least ${s.min_group_size} together. You have ${qty}. Too few leaves them stressed, hiding, and often nippier.`,
         slugs: [s.slug],
+        fixes: [{ label: `Make it ${s.min_group_size}`, type: "qty", slug: s.slug, qty: s.min_group_size }],
       });
     }
   }
@@ -379,6 +432,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
           targets.map((t) => t.common_name)
         )} ${targets.length === 1 ? "has" : "have"} the long, slow fins they go for. Swap one side, or keep the nippers in a bigger group to spread it out.`,
         slugs: [...nippers, ...targets].map((s) => s.slug),
+        fixes: nippers.slice(0, 2).map((n) => ({ label: `Remove ${n.common_name}`, type: "remove" as const, slug: n.slug })),
       });
     } else if (species.length > 1) {
       issues.push({
@@ -392,7 +446,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
 
   // Predation by size. Hunters and bullies go after anything half their size;
   // even peaceful fish swallow tankmates a quarter their size (goldfish and
-  // angelfish eat neons). Snails are safe in their shells.
+  // angelfish eat neons). Snails are safe in their shells from smaller fish.
   const seen = new Set<string>();
   for (const a of species) {
     // Shrimp and snails don't eat fish; crayfish and crabs do.
@@ -401,7 +455,8 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
     const aSize = a.max_size_in ?? 0;
     const prey: { s: Species; ratio: number }[] = [];
     for (const b of species) {
-      if (a.slug === b.slug || /snail/i.test(`${b.group_name} ${b.common_name}`)) continue;
+      // Small fish can't crack a snail shell; big cichlids, puffers and the like can.
+      if (a.slug === b.slug || (/snail/i.test(`${b.group_name} ${b.common_name}`) && aSize < 8)) continue;
       const bSize = b.max_size_in ?? 0;
       const ratio = bSize > 0 ? aSize / bSize : 0;
       const risky = hunter ? ratio >= 2 && aSize >= 2.5 : ratio >= 4 && aSize >= 4;
@@ -425,6 +480,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         serious ? "" : " Adding them as adults, bigger than a mouthful, lowers the risk."
       }`,
       slugs: [a.slug, ...prey.map((p) => p.s.slug)],
+      fixes: serious ? [{ label: `Remove ${a.common_name}`, type: "remove", slug: a.slug }] : undefined,
     });
   }
 
@@ -454,6 +510,20 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         biggerFish.slice(0, 3).map((s) => s.common_name)
       )}, but most baby shrimp will be eaten. Thick moss or plants give the colony a chance to grow.`,
       slugs: shrimp.map((s) => s.slug),
+    });
+  }
+
+  // Plant eaters: a heads-up, not a problem. Plenty of people keep them with
+  // tough plants (anubias, java fern) or no live plants at all.
+  const plantEaters = species.filter((s) => s.plant_safe === false);
+  if (plantEaters.length > 0) {
+    issues.push({
+      level: "note",
+      title: plantEaters.length === 1 ? `${plantEaters[0].common_name} eats plants` : "Some of these eat plants",
+      detail: `${list(plantEaters.map((s) => s.common_name))} ${
+        plantEaters.length === 1 ? "tends" : "tend"
+      } to eat or uproot live plants. Go with tough plants like anubias and java fern tied to wood or rock, or plan on an unplanted tank.`,
+      slugs: plantEaters.map((s) => s.slug),
     });
   }
 
@@ -497,22 +567,33 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
       title: bettas.length === 1 ? `More than one ${bettas[0].species.common_name}` : "More than one betta",
       detail: "Male bettas fight, often to the death. Keep one per tank unless they're fully divided.",
       slugs: bettas.map((b) => b.species.slug),
+      fixes:
+        bettas.length === 1
+          ? [{ label: "Keep just one", type: "qty", slug: bettas[0].species.slug, qty: 1 }]
+          : bettas.slice(1).map((b) => ({ label: `Remove ${b.species.common_name}`, type: "remove" as const, slug: b.species.slug })),
     });
   }
 
   // Stocking + equipment
   const stocking = computeStocking(g, stock);
+  // The smallest common tank size that brings the build under the "near" line.
+  const roomyGal = g > 0 ? roomyTankSize(g, stocking.pct) : null;
+  const sizeFix: IssueFix[] | undefined = roomyGal
+    ? [{ label: `Try ${roomyGal} gallons`, type: "gallons", gallons: roomyGal }]
+    : undefined;
   if (g > 0 && stocking.level === "over") {
     issues.push({
       level: "conflict",
       title: "Overstocked",
       detail: `You're well past a cautious stocking limit (about ${stocking.pct}%). Size up the tank or trim the list.`,
+      fixes: sizeFix,
     });
   } else if (g > 0 && stocking.level === "near") {
     issues.push({
       level: "caution",
       title: "Heavily stocked",
       detail: `About ${stocking.pct}% of a cautious limit. Workable with strong filtration and steady water changes, but there's little room to add more.`,
+      fixes: sizeFix,
     });
   }
 
@@ -592,6 +673,9 @@ export function suggestTankmates(
     const bad = next.issues.filter((i) => i.level !== "note").length;
     if (bad > baseBad) continue;
     if (next.stocking.pct >= STOCK_NEAR_PCT) continue;
+    // Only vouch for a fish that leaves a comfortable shared temperature, so
+    // goldfish don't get tropical fish that merely touch their top end.
+    if (next.water.temp && next.water.temp.hi - next.water.temp.lo < 4) continue;
     const zone = swimZone(sp);
     const fillsGap = zone !== "all" && !zones.has(zone);
     const easy = /beginner|easy|common/i.test(sp.suitability ?? "");

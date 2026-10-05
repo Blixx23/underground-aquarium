@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { matchSpeciesSlug } from "@/lib/species/match";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Waves, Heart } from "lucide-react";
+import { ArrowLeft, ChevronRight, Waves, Heart, Fish } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import RelatedGuides from "@/components/discover/RelatedGuides";
 import ListingsStrip from "@/components/discover/ListingsStrip";
@@ -13,6 +13,8 @@ import SpeciesVideos, { type SpeciesVideo } from "@/components/species/SpeciesVi
 import SubmitSpeciesVideo from "@/components/species/SubmitSpeciesVideo";
 import { speciesFaq } from "@/lib/species/faq";
 import { ldJson } from "@/lib/jsonLd";
+import { tankmatesFor } from "@/lib/tankBuilder/species";
+import { buildPath } from "@/lib/tankBuilder/share";
 
 export const revalidate = 3600;
 
@@ -57,9 +59,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
   const description =
     s.summary ??
-    `Care guide and profile for ${full} — water parameters, tank size, temperament, diet, and more at UndergroundAquarium.`;
+    `Care guide and profile for ${full} with water parameters, tank size, temperament, diet, and more at UndergroundAquarium.`;
 
-  const ogTitle = `${s.common_name} — Care Guide & Profile`;
+  const ogTitle = `${s.common_name} Care Guide & Profile`;
   const url = `/species/${slug}`;
 
   // Shared links show our designed card with the fish's name, key numbers
@@ -127,7 +129,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
     a: number | null,
     b: number | null,
     unit: string
-  ): string | null => (a != null && b != null ? `${a}–${b}${unit}` : null);
+  ): string | null => (a != null && b != null ? `${a}-${b}${unit}` : null);
 
   let parent: { slug: string; common_name: string } | null = null;
   if (s.parent_slug) {
@@ -178,7 +180,21 @@ export default async function SpeciesDetailPage({ params }: Params) {
     .select("species_slug", { count: "exact", head: true })
     .eq("species_slug", s.slug);
   const hasBreedingGuide = (breedingReports ?? 0) > 0;
-  const faq = speciesFaq(s, { hasBreedingGuide });
+  // Only real fish get a tank plan; group and genus pages don't have one set of numbers.
+  const plannable = ["species", "variety", "form"].includes(String(s.entry_type ?? "species"));
+  const mates = plannable ? await tankmatesFor(s.slug as string) : null;
+  const planQty = Math.max(1, Number(s.min_group_size) || 1);
+  const planHref = buildPath(s.min_tank_gal ?? null, [{ slug: s.slug as string, qty: planQty }]);
+  const matesHref = mates
+    ? buildPath(mates.gallons, [
+        { slug: s.slug as string, qty: mates.qty },
+        ...mates.picks.slice(0, 3).map((p) => ({ slug: p.slug, qty: p.qty })),
+      ])
+    : null;
+  const faq = speciesFaq(s, {
+    hasBreedingGuide,
+    tankmates: mates ? { names: mates.picks.map((p) => p.common_name), gallons: mates.gallons } : null,
+  });
 
   const fullName = s.scientific_name
     ? `${s.common_name} (${s.scientific_name})`
@@ -186,7 +202,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
 
   const schemaDescription =
     s.summary ??
-    `Care guide and profile for ${fullName} — water parameters, tank size, temperament, diet, and more at UndergroundAquarium.`;
+    `Care guide and profile for ${fullName} with water parameters, tank size, temperament, diet, and more at UndergroundAquarium.`;
 
   // Structured data for search engines (breadcrumbs + care-guide article)
   const jsonLd = [
@@ -350,6 +366,63 @@ export default async function SpeciesDetailPage({ params }: Params) {
           <Stat label="Suitability" value={s.suitability} />
           <Stat label="Origin" value={s.origin} />
         </dl>
+
+        {plannable && (
+          <Link
+            href={planHref}
+            className="mb-8 flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 px-4 py-3.5 text-ocean-100 hover:border-emerald-400/50"
+          >
+            <span className="flex items-center gap-3">
+              <Fish className="h-5 w-5 shrink-0 text-emerald-300" />
+              <span>
+                <span className="block font-medium text-white">Plan a tank with {s.common_name}</span>
+                <span className="block text-sm text-ocean-300">
+                  Opens the Tank Builder with {planQty > 1 ? `${planQty} of them` : "one"} added
+                  {s.min_tank_gal ? ` in a ${s.min_tank_gal} gallon tank` : ""}. Add tankmates and it checks the mix.
+                </span>
+              </span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-emerald-300" />
+          </Link>
+        )}
+
+        {mates && mates.picks.length > 0 && (
+          <section className="mb-8 rounded-2xl border border-ocean-800/60 bg-white/[0.03] p-5">
+            <h2 className="font-display text-2xl text-white">Good tankmates for {s.common_name}</h2>
+            <p className="mt-1 text-sm text-ocean-300">
+              Checked by the Tank Builder in a {mates.gallons} gallon tank: no water, size or temperament problems with{" "}
+              {mates.qty > 1 ? `a group of ${mates.qty}` : "one"} {s.common_name}.
+            </p>
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {mates.picks.map((p) => (
+                <li key={p.slug}>
+                  <Link
+                    href={`/species/${p.slug}`}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 hover:border-emerald-500/40 hover:bg-white/10"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-white">{p.common_name}</span>
+                      <span className="block truncate text-xs text-ocean-400">
+                        {p.why}
+                        {p.qty > 1 ? ` · groups of ${p.qty}+` : ""}
+                      </span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-ocean-400" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {matesHref && (
+              <Link
+                href={matesHref}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-ocean-950 hover:bg-emerald-400"
+              >
+                <Fish className="h-4 w-4" />
+                Try a few together in the Tank Builder
+              </Link>
+            )}
+          </section>
+        )}
 
         <SpeciesVideos videos={videos} slug={s.slug as string} name={s.common_name as string} />
 

@@ -30,7 +30,10 @@ export type Faq = { q: string; a: string };
 const low = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
 const has = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== "";
 
-export function speciesFaq(s: SpeciesFacts, opts: { hasBreedingGuide?: boolean } = {}): Faq[] {
+export function speciesFaq(
+  s: SpeciesFacts,
+  opts: { hasBreedingGuide?: boolean; tankmates?: { names: string[]; gallons: number } | null } = {}
+): Faq[] {
   const n = s.common_name;
   const out: Faq[] = [];
 
@@ -46,9 +49,9 @@ export function speciesFaq(s: SpeciesFacts, opts: { hasBreedingGuide?: boolean }
   }
 
   if (has(s.temp_min_f) && has(s.temp_max_f)) {
-    let a = `Keep a ${n} at ${s.temp_min_f}–${s.temp_max_f}°F`;
-    if (has(s.ph_min) && has(s.ph_max)) a += `, pH ${s.ph_min}–${s.ph_max}`;
-    if (has(s.gh_min) && has(s.gh_max)) a += `, and ${s.gh_min}–${s.gh_max} dGH hardness`;
+    let a = `Keep a ${n} at ${s.temp_min_f}-${s.temp_max_f}°F`;
+    if (has(s.ph_min) && has(s.ph_max)) a += `, pH ${s.ph_min}-${s.ph_max}`;
+    if (has(s.gh_min) && has(s.gh_max)) a += `, and ${s.gh_min}-${s.gh_max} dGH hardness`;
     a += ".";
     if (has(s.water_type)) a += ` It's a ${low(s.water_type)} species.`;
     a += " Stable water matters more than hitting an exact number.";
@@ -65,6 +68,17 @@ export function speciesFaq(s: SpeciesFacts, opts: { hasBreedingGuide?: boolean }
     }
     if (has(s.swim_level)) a += ` It spends most of its time in the ${low(s.swim_level)} of the tank.`;
     out.push({ q: `Is the ${n} aggressive?`, a });
+  }
+
+  // "What fish can live with a betta" is one of the most searched questions.
+  const mates = opts.tankmates;
+  if (mates && mates.names.length >= 2) {
+    const names = mates.names.slice(0, 6);
+    const listed = `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+    out.push({
+      q: `What fish can live with a ${n}?`,
+      a: `In a ${mates.gallons} gallon tank, good tankmates for a ${n} include ${listed}. They share its water needs and won't eat or bully it, or be bullied by it. Every fish is an individual, so watch the first few weeks.`,
+    });
   }
 
   if (has(s.diet)) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Droplets,
@@ -11,7 +11,10 @@ import {
   Thermometer,
   FlaskConical,
   Gauge,
+  Save,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { BUILDER_SPECIES_COLUMNS, type Species, type StockItem } from "@/lib/tankBuilder/engine";
 import {
   checkWater,
   type WaterReading,
@@ -55,11 +58,11 @@ const GROUPS: {
 }[] = [
   {
     title: "Temperature & pH",
-    blurb: "The basics — comfort and acidity.",
+    blurb: "The basics: comfort and acidity.",
     Icon: Thermometer,
     fields: [
-      { key: "temp_f", parameter: "Temperature", label: "Temperature", unit: "°F", placeholder: "78", step: "1", hint: "Safe 66–86°F · most like 74–80" },
-      { key: "ph", parameter: "pH", label: "pH", unit: "", placeholder: "7.2", step: "0.1", hint: "Safe 6.0–8.4 · ideal varies by fish" },
+      { key: "temp_f", parameter: "Temperature", label: "Temperature", unit: "°F", placeholder: "78", step: "1", hint: "Safe 66-86°F · most like 74-80" },
+      { key: "ph", parameter: "pH", label: "pH", unit: "", placeholder: "7.2", step: "0.1", hint: "Safe 6.0-8.4 · ideal varies by fish" },
     ],
   },
   {
@@ -77,7 +80,7 @@ const GROUPS: {
     blurb: "How mineral-rich your water is, and how stable your pH stays.",
     Icon: Gauge,
     fields: [
-      { key: "gh", parameter: "GH", label: "GH", unit: "dGH", placeholder: "8", step: "1", hint: "Soft 4–8, hard 8–12" },
+      { key: "gh", parameter: "GH", label: "GH", unit: "dGH", placeholder: "8", step: "1", hint: "Soft 4-8, hard 8-12" },
       { key: "kh", parameter: "KH", label: "KH", unit: "dKH", placeholder: "5", step: "1", hint: "3+ keeps pH steady" },
     ],
   },
@@ -112,8 +115,69 @@ function findingStyle(level: WaterLevel) {
   return { box: "border-white/10 bg-white/5", icon: "text-ocean-400", I: Info };
 }
 
+type MyTank = { id: string; name: string; items: { slug: string; qty: number }[] | null };
+
 export default function WaterCheckPage() {
   const [water, setWater] = useState<Record<WaterFieldKey, string>>(EMPTY_WATER);
+
+  // Signed-in members can pick one of their tanks: the check then looks at
+  // their actual fish, and the reading can be logged to that tank's history.
+  const [supabase] = useState(() => createClient());
+  const [userId, setUserId] = useState<string | null>(null);
+  const [tanks, setTanks] = useState<MyTank[]>([]);
+  const [tankId, setTankId] = useState("");
+  const [stock, setStock] = useState<StockItem[]>([]);
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = async (uid: string | null) => {
+      if (!active) return;
+      setUserId(uid);
+      if (!uid) return setTanks([]);
+      const { data } = await supabase
+        .from("tanks")
+        .select("id,name,items")
+        .eq("user_id", uid)
+        .order("updated_at", { ascending: false });
+      if (active) setTanks((data as MyTank[]) ?? []);
+    };
+    // Same fallback as the Tank Builder: getUser can come back empty while the
+    // navbar is refreshing the session.
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) load(data.user.id);
+      else supabase.auth.getSession().then(({ data: s }) => load(s.session?.user?.id ?? null));
+    });
+    return () => {
+      active = false;
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    setSaveMsg(null);
+    const tank = tanks.find((t) => t.id === tankId);
+    const items = Array.isArray(tank?.items) ? tank.items : [];
+    if (!tank || items.length === 0) return setStock([]);
+    let active = true;
+    supabase
+      .from("species")
+      .select(BUILDER_SPECIES_COLUMNS)
+      .in("slug", items.map((i) => i.slug))
+      .then(({ data }) => {
+        if (!active) return;
+        const bySlug = new Map(((data ?? []) as unknown as Species[]).map((sp) => [sp.slug, sp]));
+        setStock(
+          items
+            .map((i) => (bySlug.has(i.slug) ? { species: bySlug.get(i.slug)!, qty: Math.max(1, Number(i.qty) || 1) } : null))
+            .filter((x): x is StockItem => x !== null)
+        );
+      });
+    return () => {
+      active = false;
+    };
+  }, [tankId, tanks, supabase]);
 
   const reading: WaterReading = useMemo(() => {
     const num = (s: string): number | null => {
@@ -133,7 +197,34 @@ export default function WaterCheckPage() {
     };
   }, [water]);
 
-  const waterResult = useMemo(() => checkWater(reading, []), [reading]);
+  const waterResult = useMemo(() => checkWater(reading, stock), [reading, stock]);
+
+  async function logReading() {
+    if (!userId || !tankId || saving || waterResult.status === "empty") return;
+    setSaving(true);
+    setSaveMsg(null);
+    const { error } = await supabase.from("water_logs").insert({
+      tank_id: tankId,
+      user_id: userId,
+      measured_at: new Date().toISOString(),
+      ...reading,
+      note: note.trim() || null,
+    });
+    if (error) setSaveMsg({ ok: false, text: "Couldn't log the reading. Please try again." });
+    else {
+      setSaveMsg({ ok: true, text: "Logged. See the history in the Tank Builder." });
+      setNote("");
+      // Same first-test and weekly-streak bubbles the Tank Builder gives.
+      for (const source of ["first_water_test", "water_log_streak_week"]) {
+        fetch("/api/bubbles/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source }),
+        }).catch(() => {});
+      }
+    }
+    setSaving(false);
+  }
 
   // Map each parameter to its result level so inputs can colour themselves live.
   const levelByParam = useMemo(() => {
@@ -160,7 +251,7 @@ export default function WaterCheckPage() {
   if (waterResult.status === "danger") {
     banner = {
       text: "Needs attention now",
-      sub: "Something in your water is stressing your fish — see the steps below.",
+      sub: "Something in your water is stressing your fish. See the steps below.",
       className: "bg-red-500/10 border-red-500/30 text-red-300",
       Icon: AlertTriangle,
     };
@@ -175,8 +266,8 @@ export default function WaterCheckPage() {
     banner =
       noteCount > 0
         ? {
-            text: "Looking good — a couple of notes",
-            sub: "Nothing's wrong. A few values sit at the edge of the ideal range — details below.",
+            text: "Looking good, with a couple of notes",
+            sub: "Nothing's wrong. A few values sit at the edge of the ideal range. Details below.",
             className: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
             Icon: CheckCircle2,
           }
@@ -346,7 +437,7 @@ export default function WaterCheckPage() {
                 </div>
               )}
 
-              {/* Healthy — compact confirmations */}
+              {/* Healthy: compact confirmations */}
               {healthy.length > 0 && (
                 <div className="rounded-xl border border-white/10 bg-white/5 p-4">
                   <p className="text-[11px] uppercase tracking-wide text-ocean-400 mb-3">
@@ -368,16 +459,81 @@ export default function WaterCheckPage() {
             </>
           )}
 
-          {/* Nudge toward the fish-aware tool */}
-          <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-            <Link
-              href="/tank-builder"
-              className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 font-medium"
-            >
-              <Fish className="w-4 h-4" />
-              Keeping fish? Use the Tank Builder for checks tailored to your stock →
-            </Link>
-          </div>
+          {/* Members: check against a saved tank's fish and log the reading to it. */}
+          {userId && tanks.length > 0 ? (
+            <div className="rounded-2xl border border-ocean-800/60 bg-white/5 p-4">
+              <label htmlFor="wc-tank" className="text-sm font-semibold text-white">
+                Check against one of your tanks
+              </label>
+              <p className="mt-0.5 mb-3 text-xs text-ocean-400">
+                Pick a tank to compare these numbers with the fish in it, and save the reading to its history.
+              </p>
+              <select
+                id="wc-tank"
+                value={tankId}
+                onChange={(e) => setTankId(e.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-ocean-950 px-3 py-2.5 text-base text-white focus:border-emerald-500/50 focus:outline-none sm:text-sm"
+              >
+                <option value="">No tank, just check the water</option>
+                {tanks.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+              {tankId && (
+                <>
+                  <p className="mt-2 text-xs text-ocean-400">
+                    {stock.length > 0
+                      ? `Checking against the ${stock.length === 1 ? "fish" : `${stock.length} kinds of fish`} in this tank.`
+                      : "This tank has no fish yet, so only the general checks apply."}
+                  </p>
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    maxLength={200}
+                    placeholder="Optional note (e.g. after a 30% water change)"
+                    className="mt-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white placeholder:text-ocean-500 focus:border-emerald-500/50 focus:outline-none sm:text-sm"
+                  />
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={logReading}
+                      disabled={saving || waterResult.status === "empty"}
+                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400 disabled:opacity-50"
+                    >
+                      <Save className="h-4 w-4" />
+                      Log reading to this tank
+                    </button>
+                    {saveMsg && (
+                      <span className={`text-xs ${saveMsg.ok ? "text-emerald-300" : "text-coral-300"}`}>
+                        {saveMsg.ok ? (
+                          <Link href={`/tank-builder?tank=${tankId}`} className="underline underline-offset-2">
+                            {saveMsg.text}
+                          </Link>
+                        ) : (
+                          saveMsg.text
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+              <Link
+                href="/tank-builder"
+                className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 font-medium"
+              >
+                <Fish className="w-4 h-4" />
+                {userId
+                  ? "Save a tank in the Tank Builder to check readings against your fish and keep a history →"
+                  : "Keeping fish? Use the Tank Builder for checks tailored to your stock →"}
+              </Link>
+            </div>
+          )}
           </div>
         </div>
       </div>

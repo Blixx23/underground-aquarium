@@ -38,6 +38,7 @@ import {
   type Species,
   type StockItem,
   type Issue,
+  type IssueFix,
 } from "@/lib/tankBuilder/engine";
 import { byPopularity } from "@/lib/tankBuilder/popular";
 import { buildPath, parseBuild } from "@/lib/tankBuilder/share";
@@ -47,7 +48,7 @@ import { TANK_PHOTO_MAX_MB, uploadTankPhoto } from "@/components/tanks/tankPhoto
 import { checkWater, type WaterReading, type WaterLevel } from "@/lib/waterCheck/engine";
 import TankVisual, { speciesColor } from "@/components/tank-builder/TankVisual";
 import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
-import { RangeChart, ScoreDial } from "@/components/tank-builder/Insights";
+import { RangeChart, ScoreDial, WaterTrends } from "@/components/tank-builder/Insights";
 
 const FREE_TANK_LIMIT = 4;
 const MAX_PHOTOS = MAX_TANK_PHOTOS;
@@ -452,6 +453,16 @@ export default function TankBuilder({
   }
   function setWaterField(key: WaterFieldKey, value: string) {
     setWater((prev) => ({ ...prev, [key]: value }));
+  }
+  // The one-tap buttons on a problem ("Make it 6", "Remove Oscar", "Try 55 gallons").
+  function applyFix(fix: IssueFix) {
+    if (fix.type === "remove") remove(fix.slug);
+    else if (fix.type === "qty") setQty(fix.slug, fix.qty);
+    else {
+      setUnit("gal");
+      setGallonsInput(String(fix.gallons));
+    }
+    flash(`Done: ${fix.label}`);
   }
 
   function onSearchKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -1383,6 +1394,20 @@ export default function TankBuilder({
                           <div className="min-w-0">
                             <p className="text-[15px] font-semibold text-white">{issue.title}</p>
                             <p className="mt-0.5 text-sm leading-relaxed text-ocean-200">{issue.detail}</p>
+                            {issue.fixes && issue.fixes.length > 0 && (
+                              <div className="mt-2.5 flex flex-wrap gap-2">
+                                {issue.fixes.map((fix) => (
+                                  <button
+                                    key={fix.label}
+                                    type="button"
+                                    onClick={() => applyFix(fix)}
+                                    className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/20"
+                                  >
+                                    {fix.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </li>
                       );
@@ -1625,6 +1650,8 @@ export default function TankBuilder({
                   </div>
                 </div>
               )}
+
+              {user && currentTankId && readings.length > 1 && <WaterTrends readings={readings} />}
 
               {user && currentTankId && readings.length > 0 && (
                 <div className="rounded-xl border border-white/10 bg-white/5 p-4">

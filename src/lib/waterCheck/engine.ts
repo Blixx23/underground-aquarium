@@ -39,6 +39,11 @@ const TEMP_HIGH = 86; // °F
 const TEMP_COOL = 72; // below = cool side of comfortable
 const TEMP_WARM = 82; // above = warm side of comfortable
 const KH_LOW = 3; // dKH; below = weak buffering
+const GH_SOFT = 3; // dGH; below = very soft
+const GH_HARD = 18; // dGH; above = very hard
+// Ammonia and nitrite: test kits step 0, 0.25, 0.5, 1. A 0.25 is a warning
+// (do a water change), 0.5 and up is an emergency.
+const TOXIC_DANGER = 0.5;
 // -----------------------------------------------------------------
 
 function has(v: number | null | undefined): v is number {
@@ -56,7 +61,7 @@ export function checkWater(
 
   // ---------- Universal: cycle & toxicity (no fish needed) ----------
 
-  // Ammonia — should be zero
+  // Ammonia: should be zero
   if (has(reading.ammonia_ppm)) {
     const a = reading.ammonia_ppm;
     if (a <= 0) {
@@ -67,9 +72,9 @@ export function checkWater(
         title: "Ammonia is at zero",
         whatsHappening:
           "No ammonia means your biological filter is keeping up with the waste your fish produce. This is exactly what you want.",
-        howToFix: "Nothing to do — keep up your regular maintenance.",
+        howToFix: "Nothing to do. Keep up your regular maintenance.",
       });
-    } else if (a < 0.25) {
+    } else if (a < TOXIC_DANGER) {
       findings.push({
         parameter: "Ammonia",
         level: "warning",
@@ -78,7 +83,7 @@ export function checkWater(
         whatsHappening:
           "Ammonia is the waste fish and leftover food give off, and it's toxic even at low levels. A trace usually means the tank is still cycling, you're feeding a bit much, or the filter took a hit.",
         howToFix:
-          "Do a 25–50% water change with dechlorinated water, ease off feeding for a day or two, and hold off adding fish until it reads zero.",
+          "Do a 25-50% water change with dechlorinated water, ease off feeding for a day or two, and hold off adding fish until it reads zero.",
       });
     } else {
       findings.push({
@@ -87,14 +92,14 @@ export function checkWater(
         value: fmt(a, " ppm"),
         title: "Ammonia is too high",
         whatsHappening:
-          "Ammonia is toxic, and at this level it's actively stressing or chemically burning your fish. It means the tank can't process waste fast enough — most often an un-cycled new tank, overstocking, or overfeeding.",
+          "Ammonia is toxic, and at this level it's actively stressing or chemically burning your fish. It means the tank can't process waste fast enough, most often because of an un-cycled new tank, overstocking, or overfeeding.",
         howToFix:
           "Do a large (50%) water change right now with dechlorinated water, and another tomorrow if it's still high. Stop feeding for a couple of days, add no fish, and a bottled beneficial-bacteria supplement can speed the cycle.",
       });
     }
   }
 
-  // Nitrite — should be zero
+  // Nitrite: should be zero
   if (has(reading.nitrite_ppm)) {
     const n = reading.nitrite_ppm;
     if (n <= 0) {
@@ -107,16 +112,16 @@ export function checkWater(
           "Zero nitrite means the second stage of your cycle is working. Together with zero ammonia, that's a healthy, cycled tank.",
         howToFix: "Nothing to do here.",
       });
-    } else if (n < 0.25) {
+    } else if (n < TOXIC_DANGER) {
       findings.push({
         parameter: "Nitrite",
         level: "warning",
         value: fmt(n, " ppm"),
         title: "Traces of nitrite",
         whatsHappening:
-          "Nitrite is the middle step of the cycle and still toxic — it stops fish blood from carrying oxygen. Detecting it usually means a tank that's mid-cycle or a filter that was recently disturbed.",
+          "Nitrite is the middle step of the cycle and still toxic. It stops fish blood from carrying oxygen. Detecting it usually means a tank that's mid-cycle or a filter that was recently disturbed.",
         howToFix:
-          "Do a 25–50% water change, hold off on feeding and new fish, and give the filter time. The cycle is done when ammonia and nitrite both sit at zero.",
+          "Do a 25-50% water change, hold off on feeding and new fish, and give the filter time. The cycle is done when ammonia and nitrite both sit at zero.",
       });
     } else {
       findings.push({
@@ -125,14 +130,14 @@ export function checkWater(
         value: fmt(n, " ppm"),
         title: "Nitrite is too high",
         whatsHappening:
-          "At this level nitrite is suffocating your fish — it blocks their blood from carrying oxygen, so you may see them gasping near the surface. The tank isn't fully cycled, or the filter has crashed.",
+          "At this level nitrite is suffocating your fish. It blocks their blood from carrying oxygen, so you may see them gasping near the surface. The tank isn't fully cycled, or the filter has crashed.",
         howToFix:
           "Large (50%) water change now, and again tomorrow if needed. Stop feeding, add no new fish, and consider a beneficial-bacteria supplement.",
       });
     }
   }
 
-  // Nitrate — accumulates; lower is better
+  // Nitrate: accumulates; lower is better
   if (has(reading.nitrate_ppm)) {
     const n = reading.nitrate_ppm;
     if (n <= NITRATE_OK) {
@@ -142,8 +147,8 @@ export function checkWater(
         value: fmt(n, " ppm"),
         title: "Nitrate is in a healthy range",
         whatsHappening:
-          "Nitrate is the harmless end-product of the cycle, and yours is low — a sign of a well-maintained tank.",
-        howToFix: "Nothing to do — your water-change routine is working.",
+          "Nitrate is the harmless end-product of the cycle, and yours is low, a sign of a well-maintained tank.",
+        howToFix: "Nothing to do. Your water-change routine is working.",
       });
     } else if (n <= NITRATE_WATCH) {
       findings.push({
@@ -154,7 +159,7 @@ export function checkWater(
         whatsHappening:
           "Nitrate builds up steadily between water changes. It's far less toxic than ammonia or nitrite, but it's getting to the point where a change is due.",
         howToFix:
-          "A 25–30% water change brings it down. Live plants also soak up nitrate if you want a longer-term buffer.",
+          "A 25-30% water change brings it down. Live plants also soak up nitrate if you want a longer-term buffer.",
       });
     } else if (n <= NITRATE_HIGH) {
       findings.push({
@@ -165,7 +170,7 @@ export function checkWater(
         whatsHappening:
           "Sustained high nitrate stresses fish over time and fuels algae. It usually means water changes are overdue, the tank is overstocked, or you're feeding heavily.",
         howToFix:
-          "Do a 30–50% water change now, then get on a regular weekly schedule. Easing off feeding and adding live plants both help.",
+          "Do a 30-50% water change now, then get on a regular weekly schedule. Easing off feeding and adding live plants both help.",
       });
     } else {
       findings.push({
@@ -174,14 +179,14 @@ export function checkWater(
         value: fmt(n, " ppm"),
         title: "Nitrate is very high",
         whatsHappening:
-          "This is high enough to make fish chronically unwell. It needs to come down gradually — one huge change when nitrate is very high can shock fish, because the swing itself is stressful.",
+          "This is high enough to make fish chronically unwell. It needs to come down gradually. One huge change when nitrate is very high can shock fish, because the swing itself is stressful.",
         howToFix:
           "Do a couple of 30% changes a day or two apart rather than one massive one, then commit to weekly changes. Check whether the tank is overstocked or overfed.",
       });
     }
   }
 
-  // pH — universal extremes only; the right number depends on the fish
+  // pH: universal extremes only; the right number depends on the fish
   if (has(reading.ph)) {
     const p = reading.ph;
     if (p >= PH_LOW && p <= PH_HIGH) {
@@ -192,9 +197,9 @@ export function checkWater(
           value: String(p),
           title: "pH is on the soft, acidic side",
           whatsHappening:
-            "This sits at the acidic end of the normal range — ideal for soft-water fish like tetras, rasboras, and most South American species, but a bit low for hard-water fish like livebearers and African cichlids. What matters most is that it stays steady.",
+            "This sits at the acidic end of the normal range. It's ideal for soft-water fish like tetras, rasboras, and most South American species, but a bit low for hard-water fish like livebearers and African cichlids. What matters most is that it stays steady.",
           howToFix:
-            "Nothing urgent. If your fish prefer harder water, raise it slowly with a little crushed coral, and check your KH — weak buffering is the usual cause of a drifting low pH.",
+            "Nothing urgent. If your fish prefer harder water, raise it slowly with a little crushed coral, and check your KH, since weak buffering is the usual cause of a drifting low pH.",
         });
       } else if (p > PH_HARD_EDGE) {
         findings.push({
@@ -203,9 +208,9 @@ export function checkWater(
           value: String(p),
           title: "pH is on the hard, alkaline side",
           whatsHappening:
-            "This sits at the alkaline end of the normal range — great for livebearers, goldfish, and African cichlids, but a bit high for soft-water fish like tetras and many catfish.",
+            "This sits at the alkaline end of the normal range. It's great for livebearers, goldfish, and African cichlids, but a bit high for soft-water fish like tetras and many catfish.",
           howToFix:
-            "Nothing urgent. If your fish prefer softer water, driftwood or peat lower it gently over time — avoid sudden chemical swings.",
+            "Nothing urgent. If your fish prefer softer water, driftwood or peat lower it gently over time. Avoid sudden chemical swings.",
         });
       } else {
         findings.push({
@@ -216,7 +221,7 @@ export function checkWater(
           whatsHappening:
             "This is a middle-of-the-road pH that suits a broad range of community fish. What matters more than the exact number is that it stays steady.",
           howToFix:
-            "Nothing needed — and avoid chasing a 'perfect' number with chemicals, since a stable pH beats a textbook one.",
+            "Nothing needed. Avoid chasing a 'perfect' number with chemicals, since a stable pH beats a textbook one.",
         });
       }
     } else if (p < PH_LOW) {
@@ -228,7 +233,7 @@ export function checkWater(
         whatsHappening:
           "A low pH can stress fish that prefer neutral or hard water, and very low readings can even stall your biological filter. It's often caused by soft tap water, driftwood, or a depleted buffer (low KH).",
         howToFix:
-          "Don't jolt it back up — adjust slowly. A little crushed coral in the filter raises it gently over time. Check your KH too; weak buffering is usually the real cause.",
+          "Don't jolt it back up. Adjust slowly. A little crushed coral in the filter raises it gently over time. Check your KH too; weak buffering is usually the real cause.",
       });
     } else {
       findings.push({
@@ -239,12 +244,12 @@ export function checkWater(
         whatsHappening:
           "A high pH suits hard-water fish like livebearers and African cichlids but is rough on soft-water fish like tetras and many catfish. It usually reflects hard tap water or rocks/substrate that raise it.",
         howToFix:
-          "Easiest fix is matching fish to your water rather than fighting it. To lower it gently, driftwood or peat help — avoid sudden chemical swings.",
+          "Easiest fix is matching fish to your water rather than fighting it. To lower it gently, driftwood or peat help. Avoid sudden chemical swings.",
       });
     }
   }
 
-  // Temperature — universal extremes only; ideal depends on the fish
+  // Temperature: universal extremes only; ideal depends on the fish
   if (has(reading.temp_f)) {
     const t = reading.temp_f;
     if (t < TEMP_LOW) {
@@ -256,7 +261,7 @@ export function checkWater(
         whatsHappening:
           "Most tropical fish slow down, stop eating, and get more disease-prone below the low 70s. Coldwater fish like goldfish are fine here; tropicals aren't.",
         howToFix:
-          "If you keep tropical fish, add or turn up a heater and raise it a couple of degrees at a time toward 76–78°F.",
+          "If you keep tropical fish, add or turn up a heater and raise it a couple of degrees at a time toward 76-78°F.",
       });
     } else if (t > TEMP_HIGH) {
       findings.push({
@@ -267,7 +272,7 @@ export function checkWater(
         whatsHappening:
           "Warm water holds less oxygen, so fish can end up gasping at the surface, and the heat speeds up their metabolism and stresses them.",
         howToFix:
-          "Cool it gradually — a fan across the surface, a partial cooler-water change, or lifting the lid. Bring it down slowly; sudden swings are worse than the heat itself.",
+          "Cool it gradually with a fan across the surface, a partial cooler-water change, or lifting the lid. Bring it down slowly; sudden swings are worse than the heat itself.",
       });
     } else if (t < TEMP_COOL) {
       findings.push({
@@ -278,7 +283,7 @@ export function checkWater(
         whatsHappening:
           "Comfortable for coldwater fish like goldfish, and the cooler end for many tropicals. Most tropical community fish are happiest a few degrees warmer.",
         howToFix:
-          "If you keep tropicals, nudge a heater up toward 76–78°F a degree at a time. Coldwater setups are fine as-is.",
+          "If you keep tropicals, nudge a heater up toward 76-78°F a degree at a time. Coldwater setups are fine as-is.",
       });
     } else if (t > TEMP_WARM) {
       findings.push({
@@ -287,9 +292,9 @@ export function checkWater(
         value: fmt(t, "°F"),
         title: "Water is on the warm side",
         whatsHappening:
-          "Fine for many fish but toward the warm end — warm water holds less oxygen, so keep an eye out for fish hanging near the surface.",
+          "Fine for many fish but toward the warm end. Warm water holds less oxygen, so keep an eye out for fish hanging near the surface.",
         howToFix:
-          "No action needed unless fish look stressed. To cool it, do so gradually — a fan across the surface helps more than ice.",
+          "No action needed unless fish look stressed. To cool it, do so gradually. A fan across the surface helps more than ice.",
       });
     } else {
       findings.push({
@@ -299,18 +304,65 @@ export function checkWater(
         title: "Temperature is in a comfortable range",
         whatsHappening:
           "A solid middle-of-the-road temperature for most tropical community fish.",
-        howToFix: "Nothing to do — just keep it steady.",
+        howToFix: "Nothing to do. Just keep it steady.",
       });
     }
   }
 
-  // KH — buffering / pH stability
+  // GH: general hardness. No right number for every tank, only extremes.
+  if (has(reading.gh)) {
+    const g = reading.gh;
+    findings.push(
+      g < GH_SOFT
+        ? {
+            parameter: "GH",
+            level: "note",
+            value: fmt(g, " dGH"),
+            title: "Very soft water",
+            whatsHappening:
+              "Your water has very few minerals. Soft-water fish like tetras, rasboras and many South American cichlids love it, but livebearers, goldfish and snails struggle, and snail shells can thin out.",
+            howToFix:
+              "Fine for soft-water fish. For livebearers or snails, a remineralizer or a little crushed coral raises it slowly.",
+          }
+        : g > GH_HARD
+        ? {
+            parameter: "GH",
+            level: "note",
+            value: fmt(g, " dGH"),
+            title: "Very hard water",
+            whatsHappening:
+              "Your water is mineral-rich. Livebearers, goldfish and African cichlids do well in it, but soft-water fish like tetras and rasboras rarely show their best color or breed.",
+            howToFix:
+              "Easiest is picking fish that like hard water. To soften it, mix in some RO or distilled water at each water change.",
+          }
+        : {
+            parameter: "GH",
+            level: "ok",
+            value: fmt(g, " dGH"),
+            title: "Hardness is in a common range",
+            whatsHappening: "Moderate hardness that suits most community fish.",
+            howToFix: "Nothing to do.",
+          }
+    );
+  }
+
+  // KH: buffering / pH stability
+  if (has(reading.kh) && reading.kh >= KH_LOW) {
+    findings.push({
+      parameter: "KH",
+      level: "ok",
+      value: fmt(reading.kh, " dKH"),
+      title: "KH is holding your pH steady",
+      whatsHappening: "Enough buffer that your pH shouldn't swing between water changes.",
+      howToFix: "Nothing to do.",
+    });
+  }
   if (has(reading.kh) && reading.kh < KH_LOW) {
     findings.push({
-      parameter: "KH (buffer)",
+      parameter: "KH",
       level: "note",
       value: fmt(reading.kh, " dKH"),
-      title: "Low carbonate hardness — pH can swing",
+      title: "Low carbonate hardness, so pH can swing",
       whatsHappening:
         "KH is your water's buffer; it's what keeps pH steady. When it's this low, pH can drift or crash between water changes, which is harder on fish than a stable 'wrong' pH.",
       howToFix:
@@ -334,9 +386,9 @@ export function checkWater(
           level: "warning",
           value: String(reading.ph),
           title: "pH doesn't match your stocked fish",
-          whatsHappening: `Your reading is ${reading.ph}, but the fish you've added overlap best around ${lo}–${hi}. Outside that window they're workable but less comfortable and more prone to stress.`,
+          whatsHappening: `Your reading is ${reading.ph}, but the fish you've added overlap best around ${lo}-${hi}. Outside that window they're workable but less comfortable and more prone to stress.`,
           howToFix:
-            "Adjust slowly with natural methods (crushed coral to raise, driftwood/peat to lower) — or, honestly, the calmest path is keeping fish that already suit your tap water. Steady beats perfect.",
+            "Adjust slowly with natural methods (crushed coral to raise, driftwood/peat to lower), or, honestly, the calmest path is keeping fish that already suit your tap water. Steady beats perfect.",
         });
       }
     }
@@ -356,15 +408,35 @@ export function checkWater(
           level: "warning",
           value: fmt(reading.temp_f, "°F"),
           title: "Temperature doesn't match your stocked fish",
-          whatsHappening: `Your reading is ${reading.temp_f}°F, but your fish overlap best between ${lo}–${hi}°F. Too far off and they get sluggish, stop eating, or get stressed.`,
+          whatsHappening: `Your reading is ${reading.temp_f}°F, but your fish overlap best between ${lo}-${hi}°F. Too far off and they get sluggish, stop eating, or get stressed.`,
           howToFix:
-            "Nudge the heater a degree or two at a time until you're inside that range — never a big jump at once.",
+            "Nudge the heater a degree or two at a time until you're inside that range. Never a big jump at once.",
         });
       }
     }
   }
 
-  // (Hardness fit is intentionally left out for now — see note below.)
+  // Hardness fit: softer than pH, so a note. Most captive-bred fish adapt.
+  if (has(reading.gh)) {
+    const withGh = species.filter((s) => s.gh_min != null && s.gh_max != null);
+    if (withGh.length > 0) {
+      const lo = Math.max(...withGh.map((s) => s.gh_min as number));
+      const hi = Math.min(...withGh.map((s) => s.gh_max as number));
+      if (lo <= hi && (reading.gh < lo || reading.gh > hi)) {
+        findings.push({
+          parameter: "GH vs. your fish",
+          level: "note",
+          value: fmt(reading.gh, " dGH"),
+          title: reading.gh < lo ? "Water is softer than your fish like" : "Water is harder than your fish like",
+          whatsHappening: `Your reading is ${reading.gh} dGH, and your fish overlap best between ${lo}-${hi} dGH. Most settle in fine if it stays steady, but they may not color up or breed.`,
+          howToFix:
+            reading.gh < lo
+              ? "A remineralizer or a little crushed coral raises it slowly. Change it gradually over a few water changes."
+              : "Mix some RO or distilled water into your water changes to bring it down a little at a time.",
+        });
+      }
+    }
+  }
 
   // ---------- Overall status ----------
   const enteredAnything =
