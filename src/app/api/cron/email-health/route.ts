@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { cronAuthorised } from "@/lib/email/cronAuth";
 import { SUPPORT_EMAIL } from "@/lib/email/provider";
 import { dispatchOne } from "@/lib/email/queue";
-import type { EmailHealth } from "@/lib/email/health";
+import { readHealth, type EmailHealth } from "@/lib/email/health";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,8 @@ export async function GET(req: Request) {
 
   // Alerts go to the support inbox, never a personal address.
   const admin = SUPPORT_EMAIL;
-  const { data, error } = await supabaseAdmin.rpc("email_health");
+  const read = await readHealth();
+  const error = read.ok ? null : { message: read.error };
   if (error) {
     // The check itself failing is not "ok". Say so, loudly.
     console.error("[email health] could not read health:", error.message);
@@ -37,7 +38,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 
-  const h = data as unknown as EmailHealth;
+  if (!read.ok) return NextResponse.json({ ok: false }, { status: 500 });
+  const h: EmailHealth = read.health;
 
   // Rows that gave up and haven't been reported yet.
   const { data: newFails } = await supabaseAdmin

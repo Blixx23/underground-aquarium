@@ -19,6 +19,8 @@ export type EmailHealth = {
   opened_7d: number;
   suppressed: number;
   ever_sent: boolean;
+  /** Bulk mail waiting only because bulk sending is switched off. Not stuck. */
+  held_bulk: number;
 };
 
 export type HealthRead =
@@ -28,7 +30,32 @@ export type HealthRead =
 export async function readHealth(): Promise<HealthRead> {
   const { data, error } = await supabaseAdmin.rpc("email_health");
   if (error) return { ok: false, error: error.message };
-  return { ok: true, health: data as unknown as EmailHealth };
+  const health = { ...(data as unknown as EmailHealth), held_bulk: 0 };
+
+  // With bulk switched off the worker skips bulk rows on purpose, so they
+  // aren't "stuck". Counting them sent false "the worker isn't running"
+  // alerts every time a campaign queued while bulk was off. Recount stuck
+  // from mail that should be going out: everything when bulk is on, only
+  // receipts and alerts when it's off.
+  if (health.bulk_paused && !health.paused) {
+    const cutoff = new Date(Date.now() - 30 * 60_000).toISOString();
+    const [stuck, held] = await Promise.all([
+      supabaseAdmin
+        .from("email_queue")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending")
+        .eq("bulk", false)
+        .lt("scheduled_at", cutoff),
+      supabaseAdmin
+        .from("email_queue")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending")
+        .eq("bulk", true),
+    ]);
+    if (!stuck.error) health.stuck = stuck.count ?? 0;
+    if (!held.error) health.held_bulk = held.count ?? 0;
+  }
+  return { ok: true, health };
 }
 
 /**
@@ -48,6 +75,12 @@ export function verdict(h: EmailHealth): { tone: "bad" | "warn" | "ok" | "idle";
     return {
       tone: "idle",
       line: `Everything is paused. ${h.pending} message${h.pending === 1 ? "" : "s"} waiting in the queue. Nothing sends until you turn sending on.`,
+    };
+  }
+  if (h.held_bulk > 0 && h.stuck === 0) {
+    return {
+      tone: "warn",
+      line: `Receipts and alerts are sending. ${h.held_bulk} bulk message${h.held_bulk === 1 ? " is" : "s are"} held because bulk mail is off, and will go out in order when you allow it.`,
     };
   }
   if (!h.ever_sent) {
