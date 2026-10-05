@@ -4,6 +4,7 @@ import { ShieldCheck, ArrowRight, Mail, CheckCircle2 } from "lucide-react";
 import { ADMIN_SECTIONS } from "@/lib/admin/sections";
 import { queueStatus } from "@/lib/admin/pending";
 import { readHealth, verdict } from "@/lib/email/health";
+import SectionTabs from "@/components/admin/SectionTabs";
 
 export const metadata: Metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
@@ -49,6 +50,7 @@ export default async function AdminHubPage() {
         <p className="mb-6 text-ocean-400">
           {total > 0 ? `${total} thing${total === 1 ? "" : "s"} waiting on you, oldest first.` : "Everything's caught up."}
         </p>
+        <SectionTabs current="/admin" />
 
         {/* Email gets its own line at the top, because silence from an email
             system is indistinguishable from it working. */}

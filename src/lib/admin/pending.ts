@@ -36,6 +36,11 @@ const societyId = cache(async (): Promise<string | null> => {
 function filtered(q: any, queue: Queue, society: string | null) {
   for (const [col, value] of queue.where ?? []) q = q.eq(col, value);
   if (queue.whereIn) q = q.in(queue.whereIn[0], queue.whereIn[1]);
+  for (const col of queue.whereNull ?? []) q = q.is(col, null);
+  if (queue.onOrBeforeToday) {
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+    q = q.lte(queue.onOrBeforeToday, today);
+  }
   if (queue.society) q = q.eq("club_id", society);
   return q;
 }

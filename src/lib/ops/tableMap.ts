@@ -9,6 +9,8 @@ const MODERATION_QUEUES = [
       const parts = [
         ...(q.where ?? []).map(([c, v]) => `${c} = ${typeof v === "string" ? `'${v}'` : v}`),
         ...(q.whereIn ? [`${q.whereIn[0]} in (${q.whereIn[1].map((v) => `'${v}'`).join(", ")})`] : []),
+        ...(q.whereNull ?? []).map((c) => `${c} is null`),
+        ...(q.onOrBeforeToday ? [`${q.onOrBeforeToday} <= today (Los Angeles)`] : []),
         ...(q.society ? ["Society club only"] : []),
       ];
       return `- ${q.label}: ${q.table} where ${parts.join(" and ")}. Handled at ${q.href ?? s.href}.`;
@@ -85,6 +87,11 @@ ${MODERATION_QUEUES}
 - email_campaigns (key, name, active), email_campaign_steps, email_campaign_enrollments (store_id, status, sent_count,
   next_send_at, stop_reason, cycle).
 - email_settings: paused, bulk_paused, daily_bulk_cap.
+
+## Key dates (Admin > Dashboard > Key dates)
+- important_dates: renewals and deadlines Chris can't miss. title, due_on (date), category (legal, domain, money,
+  society, other), repeat_months (null = one-off), remind_days, remind_on (= due_on - remind_days; it shows on the
+  Dashboard from that day), done_at (null = still open), last_done_at. Mention any open date due within 14 days.
 
 ## The AI team itself
 - ops_findings (your tickets: worker_key, kind, risk, status, title, created_at), ops_runs (past runs, cost_cents),

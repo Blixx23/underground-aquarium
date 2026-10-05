@@ -31,6 +31,10 @@ export type Queue = {
   where?: [column: string, value: string | boolean][];
   /** Column in (values) filter. */
   whereIn?: [column: string, values: string[]];
+  /** Columns that must be empty (e.g. done_at, for things not finished yet). */
+  whereNull?: string[];
+  /** A date column that must be today or earlier (Los Angeles time), for "due soon" reminders. */
+  onOrBeforeToday?: string;
   /** Only rows for the Society club (filters club_id). */
   society?: boolean;
   /** Column holding when the item arrived, for "oldest waiting". Defaults to created_at. */
@@ -72,7 +76,19 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   // Today
   {
     href: "/admin", label: "Dashboard", sub: "Everything waiting on you", group: "today", Icon: LayoutDashboard, exact: true,
-    about: "Everything waiting on you, in one place.",
+    about: "Everything waiting on you, in one place, plus the key dates you can't miss.",
+    tab: "Waiting",
+    also: [{ href: "/admin/dates", label: "Key dates" }],
+    queues: [
+      {
+        label: "Key dates coming up",
+        table: "important_dates",
+        whereNull: ["done_at"],
+        onOrBeforeToday: "remind_on",
+        since: "remind_on",
+        href: "/admin/dates",
+      },
+    ],
   },
   {
     href: "/admin/ops", label: "AI team", sub: "Brief, findings, workers", group: "today", Icon: Bot,
