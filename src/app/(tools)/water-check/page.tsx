@@ -86,6 +86,18 @@ const GROUPS: {
   },
 ];
 
+// Each result links to the glossary entry that explains it in full.
+const GLOSSARY_FOR: Record<string, { slug: string; label: string }> = {
+  Ammonia: { slug: "ammonia", label: "ammonia" },
+  Nitrite: { slug: "nitrite", label: "nitrite" },
+  Nitrate: { slug: "nitrate", label: "nitrate" },
+  pH: { slug: "ph", label: "pH" },
+  "pH vs. your fish": { slug: "ph", label: "pH" },
+  GH: { slug: "gh", label: "GH" },
+  "GH vs. your fish": { slug: "gh", label: "GH" },
+  KH: { slug: "kh", label: "KH" },
+};
+
 function ringFor(level: WaterLevel | undefined, filled: boolean) {
   if (!filled) return "border-white/10 focus:border-emerald-500/40";
   if (level === "danger") return "border-red-500/50 focus:border-red-500";
@@ -430,6 +442,14 @@ export default function WaterCheckPage() {
                             <span className="text-ocean-200 font-medium">How to fix: </span>
                             {f.howToFix}
                           </p>
+                          {GLOSSARY_FOR[f.parameter] && (
+                            <Link
+                              href={`/glossary/${GLOSSARY_FOR[f.parameter].slug}`}
+                              className="mt-2 inline-block text-xs text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
+                            >
+                              More about {GLOSSARY_FOR[f.parameter].label} in the glossary
+                            </Link>
+                          )}
                         </div>
                       </div>
                     );

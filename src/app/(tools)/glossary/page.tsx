@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import GlossaryExplorer from "@/components/glossary/GlossaryExplorer";
 import { supabasePublic } from "@/lib/supabase/public";
 import { shareMeta } from "@/lib/seo/share";
+import { ldJson } from "@/lib/jsonLd";
+
+const SITE = "https://www.undergroundaquarium.com";
 
 export const revalidate = 3600;
 
@@ -19,5 +22,36 @@ export default async function GlossaryPage() {
     .select("slug, term, category, definition")
     .order("term");
 
-  return <GlossaryExplorer terms={terms ?? []} />;
+  // Tells search engines this page is a set of defined terms, each with its own page.
+  const list = terms ?? [];
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "DefinedTermSet",
+      name: "Aquarium glossary",
+      description: "Aquarium and fishkeeping terms explained in plain English.",
+      url: `${SITE}/glossary`,
+      hasDefinedTerm: list.map((t) => ({
+        "@type": "DefinedTerm",
+        name: t.term,
+        description: t.definition,
+        url: `${SITE}/glossary/${t.slug}`,
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE },
+        { "@type": "ListItem", position: 2, name: "Glossary", item: `${SITE}/glossary` },
+      ],
+    },
+  ];
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }} />
+      <GlossaryExplorer terms={list} />
+    </>
+  );
 }

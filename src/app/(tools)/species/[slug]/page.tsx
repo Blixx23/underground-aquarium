@@ -15,6 +15,7 @@ import { speciesFaq } from "@/lib/species/faq";
 import { ldJson } from "@/lib/jsonLd";
 import { tankmatesFor } from "@/lib/tankBuilder/species";
 import { buildPath } from "@/lib/tankBuilder/share";
+import { glossaryLinker } from "@/lib/glossary/links";
 
 export const revalidate = 3600;
 
@@ -191,6 +192,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
         ...mates.picks.slice(0, 3).map((p) => ({ slug: p.slug, qty: p.qty })),
       ])
     : null;
+  const gl = await glossaryLinker({ max: 8 });
   const faq = speciesFaq(s, {
     hasBreedingGuide,
     tankmates: mates ? { names: mates.picks.map((p) => p.common_name), gallons: mates.gallons } : null,
@@ -478,7 +480,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
         )}
 
         {s.body && (
-          <p className="text-ocean-300 leading-relaxed mb-10">{s.body}</p>
+          <p className="text-ocean-300 leading-relaxed mb-10">{gl.link(s.body)}</p>
         )}
 
         {hasBreedingGuide && (
@@ -503,7 +505,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
               {faq.map((f) => (
                 <div key={f.q} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5">
                   <dt className="font-medium text-white">{f.q}</dt>
-                  <dd className="mt-1.5 text-ocean-200 leading-relaxed">{f.a}</dd>
+                  <dd className="mt-1.5 text-ocean-200 leading-relaxed">{gl.link(f.a)}</dd>
                 </div>
               ))}
             </dl>

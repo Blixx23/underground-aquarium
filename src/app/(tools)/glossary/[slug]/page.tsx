@@ -8,6 +8,7 @@ import { supabasePublic } from "@/lib/supabase/public";
 import RelatedGuides from "@/components/discover/RelatedGuides";
 import { relatedThreads } from "@/lib/discover";
 import { shareMeta } from "@/lib/seo/share";
+import { glossaryLinker } from "@/lib/glossary/links";
 
 export const revalidate = 3600;
 
@@ -76,6 +77,8 @@ export default async function TermPage({ params }: Params) {
     supabasePublic.from("species").select("slug, common_name").eq("slug", term.slug).maybeSingle(),
   ]);
 
+  // Other terms mentioned on this page link to their own entry, once each.
+  const gl = await glossaryLinker({ self: term.slug as string, max: 12 });
   const sections = (Array.isArray(term.sections) ? term.sections : []) as Section[];
   const faq = (Array.isArray(term.faq) ? term.faq : []) as Faq[];
 
@@ -137,7 +140,7 @@ export default async function TermPage({ params }: Params) {
         <p className="text-ocean-200 text-lg leading-relaxed mb-5">
           {term.definition}
         </p>
-        <p className="text-ocean-300 leading-relaxed mb-10">{term.body}</p>
+        <p className="text-ocean-300 leading-relaxed mb-10">{gl.link(term.body)}</p>
 
         {/* The full write-up, where a term has one. */}
         {sections.length > 0 && (
@@ -153,12 +156,12 @@ export default async function TermPage({ params }: Params) {
                         .map((l) => l.replace(/^-\s*/, "").trim())
                         .filter(Boolean)
                         .map((l, j) => (
-                          <li key={j}>{l}</li>
+                          <li key={j}>{gl.link(l)}</li>
                         ))}
                     </ul>
                   ) : (
                     <p key={i} className="mb-3 text-ocean-200 leading-relaxed">
-                      {para}
+                      {gl.link(para)}
                     </p>
                   )
                 )}
@@ -174,7 +177,7 @@ export default async function TermPage({ params }: Params) {
               {faq.map((f) => (
                 <div key={f.q} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5">
                   <dt className="font-medium text-white">{f.q}</dt>
-                  <dd className="mt-1.5 text-ocean-200 leading-relaxed">{f.a}</dd>
+                  <dd className="mt-1.5 text-ocean-200 leading-relaxed">{gl.link(f.a)}</dd>
                 </div>
               ))}
             </dl>

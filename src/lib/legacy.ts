@@ -1,5 +1,6 @@
 import { supabasePublic } from "@/lib/supabase/public";
 import { matchSpeciesSlug } from "@/lib/species/match";
+import { GLOSSARY_ALIASES } from "@/lib/glossary/aliases";
 
 /**
  * Old WordPress addresses Google still has indexed: blog posts at the top
@@ -12,7 +13,7 @@ import { matchSpeciesSlug } from "@/lib/species/match";
 // Posts we know about, matched by hand. Keys are the old slug with any
 // emoji or punctuation stripped (see clean()).
 const KNOWN: Record<string, string> = {
-  "how-to-cycle-your-aquarium-without-losing-fish": "/glossary/cycling-a-tank",
+  "how-to-cycle-your-aquarium-without-losing-fish": "/glossary/cycling",
   "best-beginner-fish-how-to-choose-the-right-species-for-your-first-aquarium": "/glossary/beginner-fish",
   "bristlenose-pleco-vs-common-pleco": "/species/bristlenose-pleco",
   "community": "/forums",
@@ -120,6 +121,7 @@ export async function matchLegacyPost(slug: string): Promise<string | null> {
 export async function matchLegacyGlossary(slug: string): Promise<string | null> {
   const key = clean(slug);
   if (!key) return null;
+  if (GLOSSARY_ALIASES[key]) return `/glossary/${GLOSSARY_ALIASES[key]}`;
   const species = await matchSpeciesSlug(key);
   if (species) return `/species/${species}`;
   const oldWords = words(key);
