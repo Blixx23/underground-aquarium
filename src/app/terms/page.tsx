@@ -398,6 +398,22 @@ export default function TermsPage() {
               and that you are the owner or authorized to act for the owner. Members whose content is removed may
               send a counter-notice. We disable the accounts of repeat infringers.
             </p>
+            <div className="rounded-xl border border-ocean-800/60 bg-ocean-900/40 p-4 text-sm">
+              <p className="mb-1 text-white font-semibold">Our designated copyright agent</p>
+              <p>
+                Copyright Agent, Underground Aquarium
+                <br />
+                1609 Blanchard Drive, Roseville, CA 95747
+                <br />
+                Phone: 916-740-5101
+                <br />
+                Email: support@undergroundaquarium.com
+              </p>
+              <p className="mt-2 text-ocean-400">
+                Registered with the U.S. Copyright Office, DMCA Designated Agent Directory, registration number
+                DMCA-1081928.
+              </p>
+            </div>
           </Section>
 
           <Section title="Third-party services">
