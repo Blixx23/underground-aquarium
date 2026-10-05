@@ -6,6 +6,9 @@ import { queryTerms } from "@/lib/search/terms";
 import { buildVocab, correctTerms, describeFix, type Vocab } from "@/lib/search/fuzzy";
 import { helpHref } from "@/lib/help/types";
 import { formatPrice, listingHref } from "@/lib/marketplace/listings";
+import { GROUP_LABELS, ORDER, type SiteGroupKey } from "@/lib/search/groups";
+
+export { GROUP_LABELS, ORDER, isGroupKey, type SiteGroupKey } from "@/lib/search/groups";
 
 /**
  * One search across the whole site: help answers, classifieds, species care
@@ -27,18 +30,9 @@ export type SiteHit = {
   href: string;
   subtitle?: string;
   snippet?: string;
+  /** A person's avatar (people results). */
+  image?: string | null;
 };
-
-export type SiteGroupKey =
-  | "help"
-  | "listings"
-  | "species"
-  | "breeding"
-  | "stores"
-  | "forums"
-  | "events"
-  | "glossary"
-  | "courses";
 
 export type SiteGroup = {
   key: SiteGroupKey;
@@ -53,21 +47,6 @@ export type SiteSearchResult = {
   correctedTo: string | null;
 };
 
-export const GROUP_LABELS: Record<SiteGroupKey, string> = {
-  help: "Using the site",
-  listings: "Classifieds",
-  species: "Fish species & care",
-  breeding: "Breeding guides",
-  stores: "Fish stores",
-  forums: "Forums",
-  events: "Events",
-  glossary: "Glossary",
-  courses: "Courses",
-};
-
-// Real answers first: fish, care, stores, ads, the community. "How the site
-// works" help articles always come last, and only a few of them.
-const ORDER: SiteGroupKey[] = ["species", "glossary", "stores", "listings", "forums", "breeding", "events", "courses", "help"];
 const HELP_MAX = 3;
 
 // ---------------------------------------------------------------------------
@@ -182,6 +161,23 @@ const loadSpecies = () =>
         .select(
           "slug, common_name, scientific_name, also_known_as, former_names, trade_codes, group_name, summary, body, diet, temperament, origin, care_level, water_type"
         )
+        .range(a, b)
+    )
+  );
+
+type PersonRow = { username: string; full_name: string | null; avatar_url: string | null };
+
+// Members join all the time, so this list is only kept for two minutes.
+const loadPeople = () =>
+  cached("people", 2 * MIN, () =>
+    allRows<PersonRow>((a, b) =>
+      supabasePublic
+        .from("profiles")
+        .select("username, full_name, avatar_url")
+        .not("username", "is", null)
+        .is("deleted_at", null)
+        .is("suspended_at", null)
+        .order("username")
         .range(a, b)
     )
   );
@@ -330,6 +326,35 @@ const loadVocab = () =>
 // ---------------------------------------------------------------------------
 // Groups
 // ---------------------------------------------------------------------------
+
+/**
+ * Members by username or name. Uses the words as typed, not the spelling
+ * fixes (names aren't dictionary words), and treats "fish_guy" as two words
+ * so "guy" finds it. A leading @ is fine.
+ */
+async function peopleGroup(typed: string, n: number): Promise<SiteHit[]> {
+  const norm = (x: string) => x.toLowerCase().replace(/[_.]+/g, " ").replace(/[^a-z0-9 ]+/g, "").trim();
+  const words = norm(typed.replace(/@/g, " ")).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const joined = words.join("");
+  const rows = await loadPeople();
+  return rank(
+    rows,
+    (p) => {
+      const handle = p.username.toLowerCase();
+      // Exact or start-of-username matches win outright ("salmon" finds salmon868 first).
+      if (handle === joined) return 200;
+      if (handle.startsWith(joined)) return 150;
+      return score(words, norm(p.full_name ?? ""), [norm(p.username)]) || score(words, norm(p.username), []);
+    },
+    n
+  ).map(({ r: p }) => ({
+    title: p.full_name?.trim() || p.username,
+    href: `/u/${p.username}`,
+    subtitle: `@${p.username}`,
+    image: p.avatar_url,
+  }));
+}
 
 function helpGroup(q: string, n: number): SiteHit[] {
   return searchHelpFull(getHelpSections("member"), q, n, true).hits.map((h) => ({
@@ -491,10 +516,14 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   ]);
 }
 
-export async function siteSearch(rawQ: string, perGroup = 5): Promise<SiteSearchResult> {
+/**
+ * Search everything, or just one kind of result (`only`) with room for more
+ * of it: the filter chips on the /search page.
+ */
+export async function siteSearch(rawQ: string, perGroup = 5, only?: SiteGroupKey | null): Promise<SiteSearchResult> {
   const typed = rawQ.trim().slice(0, 100);
   if (typed.length < 2) return { groups: [], correctedTo: null };
-  const n = Math.min(Math.max(perGroup, 1), 20);
+  const n = Math.min(Math.max(perGroup, 1), only ? 40 : 20);
 
   // Fix misspellings against every word the site uses.
   let terms = queryTerms(typed);
@@ -514,32 +543,41 @@ export async function siteSearch(rawQ: string, perGroup = 5): Promise<SiteSearch
   const hasTerms = terms.some((t) => t.length >= 2);
   const none = async () => [] as SiteHit[];
 
+  const want = (k: SiteGroupKey) => !only || only === k;
   const jobs: Record<SiteGroupKey, Promise<SiteHit[]>> = {
-    help: Promise.resolve().then(() => helpGroup(q, Math.min(n, HELP_MAX))),
-    species: hasTerms ? speciesGroup(terms, n) : none(),
-    listings: hasTerms ? listingsGroup(terms, n) : none(),
-    stores: hasTerms ? storesGroup(terms, n) : none(),
-    forums: q.length >= 3 ? forumsGroup(q, n) : none(),
-    breeding: hasTerms ? breedingGroup(terms, n) : none(),
-    events: hasTerms ? eventsGroup(terms, n) : none(),
-    glossary: hasTerms ? glossaryGroup(terms, n) : none(),
-    courses: hasTerms ? coursesGroup(terms, n) : none(),
+    people: want("people") ? peopleGroup(typed, n) : none(),
+    help: want("help") ? Promise.resolve().then(() => helpGroup(q, only ? n : Math.min(n, HELP_MAX))) : none(),
+    species: hasTerms && want("species") ? speciesGroup(terms, n) : none(),
+    listings: hasTerms && want("listings") ? listingsGroup(terms, n) : none(),
+    stores: hasTerms && want("stores") ? storesGroup(terms, n) : none(),
+    forums: q.length >= 3 && want("forums") ? forumsGroup(q, n) : none(),
+    breeding: hasTerms && want("breeding") ? breedingGroup(terms, n) : none(),
+    events: hasTerms && want("events") ? eventsGroup(terms, n) : none(),
+    glossary: hasTerms && want("glossary") ? glossaryGroup(terms, n) : none(),
+    courses: hasTerms && want("courses") ? coursesGroup(terms, n) : none(),
   };
 
   const settled = await Promise.allSettled(ORDER.map((k) => withTimeout(jobs[k], 4000, k)));
   const enc = encodeURIComponent(q);
-  const more: Partial<Record<SiteGroupKey, { label: string; href: string }>> = {
-    forums: { label: "All forum results", href: `/forums/search?q=${enc}` },
-    stores: { label: "Open the store directory", href: `/stores?q=${enc}` },
-    help: { label: "More in the Help Center", href: "/help" },
-    breeding: { label: "All breeding guides", href: "/breeding" },
-  };
+  // In the "everything" view, a full group links to just that kind of result.
+  const typedEnc = encodeURIComponent(typed);
+  const more: Partial<Record<SiteGroupKey, { label: string; href: string }>> = only
+    ? {
+        forums: { label: "Search inside the forums", href: `/forums/search?q=${enc}` },
+        stores: { label: "Open the store directory", href: `/stores?q=${enc}` },
+        help: { label: "More in the Help Center", href: "/help" },
+      }
+    : Object.fromEntries(
+        ORDER.map((k) => [k, { label: `More ${GROUP_LABELS[k].toLowerCase()}`, href: `/search?q=${typedEnc}&type=${k}` }])
+      );
 
   const groups = ORDER.map((key, i) => {
     const r = settled[i];
     if (r.status === "rejected") console.error(`site search: ${key} failed`, r.reason);
     const hits = r.status === "fulfilled" ? r.value : [];
-    return { key, label: GROUP_LABELS[key], hits, more: hits.length ? more[key] : undefined };
+    // "More" only when the group is full, or always for the outside links in a filtered view.
+    const full = key === "help" && !only ? hits.length >= HELP_MAX : hits.length >= n;
+    return { key, label: GROUP_LABELS[key], hits, more: hits.length && (only || full) ? more[key] : undefined };
   }).filter((g) => g.hits.length > 0);
 
   return { groups, correctedTo };

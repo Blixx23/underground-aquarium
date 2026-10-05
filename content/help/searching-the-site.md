@@ -1,9 +1,9 @@
 ---
 title: Searching the whole site
 category: Getting started
-summary: One search box for everything: help answers, fish species and care guides, classifieds, stores, forums, breeding guides, events, glossary and courses.
+summary: One search box for everything: members, help answers, fish species and care guides, classifieds, stores, forums, breeding guides, events, glossary and courses.
 order: 75
-keywords: search, find, site search, search bar, look up, magnifying glass, search everything, where is, cant find, can't find, results, typo, misspelled, spelling, spell check, did you mean, care guide
+keywords: search, find, find a member, find a person, find someone, search users, search people, username, @username, filter results, only people, site search, search bar, look up, magnifying glass, search everything, where is, cant find, can't find, results, typo, misspelled, spelling, spell check, did you mean, care guide
 pages: /search
 ---
 
@@ -25,11 +25,12 @@ On a phone the pop-out fills the screen; tap the **X** to go back to the page yo
 Yes. Use the **up and down arrow keys** to move through the results and **Enter** to open the highlighted one. If nothing is highlighted, Enter opens the full results page.
 
 ## How do I see all the results?
-The pop-out shows up to four results per group to keep things quick. Click **See all results** (above the results) to open the full [Search](/search) page, which shows up to six per group, has chips to jump between groups, and links like **All forum results** under some groups. The full page's address includes your search (for example /search?q=cherry+shrimp), so you can bookmark it or share it.
+The pop-out shows up to four results per group to keep things quick. Click **See all results** (above the results) to open the full [Search](/search) page, which shows up to six per group. Each group in the pop-out also has a **See all** link that opens the full page showing only that kind of result. The full page's address includes your search (for example /search?q=cherry+shrimp), so you can bookmark it or share it.
 
 ## What does site search look through?
 Results come back in groups, in this order, and a group only shows when it has matches:
 
+- **People:** members, matched on their display name or @username. People always come first. A leading @ is fine ("@salmon"), and part of a username works too ("fish" finds fish_guy). Each result shows their photo and @username and opens their profile. Deleted and suspended accounts never appear.
 - **Help answers:** answers from the [Help Center](/help) that contain every word you typed, linked straight to the right spot in the guide.
 - **Fish species & care:** species pages, matched on the common name, scientific name, other names, former names and trade codes such as L046, and also on the care guide itself: the summary, full care write-up, diet, temperament, origin, care level and water type. So a search like "peaceful schooling fish", "blackwater" or "driftwood" finds the species whose care guides talk about it. Species whose name matches always come before ones that only mention your words in their care guide.
 - **Classifieds:** active ads that haven't expired, matched on the title, description, town, state and category. Each result shows the price (or Free or Wanted) and the area.
@@ -40,7 +41,7 @@ Results come back in groups, in this order, and a group only shows when it has m
 - **Glossary:** aquarium terms, matched on the term, its definition and its topic.
 - **Courses:** published free courses, matched on the title and subtitle.
 
-The pop-out shows up to four results per group; the full [Search](/search) page shows up to six, with chips under the search box to jump straight to a group.
+The pop-out shows up to four results per group; the full [Search](/search) page shows up to six, with filter chips under the search box.
 
 ## How does it decide what matches?
 - Every word you type (apart from little words like "how", "the" or "my") has to appear somewhere in a result for it to show.
@@ -59,8 +60,13 @@ Yes. Search knows every word used across the site: help answers, species names a
 
 Words with numbers in them (like L046 or 20g) and words of 3 letters or fewer are never changed.
 
+## How do I see only people (or only stores, ads...)?
+On the full [Search](/search) page, a row of chips sits under the search box: **Everything**, then one chip for each kind of result that matched, with how many. Tap one, like **People**, to see only that kind, with up to 30 results. Tap **Everything** to go back. The chips stay while you change your words, and the page address keeps your choice (for example /search?q=salmon&type=people) so you can share it.
+
+A group that has more results than fit also gets a link under it, like **More people**, that does the same thing.
+
 ## How do I see more results in one group?
-On the full [Search](/search) page, some groups have a link under them:
+When you're showing only one kind of result, some kinds also have a link to their own section:
 
 - **All forum results** opens the full forum search page with your words already filled in.
 - **Open the store directory** opens the fish store directory filtered by your words, with the map and Near me.

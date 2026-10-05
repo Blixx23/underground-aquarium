@@ -17,12 +17,17 @@ import {
   BookOpen,
   GraduationCap,
   ArrowRight,
+  Users,
+  LayoutGrid,
   type LucideIcon,
 } from "lucide-react";
-import type { SiteGroup, SiteGroupKey } from "@/lib/search/site";
+import type { SiteGroup } from "@/lib/search/site";
+import { GROUP_LABELS, ORDER, type SiteGroupKey } from "@/lib/search/groups";
+import Avatar from "@/components/profile/Avatar";
 import { highlightParts, queryTerms } from "@/lib/help/search";
 
 const ICONS: Record<SiteGroupKey, LucideIcon> = {
+  people: Users,
   help: LifeBuoy,
   listings: Tag,
   species: Fish,
@@ -52,6 +57,9 @@ function Hl({ text, terms }: { text: string; terms: string[] }) {
   );
 }
 
+// How many results a single-kind search (a filter chip) shows.
+const FILTERED_COUNT = 30;
+
 /**
  * The site search box and its grouped results. Used two ways:
  *  - "page": the /search page. Keeps the address bar in step (?q=...), so a
@@ -64,23 +72,31 @@ export default function SiteSearch({
   initialQuery = "",
   initialGroups = [],
   initialCorrectedTo = null,
+  initialType = null,
   mode = "page",
   onNavigate,
 }: {
   initialQuery?: string;
   initialGroups?: SiteGroup[];
   initialCorrectedTo?: string | null;
+  /** The /search page's filter: just people, just stores... (null = everything). */
+  initialType?: SiteGroupKey | null;
   mode?: "page" | "modal";
   /** called when a result is opened (the modal closes itself) */
   onNavigate?: () => void;
 }) {
   const modal = mode === "modal";
-  const perGroup = modal ? 4 : 6;
+  const [type, setType] = useState<SiteGroupKey | null>(modal ? null : initialType);
+  const perGroup = type ? FILTERED_COUNT : modal ? 4 : 6;
   const router = useRouter();
   const pathname = usePathname();
   const [q, setQ] = useState(initialQuery);
   const [groups, setGroups] = useState<SiteGroup[]>(initialGroups);
   const [searched, setSearched] = useState(initialQuery.trim().length >= 2 ? initialQuery.trim() : "");
+  // What the shown results are for (words + filter), so changing either searches again.
+  const [searchedKey, setSearchedKey] = useState(
+    initialQuery.trim().length >= 2 ? `${initialQuery.trim()}|${initialType ?? ""}` : ""
+  );
   const [loading, setLoading] = useState(false);
   const [correctedTo, setCorrectedTo] = useState<string | null>(initialCorrectedTo);
   const [active, setActive] = useState(-1);
@@ -91,42 +107,56 @@ export default function SiteSearch({
   // Search as you type, a beat after the last keystroke.
   useEffect(() => {
     const query = q.trim();
-    if (query === searched) return;
+    const key = `${query}|${type ?? ""}`;
+    if (key === searchedKey) return;
     if (query.length < 2) {
       reqId.current++;
       setGroups([]);
       setSearched("");
+      setSearchedKey("");
       setCorrectedTo(null);
       setLoading(false);
-      if (!modal && searched) router.replace(pathname, { scroll: false });
+      if (!modal && searched) router.replace(type ? `${pathname}?type=${type}` : pathname, { scroll: false });
       return;
     }
     const id = ++reqId.current;
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&n=${perGroup}`);
+        const res = await fetch(
+          `/api/search?q=${encodeURIComponent(query)}&n=${perGroup}${type ? `&type=${type}` : ""}`
+        );
         const data = (await res.json()) as { groups?: SiteGroup[]; correctedTo?: string | null };
         if (id !== reqId.current) return; // a newer search already started
         setGroups(data.groups ?? []);
         setCorrectedTo(data.correctedTo ?? null);
         setSearched(query);
+        setSearchedKey(key);
         setActive(-1);
-        if (!modal) router.replace(`${pathname}?q=${encodeURIComponent(query)}`, { scroll: false });
+        if (!modal)
+          router.replace(`${pathname}?q=${encodeURIComponent(query)}${type ? `&type=${type}` : ""}`, { scroll: false });
       } catch {
         if (id === reqId.current) setGroups([]);
       } finally {
         if (id === reqId.current) setLoading(false);
       }
-    }, 250);
+    }, query === searched ? 0 : 250); // a filter change searches straight away
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q]);
+  }, [q, type]);
+
+  /** Switch the filter on the /search page without leaving it. */
+  function pick(next: SiteGroupKey | null) {
+    if (next === type) return;
+    setType(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   const terms = queryTerms(correctedTo ?? searched);
   const flat = useMemo(() => groups.flatMap((g) => g.hits.map((h) => h.href)), [groups]);
   const total = flat.length;
   const seeAll = `/search?q=${encodeURIComponent(searched)}`;
+  const counts = new Map(groups.map((g) => [g.key, g.hits.length]));
 
   // Keep the highlighted result in view.
   useEffect(() => {
@@ -171,7 +201,7 @@ export default function SiteSearch({
           enterKeyHint="search"
           autoComplete="off"
           spellCheck={false}
-          placeholder="Search fish, care, stores, ads… typos are fine"
+          placeholder={type === "people" ? "Search members by name or @username" : "Search people, fish, care, stores, ads… typos are fine"}
           aria-label="Search the site"
           className={`w-full rounded-2xl border border-ocean-700/60 bg-ocean-950/80 pl-12 pr-14 text-base text-white placeholder:text-ocean-500 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10 ${
             modal ? "py-3.5" : "py-4 shadow-lg"
@@ -257,19 +287,29 @@ export default function SiteSearch({
           </div>
         )}
 
-        {!modal && groups.length > 1 && (
-          <nav aria-label="Jump to" className="mt-3 flex flex-wrap gap-2">
-            {groups.map((g) => {
-              const Icon = ICONS[g.key];
+        {!modal && searched && (
+          <nav aria-label="Show only" className="mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            {[null, ...ORDER].map((k) => {
+              const Icon = k ? ICONS[k] : LayoutGrid;
+              const on = type === k;
+              // In "everything" mode only kinds with results are worth a chip; a chip you're on always shows.
+              const n = k ? counts.get(k) : undefined;
+              if (k && !type && !n) return null;
               return (
-                <a
-                  key={g.key}
-                  href={`#results-${g.key}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-ocean-700/60 px-3 py-1 text-xs text-ocean-200 hover:border-emerald-500/50 hover:text-white"
+                <button
+                  key={k ?? "all"}
+                  type="button"
+                  onClick={() => pick(k)}
+                  aria-pressed={on}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                    on
+                      ? "border-emerald-400/60 bg-emerald-500/15 text-white"
+                      : "border-ocean-700/60 text-ocean-200 hover:border-emerald-500/50 hover:text-white"
+                  }`}
                 >
-                  <Icon className="h-3.5 w-3.5" /> {g.label}
-                  <span className="text-ocean-500">{g.hits.length}</span>
-                </a>
+                  <Icon className="h-3.5 w-3.5" /> {k ? GROUP_LABELS[k] : "Everything"}
+                  {!type && n ? <span className="text-ocean-500">{n}</span> : null}
+                </button>
               );
             })}
           </nav>
@@ -290,6 +330,15 @@ export default function SiteSearch({
                   </span>
                   <h2 className={modal ? "text-sm font-medium text-white" : "font-medium text-white"}>{g.label}</h2>
                   <span className="h-px flex-1 bg-ocean-800/60" />
+                  {modal && (
+                    <Link
+                      href={`/search?q=${encodeURIComponent(searched)}&type=${g.key}`}
+                      onClick={onNavigate}
+                      className="shrink-0 text-xs text-emerald-400 hover:text-emerald-300"
+                    >
+                      See all
+                    </Link>
+                  )}
                 </div>
                 <ul className="divide-y divide-ocean-800/50 overflow-hidden rounded-2xl border border-ocean-800/60 bg-white/[0.02]">
                   {g.hits.map((h) => {
@@ -305,10 +354,24 @@ export default function SiteSearch({
                             i === active ? "bg-white/[0.07]" : "hover:bg-white/[0.04]"
                           }`}
                         >
-                          <span className="block text-sm font-medium text-white">
-                            <Hl text={h.title} terms={terms} />
-                          </span>
-                          {h.subtitle && <span className="mt-0.5 block text-xs text-emerald-400/80">{h.subtitle}</span>}
+                          {g.key === "people" ? (
+                            <span className="flex items-center gap-3">
+                              <Avatar src={h.image ?? null} name={h.title} size={modal ? 32 : 40} />
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm font-medium text-white">
+                                  <Hl text={h.title} terms={terms} />
+                                </span>
+                                {h.subtitle && <span className="block truncate text-xs text-ocean-400">{h.subtitle}</span>}
+                              </span>
+                            </span>
+                          ) : (
+                            <>
+                              <span className="block text-sm font-medium text-white">
+                                <Hl text={h.title} terms={terms} />
+                              </span>
+                              {h.subtitle && <span className="mt-0.5 block text-xs text-emerald-400/80">{h.subtitle}</span>}
+                            </>
+                          )}
                           {h.snippet && (
                             <span
                               className={`mt-1 block text-[13px] leading-relaxed text-ocean-300 ${
@@ -326,6 +389,13 @@ export default function SiteSearch({
                 {g.more && !modal && (
                   <Link
                     href={g.more.href}
+                    onClick={(e) => {
+                      // "More people" etc. switches the filter here instead of reloading the page.
+                      if (g.more!.href.startsWith("/search?")) {
+                        e.preventDefault();
+                        pick(g.key);
+                      }
+                    }}
                     className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-emerald-400 hover:text-emerald-300"
                   >
                     {g.more.label} <ArrowRight className="h-3.5 w-3.5" />
