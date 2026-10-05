@@ -58,8 +58,12 @@ Use well established hobby values. If you're not sure of a value, leave it out a
 Never invent a scientific name.
 
 ## Writing
-member_reason is shown to the member who asked: friendly, plain, one to three sentences, no em dashes, name the
-library fish by their common names. summary is for the admin: two to four sentences. No em dashes anywhere.
+member_reason: ALWAYS write it, whatever the verdict. It is what the member sees if Chris turns the request
+down, so write it as that reply: one or two short, friendly, plain sentences, no em dashes, naming library fish by
+their common names. Examples: "That's another name for the Panda Cory, which is already in the library." "Cory cats
+are a whole group; we have 30 of them listed. Request the exact species if yours isn't there." "That's a saltwater
+fish, and the library is freshwater only." For add_new, say kindly that it isn't being added right now.
+summary is for the admin: two to four sentences. No em dashes anywhere.
 
 ## Answer
 Reply with ONLY a JSON object, no other text:
@@ -67,7 +71,7 @@ Reply with ONLY a JSON object, no other text:
  "identified_as": {"common_name": "...", "scientific_name": "..."},
  "summary": "...",
  "matches": [{"slug": "...", "relation": "same species|variant|same genus|same group|related", "why": "..."}],
- "alias_slug": "... or null", "member_reason": "... or null",
+ "alias_slug": "... or null", "member_reason": "...",
  "species": {field: value, ...} or null,
  "double_check": ["..."]}
 Only use slugs that appear in the library below. List at most 8 matches, most relevant first.

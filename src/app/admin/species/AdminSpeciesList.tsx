@@ -369,9 +369,9 @@ function Request({
                 ))}
               </ul>
             )}
-            {ai.member_reason && ai.verdict !== "add_new" && ai.verdict !== "another_name" && (
+            {ai.member_reason && (
               <p className="text-xs text-ocean-400">
-                Reason they&apos;d see: <span className="text-ocean-200">{ai.member_reason}</span>
+                If you turn it down, they see: <span className="text-ocean-200">{ai.member_reason}</span>
               </p>
             )}
             {ai.double_check.length > 0 && (
@@ -408,7 +408,11 @@ function Request({
           <button
             key={m}
             type="button"
-            onClick={() => setMode(mode === m ? "none" : m)}
+            onClick={() => {
+              // Turning down starts from the AI's reason, ready to send or edit.
+              if (m === "dismiss" && mode !== "dismiss" && !note.trim() && ai?.member_reason) setNote(ai.member_reason);
+              setMode(mode === m ? "none" : m);
+            }}
             className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
               mode === m
                 ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200"
@@ -527,6 +531,19 @@ function Request({
       {mode === "dismiss" && (
         <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <div className="flex flex-wrap gap-1.5">
+            {ai?.member_reason && (
+              <button
+                type="button"
+                onClick={() => setNote(ai.member_reason ?? "")}
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                  note === ai.member_reason
+                    ? "border-violet-400/60 bg-violet-500/15 text-violet-200"
+                    : "border-violet-400/30 text-violet-200/80 hover:text-white"
+                }`}
+              >
+                <Sparkles className="h-3 w-3" /> AI&apos;s reason
+              </button>
+            )}
             {DISMISS_REASONS.map((r) => (
               <button
                 key={r}
