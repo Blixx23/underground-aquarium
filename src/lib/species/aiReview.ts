@@ -1,14 +1,15 @@
 import "server-only";
 import { callClaude, costCents } from "@/lib/ops/claude";
 import { OPS_MODELS } from "@/lib/ops/config";
-import { findCandidates, libraryLine, type LibraryEntry } from "@/lib/species/library";
+import { findCandidates, libraryText, type LibraryEntry } from "@/lib/species/library";
 import { SPECIES_FIELDS, SPECIES_OPTIONS, type AiReview, type AiVerdict, type SpeciesField } from "@/lib/species/fields";
 
 /**
  * Checks one species request against the whole library and says what to do
- * with it. Uses the careful model: getting "is this already in the library"
- * right matters more than the few cents it costs. It never acts on its own;
- * the admin still presses the button.
+ * with it. The fast model goes first; when it isn't sure (verdict "unsure"
+ * or low confidence) the careful model takes a second look, so the hard
+ * cases still get the best answer and the easy ones cost about a third. It
+ * never acts on its own; the admin still presses the button.
  */
 
 const VERDICTS: AiVerdict[] = ["already_listed", "another_name", "too_broad", "add_new", "turn_down", "unsure"];
@@ -66,6 +67,7 @@ fish, and the library is freshwater only." For add_new, say kindly that it isn't
 summary is for the admin: two to four sentences. No em dashes anywhere.
 
 ## Answer
+Keep it short: summary under 60 words, at most 5 matches, "why" under 12 words each.
 Reply with ONLY a JSON object, no other text:
 {"verdict": "...", "confidence": "high|medium|low",
  "identified_as": {"common_name": "...", "scientific_name": "..."},
@@ -74,10 +76,10 @@ Reply with ONLY a JSON object, no other text:
  "alias_slug": "... or null", "member_reason": "...",
  "species": {field: value, ...} or null,
  "double_check": ["..."]}
-Only use slugs that appear in the library below. List at most 8 matches, most relevant first.
+Only use slugs that appear in the library below. List at most 5 matches, most relevant first.
 
-## The species library (slug | common name | scientific name | group | family | akas | codes | notes)
-${library.map(libraryLine).join("\n")}`;
+## The species library, by group (slug | common name | scientific name | akas | codes | notes)
+${libraryText(library)}`;
 }
 
 function parseJson(text: string): Record<string, unknown> | null {
@@ -139,7 +141,7 @@ export async function reviewSpeciesRequest(
 ): Promise<AiReview> {
   const groups = [...new Set(library.map((e) => e.group_name).filter((g): g is string => !!g))].sort();
   const candidates = findCandidates(library, request, 15);
-  const model = OPS_MODELS.smart;
+  const system = systemPrompt(library, groups);
 
   const userText = `Species request from a member:
 Common name they typed: ${request.common_name}
@@ -151,16 +153,31 @@ ${candidates.length ? candidates.map((c) => `- ${c.entry.slug} (${c.entry.common
 
 Decide, then answer with the JSON object only.`;
 
-  const reply = await callClaude({
-    model,
-    system: systemPrompt(library, groups),
-    tools: [],
-    messages: [{ role: "user", content: [{ type: "text", text: userText }] }],
-    maxTokens: 3000,
-    timeoutMs: 110_000,
-  });
-  const text = reply.content.map((b) => (b.type === "text" ? b.text : "")).join("");
-  const raw = parseJson(text);
+  async function ask(model: (typeof OPS_MODELS)[keyof typeof OPS_MODELS]) {
+    const reply = await callClaude({
+      model,
+      system,
+      tools: [],
+      messages: [{ role: "user", content: [{ type: "text", text: userText }] }],
+      maxTokens: 2000,
+      timeoutMs: 55_000,
+    });
+    const text = reply.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    return { raw: parseJson(text), cents: costCents(model, reply.usage) };
+  }
+
+  // Fast model first; the careful one only for the cases it can't settle.
+  let model: (typeof OPS_MODELS)[keyof typeof OPS_MODELS] = OPS_MODELS.fast;
+  let first = await ask(model).catch(() => ({ raw: null, cents: 0 }));
+  let cents = first.cents;
+  const unsettled = !first.raw || first.raw.verdict === "unsure" || first.raw.confidence === "low";
+  if (unsettled) {
+    model = OPS_MODELS.smart;
+    const second = await ask(model);
+    cents += second.cents;
+    if (second.raw) first = second;
+  }
+  const raw = first.raw;
   if (!raw) throw new Error("The AI's answer couldn't be read. Try again.");
 
   const bySlug = new Map(library.map((e) => [e.slug, e]));
@@ -168,7 +185,7 @@ Decide, then answer with the JSON object only.`;
   const matches = (Array.isArray(raw.matches) ? raw.matches : [])
     .map((m) => m as Record<string, unknown>)
     .filter((m) => typeof m.slug === "string" && bySlug.has(m.slug))
-    .slice(0, 8)
+    .slice(0, 5)
     .map((m) => ({
       slug: m.slug as string,
       common_name: bySlug.get(m.slug as string)!.common_name,
@@ -197,7 +214,7 @@ Decide, then answer with the JSON object only.`;
     species: finalVerdict === "add_new" ? cleanSpecies(raw.species, groups) : null,
     double_check: doubleCheck,
     model,
-    cost_cents: costCents(model, reply.usage),
+    cost_cents: Math.round(cents * 10) / 10,
     checked_at: new Date().toISOString(),
   };
 }

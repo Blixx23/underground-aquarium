@@ -223,3 +223,31 @@ export function libraryLine(e: LibraryEntry): string {
     .join(" | ")
     .replace(/( \| )+$/, "");
 }
+
+/**
+ * The whole library as compact text for the AI, grouped under one heading
+ * per group so the group name isn't repeated on every line. Family is left
+ * out (the scientific name carries the genus). About a third smaller than
+ * one libraryLine per fish, which is most of what a check costs.
+ */
+export function libraryText(library: LibraryEntry[]): string {
+  const byGroup = new Map<string, LibraryEntry[]>();
+  for (const e of library) {
+    const g = e.group_name || "Other";
+    byGroup.set(g, [...(byGroup.get(g) ?? []), e]);
+  }
+  const out: string[] = [];
+  for (const [g, list] of [...byGroup].sort(([a], [b]) => a.localeCompare(b))) {
+    out.push(`# ${g}`);
+    for (const e of list) {
+      const aka = [...(e.also_known_as ?? []), ...(e.former_names ?? [])];
+      const parts = [e.slug, e.common_name, e.scientific_name ?? ""];
+      if (aka.length) parts.push(`aka ${aka.join("; ")}`);
+      if (e.trade_codes?.length) parts.push(e.trade_codes.join("; "));
+      if (e.parent_slug) parts.push(`variant of ${e.parent_slug}`);
+      if (e.entry_type && e.entry_type !== "species") parts.push(`type ${e.entry_type}`);
+      out.push(parts.map((x) => x.replace(/\|/g, "/")).join(" | ").replace(/( \| )+$/, ""));
+    }
+  }
+  return out.join("\n");
+}
