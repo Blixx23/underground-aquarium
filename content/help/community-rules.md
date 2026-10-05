@@ -3,7 +3,7 @@ title: Community rules
 category: Account & safety
 summary: How to behave on Underground Aquarium, what gets content removed or accounts suspended, who owns what you upload, and the no-links rule for events.
 order: 100
-keywords: rules, community guidelines, code of conduct, conduct, behavior, what's allowed, banned, ban, suspended, harassment, spam, self promotion, advertising, links, url, no links, copyright, who owns my photos, license, content rights, library submissions, dmca, multiple accounts, impersonation
+keywords: rules, community guidelines, code of conduct, conduct, behavior, what's allowed, banned, ban, suspended, harassment, spam, self promotion, advertising, links, url, no links, copyright, who owns my photos, license, content rights, arbitration, scraping, library submissions, dmca, multiple accounts, impersonation
 pages: /terms, /rules, /events/new, /u/[username]
 ---
 
@@ -60,11 +60,12 @@ Anywhere else, keep links to a minimum and never use them to spam or send people
 ## Who owns the photos and posts I share?
 You keep your own original files. But when you post anything on the site (photos, videos, listings, tanks, posts, comments, reviews, public messages, Society records, suggestions), the [Terms of Service](/terms) say you give Underground Aquarium a permanent, worldwide, royalty-free license to use it. In plain words:
 
-- We can show, copy, edit, crop, convert and share your content anywhere, including in our marketing, social media, emails and print.
+- We can show, copy, edit, crop, convert, share and license your content anywhere, including in our marketing, social media, emails, print, and deals with partners such as AI developers.
 - We can show your name, username and profile photo with it.
 - The license continues after you delete the content or your account, though we generally stop showing deleted content in public areas within a reasonable time. We may keep copies for backups and records.
 - You aren't paid for content, and we aren't required to credit you (though we may).
 - We can review, edit, move or remove any content at any time.
+- Private messages are only used to deliver them and keep the site safe. We never publish them.
 - We may use content to run and improve the site, including tools like search, species identification and recommendations.
 
 ## Species photos and breeding videos: special rules
