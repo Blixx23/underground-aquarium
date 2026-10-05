@@ -67,7 +67,7 @@ The cover is the main photo on the species page and on its card in the [Fish Spe
    - "We already have a better shot of this angle."
 3. Press **Reject with this reason**. Press **Cancel** to go back without rejecting.
 
-The member is notified with your reason. The file is deleted from storage (if that cleanup fails the photo is still rejected and the leftover file isn't shown anywhere). No bubbles are given. If the box is empty you see "Pick or write a reason. The member sees it."
+The member is notified with your reason. The file is deleted from storage (if that cleanup fails the photo is still rejected and the leftover file isn't shown anywhere). Unless you untick **Thank them with 10 bubbles** (do that for spam), they also get 10 thank-you bubbles, added to the same notice with a thank-you line. If the box is empty you see "Pick or write a reason. The member sees it."
 
 ## What does the member get when a photo is used?
 - A notification naming the fish, linking to its page and mentioning the bubbles.

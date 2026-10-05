@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
+import { thankForSubmission } from "@/lib/species/thankYou";
 
 /**
  * Admin decision on a member's species photo. The database checks the
@@ -17,6 +18,8 @@ export async function POST(req: Request) {
     cover?: boolean;
     retireId?: string | null;
     note?: string | null;
+    /** Rejections: give the thank-you bubbles (off for spam). */
+    thanks?: boolean;
   };
   try {
     body = await req.json();
@@ -57,6 +60,16 @@ export async function POST(req: Request) {
     // its page and mentions the bubbles, so no second generic notice.
     bubbles = await awardBubbles(result.user_id, "species_photo_used", `species_photo_${id}`, {
       notify: false,
+    });
+  }
+
+  if (result.status === "rejected") {
+    bubbles = await thankForSubmission({
+      userId: result.user_id,
+      kind: "photo",
+      id,
+      reason: (body.note ?? "").trim(),
+      giveBubbles: body.thanks !== false,
     });
   }
 

@@ -24,6 +24,9 @@ export type QueuePhoto = {
 
 const MAX = 5;
 
+// Matches the species_submission_thanks bubble rule (step69 SQL).
+const THANKS_BUBBLES = 10;
+
 const REASONS = [
   "It isn't sharp enough.",
   "It's too dark or washed out.",
@@ -87,6 +90,7 @@ function Item({ row, onDone }: { row: QueuePhoto; onDone: (d: Decision) => void 
   const [retireId, setRetireId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [note, setNote] = useState("");
+  const [thanks, setThanks] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,6 +115,7 @@ function Item({ row, onDone }: { row: QueuePhoto; onDone: (d: Decision) => void 
           cover: action === "approve" ? cover : false,
           retireId: action === "approve" && full ? retireId : null,
           note: action === "reject" ? note.trim() : null,
+        thanks: action === "reject" ? thanks : undefined,
         }),
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
@@ -251,6 +256,15 @@ function Item({ row, onDone }: { row: QueuePhoto; onDone: (d: Decision) => void 
               placeholder="Reason the member will see"
               className="w-full rounded-lg border border-ocean-800/60 bg-ocean-900/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:border-ocean-500 focus:outline-none"
             />
+            <label className="mt-2 flex items-center gap-2 text-xs text-ocean-300">
+              <input
+                type="checkbox"
+                checked={thanks}
+                onChange={(e) => setThanks(e.target.checked)}
+                className="h-4 w-4 rounded accent-emerald-500"
+              />
+              Thank them with {THANKS_BUBBLES} bubbles (untick for spam)
+            </label>
           </div>
         )}
 

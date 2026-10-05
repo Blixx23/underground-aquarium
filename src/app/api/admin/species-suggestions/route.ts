@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { awardBubbles } from "@/lib/awardBubbles";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { thankForSubmission } from "@/lib/species/thankYou";
 
 /**
  * Admin decision on a species request. The database does the work (creates
@@ -15,6 +17,8 @@ export async function POST(req: Request) {
     species?: Record<string, unknown> | null;
     existingSlug?: string | null;
     note?: string | null;
+    /** Turn-downs: give the thank-you bubbles (off for spam). */
+    thanks?: boolean;
   };
   try {
     body = await req.json();
@@ -25,6 +29,19 @@ export async function POST(req: Request) {
   const { id, action } = body;
   if (!id || !["create", "alias", "dismiss"].includes(action ?? "")) {
     return NextResponse.json({ error: "Missing request or action." }, { status: 400 });
+  }
+
+  const note = (body.note ?? "").trim();
+  if (action === "dismiss" && !note) {
+    return NextResponse.json({ error: "Give a short reason. The member sees it." }, { status: 400 });
+  }
+
+  // Who asked, read before the decision in case the result leaves it out.
+  let suggester: string | null = null;
+  if (action === "dismiss") {
+    const { data: row } = await supabaseAdmin.from("species_suggestions").select("*").eq("id", id).maybeSingle();
+    const r = (row ?? {}) as Record<string, unknown>;
+    suggester = ((r.suggester_id ?? r.user_id ?? null) as string | null) ?? null;
   }
 
   const supabase = await createClient();
@@ -39,13 +56,23 @@ export async function POST(req: Request) {
     p_action: action,
     p_species: body.species ?? null,
     p_existing_slug: body.existingSlug ?? null,
-    p_note: body.note ?? null,
+    p_note: note || null,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
   const result = (data ?? {}) as { slug?: string | null; suggester_id?: string | null; status?: string };
   if (result.status === "added" && result.suggester_id) {
     await awardBubbles(result.suggester_id, "species_approved", `species_sugg_${id}`);
+  }
+  let bubbles = 0;
+  if (action === "dismiss") {
+    bubbles = await thankForSubmission({
+      userId: result.suggester_id ?? suggester,
+      kind: "request",
+      id,
+      reason: note,
+      giveBubbles: body.thanks !== false,
+    });
   }
 
   // Show the change straight away instead of waiting out the hour-long
@@ -55,5 +82,5 @@ export async function POST(req: Request) {
   revalidatePath("/tank-builder");
   if (result.slug) revalidatePath(`/species/${result.slug}`);
 
-  return NextResponse.json({ ok: true, slug: result.slug ?? null });
+  return NextResponse.json({ ok: true, slug: result.slug ?? null, bubbles });
 }

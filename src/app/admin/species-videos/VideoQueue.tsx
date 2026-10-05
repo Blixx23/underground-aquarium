@@ -25,6 +25,9 @@ export type QueueVideo = {
   live: LiveVideo[];
 };
 
+// Matches the species_submission_thanks bubble rule (step69 SQL).
+const THANKS_BUBBLES = 10;
+
 const REASONS = [
   "It's too shaky to follow.",
   "The fish are too small or out of focus.",
@@ -88,6 +91,7 @@ function Item({ row, onDone }: { row: QueueVideo; onDone: (d: Decision) => void 
   const [retireId, setRetireId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [note, setNote] = useState("");
+  const [thanks, setThanks] = useState(true);
   const [busy, setBusy] = useState(false);
   const [posterBusy, setPosterBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,6 +132,7 @@ function Item({ row, onDone }: { row: QueueVideo; onDone: (d: Decision) => void 
         stage,
         retireId: action === "approve" && full ? retireId : null,
         note: action === "reject" ? note.trim() : null,
+        thanks: action === "reject" ? thanks : undefined,
       });
       onDone({ id: row.id, slug: row.species_slug, approved: action === "approve", poster, stage, retireId: full ? retireId : null });
     } catch (e) {
@@ -277,6 +282,15 @@ function Item({ row, onDone }: { row: QueueVideo; onDone: (d: Decision) => void 
               placeholder="Reason the member will see"
               className="w-full rounded-lg border border-ocean-800/60 bg-ocean-900/60 px-3 py-2 text-sm text-white placeholder-ocean-600 focus:border-ocean-500 focus:outline-none"
             />
+            <label className="mt-2 flex items-center gap-2 text-xs text-ocean-300">
+              <input
+                type="checkbox"
+                checked={thanks}
+                onChange={(e) => setThanks(e.target.checked)}
+                className="h-4 w-4 rounded accent-emerald-500"
+              />
+              Thank them with {THANKS_BUBBLES} bubbles (untick for spam)
+            </label>
           </div>
         )}
 

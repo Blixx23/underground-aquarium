@@ -6,6 +6,7 @@ import path from "node:path";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { awardBubbles } from "@/lib/awardBubbles";
+import { thankForSubmission } from "@/lib/species/thankYou";
 import { ffmpeg } from "@/lib/video/ffmpeg";
 
 export const runtime = "nodejs";
@@ -27,6 +28,8 @@ export async function POST(req: Request) {
     note?: string | null;
     stage?: string | null;
     at?: number;
+    /** Rejections: give the thank-you bubbles (off for spam). */
+    thanks?: boolean;
   };
   try {
     body = await req.json();
@@ -75,6 +78,13 @@ export async function POST(req: Request) {
   }
 
   if (result.status === "rejected") {
+    bubbles = await thankForSubmission({
+      userId: result.user_id,
+      kind: "video",
+      id,
+      reason: (body.note ?? "").trim(),
+      giveBubbles: body.thanks !== false,
+    });
     const files = [result.video_path, result.poster_path].filter((f): f is string => !!f);
     if (files.length) {
       try {

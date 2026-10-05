@@ -76,7 +76,7 @@ Note: once a species has 3 approved videos, members no longer see the upload for
    - "We already have a clearer video of this."
 3. Press **Reject with this reason**, or **Cancel** to go back.
 
-The member is notified with your reason, the video and poster files are deleted, and no bubbles are given. An empty reason shows "Pick or write a reason. The member sees it."
+The member is notified with your reason, the video and poster files are deleted, and unless you untick **Thank them with 10 bubbles** (do that for spam) they get 10 thank-you bubbles in the same notice. An empty reason shows "Pick or write a reason. The member sees it."
 
 ## What does Remove sound from all videos do?
 New uploads are already silent. This button exists for clips uploaded before that change.

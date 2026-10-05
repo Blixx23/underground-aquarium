@@ -102,7 +102,7 @@ The upload didn't go through. Check your connection and try again. If it keeps f
 You haven't picked a photo yet, or the photo is still being checked. Wait for the preview to appear.
 
 **My photo was turned down.**
-Read the reason in the notification, and compare your photo against the checklist in [What makes a photo get approved?](/help/submitting-species-photos#what-makes-a-photo-get-approved). You're welcome to submit a different photo.
+You'll usually get 10 thank-you bubbles for sending it in. Read the reason in the notification, and compare your photo against the checklist in [What makes a photo get approved?](/help/submitting-species-photos#what-makes-a-photo-get-approved). You're welcome to submit a different photo.
 
 **I don't see my approved photo on the page.**
 Refresh the page. If it's still missing after a few minutes, email support@undergroundaquarium.com.

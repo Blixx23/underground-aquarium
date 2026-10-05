@@ -4,6 +4,17 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Loader2, Fish, Link2, Plus } from "lucide-react";
 
+// Matches the species_submission_thanks bubble rule (step69 SQL).
+const THANKS_BUBBLES = 10;
+
+const DISMISS_REASONS = [
+  "That's a saltwater fish. The library is freshwater only.",
+  "That's a plant, not an animal.",
+  "That's a trade name for a fish we already have.",
+  "We couldn't match that name to a real species.",
+  "It's already in the library.",
+];
+
 export type QueueSuggestion = {
   id: string;
   common_name: string;
@@ -102,6 +113,7 @@ function Request({
   const [aliasSlug, setAliasSlug] = useState(s.matches[0]?.slug ?? "");
   const [aliasQuery, setAliasQuery] = useState("");
   const [note, setNote] = useState("");
+  const [thanks, setThanks] = useState(true);
   const [f, setF] = useState<Record<string, string>>({
     common_name: s.common_name,
     scientific_name: s.scientific_name ?? "",
@@ -157,6 +169,10 @@ function Request({
       species = {};
       for (const [k, v] of Object.entries(f)) if (v.trim() !== "") species[k] = v.trim();
     }
+    if (action === "dismiss" && !note.trim()) {
+      setError("Pick or write a reason. The member sees it.");
+      return;
+    }
     if (action === "alias" && !aliasSlug) {
       setError("Pick the fish it's another name for.");
       return;
@@ -172,6 +188,7 @@ function Request({
           species,
           existingSlug: action === "alias" ? aliasSlug : null,
           note: note.trim() || null,
+          thanks: action === "dismiss" ? thanks : undefined,
         }),
       });
       const data = await res.json();
@@ -381,14 +398,39 @@ function Request({
 
       {mode === "dismiss" && (
         <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="flex flex-wrap gap-1.5">
+            {DISMISS_REASONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setNote(r)}
+                className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                  note === r
+                    ? "border-coral-400/60 bg-coral-500/15 text-coral-200"
+                    : "border-white/10 text-ocean-300 hover:text-white"
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
             maxLength={300}
-            placeholder="Optional note for them (e.g. that's a saltwater fish, or it's a made-up trade name)"
+            placeholder="Reason the member will see (required)"
             className={input}
           />
+          <label className="flex items-center gap-2 text-xs text-ocean-300">
+            <input
+              type="checkbox"
+              checked={thanks}
+              onChange={(e) => setThanks(e.target.checked)}
+              className="h-4 w-4 rounded accent-emerald-500"
+            />
+            Thank them with {THANKS_BUBBLES} bubbles (untick for spam)
+          </label>
           <button
             type="button"
             disabled={busy}

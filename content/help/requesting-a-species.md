@@ -34,7 +34,7 @@ Our team reviews every request by hand. One of three things happens:
 
 - **It's added.** We create a new species page with its care details. You get a notification, bubbles and the Cartographer trophy, and it shows up in [Fish Species](/species) and the [Tank Builder](/tank-builder) right away.
 - **It's another name for a fish we already have.** We add the name you used to that species (so searching it finds the right fish) instead of making a new page. Bubbles are only given when a new species is added.
-- **It's turned down.** For example, if it isn't a freshwater species, or the name doesn't match a real animal. Our team can include a short note explaining why.
+- **It's turned down.** For example, if it isn't a freshwater species, or the name doesn't match a real animal. The notice tells you why, and you usually get 10 bubbles as a thank-you for helping build the library.
 
 These notifications appear under the **Trophies** filter on your notifications page. See [Notifications](/help/notifications).
 
@@ -82,4 +82,4 @@ The form is still checking that you're signed in, or it's sending. Wait a moment
 Requests are reviewed by hand, so it can take a while. You'll get a notification when it's decided.
 
 **I didn't get bubbles for my request.**
-Bubbles are only given when a new species is added. If your request turned out to be another name for a species we already had, or was turned down, there are no bubbles.
+Requests that are added earn the full species bubbles. Requests turned down usually earn 10 thank-you bubbles instead (not for spam). If your request turned out to be another name for a species we already had, the notice explains what happened.

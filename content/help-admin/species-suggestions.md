@@ -74,10 +74,11 @@ The database adds the member's name to that fish's other names, marks the reques
 
 ## How do I turn a species request down?
 1. Press **Turn down**.
-2. Optionally write a note for the member (up to 300 characters). The placeholder suggests reasons like "that's a saltwater fish, or it's a made-up trade name".
-3. Press **Turn down** inside the panel.
+2. Pick one of the ready-made reasons or write your own (up to 300 characters). A reason is required: the member sees it. An empty box shows "Pick or write a reason. The member sees it."
+3. Leave **Thank them with 10 bubbles** ticked, or untick it for spam.
+4. Press **Turn down** inside the panel.
 
-The request leaves the queue, the database marks it turned down and notifies the member (with your note if you wrote one). No bubbles, no trophy progress, and nothing changes in the library.
+The request leaves the queue, the database marks it turned down and notifies the member with your reason, plus a thank-you line and the 10 bubbles if they were left ticked. The thank-you bubbles are given once per request. No trophy progress, and nothing changes in the library.
 
 ## What does the member get when a fish is added?
 - A notification that their request was added.

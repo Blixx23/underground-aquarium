@@ -69,7 +69,7 @@ A video that failed to convert doesn't count toward your 2.
 You get a notification (the bell) either way. They appear under the **Trophies** filter on your notifications page.
 
 - **If it's used**: the notification names the fish, links to your video and mentions your bubbles. The video appears on the species page under **[Species] breeding videos** and gets its own page.
-- **If it isn't used**: the notification gives the reason, and the video is deleted from our storage.
+- **If it isn't used**: the notification gives the reason and thanks you, usually with 10 bubbles for sending it in, and the video is deleted from our storage.
 - **If it couldn't be converted**: you get a notification titled "We couldn't use your [species] video" with the reason. See Common problems below.
 
 ## What does a breeding video's own page show?
