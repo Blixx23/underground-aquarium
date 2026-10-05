@@ -32,25 +32,23 @@ export async function readHealth(): Promise<HealthRead> {
   if (error) return { ok: false, error: error.message };
   const health = { ...(data as unknown as EmailHealth), held_bulk: 0 };
 
-  // With bulk switched off the worker skips bulk rows on purpose, so they
-  // aren't "stuck". Counting them sent false "the worker isn't running"
-  // alerts every time a campaign queued while bulk was off. Recount stuck
-  // from mail that should be going out: everything when bulk is on, only
-  // receipts and alerts when it's off.
-  if (health.bulk_paused && !health.paused) {
+  // "Stuck" means mail that should have gone out over 30 minutes ago and
+  // didn't. Bulk held by the bulk switch, and bulk deliberately moved to
+  // tomorrow (the daily cap or the bounce brake), isn't stuck: counting it
+  // sent false "the worker isn't running" alerts.
+  if (!health.paused) {
     const cutoff = new Date(Date.now() - 30 * 60_000).toISOString();
+    let stuckQ = supabaseAdmin
+      .from("email_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending")
+      .lt("scheduled_at", cutoff);
+    if (health.bulk_paused) stuckQ = stuckQ.eq("bulk", false);
     const [stuck, held] = await Promise.all([
-      supabaseAdmin
-        .from("email_queue")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "pending")
-        .eq("bulk", false)
-        .lt("scheduled_at", cutoff),
-      supabaseAdmin
-        .from("email_queue")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "pending")
-        .eq("bulk", true),
+      stuckQ,
+      health.bulk_paused
+        ? supabaseAdmin.from("email_queue").select("id", { count: "exact", head: true }).eq("status", "pending").eq("bulk", true)
+        : Promise.resolve({ count: 0, error: null }),
     ]);
     if (!stuck.error) health.stuck = stuck.count ?? 0;
     if (!held.error) health.held_bulk = held.count ?? 0;
@@ -89,7 +87,10 @@ export function verdict(h: EmailHealth): { tone: "bad" | "warn" | "ok" | "idle";
   const rate = h.delivered_7d + h.bounced_7d;
   const bouncePct = rate > 0 ? (h.bounced_7d / rate) * 100 : 0;
   if (bouncePct >= 5) {
-    return { tone: "bad", line: `${bouncePct.toFixed(1)}% of the last week bounced. Over 5% and mailbox providers start filtering you. Stop bulk sending and clean the list.` };
+    return {
+      tone: "bad",
+      line: `${bouncePct.toFixed(1)}% of the last week bounced (keep under 5%). Bulk mail is going only to Gmail, Yahoo, Outlook and other big providers until it drops back under; the rest waits in the queue.`,
+    };
   }
   if (h.complained_7d > 0) {
     return { tone: "warn", line: `${h.complained_7d} spam complaint${h.complained_7d === 1 ? "" : "s"} this week. Keep an eye on it; a handful is normal, a trend is not.` };

@@ -7,6 +7,17 @@ import { deliver } from "@/lib/email/provider";
 import { getEmailSettings } from "@/lib/email/settings";
 import { blocks, categoryOf, skippedMessage, suppressedSet, suppressionReasons, suppress } from "@/lib/email/suppress";
 import { letterShell } from "@/lib/email/shell";
+import { outreachProblem, tidyOutreachEmail } from "@/lib/email/outreach";
+import { isBigProvider } from "@/lib/email/mx";
+
+/**
+ * Past this 7-day bounce rate, mailbox providers start filtering the whole
+ * domain. Above it, bulk mail goes only to big providers (where a real
+ * mailbox almost never bounces) until old bounces age out of the window.
+ */
+const BOUNCE_BRAKE = 0.05;
+/** Too few sends to judge a rate on. */
+const BOUNCE_BRAKE_MIN_SENDS = 40;
 
 export const SITE = "https://www.undergroundaquarium.com";
 /** Past this many tries a still-retrying row shows up in the health check. */
@@ -328,6 +339,52 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
     return { claimed: rows.length, sent: 0, failed: 0, retried: 0, suppressed: 0, paused: false };
   }
 
+  let sent = 0;
+  let failed = 0;
+  let retried = 0;
+  let suppressed = 0;
+
+  // Bulk mail goes to addresses taken from public websites. Fix the
+  // harmless slips ("@www.shop.com") and never send to template
+  // placeholders (hi@mystore.com) or scraped file names: each one is a
+  // guaranteed bounce, and bounces are what get a sender filtered.
+  for (const row of rows) {
+    if (!row.bulk) continue;
+    const tidy = tidyOutreachEmail(row.to_email);
+    const problem = outreachProblem(tidy);
+    if (problem) {
+      const { error: badErr } = await supabaseAdmin
+        .from("email_queue")
+        .update({ status: "failed", fail_reason: "other", last_error: `Not sent: ${problem}`, locked_at: null, alerted_at: new Date().toISOString() })
+        .eq("id", row.id);
+      if (badErr) await supabaseAdmin.from("email_queue").update({ locked_at: null }).eq("id", row.id);
+      await suppress(row.to_email, "invalid", problem).catch(() => {});
+      row.to_email = ""; // marks it handled below
+      suppressed++;
+      continue;
+    }
+    if (tidy !== row.to_email) {
+      await supabaseAdmin.from("email_queue").update({ to_email: tidy }).eq("id", row.id);
+      row.to_email = tidy;
+    }
+  }
+  const sendable = rows.filter((r) => r.to_email);
+
+  // The bounce brake (see BOUNCE_BRAKE).
+  let brake = false;
+  if (sendable.some((r) => r.bulk)) {
+    const { data: hd, error: hErr } = await supabaseAdmin.rpc("email_health");
+    if (!hErr && hd) {
+      const h = hd as unknown as { delivered_7d?: number; bounced_7d?: number };
+      const total = Number(h.delivered_7d ?? 0) + Number(h.bounced_7d ?? 0);
+      brake = total >= BOUNCE_BRAKE_MIN_SENDS && Number(h.bounced_7d ?? 0) / total >= BOUNCE_BRAKE;
+    }
+  }
+  // Within bulk, big providers first: today's cap goes to the safest sends.
+  sendable.sort((a, b) =>
+    a.bulk === b.bulk ? (a.bulk ? Number(isBigProvider(b.to_email)) - Number(isBigProvider(a.to_email)) : 0) : a.bulk ? 1 : -1
+  );
+
   // A bulk row still has to respect today's cap.
   let bulkBudget = Infinity;
   if (rows.some((r) => r.bulk)) {
@@ -342,19 +399,14 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
     bulkBudget = Math.max(0, settings.daily_bulk_cap - (count ?? 0));
   }
 
-  let sent = 0;
-  let failed = 0;
-  let retried = 0;
-  let suppressed = 0;
-
   // Check the do-not-email list again right before sending. A row can sit
   // in the queue for hours (or be put back by "Try again"), and in that
   // time the address may have bounced or opted out. Checking only when it
   // was queued is how mail keeps going to a dead address.
-  const listed = await suppressionReasons(rows.map((r) => r.to_email));
+  const listed = await suppressionReasons(sendable.map((r) => r.to_email));
 
   const groups: QueueRow[][] = [];
-  for (let i = 0; i < rows.length; i += 4) groups.push(rows.slice(i, i + 4));
+  for (let i = 0; i < sendable.length; i += 4) groups.push(sendable.slice(i, i + 4));
 
   for (const group of groups) {
     const started = Date.now();
@@ -385,8 +437,9 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
           return;
         }
         if (row.bulk) {
-          if (bulkBudget <= 0) {
-            // Over today's cap: put it back for tomorrow, untouched.
+          if (bulkBudget <= 0 || (brake && !isBigProvider(row.to_email))) {
+            // Over today's cap, or the bounce brake is on and this isn't a
+            // big provider: put it back for tomorrow, untouched.
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(9, 0, 0, 0);

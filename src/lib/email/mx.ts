@@ -24,12 +24,17 @@ import { normaliseEmail } from "@/lib/email/address";
 export type DomainCheck = "ok" | "dead" | "unknown";
 
 /** Big providers always take mail; no point looking them up. */
-const KNOWN_GOOD = new Set([
+export const KNOWN_GOOD = new Set([
   "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com", "outlook.com",
   "live.com", "msn.com", "aol.com", "icloud.com", "me.com", "mac.com", "comcast.net",
   "att.net", "sbcglobal.net", "verizon.net", "protonmail.com", "proton.me", "gmx.com",
   "mail.com", "zoho.com", "cox.net", "charter.net", "bellsouth.net", "earthlink.net",
 ]);
+
+/** Gmail, Yahoo, Outlook and the like: a real mailbox there almost never bounces. */
+export function isBigProvider(email: string): boolean {
+  return KNOWN_GOOD.has(domainOf(email));
+}
 
 /** Answers that mean "this domain has no mail server", not "DNS is having a bad day". */
 const DEAD_CODES = new Set(["ENOTFOUND", "ENODATA", "NXDOMAIN"]);

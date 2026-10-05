@@ -5,6 +5,7 @@ import { normaliseEmail } from "@/lib/email/address";
 import { suppress, suppressedSet } from "@/lib/email/suppress";
 import { checkDomains, domainOf, type DomainCheck } from "@/lib/email/mx";
 import { getEmailSettings } from "@/lib/email/settings";
+import { outreachProblem, tidyOutreachEmail } from "@/lib/email/outreach";
 import { letterShell } from "@/lib/email/shell";
 import { previewLine, renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
 import { factsFor, subjectHook, whatsHappening, whatsMissing } from "@/lib/campaigns/facts";
@@ -110,12 +111,17 @@ async function enrolAudience(campaign: Campaign, dry = false): Promise<{ added: 
       .range(from, from + pageSize - 1);
     if (error) throw new Error(error.message);
     const page = (data ?? []) as unknown as { store_id: string; email: string | null }[];
-    for (const r of page) if (r.email) rows.push({ store_id: r.store_id, email: r.email });
+    for (const r of page) if (r.email) rows.push({ store_id: r.store_id, email: tidyOutreachEmail(r.email) });
     if (page.length < pageSize) break;
   }
 
-  const unseen = rows.filter((r) => !have.has(r.store_id));
-  if (unseen.length === 0) return { added: 0, dead: 0 };
+  // Template placeholders and scraped junk never get enrolled; they go on
+  // the do-not-email list so they're skipped for good.
+  const seen = rows.filter((r) => !have.has(r.store_id));
+  const junk = seen.filter((r) => outreachProblem(r.email));
+  if (!dry) for (const r of junk) await suppress(r.email, "invalid", outreachProblem(r.email) ?? undefined).catch(() => {});
+  const unseen = seen.filter((r) => !outreachProblem(r.email));
+  if (unseen.length === 0) return { added: 0, dead: junk.length };
 
   // Never enrol an address we already promised not to write to. Campaign
   // mail is marketing, so an unsubscribe or a bounce both keep them out.
@@ -125,7 +131,7 @@ async function enrolAudience(campaign: Campaign, dry = false): Promise<{ added: 
   // Only enrol addresses whose domain has a mail server. Dead ones go on
   // the do-not-email list; ones we couldn't check yet wait for next run.
   const checks = await checkDomains(open.map((r) => r.email));
-  const dead = await blockDead(checks, dry);
+  const dead = (await blockDead(checks, dry)) + junk.length;
   const fresh = open.filter((r) => checks.get(normaliseEmail(r.email)) === "ok");
 
   // A dry run only counts. It must never write, or "What would a run
@@ -328,7 +334,23 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
   // Shops enrolled before domain checks existed (and domains that have
   // died since) get checked here, right before anything is queued.
   // Dead ones are blocked now and come off the list on the next run.
-  const domainChecks = await checkDomains(due.map((e) => e.email), { budgetMs: 10_000 });
+  // Same address care as at enrolment, for shops enrolled before it existed.
+  const junkIds = new Set<string>();
+  for (const e of due) {
+    const tidy = tidyOutreachEmail(e.email);
+    const problem = outreachProblem(tidy);
+    if (problem) {
+      junkIds.add(e.id);
+      if (!opts.dry) await suppress(e.email, "invalid", problem).catch(() => {});
+      continue;
+    }
+    if (tidy !== e.email) {
+      if (!opts.dry) await supabaseAdmin.from("email_campaign_enrollments").update({ email: tidy }).eq("id", e.id);
+      e.email = tidy;
+    }
+  }
+  out.undeliverable += junkIds.size;
+  const domainChecks = await checkDomains(due.filter((e) => !junkIds.has(e.id)).map((e) => e.email), { budgetMs: 10_000 });
   out.undeliverable += await blockDead(domainChecks, Boolean(opts.dry));
 
   /** What happens to an enrolment once its step is dealt with. */
@@ -364,7 +386,7 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
   for (const e of due) {
     // Dead domain: blocked above, never queued. Couldn't check: leave it
     // exactly as it is and try again next run.
-    if (domainChecks.get(normaliseEmail(e.email)) !== "ok") {
+    if (junkIds.has(e.id) || domainChecks.get(normaliseEmail(e.email)) !== "ok") {
       out.skipped++;
       continue;
     }
