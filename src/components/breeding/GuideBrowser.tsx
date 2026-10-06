@@ -363,7 +363,7 @@ export default function GuideBrowser({ guides, children }: { guides: GuideCard[]
                   </h2>
                   {c && <p className="text-sm text-ocean-400">{c.blurb}</p>}
                 </div>
-                <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {list.map(({ g }) => {
                     // Show the other name that matched, so "x-ray" finding Pristella makes sense.
                     const t = parsed.text;
@@ -381,7 +381,7 @@ export default function GuideBrowser({ guides, children }: { guides: GuideCard[]
                             {alias && <span className="block truncate text-xs text-emerald-300/80">Also called {alias}</span>}
                             {g.scientific && <span className="block truncate text-xs italic text-ocean-400">{g.scientific}</span>}
                             <span className="mt-1 block truncate text-xs text-ocean-500">
-                              {[g.method, g.category].filter(Boolean).join(" · ")}
+                              {[g.method?.replace(/\s*\(.*\)\s*$/, ""), g.category].filter(Boolean).join(" · ")}
                             </span>
                           </span>
                           <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-ocean-500" />

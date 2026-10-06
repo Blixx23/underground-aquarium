@@ -115,7 +115,7 @@ export default async function BreedingIndex() {
             {/* The ladder at a glance; each class jumps to its list. A sideways strip on phones. */}
             <nav
               aria-label="Difficulty classes"
-              className="-mx-6 mb-6 flex snap-x gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-6"
+              className="-mx-6 mb-6 flex snap-x scroll-px-6 gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-6"
             >
               {CLASS_LADDER.map((c) => (
                 <a
@@ -139,7 +139,7 @@ export default async function BreedingIndex() {
               <div className="mb-8">
                 <h2 className="font-display text-xl text-white sm:text-2xl">Start here: the easiest fish to breed</h2>
                 <p className="mt-1 text-sm text-ocean-300">Reliable, popular and quick to show results.</p>
-                <ul className="-mx-6 mt-3 flex snap-x gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+                <ul className="-mx-6 mt-3 flex snap-x scroll-px-6 gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
                   {starters.map((g) => (
                     <li key={g.slug} className="w-56 shrink-0 snap-start sm:w-auto">
                       <Link
@@ -147,7 +147,7 @@ export default async function BreedingIndex() {
                         className="flex h-full flex-col rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4 transition-colors hover:border-emerald-400/50"
                       >
                         <span className="font-medium text-white">{g.name}</span>
-                        <span className="mt-0.5 text-xs text-ocean-400">{[g.method, g.points != null ? `${g.points} points` : null].filter(Boolean).join(" · ")}</span>
+                        <span className="mt-0.5 text-xs text-ocean-400">{[g.method?.replace(/\s*\(.*\)\s*$/, ""), g.points != null ? `${g.points} points` : null].filter(Boolean).join(" · ")}</span>
                         <span className="mt-2 line-clamp-3 text-xs text-ocean-300">{g.summary}</span>
                       </Link>
                     </li>

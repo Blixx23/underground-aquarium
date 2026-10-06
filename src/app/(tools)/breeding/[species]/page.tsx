@@ -15,6 +15,7 @@ import { CLASS_LADDER } from "@/lib/society/classes";
 import { glossaryLinker } from "@/lib/glossary/links";
 import { buildPath } from "@/lib/tankBuilder/share";
 import BreederCta from "@/components/breeding/BreederCta";
+import OpenOnWide from "@/components/breeding/OpenOnWide";
 import { ldJson } from "@/lib/jsonLd";
 
 export const revalidate = 3600;
@@ -95,6 +96,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     alternates: { canonical: `/breeding/${species}` },
   };
 }
+
+const sectionId = (h: string) => h.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export default async function BreedingGuidePage({ params }: Params) {
   const { species } = await params;
@@ -186,31 +189,57 @@ export default async function BreedingGuidePage({ params }: Params) {
           {guide.program === "hap" ? <Leaf className="h-4 w-4" /> : <Egg className="h-4 w-4" />}
           {guide.program === "hap" ? "Propagation guide" : "Breeding guide"}
         </p>
-        <h1 className="font-display text-4xl text-white sm:text-5xl">
+        <h1 className="font-display text-3xl text-white sm:text-5xl">
           How to {verb(guide).toLowerCase()} {guide.name}
         </h1>
         {guide.scientific && <p className="mt-1 text-lg italic text-ocean-300">{guide.scientific}</p>}
 
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
-          <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-semibold text-amber-200">
+          <span
+            className={`${guide.program === "bap" ? "hidden sm:inline-block" : ""} rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-semibold text-amber-200`}
+          >
             {classLabel(guide.points)}
           </span>
           {guide.method && (
-            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-200">{guide.method}</span>
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-200">
+              <span className="sm:hidden">{guide.method.replace(/\s*\(.*\)\s*$/, "")}</span>
+              <span className="hidden sm:inline">{guide.method}</span>
+            </span>
           )}
           {guide.category && <span className="rounded-full border border-white/10 px-3 py-1 text-ocean-300">{guide.category}</span>}
         </div>
-        {klass && <p className="mt-2 text-sm text-ocean-400">Society difficulty: {klass.blurb}</p>}
+        {klass && (
+          <p className={`${guide.program === "bap" ? "hidden sm:block" : ""} mt-2 text-sm text-ocean-400`}>Society difficulty: {klass.blurb}</p>
+        )}
 
         {/* The highlights first: difficulty, spawn-to-grown timeline and the key facts. */}
         {guide.program === "bap" && <BreedingSnapshot guide={guide} speciesName={guide.name} reports={0} variant="guide" />}
 
-        <p className="mt-6 text-lg leading-relaxed text-ocean-200">{gl.link(guide.intro)}</p>
+        {/* Jump to any part of a long guide; scrolls sideways on phones. */}
+        <nav aria-label="In this guide" className="-mx-6 mt-5 flex snap-x scroll-px-6 gap-1.5 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
+          {[
+            ...guide.sections.map((sec) => [sectionId(sec.heading), sec.heading.replace(/:.*$/, "")]),
+            ["certificate", "Get certified"],
+            ...(guide.faq.length ? [["questions", "Questions"]] : []),
+          ].map(([id, label]) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="shrink-0 snap-start rounded-full border border-white/10 px-3 py-1.5 text-xs text-ocean-300 hover:border-emerald-500/40 hover:text-white"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+
+        <p className="mt-6 text-base leading-relaxed text-ocean-200 sm:text-lg">{gl.link(guide.intro)}</p>
 
         {/* Quick facts */}
-        <section className="mt-8 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5">
-          <h2 className="mb-3 font-display text-xl text-white">At a glance</h2>
-          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+        <OpenOnWide
+          className="mt-8 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5"
+          summary={<h2 className="font-display text-xl text-white">All the facts</h2>}
+        >
+          <dl className="mt-3 grid gap-x-6 gap-y-3 sm:grid-cols-2">
             {FACT_LABELS.filter(([k]) => guide.facts[k]).map(([k, label]) => (
               <div key={k}>
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-ocean-500">{label}</dt>
@@ -226,13 +255,13 @@ export default async function BreedingGuidePage({ params }: Params) {
               </Link>
             </p>
           )}
-        </section>
+        </OpenOnWide>
 
         {/* The guide itself */}
         <div className="mt-10 space-y-8">
           {guide.sections.map((sec) => (
-            <section key={sec.heading}>
-              <h2 className="mb-3 font-display text-2xl text-white">{sec.heading}</h2>
+            <section key={sec.heading} id={sectionId(sec.heading)} className="scroll-mt-24">
+              <h2 className="mb-3 font-display text-xl text-white sm:text-2xl">{sec.heading}</h2>
               {sec.text.split(/\n\n+/).map((para, i) =>
                 para.trim().startsWith("- ") ? (
                   <ul key={i} className="mb-3 list-disc space-y-1.5 pl-5 leading-relaxed text-ocean-200">
@@ -264,7 +293,7 @@ export default async function BreedingGuidePage({ params }: Params) {
           </aside>
         )}
 
-        <div className="mt-8">
+        <div id="certificate" className="mt-8 scroll-mt-24">
           <BreederCta
             slug={guide.slug}
             name={guide.name}
@@ -312,8 +341,8 @@ export default async function BreedingGuidePage({ params }: Params) {
         )}
 
         {guide.faq.length > 0 && (
-          <section className="mt-10">
-            <h2 className="mb-4 font-display text-2xl text-white">{guide.name} breeding questions</h2>
+          <section id="questions" className="mt-10 scroll-mt-24">
+            <h2 className="mb-4 font-display text-xl text-white sm:text-2xl">{guide.name} breeding questions</h2>
             <dl className="space-y-3">
               {guide.faq.map((f) => (
                 <div key={f.q} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5">
@@ -447,7 +476,7 @@ function ReportsOnly({ reports }: { reports: Report[] }) {
         <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-300">
           {isPlant ? <Leaf className="h-4 w-4" /> : <Egg className="h-4 w-4" />} Members&apos; reports
         </p>
-        <h1 className="font-display text-4xl text-white sm:text-5xl">{name}</h1>
+        <h1 className="font-display text-3xl text-white sm:text-5xl">{name}</h1>
         <p className="mb-8 mt-2 text-ocean-300">
           {reports.length} {reports.length === 1 ? "report" : "reports"} from members who have bred {name}.
         </p>
