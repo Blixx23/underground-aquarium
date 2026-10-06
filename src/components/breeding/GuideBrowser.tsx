@@ -87,7 +87,7 @@ function readParams() {
   return { q: p.get("q") ?? "", program: p.get("type") === "plants" ? "hap" : "bap", cls: (p.get("class") ?? "").toUpperCase(), group: p.get("group") ?? "All" } as const;
 }
 
-export default function GuideBrowser({ guides }: { guides: GuideCard[] }) {
+export default function GuideBrowser({ guides, children }: { guides: GuideCard[]; children?: React.ReactNode }) {
   const [q, setQ] = useState("");
   const [program, setProgram] = useState<Program>("bap");
   const [group, setGroup] = useState<string>("All");
@@ -223,66 +223,75 @@ export default function GuideBrowser({ guides }: { guides: GuideCard[] }) {
     input.current?.focus();
   }
 
+  const tabs = (["bap", "hap"] as const).map((p) => (
+    <button
+      key={p}
+      type="button"
+      onClick={() => {
+        setProgram(p);
+        setGroup("All");
+      }}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+        program === p ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200" : "border-ocean-700/60 text-ocean-300 hover:text-white"
+      }`}
+    >
+      {p === "bap" ? <Fish className="h-4 w-4" /> : <Leaf className="h-4 w-4" />}
+      {p === "bap" ? "Fish & inverts" : "Plants"}
+      {filtering && <span className="text-xs text-ocean-400">{counts[p]}</span>}
+    </button>
+  ));
+
+  // On phones the chip rows scroll sideways instead of wrapping into a wall of buttons.
+  const chipRow = "-mx-6 flex flex-nowrap items-center gap-1.5 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0";
+
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {(["bap", "hap"] as const).map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => {
-              setProgram(p);
-              setGroup("All");
-            }}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-              program === p ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200" : "border-ocean-700/60 text-ocean-300 hover:text-white"
-            }`}
-          >
-            {p === "bap" ? <Fish className="h-4 w-4" /> : <Leaf className="h-4 w-4" />}
-            {p === "bap" ? "Fish & inverts" : "Plants"}
-            {filtering && <span className="text-xs text-ocean-400">{counts[p]}</span>}
-          </button>
-        ))}
-        <div className="relative ml-auto w-full sm:w-80">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-500" />
-          <input
-            ref={input}
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && best) window.location.href = `/breeding/${best.slug}`;
-              if (e.key === "Escape") setQ("");
-            }}
-            placeholder="Search: guppy, mouthbrooder, class c…"
-            aria-label="Search breeding guides"
-            className="w-full rounded-xl border border-ocean-800/60 bg-ocean-950/60 py-2.5 pl-9 pr-9 text-base text-white placeholder:text-ocean-500 focus:border-emerald-500/50 focus:outline-none sm:text-sm [&::-webkit-search-cancel-button]:hidden"
-          />
-          {q && (
-            <button
-              type="button"
-              onClick={() => {
-                setQ("");
-                input.current?.focus();
+      {/* Search first, and on phones it stays pinned under the header while you scroll. */}
+      <div className="sticky top-16 z-20 -mx-6 mb-3 border-b border-ocean-800/60 bg-ocean-950/95 px-6 py-2 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:order-2 sm:ml-auto sm:w-80">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-500" />
+            <input
+              ref={input}
+              type="search"
+              enterKeyHint="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && best) window.location.href = `/breeding/${best.slug}`;
+                if (e.key === "Escape") setQ("");
               }}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-ocean-400 hover:text-white"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+              placeholder={`Search ${guides.length} guides: guppy, class c…`}
+              aria-label="Search breeding guides"
+              className="w-full rounded-xl border border-ocean-700/70 bg-ocean-900/80 py-3 pl-9 pr-9 text-base text-white placeholder:text-ocean-500 focus:border-emerald-500/50 focus:outline-none sm:py-2.5 sm:text-sm [&::-webkit-search-cancel-button]:hidden"
+            />
+            {q && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  input.current?.focus();
+                }}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-ocean-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2 sm:order-1">{tabs}</div>
         </div>
       </div>
 
       {/* Difficulty */}
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs text-ocean-500">Difficulty</span>
+      <div className={`mb-2 ${chipRow}`}>
+        <span className="mr-1 shrink-0 text-xs text-ocean-500">Difficulty</span>
         {["", ...CLASS_LADDER.map((c) => c.letter)].map((letter) => (
           <button
             key={letter || "any"}
             type="button"
             onClick={() => setCls(letter)}
-            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs transition-colors ${
               cls === letter ? "border-amber-400/60 bg-amber-500/15 text-amber-200" : "border-white/10 text-ocean-300 hover:text-white"
             }`}
           >
@@ -292,13 +301,13 @@ export default function GuideBrowser({ guides }: { guides: GuideCard[] }) {
       </div>
 
       {/* Groups */}
-      <div className="mb-4 flex flex-wrap gap-1.5">
+      <div className={`mb-4 ${chipRow}`}>
         {[["All", inProgram.length] as [string, number], ...groups].map(([name, n]) => (
           <button
             key={name}
             type="button"
             onClick={() => setGroup(name)}
-            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs transition-colors ${
               group === name ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200" : "border-white/10 text-ocean-300 hover:text-white"
             }`}
           >
@@ -307,6 +316,9 @@ export default function GuideBrowser({ guides }: { guides: GuideCard[] }) {
           </button>
         ))}
       </div>
+
+      {/* Extras (the class ladder and easy starters) only while nothing is searched. */}
+      {!filtering && children}
 
       <p className="mb-6 text-sm text-ocean-400" aria-live="polite">
         {filtering ? (
@@ -343,7 +355,7 @@ export default function GuideBrowser({ guides }: { guides: GuideCard[] }) {
           {byPoints.map(([points, list]) => {
             const c = blurb(points);
             return (
-              <section key={points} id={c ? `class-${c.letter.toLowerCase()}` : `points-${points}`} className="scroll-mt-28">
+              <section key={points} id={c ? `class-${c.letter.toLowerCase()}` : `points-${points}`} className="scroll-mt-52 sm:scroll-mt-28">
                 <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <h2 className="font-display text-2xl text-white">
                     {c ? `Class ${c.letter}` : `${points} points`}

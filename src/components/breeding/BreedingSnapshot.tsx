@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Egg, Fish, Sparkles, Ruler, Users } from "lucide-react";
 import type { Guide } from "@/lib/breeding/guides";
-import { CLASS_LADDER } from "@/lib/society/classes";
+import { CLASS_COLORS, CLASS_LADDER } from "@/lib/society/classes";
 
 /**
  * Breeding at a glance, on a species profile: how hard it is (the Society
@@ -9,15 +9,7 @@ import { CLASS_LADDER } from "@/lib/society/classes";
  * all read from the written guide, with a link to the full guide.
  */
 
-// Difficulty runs neon green (Class A, easy) to neon red (Class F, rarely bred).
-const HEAT: Record<string, string> = {
-  A: "#39ff14",
-  B: "#b4ff1a",
-  C: "#ffe81a",
-  D: "#ffa31a",
-  E: "#ff5e1a",
-  F: "#ff1744",
-};
+const HEAT = CLASS_COLORS;
 
 // The first, plain part of a guide fact: "Cave spawner (biparental care)" -> "Cave spawner".
 function short(v: string | undefined, max = 80): string | null {

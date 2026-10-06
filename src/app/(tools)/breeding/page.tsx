@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Award, Egg, Fish, Leaf, ArrowRight } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { loadGuideCards } from "@/lib/breeding/guides";
-import { CLASS_LADDER } from "@/lib/society/classes";
+import { CLASS_COLORS, CLASS_LADDER } from "@/lib/society/classes";
 import GuideBrowser from "@/components/breeding/GuideBrowser";
 import BreederCta from "@/components/breeding/BreederCta";
 import { shareMeta } from "@/lib/seo/share";
@@ -98,59 +98,64 @@ export default async function BreedingIndex() {
   ];
 
   return (
-    <main className="min-h-screen pt-28 pb-20 px-6">
+    <main className="min-h-screen pt-24 pb-20 px-6 sm:pt-28">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }} />
       <div className="max-w-5xl mx-auto">
         <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-300">
           <Egg className="h-4 w-4" /> Breeding guides
         </p>
-        <h1 className="font-display text-4xl text-white sm:text-5xl">Breed it. Raise it. Get certified.</h1>
-        <p className="mt-3 max-w-3xl text-lg text-ocean-200">
-          Step-by-step guides for {fishCount} fish, shrimp and snails and {plantCount} plants: how to set up, spawn, hatch and
-          raise the fry. They&apos;re sorted by the Society&apos;s difficulty classes, so you can start easy and work your way
-          up to the fish few people have ever bred.
+        <h1 className="font-display text-3xl text-white sm:text-5xl">Breed it. Raise it. Get certified.</h1>
+        <p className="mt-3 max-w-3xl text-base text-ocean-200 sm:text-lg">
+          {`Step-by-step guides for ${fishCount} fish, shrimp and snails and ${plantCount} plants, sorted from beginner to expert.`}
+          <span className="hidden sm:inline"> How to set up, spawn, hatch and raise the fry, so you can start easy and work your way up to the fish few people have ever bred.</span>
         </p>
 
-        {/* The ladder at a glance, each class jumps to its list. */}
-        <nav aria-label="Difficulty classes" className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          {CLASS_LADDER.map((c) => (
-            <a
-              key={c.letter}
-              href={`#class-${c.letter.toLowerCase()}`}
-              className="rounded-xl border border-ocean-800/60 bg-ocean-900/40 p-3 transition-colors hover:border-amber-500/40"
+        <section className="mt-6 sm:mt-10">
+          <GuideBrowser guides={guides}>
+            {/* The ladder at a glance; each class jumps to its list. A sideways strip on phones. */}
+            <nav
+              aria-label="Difficulty classes"
+              className="-mx-6 mb-6 flex snap-x gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-6"
             >
-              <span className="flex items-baseline justify-between">
-                <span className="font-display text-xl text-amber-300">Class {c.letter}</span>
-                <span className="text-xs text-ocean-400">{c.points} pts</span>
-              </span>
-              <span className="mt-1 block text-xs leading-snug text-ocean-400">{c.blurb}</span>
-            </a>
-          ))}
-        </nav>
-
-        {starters.length > 0 && (
-          <section className="mt-10">
-            <h2 className="font-display text-2xl text-white">Start here: the easiest fish to breed</h2>
-            <p className="mt-1 text-sm text-ocean-300">Reliable, popular and quick to show results. A first success is the best teacher.</p>
-            <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {starters.map((g) => (
-                <li key={g.slug}>
-                  <Link
-                    href={`/breeding/${g.slug}`}
-                    className="flex h-full flex-col rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4 transition-colors hover:border-emerald-400/50"
-                  >
-                    <span className="font-medium text-white">{g.name}</span>
-                    <span className="mt-0.5 text-xs text-ocean-400">{[g.method, g.points != null ? `${g.points} points` : null].filter(Boolean).join(" · ")}</span>
-                    <span className="mt-2 line-clamp-3 text-xs text-ocean-300">{g.summary}</span>
-                  </Link>
-                </li>
+              {CLASS_LADDER.map((c) => (
+                <a
+                  key={c.letter}
+                  href={`#class-${c.letter.toLowerCase()}`}
+                  className="w-40 shrink-0 snap-start rounded-xl border border-ocean-800/60 bg-ocean-900/40 p-3 transition-colors hover:border-white/20 sm:w-auto"
+                  style={{ borderTop: `3px solid ${CLASS_COLORS[c.letter]}` }}
+                >
+                  <span className="flex items-baseline justify-between">
+                    <span className="font-display text-xl" style={{ color: CLASS_COLORS[c.letter] }}>
+                      Class {c.letter}
+                    </span>
+                    <span className="text-xs text-ocean-400">{c.points} pts</span>
+                  </span>
+                  <span className="mt-1 block text-xs leading-snug text-ocean-400">{c.blurb}</span>
+                </a>
               ))}
-            </ul>
-          </section>
-        )}
+            </nav>
 
-        <section className="mt-12">
-          <GuideBrowser guides={guides} />
+            {starters.length > 0 && (
+              <div className="mb-8">
+                <h2 className="font-display text-xl text-white sm:text-2xl">Start here: the easiest fish to breed</h2>
+                <p className="mt-1 text-sm text-ocean-300">Reliable, popular and quick to show results.</p>
+                <ul className="-mx-6 mt-3 flex snap-x gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+                  {starters.map((g) => (
+                    <li key={g.slug} className="w-56 shrink-0 snap-start sm:w-auto">
+                      <Link
+                        href={`/breeding/${g.slug}`}
+                        className="flex h-full flex-col rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4 transition-colors hover:border-emerald-400/50"
+                      >
+                        <span className="font-medium text-white">{g.name}</span>
+                        <span className="mt-0.5 text-xs text-ocean-400">{[g.method, g.points != null ? `${g.points} points` : null].filter(Boolean).join(" · ")}</span>
+                        <span className="mt-2 line-clamp-3 text-xs text-ocean-300">{g.summary}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </GuideBrowser>
         </section>
 
         {sample && (

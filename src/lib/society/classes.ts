@@ -20,3 +20,13 @@ export const CLASS_LADDER: { letter: string; points: number; blurb: string }[] =
 export function classForPoints(points: number): string | null {
   return CLASS_LADDER.find((c) => c.points === points)?.letter ?? null;
 }
+
+/** Difficulty colors, neon green (Class A, easy) to neon red (Class F, rarely bred). */
+export const CLASS_COLORS: Record<string, string> = {
+  A: "#39ff14",
+  B: "#b4ff1a",
+  C: "#ffe81a",
+  D: "#ffa31a",
+  E: "#ff5e1a",
+  F: "#ff1744",
+};
