@@ -1,3 +1,4 @@
+import { fillTokens, TOKEN_COLUMNS, type TokenRow } from "@/lib/data/tokens";
 import "server-only";
 import { supabasePublic } from "@/lib/supabase/public";
 import { getHelpSections } from "@/lib/help/content";
@@ -160,9 +161,12 @@ const loadSpecies = () =>
       supabasePublic
         .from("species")
         .select(
-          "slug, common_name, scientific_name, also_known_as, former_names, trade_codes, group_name, summary, body, diet, temperament, origin, care_level, water_type"
+          `${TOKEN_COLUMNS}, scientific_name, also_known_as, former_names, trade_codes, group_name, summary, body, diet, temperament, origin, care_level, water_type`
         )
         .range(a, b)
+    ).then((rows) =>
+      // Fill the live numbers so search snippets read like the page.
+      rows.map((r) => ({ ...r, summary: fillTokens(r.summary, r as unknown as TokenRow), body: fillTokens(r.body, r as unknown as TokenRow) }))
     )
   );
 

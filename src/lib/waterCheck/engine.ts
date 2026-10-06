@@ -1,4 +1,7 @@
 import type { Species, StockItem } from "@/lib/tankBuilder/engine";
+import { WATER, CARE } from "@/lib/data/facts";
+
+const HEAT = `${CARE.heaterSetPoint[0]}-${CARE.heaterSetPoint[1]}`;
 
 export type WaterReading = {
   temp_f?: number | null;
@@ -27,23 +30,24 @@ export type WaterResult = {
 };
 
 // ---- Tuning knobs: universal safe ranges (not fish-specific) ----
-const NITRATE_OK = 20; // ppm; at/below = healthy
-const NITRATE_WATCH = 40; // ppm; OK..here = plan a change soon
-const NITRATE_HIGH = 80; // ppm; WATCH..here = warning, above = danger
-const PH_LOW = 6.0;
-const PH_HIGH = 8.4;
-const PH_SOFT_EDGE = 6.5; // below = acidic side of normal
-const PH_HARD_EDGE = 7.8; // above = alkaline side of normal
-const TEMP_LOW = 66; // °F
-const TEMP_HIGH = 86; // °F
-const TEMP_COOL = 72; // below = cool side of comfortable
-const TEMP_WARM = 82; // above = warm side of comfortable
-const KH_LOW = 3; // dKH; below = weak buffering
-const GH_SOFT = 3; // dGH; below = very soft
-const GH_HARD = 18; // dGH; above = very hard
+// They live in lib/data/facts.ts so the glossary and courses quote the same numbers.
+const NITRATE_OK = WATER.nitrateOk;
+const NITRATE_WATCH = WATER.nitrateWatch;
+const NITRATE_HIGH = WATER.nitrateHigh;
+const PH_LOW = WATER.phLow;
+const PH_HIGH = WATER.phHigh;
+const PH_SOFT_EDGE = WATER.phSoftEdge;
+const PH_HARD_EDGE = WATER.phHardEdge;
+const TEMP_LOW = WATER.tempLow;
+const TEMP_HIGH = WATER.tempHigh;
+const TEMP_COOL = WATER.tempCool;
+const TEMP_WARM = WATER.tempWarm;
+const KH_LOW = WATER.khLow;
+const GH_SOFT = WATER.ghSoft;
+const GH_HARD = WATER.ghHard;
 // Ammonia and nitrite: test kits step 0, 0.25, 0.5, 1. A 0.25 is a warning
 // (do a water change), 0.5 and up is an emergency.
-const TOXIC_DANGER = 0.5;
+const TOXIC_DANGER = WATER.toxicDanger;
 // -----------------------------------------------------------------
 
 function has(v: number | null | undefined): v is number {
@@ -66,7 +70,7 @@ export function checkWater(
     species.length > 0 &&
     species.every((s) => s[minKey] != null && s[maxKey] != null && v >= (s[minKey] as number) && v <= (s[maxKey] as number));
   // Ammonia is far more toxic in alkaline or warm water.
-  const harshWater = (has(reading.ph) && reading.ph >= 7.8) || (has(reading.temp_f) && reading.temp_f >= 82);
+  const harshWater = (has(reading.ph) && reading.ph >= WATER.ammoniaHarshPh) || (has(reading.temp_f) && reading.temp_f >= WATER.ammoniaHarshTemp);
 
   // ---------- Universal: cycle & toxicity (no fish needed) ----------
 
@@ -281,7 +285,7 @@ export function checkWater(
         whatsHappening:
           "Most tropical fish slow down, stop eating, and get more disease-prone below the low 70s. Coldwater fish like goldfish are fine here; tropicals aren't.",
         howToFix:
-          "If you keep tropical fish, add or turn up a heater and raise it a couple of degrees at a time toward 76-78°F.",
+          `If you keep tropical fish, add or turn up a heater and raise it a couple of degrees at a time toward ${HEAT}°F.`,
       });
     } else if (t > TEMP_HIGH) {
       findings.push({
@@ -303,7 +307,7 @@ export function checkWater(
         whatsHappening:
           "Comfortable for coldwater fish like goldfish, and the cooler end for many tropicals. Most tropical community fish are happiest a few degrees warmer.",
         howToFix:
-          "If you keep tropicals, nudge a heater up toward 76-78°F a degree at a time. Coldwater setups are fine as-is.",
+          `If you keep tropicals, nudge a heater up toward ${HEAT}°F a degree at a time. Coldwater setups are fine as-is.`,
       });
     } else if (t > TEMP_WARM) {
       findings.push({

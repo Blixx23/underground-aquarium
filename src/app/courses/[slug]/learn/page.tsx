@@ -1,3 +1,4 @@
+import { fillTokens, loadTokenRows } from "@/lib/data/tokens";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Award, ScrollText } from "lucide-react";
@@ -169,6 +170,8 @@ export default async function CoursePage({
     .order("sort_order", { ascending: true });
 
   const secs = sectionRows ?? [];
+  // Numbers written into lessons come live from the species data and shared facts.
+  const tokenRows = await loadTokenRows(secs.map((s) => s.content));
   const sectionIds = secs.map((s) => s.id);
 
   // Questions (no correct_index — the answer key never reaches the browser)
@@ -193,7 +196,7 @@ export default async function CoursePage({
   const sections: Section[] = secs.map((s) => ({
     id: s.id,
     title: s.title,
-    content: s.content ?? "",
+    content: fillTokens(s.content ?? "", null, tokenRows),
     has_video: !!s.has_video,
     video_url: s.video_url,
     image_url: s.image_url ?? null,

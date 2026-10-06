@@ -1,4 +1,5 @@
 import { supabasePublic } from "@/lib/supabase/public";
+import { fillTokens, fillDeep, loadTokenRows, TOKEN_COLUMNS, type TokenRow } from "@/lib/data/tokens";
 import { CLASS_LADDER, classForPoints } from "@/lib/society/classes";
 
 /**
@@ -106,19 +107,22 @@ export async function loadGuideCards(): Promise<GuideCard[]> {
   // Other names from the species library, so "X-ray tetra" or "Corydoras panda" finds its guide.
   const slugs = [...new Set(rows.map((r) => r.species_slug).filter((x): x is string => !!x))];
   const names = new Map<string, string[]>();
+  const tokenRows = new Map<string, TokenRow>();
   if (slugs.length) {
     const { data: sp } = await supabasePublic
       .from("species")
-      .select("slug, common_name, also_known_as, former_names, trade_codes")
+      .select(`${TOKEN_COLUMNS}, also_known_as, former_names, trade_codes`)
       .in("slug", slugs);
-    for (const s of (sp ?? []) as { slug: string; common_name: string; also_known_as: string[] | null; former_names: string[] | null; trade_codes: string[] | null }[]) {
+    for (const s of (sp ?? []) as unknown as (TokenRow & { common_name: string; also_known_as: string[] | null; former_names: string[] | null; trade_codes: string[] | null })[]) {
       names.set(s.slug, [s.common_name, ...(s.also_known_as ?? []), ...(s.former_names ?? []), ...(s.trade_codes ?? [])]);
+      tokenRows.set(s.slug, s);
     }
   }
   return rows
     .map((r) => {
       const card = toCard(r, r.award_species_id ? awards.get(r.award_species_id) : undefined);
       card.aliases = (r.species_slug ? names.get(r.species_slug) ?? [] : []).filter((n) => n && n !== card.name);
+      card.summary = fillTokens(card.summary, r.species_slug ? tokenRows.get(r.species_slug) : null, tokenRows);
       return card;
     })
     .sort((a, b) => (a.points ?? 999) - (b.points ?? 999) || a.name.localeCompare(b.name));
@@ -129,14 +133,20 @@ export async function loadGuide(slug: string): Promise<Guide | null> {
   if (!data) return null;
   const g = data as unknown as GuideRow;
   const awards = await awardsById(g.award_species_id ? [g.award_species_id] : []);
+  // Numbers in the guide text come live from the species data (lib/data/tokens.ts).
+  const texts = [g.summary, g.intro, g.society_tip, JSON.stringify([g.facts, g.sections, g.faq])];
+  const others = await loadTokenRows(g.species_slug ? [...texts, `{{${g.species_slug}.name}}`] : texts);
+  const self = g.species_slug ? others.get(g.species_slug) ?? null : null;
+  const card = toCard(g, g.award_species_id ? awards.get(g.award_species_id) : undefined);
   return {
-    ...toCard(g, g.award_species_id ? awards.get(g.award_species_id) : undefined),
-    seoTitle: g.seo_title,
-    intro: g.intro,
-    facts: g.facts ?? {},
-    sections: Array.isArray(g.sections) ? g.sections : [],
-    faq: Array.isArray(g.faq) ? g.faq : [],
-    societyTip: g.society_tip,
+    ...card,
+    summary: fillTokens(card.summary, self, others),
+    seoTitle: fillTokens(g.seo_title, self, others),
+    intro: fillTokens(g.intro, self, others),
+    facts: fillDeep(g.facts ?? {}, self, others),
+    sections: fillDeep(Array.isArray(g.sections) ? g.sections : [], self, others),
+    faq: fillDeep(Array.isArray(g.faq) ? g.faq : [], self, others),
+    societyTip: fillTokens(g.society_tip, self, others),
     glossarySlug: g.glossary_slug,
     updatedAt: g.updated_at,
   };

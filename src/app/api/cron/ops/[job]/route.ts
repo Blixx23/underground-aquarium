@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cronAuthorised } from "@/lib/email/cronAuth";
 import { reviewIfDue, runWorker, type RunOutcome } from "@/lib/ops/runner";
 import { OPS_LIMITS } from "@/lib/ops/config";
+import { runDataCheck } from "@/lib/data/consistency";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -13,7 +14,7 @@ export const maxDuration = 300;
  *   /api/cron/ops/weekly        Monday 7 am: the weekly review
  *   /api/cron/ops/cmo           Monday 7:30 am: the week's marketing
  *   /api/cron/ops/partnerships  Tuesday 8 am: the shop pipeline
- *   /api/cron/ops/qa            Wednesday 9 am: QA / Site Health
+ *   /api/cron/ops/qa            Wednesday 9 am: the data check, then QA / Site Health
  * Each worker checks its own switch, the monthly cap and whether there's anything new.
  */
 export async function GET(req: Request, { params }: { params: Promise<{ job: string }> }) {
@@ -44,6 +45,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ job: str
       results.push(await reviewIfDue(deadline));
       break;
     case "qa":
+      // The rule-based data check first (free), so QA's run sees its findings.
+      try {
+        await runDataCheck();
+      } catch (e) {
+        console.error("data check failed", e);
+      }
       results.push(await runWorker("qa", "schedule", deadline));
       results.push(await reviewIfDue(deadline));
       break;

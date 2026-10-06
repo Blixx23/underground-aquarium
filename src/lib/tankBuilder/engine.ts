@@ -1,4 +1,5 @@
 import { popularityRank } from "@/lib/tankBuilder/popular";
+import { CARE } from "@/lib/data/facts";
 
 export type Species = {
   slug: string;
@@ -250,7 +251,7 @@ export function computeEquipment(
   if (coldwater) {
     heaterNote =
       "Everything here is happy at room temperature, so you likely don't need a heater. Keep the tank away from windows and heat vents to hold the temperature steady.";
-  } else if (gallons >= 55) {
+  } else if (gallons >= CARE.twoHeatersFromGal) {
     heaterNote =
       "For a tank this size, two smaller heaters (one at each end) heat more evenly, and if one sticks on or dies the other covers for it.";
   }

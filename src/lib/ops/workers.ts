@@ -261,12 +261,16 @@ links, pages slower than 4 seconds, empty or obviously broken pages, and anythin
 wording (fees, checkout, buy now, seller payouts), family plans, vendor guide, links to other websites in member content,
 "undefined", "NaN" or "[object Object]" on a page. Pages under /my, /account, /admin and /messages should redirect signed-out
 visitors to /login; that's correct, not a bug. Re-check bugs Chris marked fixed and set them verified or reopen them.
-Group similar problems into one finding.`,
-  goals: ["No broken pages or links", "Nothing retired still showing", "Key pages load in under 4 seconds"],
+Group similar problems into one finding.
+Before you run, a rule-based data check files 'data' findings titled "Data check: ..." when species numbers, varieties,
+breeding guides, glossary or course text, or the Society list disagree. Don't duplicate those. Do flag any page where a
+live number placeholder shows raw (text like "{{temp}}") or reads "varies" where a number belongs.`,
+  goals: ["No broken pages or links", "Nothing retired still showing", "Key pages load in under 4 seconds", "No page disagrees with the species data"],
   checklist: [
     "Main sections and a sample of each content type",
     "Links on the homepage and busiest pages",
     "Re-check bugs marked fixed",
+    "Raw {{...}} placeholders or 'varies' where a number belongs",
   ],
   report: `Write markdown: first line says whether the site is healthy. Then a table (Page | Status | Load time | Problem)
 for anything wrong only, then what you re-checked. Under 200 words. No em dashes.`,

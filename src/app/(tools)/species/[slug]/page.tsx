@@ -16,6 +16,7 @@ import { ldJson } from "@/lib/jsonLd";
 import { tankmatesFor } from "@/lib/tankBuilder/species";
 import { buildPath } from "@/lib/tankBuilder/share";
 import { glossaryLinker } from "@/lib/glossary/links";
+import { fillTokens, loadTokenRows, TOKEN_COLUMNS, type TokenRow } from "@/lib/data/tokens";
 import { classLabel, guideForSpecies } from "@/lib/breeding/guides";
 
 export const revalidate = 3600;
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const { data: s } = await supabasePublic
     .from("species")
-    .select("common_name, scientific_name, summary")
+    .select(`${TOKEN_COLUMNS}, scientific_name, summary`)
     .eq("slug", slug)
     .maybeSingle();
 
@@ -60,7 +61,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     : s.common_name;
 
   const description =
-    s.summary ??
+    fillTokens(s.summary, s as unknown as TokenRow) ??
     `Care guide and profile for ${full} with water parameters, tank size, temperament, diet, and more at UndergroundAquarium.`;
 
   const ogTitle = `${s.common_name} Care Guide & Profile`;
@@ -114,18 +115,26 @@ function Stat({ label, value }: { label: string; value: string | null }) {
 export default async function SpeciesDetailPage({ params }: Params) {
   const { slug } = await params;
 
-  const { data: s } = await supabasePublic
+  const { data: row } = await supabasePublic
     .from("species")
     .select("*")
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!s) {
+  if (!row) {
     // An old or renamed species link: send it to the species it meant.
     const alt = await matchSpeciesSlug(slug);
     if (alt) permanentRedirect(`/species/${alt}`);
     notFound();
   }
+
+  // Numbers written into the text come live from the data (see lib/data/tokens.ts).
+  const others = await loadTokenRows([row.summary, row.body]);
+  const s = {
+    ...row,
+    summary: fillTokens(row.summary as string | null, row as TokenRow, others),
+    body: fillTokens(row.body as string | null, row as TokenRow, others),
+  };
 
   const range = (
     a: number | null,

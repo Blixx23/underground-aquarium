@@ -1,3 +1,4 @@
+import { tokenizeOwnNumbers, type TokenRow } from "@/lib/data/tokens";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -49,6 +50,15 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
+  // Numbers the AI or admin typed into the text become live placeholders, so the
+  // text follows the numbers if they're corrected later.
+  if (action === "create" && body.species && typeof body.species === "object") {
+    const sp = body.species as Record<string, unknown>;
+    for (const k of ["summary", "body"]) {
+      if (typeof sp[k] === "string") sp[k] = tokenizeOwnNumbers(sp[k] as string, sp as unknown as TokenRow);
+    }
+  }
 
   // resolve_species_request checks the caller is an admin.
   const { data, error } = await supabase.rpc("resolve_species_request", {

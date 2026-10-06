@@ -1,3 +1,4 @@
+import { fillDeep, fillTokens, loadTokenRows } from "@/lib/data/tokens";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { matchLegacyGlossary } from "@/lib/legacy";
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const title = (term.seo_title as string | null) || `What Is ${term.term}? Meaning for Fish Tanks`;
   return {
     title,
-    description: term.definition,
+    description: fillTokens(term.definition as string | null) ?? undefined,
     ...shareMeta({ path: `/glossary/${slug}`, alt: `${term.term}, aquarium glossary`, type: "article" }),
     alternates: { canonical: `/glossary/${slug}` },
   };
@@ -51,17 +52,20 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function TermPage({ params }: Params) {
   const { slug } = await params;
 
-  const { data: term } = await supabasePublic
+  const { data: raw } = await supabasePublic
     .from("glossary_terms")
     .select("slug, term, category, definition, body, sections, faq")
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!term) {
+  if (!raw) {
     const to = await matchLegacyGlossary(slug);
     if (to) permanentRedirect(to);
     notFound();
   }
+  // Numbers written into the text come live from the species data and shared facts.
+  const others = await loadTokenRows([raw.definition, raw.body, JSON.stringify([raw.sections, raw.faq])]);
+  const term = fillDeep(raw, null, others);
 
   const { data: related } = await supabasePublic
     .from("glossary_terms")
