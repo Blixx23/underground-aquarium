@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel_Decorative, Crimson_Pro, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -10,24 +10,35 @@ import TrophySync from "@/components/trophies/TrophySync";
 import SiteAnalytics from "@/components/SiteAnalytics";
 import NavProgress from "@/components/NavProgress";
 
-// Fonts are downloaded at build time and served from our own domain, so the
-// page never waits on Google Fonts before it can show text.
-const display = Cinzel_Decorative({
-  weight: ["400", "700", "900"],
-  subsets: ["latin"],
+// Fonts are self-hosted from src/app/fonts and served from our own domain, so the
+// page never waits on Google Fonts, and a build can't fail because Google Fonts
+// was slow to answer.
+const display = localFont({
+  src: [
+    { path: "./fonts/cinzel-decorative-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/cinzel-decorative-latin-700-normal.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/cinzel-decorative-latin-900-normal.woff2", weight: "900", style: "normal" },
+  ],
   display: "swap",
   variable: "--font-cinzel",
 });
-const body = Crimson_Pro({
-  weight: ["300", "400", "600"],
-  style: ["normal", "italic"],
-  subsets: ["latin"],
+const body = localFont({
+  src: [
+    { path: "./fonts/crimson-pro-latin-300-normal.woff2", weight: "300", style: "normal" },
+    { path: "./fonts/crimson-pro-latin-300-italic.woff2", weight: "300", style: "italic" },
+    { path: "./fonts/crimson-pro-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/crimson-pro-latin-400-italic.woff2", weight: "400", style: "italic" },
+    { path: "./fonts/crimson-pro-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/crimson-pro-latin-600-italic.woff2", weight: "600", style: "italic" },
+  ],
   display: "swap",
   variable: "--font-crimson",
 });
-const mono = JetBrains_Mono({
-  weight: ["400", "500"],
-  subsets: ["latin"],
+const mono = localFont({
+  src: [
+    { path: "./fonts/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/jetbrains-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+  ],
   display: "swap",
   variable: "--font-jetbrains",
 });
