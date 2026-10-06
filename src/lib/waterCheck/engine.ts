@@ -58,6 +58,15 @@ export function checkWater(
   stock: StockItem[] = []
 ): WaterResult {
   const findings: WaterFinding[] = [];
+  const species: Species[] = stock.map((s) => s.species);
+  // True when fish are entered and every one of them is comfortable at this value,
+  // e.g. a goldfish tank at 65°F or a blackwater tank at pH 5.8. Then a general
+  // "unusual" reading is only a note, not a warning.
+  const stockSuits = (minKey: "ph_min" | "temp_min_f", maxKey: "ph_max" | "temp_max_f", v: number) =>
+    species.length > 0 &&
+    species.every((s) => s[minKey] != null && s[maxKey] != null && v >= (s[minKey] as number) && v <= (s[maxKey] as number));
+  // Ammonia is far more toxic in alkaline or warm water.
+  const harshWater = (has(reading.ph) && reading.ph >= 7.8) || (has(reading.temp_f) && reading.temp_f >= 82);
 
   // ---------- Universal: cycle & toxicity (no fish needed) ----------
 
@@ -73,6 +82,17 @@ export function checkWater(
         whatsHappening:
           "No ammonia means your biological filter is keeping up with the waste your fish produce. This is exactly what you want.",
         howToFix: "Nothing to do. Keep up your regular maintenance.",
+      });
+    } else if (a < TOXIC_DANGER && harshWater) {
+      findings.push({
+        parameter: "Ammonia",
+        level: "danger",
+        value: fmt(a, " ppm"),
+        title: "Ammonia in alkaline or warm water",
+        whatsHappening:
+          "Even a trace of ammonia is urgent here. At a pH of 7.8 or higher, or in warm water, much more of it is in its toxic form, so a reading that would be a warning in soft, cool water can burn gills.",
+        howToFix:
+          "Do a 50% water change now with dechlorinated water, then test again. Stop feeding for a day or two, add no fish, and keep changing water until ammonia reads zero.",
       });
     } else if (a < TOXIC_DANGER) {
       findings.push({
@@ -181,7 +201,7 @@ export function checkWater(
         whatsHappening:
           "This is high enough to make fish chronically unwell. It needs to come down gradually. One huge change when nitrate is very high can shock fish, because the swing itself is stressful.",
         howToFix:
-          "Do a couple of 30% changes a day or two apart rather than one massive one, then commit to weekly changes. Check whether the tank is overstocked or overfed.",
+          "Do a couple of 30% changes a day or two apart rather than one massive one, then commit to weekly changes. If the tank hasn't had a water change in months, or its pH is well below your tap water's, start smaller: 10 to 15% every two or three days, testing pH as you go. Check whether the tank is overstocked or overfed.",
       });
     }
   }
@@ -227,7 +247,7 @@ export function checkWater(
     } else if (p < PH_LOW) {
       findings.push({
         parameter: "pH",
-        level: "warning",
+        level: stockSuits("ph_min", "ph_max", p) ? "note" : "warning",
         value: String(p),
         title: "pH is on the low (acidic) side",
         whatsHappening:
@@ -238,7 +258,7 @@ export function checkWater(
     } else {
       findings.push({
         parameter: "pH",
-        level: "warning",
+        level: stockSuits("ph_min", "ph_max", p) ? "note" : "warning",
         value: String(p),
         title: "pH is on the high (alkaline) side",
         whatsHappening:
@@ -255,7 +275,7 @@ export function checkWater(
     if (t < TEMP_LOW) {
       findings.push({
         parameter: "Temperature",
-        level: "warning",
+        level: stockSuits("temp_min_f", "temp_max_f", t) ? "note" : "warning",
         value: fmt(t, "°F"),
         title: "Water is cold",
         whatsHappening:
@@ -366,13 +386,12 @@ export function checkWater(
       whatsHappening:
         "KH is your water's buffer; it's what keeps pH steady. When it's this low, pH can drift or crash between water changes, which is harder on fish than a stable 'wrong' pH.",
       howToFix:
-        "A small amount of crushed coral in the filter, or a pinch of baking soda, raises KH and steadies your pH. Go slowly and re-test.",
+        "A small amount of crushed coral in the filter raises KH and steadies your pH. Baking soda works faster: about 1 teaspoon per 50 gallons raises KH by roughly 1 dKH. Raise it no more than 1 to 2 dKH a day, and re-test.",
     });
   }
 
   // ---------- Fish-fit: do your numbers suit your stock? ----------
   // Reuses the preferred ranges already stored on each species.
-  const species: Species[] = stock.map((s) => s.species);
 
   // pH fit
   if (has(reading.ph)) {
@@ -380,7 +399,17 @@ export function checkWater(
     if (withPh.length > 0) {
       const lo = Math.max(...withPh.map((s) => s.ph_min as number));
       const hi = Math.min(...withPh.map((s) => s.ph_max as number));
-      if (lo <= hi && (reading.ph < lo || reading.ph > hi)) {
+      if (lo > hi) {
+        findings.push({
+          parameter: "pH vs. your fish",
+          level: "warning",
+          value: String(reading.ph),
+          title: "Your fish don't share a pH range",
+          whatsHappening:
+            "Some of your fish need softer, more acidic water and others need harder, alkaline water, so no single pH suits them all. One group will always be under stress.",
+          howToFix: "Rehome one group, or plan separate tanks. The Tank Builder shows which fish clash.",
+        });
+      } else if (reading.ph < lo || reading.ph > hi) {
         findings.push({
           parameter: "pH vs. your fish",
           level: "warning",
@@ -402,7 +431,17 @@ export function checkWater(
     if (withTemp.length > 0) {
       const lo = Math.max(...withTemp.map((s) => s.temp_min_f as number));
       const hi = Math.min(...withTemp.map((s) => s.temp_max_f as number));
-      if (lo <= hi && (reading.temp_f < lo || reading.temp_f > hi)) {
+      if (lo > hi) {
+        findings.push({
+          parameter: "Temperature vs. your fish",
+          level: "warning",
+          value: fmt(reading.temp_f, "°F"),
+          title: "Your fish don't share a temperature range",
+          whatsHappening:
+            "Some of your fish need cooler water than the others can live in long term (goldfish with tropical fish is the classic case), so no single temperature suits them all.",
+          howToFix: "Rehome one group, or plan separate tanks. The Tank Builder shows which fish clash.",
+        });
+      } else if (reading.temp_f < lo || reading.temp_f > hi) {
         findings.push({
           parameter: "Temperature vs. your fish",
           level: "warning",
@@ -422,7 +461,16 @@ export function checkWater(
     if (withGh.length > 0) {
       const lo = Math.max(...withGh.map((s) => s.gh_min as number));
       const hi = Math.min(...withGh.map((s) => s.gh_max as number));
-      if (lo <= hi && (reading.gh < lo || reading.gh > hi)) {
+      if (lo > hi) {
+        findings.push({
+          parameter: "GH vs. your fish",
+          level: "note",
+          value: fmt(reading.gh, " dGH"),
+          title: "Your fish don't share a hardness range",
+          whatsHappening: "Some of your fish prefer soft water and others hard water, so no single hardness suits them all perfectly.",
+          howToFix: "Aim for the middle and keep it steady, or plan separate tanks for the soft-water and hard-water fish.",
+        });
+      } else if (reading.gh < lo || reading.gh > hi) {
         findings.push({
           parameter: "GH vs. your fish",
           level: "note",

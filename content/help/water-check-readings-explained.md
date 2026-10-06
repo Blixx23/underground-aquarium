@@ -22,7 +22,7 @@ The overall banner is red if anything is red, amber if anything is amber, and gr
 ## Quick reference: every threshold
 | Reading | Healthy (green) | Heads-up (blue) | To watch (amber) | Needs action (red) |
 |---|---|---|---|---|
-| Ammonia (ppm) | 0 | | above 0, under 0.5 (so 0.25) | 0.5 or more |
+| Ammonia (ppm) | 0 | | above 0, under 0.5 (so 0.25) | 0.5 or more, or any amount when pH is 7.8+ or the water is 82°F+ |
 | Nitrite (ppm) | 0 | | above 0, under 0.5 (so 0.25) | 0.5 or more |
 | Nitrate (ppm) | 20 or less | above 20, up to 40 | above 40, up to 80 | above 80 |
 | pH | 6.5 to 7.8 | 6.0 up to 6.5, or above 7.8 up to 8.4 | below 6.0 or above 8.4 | never |
@@ -37,6 +37,7 @@ Ammonia is entered in ppm. It should be zero.
 
 - **0 ppm: "Ammonia is at zero"** (healthy). Your biological filter is keeping up with the waste your fish produce. How to fix: "Nothing to do, keep up your regular maintenance."
 - **Above 0 but under 0.5 ppm: "Traces of ammonia"** (to watch). This includes a 0.25 reading. Ammonia is toxic even at low levels. A trace usually means the tank is still cycling, you're feeding a bit much, or the filter took a hit. How to fix: do a 25 to 50 percent water change with dechlorinated water, ease off feeding for a day or two, and hold off adding fish until it reads zero.
+- **Any ammonia when pH is 7.8 or higher, or the water is 82°F or warmer: "Ammonia in alkaline or warm water"** (needs action). In alkaline or warm water much more of the ammonia is in its toxic form, so even a trace is urgent. How to fix: do a 50% water change now with dechlorinated water and test again; stop feeding for a day or two, add no fish, and keep changing water until it reads zero. (Water Check only knows this when you enter pH or temperature with the ammonia.)
 - **0.5 ppm or more: "Ammonia is too high"** (needs action). At this level it's actively stressing or chemically burning your fish, usually from an uncycled new tank, overstocking or overfeeding. How to fix: do a large (50%) water change right now with dechlorinated water, and another tomorrow if it's still high. Stop feeding for a couple of days, add no fish, and a bottled beneficial-bacteria supplement can speed the cycle.
 
 On most liquid kits the colors step 0, 0.25, 0.5, 1 ppm and up. So 0.25 reads as "to watch," and 0.5 or anything darker reads as needing action.
@@ -54,7 +55,7 @@ Nitrate is entered in ppm. It builds up between water changes, so lower is bette
 - **20 ppm or less: "Nitrate is in a healthy range"** (healthy). The harmless end product of the cycle, and yours is low. How to fix: "Nothing to do, your water-change routine is working."
 - **Above 20, up to 40 ppm: "Nitrate is creeping up"** (heads-up). Far less toxic than ammonia or nitrite, but a water change is due. How to fix: a 25-30% water change brings it down; live plants also soak up nitrate.
 - **Above 40, up to 80 ppm: "Nitrate is high"** (to watch). Sustained high nitrate stresses fish and fuels algae, usually from overdue water changes, overstocking or heavy feeding. How to fix: do a 30-50% water change now, then get on a regular weekly schedule. Easing off feeding and adding live plants both help.
-- **Above 80 ppm: "Nitrate is very high"** (needs action). High enough to make fish chronically unwell. It needs to come down gradually, because one huge change can shock fish. How to fix: do a couple of 30% changes a day or two apart rather than one massive one, then commit to weekly changes, and check whether the tank is overstocked or overfed.
+- **Above 80 ppm: "Nitrate is very high"** (needs action). High enough to make fish chronically unwell. It needs to come down gradually, because one huge change can shock fish. How to fix: do a couple of 30% changes a day or two apart rather than one massive one, then commit to weekly changes, and check whether the tank is overstocked or overfed. If the tank hasn't had a water change in months, or its pH is well below your tap water's, start smaller: 10 to 15% every two or three days, testing pH as you go.
 
 ## What do my pH results mean?
 pH has no unit. Water Check only flags general extremes, because the right pH depends on your fish. pH never reaches the red "needs action" level.
@@ -80,7 +81,7 @@ The Water Check hint under the box says "most like 74-80," which is a narrower s
 KH (carbonate hardness, entered in dKH) is your water's buffer: it keeps pH steady.
 
 - **3 dKH or more: "KH is holding your pH steady"** (healthy). Enough buffer that your pH shouldn't swing between water changes. How to fix: "Nothing to do."
-- **Below 3 dKH: "Low carbonate hardness, so pH can swing"** (heads-up). pH can drift or crash between water changes, which is harder on fish than a stable "wrong" pH. How to fix: a small amount of crushed coral in the filter, or a pinch of baking soda, raises KH and steadies your pH. Go slowly and re-test.
+- **Below 3 dKH: "Low carbonate hardness, so pH can swing"** (heads-up). pH can drift or crash between water changes, which is harder on fish than a stable "wrong" pH. How to fix: a small amount of crushed coral in the filter raises KH and steadies your pH. Baking soda works faster: about 1 teaspoon per 50 gallons raises KH by roughly 1 dKH. Raise it no more than 1 to 2 dKH a day, and re-test.
 
 ## What do my GH results mean?
 GH (general hardness, entered in dGH) is how much calcium and magnesium your water has. There's no single right number, so only the extremes get a heads-up. GH never reaches amber or red.
@@ -98,7 +99,9 @@ When the tool knows your fish, it adds checks based on the range all of them sha
 - **"Temperature doesn't match your stocked fish"** (to watch): your temperature is outside the shared range, for example "your fish overlap best between 74-78°F." How to fix: nudge the heater a degree or two at a time until you're inside that range.
 - **"Water is softer than your fish like"** or **"Water is harder than your fish like"** (heads-up): your GH is outside the shared hardness range, for example "your fish overlap best between 6-12 dGH." It's only a heads-up because most fish settle in fine if it stays steady, though they may not color up or breed. How to fix: to raise it, a remineralizer or a little crushed coral, changed gradually over a few water changes; to lower it, mix some RO or distilled water into your water changes.
 
-These only appear when your fish have data for that value and actually share a range. If your fish don't overlap at all, there's no fish-fit result (the Compatibility tab flags that instead). When you haven't added fish, the tab reminds you: "Add fish and the pH and temperature checks will also tell you how well your water suits them."
+These only appear when your fish have data for that value. If your fish don't share a range at all, you'll see **"Your fish don't share a pH range"** or **"Your fish don't share a temperature range"** (to watch), or **"Your fish don't share a hardness range"** (heads-up). That means no single setting suits every fish, for example goldfish with tropical fish. How to fix: rehome one group or plan separate tanks.
+
+When you've told the tool your fish and every one of them is comfortable at your reading, an unusual general reading is softened to a heads-up. For example, 64°F in a goldfish tank or pH 5.8 in a blackwater tank of cardinal tetras is a note, not a warning. When you haven't added fish, the tab reminds you: "Add fish and the pH and temperature checks will also tell you how well your water suits them."
 
 ## Common problems
 **Water Check says my ammonia is "at zero" but I typed a negative number.**
@@ -114,7 +117,7 @@ pH and temperature never reach red on their own; they top out at "to watch." Sti
 Enter the value your color matches best. When in doubt, enter the higher number to be safe. Remember 0.25 is "to watch" and 0.5 is "needs action."
 
 **My ammonia is 0.25 and it's only amber now.**
-That's on purpose. A 0.25 trace calls for a 25 to 50 percent water change and lighter feeding, not an emergency. It turns red at 0.5 ppm.
+That's on purpose in soft, cool water. A 0.25 trace calls for a 25 to 50 percent water change and lighter feeding. It turns red at 0.5 ppm, or at any amount if your pH is 7.8 or higher or the water is 82°F or warmer, because ammonia is far more toxic there.
 
 **I use test strips that give ppm hardness.**
 Divide the ppm number by about 17.9 to get dGH or dKH.

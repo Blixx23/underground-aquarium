@@ -68,7 +68,7 @@ The **Heater** box shows a wattage range of **3 to 5 watts per gallon**, each en
 
 The builder's advice (in its FAQ) is to use the higher end if your room gets cold or the tank sits near a window or outside wall.
 
-**Tanks of 75 gallons and up** get this note: "For a tank this size, two smaller heaters (one at each end) heat more evenly, and if one sticks on or dies the other covers for it."
+**Tanks of 55 gallons and up** get this note: "For a tank this size, two smaller heaters (one at each end) heat more evenly, and if one sticks on or dies the other covers for it."
 
 ## When does it say I don't need a heater?
 The **Heater** box shows **Not needed** when every fish in your build is happy at room temperature. Specifically, all of these must be true:

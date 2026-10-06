@@ -250,7 +250,7 @@ export function computeEquipment(
   if (coldwater) {
     heaterNote =
       "Everything here is happy at room temperature, so you likely don't need a heater. Keep the tank away from windows and heat vents to hold the temperature steady.";
-  } else if (gallons >= 75) {
+  } else if (gallons >= 55) {
     heaterNote =
       "For a tank this size, two smaller heaters (one at each end) heat more evenly, and if one sticks on or dies the other covers for it.";
   }
@@ -296,7 +296,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
       issues.push({
         level: "caution",
         title: `${s.common_name} is tight in this tank`,
-        detail: `${s.common_name} is usually kept in ${s.min_tank_gal}+ gallons, and ${gal} is on the small side. Fine short term or for a single fish, but a bigger tank should be the plan.`,
+        detail: `${s.common_name} is usually kept in ${s.min_tank_gal}+ gallons, and ${gal} is on the small side. ${(s.min_group_size ?? 1) > 1 ? "Fine short term" : "Fine short term or for a single fish"}, but a bigger tank should be the plan.`,
         slugs: [s.slug],
         fixes: [
           { label: `Try ${s.min_tank_gal} gallons`, type: "gallons", gallons: s.min_tank_gal },

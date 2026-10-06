@@ -124,15 +124,16 @@ Species rated Advanced, Expert or Kept but not recommended also carry that tag o
 - **Origin**: where it comes from in the wild.
 - **Breeding**: how the species reproduces:
   - **Egg-scatterer**: scatters eggs over plants or the substrate and gives no care. Parents often eat the eggs.
-  - **Egg-depositor**: places eggs on a chosen surface, like a leaf, rock or glass.
-  - **Egg-layer**: lays eggs (general term).
-  - **Substrate spawner**: lays eggs on a cleaned surface such as a flat rock, often guarded by the parents.
+  - **Egg-depositor**: attaches eggs to a chosen surface, like a leaf, glass or a spawning mop, with little or no guarding (corydoras, harlequin rasboras, many killifish).
+  - **Egg-layer**: lays eggs or egg capsules in a way the other labels don't cover (most snails, and a few fish).
+  - **Substrate spawner**: lays eggs on an open, cleaned surface such as a flat rock or leaf, and the parents guard the eggs and fry (angelfish, discus, rams, oscars).
   - **Cave spawner**: lays eggs inside a cave, pipe or crevice, usually guarded.
   - **Mouthbrooder**: a parent carries the eggs and young in its mouth.
   - **Bubble-nester**: the male builds a nest of bubbles at the surface and guards the eggs.
   - **Livebearer**: gives birth to free-swimming young instead of laying eggs.
+  - **Egg carrier**: the female carries the eggs under her tail until they hatch (shrimp, crayfish and crabs).
 
-If members have shared breeding reports for the species, you'll see a **How to breed [species]** box further down. See [Breeding guides](/help/breeding-guides).
+If the species has a written breeding guide or members have shared breeding reports, you'll see a **How to breed [species]** box further down. See [Breeding guides](/help/breeding-guides).
 
 ## What are the care notes and care questions?
 Under the stats you may see:
