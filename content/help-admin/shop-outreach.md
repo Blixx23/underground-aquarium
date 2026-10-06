@@ -1,9 +1,9 @@
 ---
 title: Shop outreach emails
 category: Email & campaigns
-summary: How unclaimed fish stores get emailed, where their addresses come from, what the emails contain, how unsubscribe and removal requests work, and what shops see.
+summary: How unclaimed fish stores get emailed, where their addresses come from, how bad addresses are cleaned up or skipped, what the emails contain, how unsubscribe and removal requests work, and what shops see.
 order: 30
-keywords: store outreach, cold email, shop contacts, store contacts, unsubscribe link, opt out, remove me, take me off, one click unsubscribe, claim link email, outreach reply, list-unsubscribe
+keywords: store outreach, placeholder address, mystore.com, bad address, address cleanup, bounce brake, bounces, cold email, shop contacts, store contacts, unsubscribe link, opt out, remove me, take me off, one click unsubscribe, claim link email, outreach reply, list-unsubscribe
 pages: /admin/campaigns, /admin/campaigns/[key], /admin/email, /api/email/unsubscribe, /claim/[slug], /stores/[slug]
 ---
 
@@ -18,6 +18,25 @@ There is no screen in the site for adding or editing shop contact addresses, and
 The planner enrolls a shop into an unclaimed-shops campaign when it has a contact address, hasn't opted out, nobody has claimed it, it's shown in the directory, and its address isn't on the Do not email list. It drops the shop the moment it's claimed, hidden, opted out, bounced or complained. The details are in [Running email campaigns](/admin/help/campaigns).
 
 Shop owners who have claimed their page get a different set of emails (review alerts, fix alerts, milestones and a weekly report) sent to the address they sign in with, not outreach. Those are described for owners in [Shop notifications and emails](/help/shop-notifications-and-emails).
+
+## Which addresses are cleaned up or never mailed?
+Shop addresses come from public websites, not from the shop typing them in, so they carry website-template leftovers and scraping mistakes. Outreach and other bulk mail get extra address care for this. Member addresses, receipts and alerts are not affected.
+
+**Harmless slips are fixed** and the address is used:
+
+- "mailto:" at the start, angle brackets around it, or a trailing dot or comma,
+- upper case letters,
+- "www." typed into the domain, so clyde@www.shop.com becomes clyde@shop.com.
+
+**These are never mailed.** They go on the Do not email list as "Address doesn't work" (all email), with the reason:
+
+- Website-template placeholder domains, such as mystore.com, yourdomain.com, domain.com, example.com, yourstore.com, mysite.com, yoursite.com, yourwebsite.com, website.com and company.com, plus addresses scraped from page code at wixpress.com, sentry.io, squarespace.com and godaddy.com. The reason reads "Placeholder address from a website template (mystore.com)".
+- Placeholder names before the @, such as your@, youremail@, name@, email@, user@, test@ and example@. The reason reads "Placeholder address from a website template (your@)".
+- Scraped file names that look like addresses, such as logo@2x.png. The reason reads "Not an email address (a file name scraped from a web page)".
+
+These checks run when a shop is enrolled in a campaign, again when a step is queued, and once more right before sending, so mail already waiting in the queue is cleaned too. A placeholder row caught in the queue shows on the [Email](/admin/email) page as "Not sent · on the do-not-email list", with a red line starting "Not sent:" and the reason.
+
+The older domain check still runs too: a domain with no mail server is blocked before anything is sent. The new rules catch what that check can't, because placeholder domains like mystore.com often do have a mail server. What still can't be caught in advance is a real shop domain where that one mailbox no longer exists. Each such address is blocked after its first bounce.
 
 ## What does an outreach email look like?
 It's written to look like a letter, not an advert, because Gmail sorts mail into Promotions mostly by its shape:
@@ -85,9 +104,11 @@ To take a shop's addresses off Do not email (for example to send a claim link as
 ## Why are some shop emails never sent?
 The queue skips or blocks mail when:
 
-- the address fails basic checks (spaces, no @, a placeholder domain such as example.com, over 254 characters),
+- the address fails basic checks (spaces, no @, over 254 characters),
+- the address is a website-template placeholder or a scraped file name (see [above](#which-addresses-are-cleaned-up-or-never-mailed)),
 - the address is on Do not email (outreach is marketing, so both marketing only and all email entries block it),
 - bulk mail is paused, or the daily cap is used up (it waits for the next day),
+- the bounce brake is on: when 5% or more of the last week's mail bounced, bulk mail goes only to Gmail, Yahoo, Outlook and other big providers, and every other shop address waits for the next day until the rate drops back under 5% (see [Email queue and health](/admin/help/email-queue-and-health#what-is-the-bounce-brake)),
 - `RESEND_FROM_BULK` isn't set (it keeps retrying until it is).
 
 ## Common problems
@@ -98,5 +119,7 @@ The queue skips or blocks mail when:
 **A shop wants to claim after unsubscribing.** Press **Bring back** and send them the copied claim link.
 
 **A bounce or spam complaint came in.** The address goes on Do not email automatically (via the Resend webhook): a hard bounce as all email, a complaint as marketing only. The shop drops out of the campaign on the next run. A bulk email already waiting in the queue for that address isn't sent: the worker re-checks the list and marks it "Not sent · on the do-not-email list".
+
+**A shop's address was skipped as a placeholder, but it's real.** Check the reason on the Do not email list. If the shop really uses that address, remove it with the **X** on the [Email](/admin/email) page, but note the queue will still skip it if it matches the placeholder rules; email that shop personally instead.
 
 **I want to email one shop personally.** Write from support@undergroundaquarium.com as normal. Outreach has no one-off send; use a campaign test only for checking the template.

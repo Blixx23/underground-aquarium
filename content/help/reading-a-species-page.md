@@ -1,9 +1,9 @@
 ---
 title: Reading a species page
 category: Tools & learning
-summary: What every stat, tag and section on a species care page means, from temperament and swim level to suitability, breeding type, photos and videos.
+summary: What every stat, tag and section on a species care page means, from temperament and swim level to suitability, breeding type, tankmates, planning a tank, glossary links, photos and videos.
 order: 20
-keywords: care guide, care sheet, fish profile, water parameters, dGH, GH, hardness, pH range, temperature range, fahrenheit, tank size, gallons, schooling fish, shoaling, semi aggressive, community fish, beginner fish, hard to keep, egg layer, bubble nest, mouth brooder, livebearing, undescribed species, variety, morph, color form
+keywords: care guide, care sheet, fish profile, water parameters, dGH, GH, hardness, pH range, temperature range, fahrenheit, tank size, gallons, schooling fish, shoaling, semi aggressive, community fish, beginner fish, hard to keep, egg layer, bubble nest, mouth brooder, livebearing, undescribed species, variety, morph, color form, tankmates, what fish can live with, compatible fish, plan a tank, tank builder, glossary links
 pages: /species/[slug]
 ---
 
@@ -45,7 +45,23 @@ Stable water inside the range matters more than hitting one exact number. To che
 - **Max size**: about how big an adult gets, in inches. Buy for the adult size, not the size in the store.
 - **Min tank**: the smallest tank we recommend for this species, in gallons. For schooling or group fish, this is for a proper group, not a single fish.
 
-If you plan a whole community, the [Tank Builder](/tank-builder) uses these same numbers to warn you when a tank is too small.
+If you plan a whole community, the [Tank Builder](/tank-builder) uses these same numbers to warn you when a tank is too small. The **Plan a tank** button under the stats starts one for you (see below).
+
+## What does "Plan a tank with [species]" do?
+Under the care stats there's a **Plan a tank with [species]** button. It opens the [Tank Builder](/tank-builder) with that fish already added at its minimum group size (for example 6 for a schooling fish, or one for a fish kept alone), in its recommended minimum tank size. The note on the button says exactly what you'll get, such as "Opens the Tank Builder with 6 of them added in a 10 gallon tank." From there you can add tankmates and the builder checks the mix.
+
+The button only shows on pages for an actual species, variety or form, not on pages that cover a whole group. Opening it replaces any unsaved build you had in the Tank Builder on that device. See [Using the Tank Builder](/help/tank-builder).
+
+## What is "Good tankmates for [species]"?
+This section lists up to **8 fish** that the [Tank Builder](/tank-builder) found to fit with this one: no water, size or temperament problems. It's worked out with the same rules the builder uses for its **Tankmates that fit** suggestions:
+
+- The check uses this fish at its minimum group size, in a tank sized for it. That's at least 20 gallons, at least this fish's own minimum tank, and bigger if this fish's group alone would fill more than half the tank. For example, angelfish have their tankmates worked out for a 75 gallon tank. The line under the heading says which size was used.
+- Each tankmate is tried at its own minimum group size and must add no new Conflicts or Checks, keep the tank under 90% stocked, and leave a shared temperature window at least 4°F wide.
+- Only one fish per group is shown (so you don't get eight kinds of tetra).
+
+Each tankmate shows its reason (for example "Fills the bottom of the tank") and, for group fish, "groups of [number]+". Tap one to open its species page. **Try a few together in the Tank Builder** opens the builder with this fish plus the top 3 tankmates, in the tank size used for the check.
+
+The section doesn't appear when we don't have enough data to check (a temperature range and adult size are needed) or when nothing passes. It's a starting point, not a promise: every fish is an individual.
 
 ## What does Temperament mean?
 How the species behaves toward other fish. The values you'll see most often:
@@ -124,7 +140,10 @@ Under the stats you may see:
 - **Tanks with this fish**: members' public tanks that include this species, with the tank name, size, owner and likes. Tap one to see the tank. Scroll sideways to see more.
 - **Care notes**: a short paragraph about keeping the species.
 - **How to breed [species]**: a link to member breeding reports, when there are any, with how many reports exist.
-- **[Species] care questions**: common questions answered straight from the species' own data. Depending on what we have, these cover what size tank it needs (or how big it gets), water temperature and pH, whether it's aggressive, what it eats, how long it lives, whether it's good for beginners, how it breeds and where it comes from. They say the same thing as the stats, in plain sentences.
+- **[Species] care questions**: common questions answered straight from the species' own data. Depending on what we have, these cover what size tank it needs (or how big it gets), water temperature, pH and hardness, whether it's aggressive, **what fish can live with it** (from the tankmates above, when there are at least 2), what it eats, how long it lives, whether it's good for beginners, how it breeds and where it comes from. They say the same thing as the stats, in plain sentences.
+
+## Why are some words in the care notes links?
+Fishkeeping words in the care notes and care questions, like "cycling," "KH" or "sponge filter," link to their entry in the [Glossary](/glossary). Only the first mention of each word links, and only a handful per page, so the text stays easy to read. Tap one for a plain-English explanation. See [Using the aquarium glossary](/help/glossary).
 
 ## How do member photos work on a species page?
 Photos on species pages are taken by members of their own fish, and each one was checked by our team before it went live. A species can show up to 5 member photos.
@@ -158,6 +177,12 @@ If nothing is listed, you'll see a note with **Sell yours** (post a free ad) and
 We only show a stat when we have real data for it. If a box like **Lifespan** or **Hardness** isn't there, we don't have a reliable value yet. The care questions follow the same rule, so a species with less data has fewer questions.
 
 ## Common problems
+
+**There's no "Good tankmates" section on this page.**
+We need at least a temperature range and an adult size to check tankmates, and some fish (big predators, for example) have nothing that passes every check. You can still tap **Plan a tank** and try fish yourself in the Tank Builder.
+
+**The tankmates were checked in a bigger tank than I have.**
+They're checked in a tank sized for this fish's group. In a smaller tank some of them may not fit; open the builder, set your real size and see what it says.
 
 **The temperature is only in Fahrenheit.**
 Species pages show temperature in °F only. To convert, subtract 32 and multiply by 5/9 (for example 77°F is 25°C).

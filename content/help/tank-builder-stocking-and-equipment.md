@@ -3,7 +3,7 @@ title: Stocking level, heater and filter sizing
 category: Tools & learning
 summary: How the Tank Builder works out how full your tank is, which fish count as messy, and how it sizes your heater, filter, heater setting and tankmate ideas.
 order: 120
-keywords: stocking level, how many fish, inch per gallon rule, bioload, overstocked, stocking percentage, heater wattage, watts per gallon, filter gph, gallons per hour, turnover, flow rate, messy fish, waste, heater temperature, tankmates, suggestions, coldwater
+keywords: stocking level, how many fish, inch per gallon rule, bioload, overstocked, stocking percentage, heater wattage, watts per gallon, filter gph, gallons per hour, turnover, flow rate, messy fish, waste, heater temperature, tankmates, suggestions, coldwater, try gallons, bigger tank, temperature window
 pages: /tank-builder, /tank-builder/[size]
 ---
 
@@ -49,6 +49,8 @@ The bar is green up to 89%, amber from 90% to 130%, and red above 130%. A thin l
 The same percentage shows on the tank picture (for example "42% stocked"), colored the same way. Past 90% the water in the picture gets a faint green-brown tint, stronger past 130%.
 
 Near capacity also adds a **Check** ("Heavily stocked") and Overstocked adds a **Conflict** ("Overstocked") to your compatibility results, and a very overstocked tank caps your score. See [Tank Builder compatibility warnings explained](/help/tank-builder-compatibility-warnings).
+
+Both of those warnings have a **Try [size] gallons** button. It picks the smallest common US size bigger than your tank (5, 10, 20, 29, 40, 55, 75, 90, 125, 150, 180, 220 or 300 gallons) where the same fish would come out at about 85% or less, so you land comfortably below the 90% line. Tapping it sets that size in gallons. For example, a 20 gallon tank at 110% gets **Try 29 gallons**, because 29 gallons brings it down to about 76%.
 
 ## Why is the stocking limit so cautious?
 The limit is set low on purpose so beginners have a safety margin. A tank at 100% isn't doomed: the builder's own wording says 90 to 130% "can work with strong filtration and regular water changes." Experienced keepers with heavy filtration, lots of plants and frequent water changes often run tanks above the line. Treat the percentage as a guide to how much room you have, not a hard rule.
@@ -107,6 +109,7 @@ The builder works in US gallons internally and shows gear in watts and gallons p
 - It isn't marked as "not recommended" or "expert" level.
 - Adding it creates **no new Conflicts or Checks** (Tips are allowed).
 - Adding it keeps your stocking **under 90%**.
+- With it added, your whole group still shares a temperature window at least **4°F** wide. This keeps the list from suggesting, say, tropical fish that only just touch the top of a goldfish's range.
 
 The keepers are then ranked. A fish gets a big boost if it would live in a part of the tank you haven't filled yet (top, middle or bottom), a smaller boost if it's a beginner or easy fish, a boost for being a popular, familiar species, and a small boost for being peaceful. It loses ground for each new Tip it would add.
 
@@ -126,7 +129,7 @@ The **Tankmates that fit** section is hidden when:
 
 - You haven't entered a tank size, or haven't added any fish yet.
 - Your tank is already near capacity, so anything more would push it to 90% or beyond.
-- Every candidate would add a Conflict or Check (common in small tanks or with aggressive fish).
+- Every candidate would add a Conflict or Check (common in small tanks or with aggressive fish), or would squeeze the shared temperature window under 4°F.
 
 Try a bigger tank size, fewer fish, or removing the fish causing warnings to see more ideas.
 

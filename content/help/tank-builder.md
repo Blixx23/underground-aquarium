@@ -1,9 +1,9 @@
 ---
 title: Using the Tank Builder
 category: Tools & learning
-summary: A full walkthrough of the Tank Builder: setting your tank size, adding fish, reading the score and results, sharing, saving and the Water test tab.
+summary: A full walkthrough of the Tank Builder: setting your tank size, adding fish, reading the score and results, one-tap fixes, starting from a species page, sharing, saving and the Water test tab.
 order: 100
-keywords: compatibility checker, stocking calculator, aqadvisor, fish calculator, tank planner, aquarium planner, fish compatibility, tankmates, gallon calculator, litres, liters, tank volume, measure tank, will my fish get along
+keywords: compatibility checker, stocking calculator, aqadvisor, fish calculator, tank planner, aquarium planner, fish compatibility, tankmates, gallon calculator, litres, liters, tank volume, measure tank, will my fish get along, fix buttons, one-tap fix, plan a tank, water trends, hardness
 pages: /tank-builder, /tank-builder/[size], /tanks/[id]
 ---
 
@@ -98,7 +98,7 @@ The labels on the picture show your size (for example "29 gal · 110 L"; in litr
 The **Compatibility** tab is the default view in the results panel. Before you add fish it says "Add fish to get your score." Once you add one:
 
 1. **Score dial**: a ring that fills with your score out of 100, with a label such as **Great match** or **Needs changes**. Next to it are two counters: how many **conflicts** and how many items **to check**.
-2. **The problem list**: every issue the builder found, worst first. Each one is tagged **Conflict** (red), **Check** (amber) or **Tip** (blue info icon), with a title that names the fish and a plain-English explanation. If there are none you'll see "No problems found with this combination. Every fish has its own personality, so watch the first few weeks."
+2. **The problem list**: every issue the builder found, worst first. Each one is tagged **Conflict** (red), **Check** (amber) or **Tip** (blue info icon), with a title that names the fish and a plain-English explanation. Many come with green one-tap fix buttons, like **Make it 6**, **Remove [Fish]** or **Try 55 gallons** (see the next section). If there are none you'll see "No problems found with this combination. Every fish has its own personality, so watch the first few weeks."
 3. **How full is it?**: your stocking percentage, a label (Lightly stocked, Comfortably stocked, Near capacity or Overstocked) and a bar with a marker at 90%.
 4. **Gear for [size] gallons**: **Heater** watts, **Filter** flow in GPH, and **Set to** (the heater temperature).
 5. **Water each fish likes**: a chart of each fish's temperature and pH range with the shared range highlighted. It opens automatically when you have two or more species.
@@ -106,6 +106,16 @@ The **Compatibility** tab is the default view in the results panel. Before you a
 If you haven't entered a size, items 3 and 4 are replaced by "Add your tank size to see how full it is and what heater and filter you need."
 
 Every rule, severity and score cutoff is explained in [Tank Builder compatibility warnings explained](/help/tank-builder-compatibility-warnings). The stocking math and gear formulas are in [Stocking level, heater and filter sizing](/help/tank-builder-stocking-and-equipment).
+
+## What do the fix buttons under a problem do?
+Many problems in the **Compatibility** tab have one or two green buttons that make the change for you:
+
+- **Make it [number]**: raises a group that's too small to its minimum.
+- **Remove [Fish]**: takes out the fish causing the problem, for example a fish whose tank is too small, the odd one out on temperature, pH or hardness, a fin nipper next to long-finned fish, or a big fish that may eat its tankmates.
+- **Try [size] gallons**: changes your tank size, either to a fish's recommended minimum or, when you're overstocked or heavily stocked, to the next common tank size that gives comfortable room.
+- **Keep just one** or **Remove [betta]**: for more than one male betta.
+
+After you tap, a short message confirms it (for example "Done: Try 55 gallons") and every result updates. A size fix always switches the size box to **Gallons**. Exactly when each button appears is in [Tank Builder compatibility warnings explained](/help/tank-builder-compatibility-warnings).
 
 ## What does the "Water each fish likes" chart show?
 Open **Water each fish likes** at the bottom of the **Compatibility** tab. There are two charts:
@@ -115,7 +125,7 @@ Open **Water each fish likes** at the bottom of the **Compatibility** tab. There
 
 Each fish gets a colored bar showing its comfortable range (the colors match the dots in your fish list). When you have two or more fish, the range they all share is highlighted in green and labeled, for example "Shared: 74-78°F." If there's no range they all share, the label reads **No overlap** in red, which is the same problem the builder flags as a temperature mismatch or pH difference.
 
-Fish with no temperature or pH data in our library are left off the chart. Hardness (GH) isn't charted.
+Fish with no temperature or pH data in our library are left off the chart. Hardness (GH) isn't charted, but the builder still compares your fish's hardness ranges and warns you in the problem list if they don't overlap ("Water hardness preferences differ").
 
 ## How do tankmate suggestions work?
 Once you've set a size and added at least one fish, **Tankmates that fit** appears under your fish list with up to 6 suggestions. Each shows the quantity (for example "6 × [fish name]") and a reason:
@@ -125,6 +135,11 @@ Once you've set a size and added at least one fish, **Tankmates that fit** appea
 - "No conflicts with your fish"
 
 Tap a suggestion to add it at that quantity. The list updates every time your build changes. How suggestions are picked is covered in [Stocking level, heater and filter sizing](/help/tank-builder-stocking-and-equipment).
+
+## Can I start a build from a species page?
+Yes. Every fish's [species page](/help/reading-a-species-page) has a **Plan a tank with [fish]** button under its care stats. It opens the Tank Builder with that fish already added at its minimum group size, in its recommended minimum tank size. If the page shows **Good tankmates for [fish]**, the **Try a few together in the Tank Builder** button opens the fish plus its top 3 tankmates in the tank size they were checked for.
+
+These buttons work like a share link: the build opens ready to change, and it replaces any unsaved build on that device.
 
 ## What if the fish I want isn't in the Tank Builder?
 If your search finds nothing, the list says "“[what you typed]” isn't in our library yet." with a **Request it and earn bubbles** button. If you get results but not the fish you meant (and you typed at least 3 characters), tap **Not the one? Request “[what you typed]”** at the bottom of the list.
@@ -142,9 +157,9 @@ Tap **Send request**. You must be signed in to request; signed out, the box show
 - **New** clears the builder for a fresh start: size, fish, tank name, photos, public setting and any water test values. If you're editing a saved tank with changes you haven't saved, it asks "You have unsaved changes. Start a new build anyway?" first. **New** does not delete any saved tank.
 
 ## Can I check my water in the Tank Builder?
-Yes. Switch the results panel to the **Water test** tab and enter your test kit numbers (Temperature, pH, Ammonia, Nitrite, Nitrate, GH, KH). You get the same plain-English read as [Water Check](/water-check), plus two extra checks because the builder knows your fish: whether your pH and your temperature fall inside the range your fish share.
+Yes. Switch the results panel to the **Water test** tab and enter your test kit numbers (Temperature, pH, Ammonia, Nitrite, Nitrate, GH, KH). You get the same plain-English read as [Water Check](/water-check), plus three extra checks because the builder knows your fish: whether your pH, your temperature and your GH fall inside the range your fish share.
 
-Signed in, you can log the reading to a saved tank to build a history. See [Water Check](/help/water-check), [Water test results explained](/help/water-check-readings-explained) and [Logging water tests](/help/logging-water-tests).
+Signed in, you can log the reading to a saved tank to build a history. Once a saved tank has 2 or more logged tests, the tab also shows **Trends**, a small line for each value over your recent tests. See [Water Check](/help/water-check), [Water test results explained](/help/water-check-readings-explained) and [Logging water tests](/help/logging-water-tests).
 
 ## Is the Tank Builder on the size guide pages the same tool?
 Yes. Each [tank size guide](/help/tank-size-guides) (like [the 29 gallon guide](/tank-builder/29-gallon)) has the full builder under the heading "Build your own 29 gallon tank," already set to that size. Everything works the same, including saving and logging, with two differences:
@@ -153,7 +168,7 @@ Yes. Each [tank size guide](/help/tank-size-guides) (like [the 29 gallon guide](
 - An unsaved build on a guide page is **not** kept on your device. If you refresh or leave, it's gone. Save it, share it, or tap **Open in builder** on a stocking idea to continue on the main [Tank Builder](/tank-builder) page, where drafts are kept.
 
 ## How accurate is the Tank Builder?
-The builder uses the care data in our species library: adult size, recommended minimum tank, temperature and pH range, water type, temperament, schooling minimum, where it swims, diet and whether it nips fins. Its limits are deliberately cautious, and its advice is a guide, not a guarantee. Individual fish vary, and filtration, plants, aquascaping and maintenance all change how a real tank behaves. Watch new additions closely for the first few weeks.
+The builder uses the care data in our species library: adult size, recommended minimum tank, temperature, pH and hardness range, water type, temperament, schooling minimum, where it swims, diet, whether it nips fins and whether it eats plants. Its limits are deliberately cautious, and its advice is a guide, not a guarantee. Individual fish vary, and filtration, plants, aquascaping and maintenance all change how a real tank behaves. Watch new additions closely for the first few weeks.
 
 If a species' data is missing, the builder simply can't check that part (for example, no temperature range means no temperature check for that fish). If you think a species' data is wrong, email support@undergroundaquarium.com with the species name and what looks off.
 

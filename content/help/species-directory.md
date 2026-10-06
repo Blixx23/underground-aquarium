@@ -3,7 +3,7 @@ title: Searching the Fish Species directory
 category: Tools & learning
 summary: Find any fish, shrimp, snail or crayfish in the species directory by name, scientific name or L-number, filter by group and fix searches that come up empty.
 order: 10
-keywords: fish library, species list, species database, care sheets, fish profiles, find a fish, pleco codes, L number, L-number, lnumber, fish search, fish finder, stocking guide, freshwater fish list, catfish codes, spelling
+keywords: fish library, species list, species database, care sheets, fish profiles, find a fish, pleco codes, L number, L-number, lnumber, fish search, fish finder, stocking guide, freshwater fish list, catfish codes, spelling, tankmates, plan a tank
 pages: /species, /species/[slug], /fish/[slug]
 ---
 
@@ -12,7 +12,7 @@ The [Fish Species](/species) directory is our library of freshwater aquarium spe
 ## What is the Fish Species directory?
 The [Fish Species](/species) page (called **Freshwater Species** at the top, and **Fish Species** in the menu under Learn) lists every fish, shrimp, snail and crayfish in our library. The line under the heading tells you how many "aquarium species and varieties with real care data" there are right now.
 
-Each species has its own care page with water parameters, adult size, minimum tank size, temperament, diet and more. See [Reading a species page](/help/reading-a-species-page) for what every field means.
+Each species has its own care page with water parameters, adult size, minimum tank size, temperament, diet and more. Most pages also list good tankmates checked by the Tank Builder and have a **Plan a tank** button that opens the [Tank Builder](/tank-builder) with that fish already added. See [Reading a species page](/help/reading-a-species-page) for what every field means.
 
 You don't need an account to browse or search. You only need to sign in to submit photos or videos, or to request a missing species.
 

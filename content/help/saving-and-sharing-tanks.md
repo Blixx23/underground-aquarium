@@ -18,7 +18,7 @@ This draft is not saved when:
 - You're editing a saved tank (your changes live in the builder until you tap **Update tank**).
 - Your browser blocks site storage, you're in a private or incognito window, or you clear site data.
 
-A draft never moves between devices or browsers. Opening a shared build link also replaces your draft on that device. Once you save a tank, the draft is cleared.
+A draft never moves between devices or browsers. Opening a shared build link, or tapping **Plan a tank** or **Try a few together in the Tank Builder** on a [species page](/help/reading-a-species-page), also replaces your draft on that device. Once you save a tank, the draft is cleared.
 
 ## How do I save a tank?
 You need to be signed in. If you're not, the save area shows **Sign in to save**; tap it and you'll come back to the Tank Builder after signing in.
@@ -47,7 +47,7 @@ Tap a card to load that tank into the builder. The builder scrolls to the top. T
 
 If the tank you're currently editing has changes you haven't saved, you'll be asked "You have unsaved changes. Switch tanks anyway?" Tap **OK** to switch and lose the changes, or **Cancel** to go back and save.
 
-You can also open a saved tank from its public tank page: as the owner, tap **Edit stock**, which opens it in the Tank Builder.
+You can also open a saved tank from its public tank page: as the owner, tap **Edit stock**, which opens it in the Tank Builder. After logging a reading on [Water Check](/water-check), the **Logged. See the history in the Tank Builder.** link opens that tank in the builder too.
 
 ## How do I update a saved tank?
 1. Load the tank from **Your tanks**.
@@ -101,7 +101,7 @@ To make it private again, untick the box and tap **Update tank**.
 ## Who can see a private tank?
 A tank that isn't public is private. On its page, you (the owner) see the label **Only you can see this** next to "Community tank." Private tanks don't appear on your public profile or in the feed. You can still see all your tanks, public and private, in the **Your tanks** section of your [profile](/profile) and in the Tank Builder.
 
-Water test readings are never shown on a tank's public page. They're only visible to you in the Tank Builder.
+Water test readings are never shown on a tank's public page. They're only visible to you in the Tank Builder, where the **Water test** tab shows your recent readings and trend lines. See [Logging water tests](/help/logging-water-tests).
 
 ## How do I share a build with someone?
 1. Set a size and/or add fish.

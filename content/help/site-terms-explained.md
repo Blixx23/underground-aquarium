@@ -1,13 +1,15 @@
 ---
 title: Site terms explained
 category: Getting started
-summary: Plain-language meanings of words used around Underground Aquarium, like bubbles, the Society, areas, bumping, claimed shops, spawn logs and Float up.
+summary: Plain-language meanings of words used around Underground Aquarium, like bubbles, the Society, areas, bumping, claimed shops, spawn logs and Float up, plus a plain-words summary of our Terms of Service.
 order: 90
-keywords: what does mean, definition, jargon, terminology, dictionary, bubbles meaning, float up, sink, bumped, renew, area, region, metro, ISO, wanted, claimed, spawn log, challenge code, BAP, good standing, UAS number, tier, leviathan, gold ring
-pages: /, /feed, /marketplace, /society, /stores, /forums
+keywords: what does mean, definition, jargon, terminology, dictionary, bubbles meaning, float up, sink, bumped, renew, area, region, metro, ISO, wanted, claimed, spawn log, challenge code, BAP, good standing, UAS number, tier, leviathan, gold ring, terms of service, tos, legal, who owns my photos, content license, ai training, scraping, robots.txt, arbitration, opt out, class action, placer county, dmca, copyright, copyright agent, takedown
+pages: /, /feed, /marketplace, /society, /stores, /forums, /terms
 ---
 
 Underground Aquarium uses a few words of its own. This page explains what they mean on the site. For fish keeping terms like "cycling" or "bioload", use the [Glossary](/glossary) instead (see [Glossary](/help/glossary)).
+
+Further down, you'll also find a plain-words summary of our [Terms of Service](/terms): who owns what you post, the rules on scraping and AI, how disputes work and how to send a copyright notice.
 
 ## Account and community words
 
@@ -136,6 +138,66 @@ A tool at [/water-check](/water-check) where you enter your water test results a
 ### Trade code
 A code the hobby uses for fish without a settled name, like "L046" for a plecostomus. You can search Fish Species by trade code. See [Species directory](/help/species-directory).
 
+## Our Terms of Service in plain words
+The [Terms of Service](/terms) are the agreement between you and Underground Aquarium for using the site. They were last updated on **October 4, 2026**. New members agree to them when they sign up. For members who joined before October 4, 2026, they take effect on **November 4, 2026**, and the previous terms apply until then.
+
+The sections below sum up the main points. They're a guide only: the [Terms](/terms) page itself is the agreement, so read it for the full wording. A few basics:
+
+- You must be **18 or older** to have an account or use the site.
+- The site is **free**. The only thing you can pay for is optional [Society](/help/the-society-overview) dues, processed by Stripe.
+- **Bubbles, tiers, trophies, badges, leaderboard standings and certificates** have no cash value, can't be sold or transferred, and can be changed or removed.
+- **Usernames, profile addresses and shop pages** belong to the site, and a username can be changed or reclaimed (for example if it's inactive or misleading).
+- **Care information** (species pages, courses, the Tank Builder and Water Check) is general guidance, not a substitute for professional or veterinary advice.
+- In **classifieds** the site isn't the buyer or seller. No money passes through us, and knowing the laws on keeping and selling live animals and plants where you live is up to you.
+
+## Who owns the photos and posts I put on the site?
+**You keep ownership of your content.** By posting it, you give Underground Aquarium a license to use it. In plain words, the license is:
+
+- **Permanent and can't be taken back**, worldwide, non-exclusive (you can still use your content anywhere else), and free of any payment to you.
+- **Broad**: we can store, edit, crop, convert, translate, publish and share it in any format, for any purpose, including advertising and promoting the site on our pages, apps, social media, emails and printed materials.
+- **Transferable and sublicensable**: we can pass it on or license it to others, **including partners and AI developers**. When we license content to others, we don't include your email address or other private account details.
+- **Your name and likeness**: we can show your name, username and profile photo with your content and with things you do on the site, including in promotions.
+
+The license continues after you delete content or close your account, though we generally stop showing deleted content in public areas within a reasonable time, and we may keep copies for backups, records and legal reasons. You aren't paid for content, and where the law allows you waive "moral rights" such as the right to be named as the author. We may also use content to run and improve the site, including building tools like search, species identification and recommendations.
+
+**Private messages** are different: they're used only to deliver them, keep the site safe, enforce the Terms and follow the law. We don't publish them.
+
+## What about species photos, breeding videos and library suggestions?
+Uploads made for our species library work differently. When we **accept** a species photo, a breeding video, or a species or glossary suggestion, its ownership (including copyright) transfers to Underground Aquarium. You keep a personal right to keep your original files and share them on your own personal accounts, but you can't license or sell an accepted submission to anyone else. Submissions we turn down are deleted and stay yours.
+
+We convert every photo and video to our own format and remove hidden data phones add, such as location. See [Submitting species photos](/help/submitting-species-photos) and [Breeding videos](/help/breeding-videos).
+
+## Can I scrape the site or use it to train AI?
+No, not without our written agreement. The Terms ban using robots, scrapers, scripts, browser extensions or any other automated means to collect or copy the site, using it to build a competing service or a dataset, and using any of it to train, fine-tune or test an AI or machine learning model. Public search engines may index the site as our robots.txt file allows.
+
+The Terms also set damages for bulk copying. Anyone who requests, views or collects more than **10,000 pages or records in 24 hours** in breach of this rule agrees to pay **US$15,000 for every 1,000,000** pages or records (US$0.015 each), counted from the first one. Everyone acting together is jointly responsible.
+
+Separately, the site's **robots.txt** file tells AI-training crawlers not to collect our pages at all. Search engines, and AI search tools that quote and link back to our pages, are still allowed.
+
+## How are disputes with Underground Aquarium handled?
+- **Talk first.** Before any formal claim, each side sends the other a written notice and tries for 60 days to sort it out. Yours goes to support@undergroundaquarium.com with your username and email.
+- **Arbitration, not court.** If that doesn't work, disputes go to binding **individual arbitration** run by the American Arbitration Association under its Consumer Arbitration Rules, by video, by phone, or in the county where you live (or on paper for claims of US$10,000 or less).
+- **Exceptions.** Either side can use small claims court for a claim that qualifies, and can go to court over intellectual property or over scraping, hacking or unauthorized access.
+- **No class actions and no jury.** Claims are brought one person at a time. If 25 or more similar claims are filed through the same lawyers, they're handled in batches of 25.
+- **One year.** Claims must be filed within one year after they arise.
+- **California law and Placer County.** The Terms follow California law (and the Federal Arbitration Act). Anything not arbitrated goes to the state courts in **Placer County, California**, or the federal court for the Eastern District of California.
+
+**You can opt out of arbitration within 30 days.** Email support@undergroundaquarium.com from the email on your account, with the subject **Arbitration opt-out** and your username, within 30 days after you first become bound by the arbitration section. Opting out doesn't change the rest of the Terms.
+
+## How do I report copyright infringement (DMCA)?
+If you think something on the site copies your work without permission, email **support@undergroundaquarium.com** with:
+
+- your physical or electronic signature
+- a description of the work
+- a link to the content you say infringes it
+- your name, address, phone number and email
+- a statement that you believe in good faith the use isn't authorized by the owner, its agent or the law
+- a statement, under penalty of perjury, that your notice is accurate and that you're the owner or allowed to act for the owner
+
+Our designated copyright agent is registered with the U.S. Copyright Office's DMCA Designated Agent Directory (registration number **DMCA-1081928**). The agent's mailing address and phone number are listed under **Copyright complaints** on the [Terms](/terms) page. Members whose content is removed can send a counter-notice, and accounts of repeat infringers are disabled.
+
+To report something that breaks the community rules rather than your copyright, see [Reporting content](/help/reporting-content).
+
 ## Common problems
 
 **I earned bubbles. Can I spend them?**
@@ -149,6 +211,15 @@ Your Dashboard ([/profile](/profile)) is private and holds your settings and sho
 
 **Why does my ad say "Bumped 3 days ago" when I posted it weeks ago?**
 You renewed it, which counts as a fresh posting and moves it back to the top.
+
+**Do the new Terms apply to me yet?**
+If you joined on or after October 4, 2026, yes. If you joined before then, they take effect on November 4, 2026.
+
+**I want to opt out of arbitration.**
+Email support@undergroundaquarium.com from your account email, with the subject "Arbitration opt-out" and your username, within 30 days of becoming bound by it.
+
+**Does deleting my post cancel the site's license to it?**
+No. The license continues after you delete content, though deleted content is generally taken out of public areas within a reasonable time. See [Deleting your account](/help/deleting-your-account) for what happens to your account.
 
 **I don't see a word here.**
 Try the [Glossary](/glossary) for fish keeping terms, or search the [Help Center](/help). If it's a word on our site that isn't explained anywhere, email support@undergroundaquarium.com and we'll add it.

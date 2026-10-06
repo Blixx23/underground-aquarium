@@ -3,7 +3,7 @@ title: Water test results explained
 category: Tools & learning
 summary: Every reading Water Check grades, the exact thresholds for each color, the result titles you'll see, and what to do about each one.
 order: 160
-keywords: ammonia level, nitrite level, nitrate level, safe ammonia, how much nitrate is too much, ph range, aquarium temperature, kh, gh, carbonate hardness, general hardness, dkh, dgh, ppm, cycling, new tank syndrome, water parameters chart, safe levels
+keywords: ammonia level, nitrite level, nitrate level, safe ammonia, 0.25 ammonia, trace ammonia, how much nitrate is too much, ph range, aquarium temperature, kh, gh, carbonate hardness, general hardness, soft water, hard water, dkh, dgh, ppm, cycling, new tank syndrome, water parameters chart, safe levels, fish-fit, softer than your fish like
 pages: /water-check, /tank-builder
 ---
 
@@ -17,36 +17,36 @@ Every graded reading lands in one of four levels:
 - **Heads-up** (blue on Water Check, gray in the Tank Builder): at the edge of the normal range. Usually nothing urgent.
 - **Healthy** (green): a good reading.
 
-The overall banner is red if anything is red, amber if anything is amber, and green otherwise. Heads-up notes alone never turn the banner amber; on Water Check they change it to "Looking good, a couple of notes."
+The overall banner is red if anything is red, amber if anything is amber, and green otherwise. Heads-up notes alone never turn the banner amber; on Water Check they change it to "Looking good, with a couple of notes."
 
 ## Quick reference: every threshold
 | Reading | Healthy (green) | Heads-up (blue) | To watch (amber) | Needs action (red) |
 |---|---|---|---|---|
-| Ammonia (ppm) | 0 | | above 0, under 0.25 | 0.25 or more |
-| Nitrite (ppm) | 0 | | above 0, under 0.25 | 0.25 or more |
+| Ammonia (ppm) | 0 | | above 0, under 0.5 (so 0.25) | 0.5 or more |
+| Nitrite (ppm) | 0 | | above 0, under 0.5 (so 0.25) | 0.5 or more |
 | Nitrate (ppm) | 20 or less | above 20, up to 40 | above 40, up to 80 | above 80 |
 | pH | 6.5 to 7.8 | 6.0 up to 6.5, or above 7.8 up to 8.4 | below 6.0 or above 8.4 | never |
 | Temperature (°F) | 72 to 82 | 66 up to 72, or above 82 up to 86 | below 66 or above 86 | never |
-| KH (dKH) | no result | below 3 | never | never |
-| GH (dGH) | no result | no result | no result | no result |
+| GH (dGH) | 3 to 18 | below 3, or above 18 | never | never |
+| KH (dKH) | 3 or more | below 3 | never | never |
 
-In the Tank Builder only, pH and temperature outside the range your fish share also add an amber result. See the section on fish-fit checks.
+When the tool knows your fish (the Tank Builder, or Water Check with one of your tanks picked), pH and temperature outside the range your fish share also add an amber result, and GH outside it adds a heads-up. See the section on fish-fit checks.
 
 ## What do my ammonia results mean?
 Ammonia is entered in ppm. It should be zero.
 
 - **0 ppm: "Ammonia is at zero"** (healthy). Your biological filter is keeping up with the waste your fish produce. How to fix: "Nothing to do, keep up your regular maintenance."
-- **Above 0 but under 0.25 ppm: "Traces of ammonia"** (to watch). Ammonia is toxic even at low levels. A trace usually means the tank is still cycling, you're feeding a bit much, or the filter took a hit. How to fix: do a 25-50% water change with dechlorinated water, ease off feeding for a day or two, and hold off adding fish until it reads zero.
-- **0.25 ppm or more: "Ammonia is too high"** (needs action). At this level it's actively stressing or chemically burning your fish, usually from an uncycled new tank, overstocking or overfeeding. How to fix: do a large (50%) water change right now with dechlorinated water, and another tomorrow if it's still high. Stop feeding for a couple of days, add no fish, and a bottled beneficial-bacteria supplement can speed the cycle.
+- **Above 0 but under 0.5 ppm: "Traces of ammonia"** (to watch). This includes a 0.25 reading. Ammonia is toxic even at low levels. A trace usually means the tank is still cycling, you're feeding a bit much, or the filter took a hit. How to fix: do a 25 to 50 percent water change with dechlorinated water, ease off feeding for a day or two, and hold off adding fish until it reads zero.
+- **0.5 ppm or more: "Ammonia is too high"** (needs action). At this level it's actively stressing or chemically burning your fish, usually from an uncycled new tank, overstocking or overfeeding. How to fix: do a large (50%) water change right now with dechlorinated water, and another tomorrow if it's still high. Stop feeding for a couple of days, add no fish, and a bottled beneficial-bacteria supplement can speed the cycle.
 
-On most liquid kits the first color above zero is 0.25 ppm, so any color other than zero will read as needing action.
+On most liquid kits the colors step 0, 0.25, 0.5, 1 ppm and up. So 0.25 reads as "to watch," and 0.5 or anything darker reads as needing action.
 
 ## What do my nitrite results mean?
 Nitrite is entered in ppm. It should be zero.
 
 - **0 ppm: "Nitrite is at zero"** (healthy). The second stage of your cycle is working; together with zero ammonia, that's a healthy, cycled tank. How to fix: "Nothing to do here."
-- **Above 0 but under 0.25 ppm: "Traces of nitrite"** (to watch). Nitrite is still toxic; it stops fish blood from carrying oxygen. It usually means a tank that's mid-cycle or a filter that was recently disturbed. How to fix: do a 25-50% water change, hold off on feeding and new fish, and give the filter time. The cycle is done when ammonia and nitrite both sit at zero.
-- **0.25 ppm or more: "Nitrite is too high"** (needs action). It's suffocating your fish, so you may see them gasping near the surface. The tank isn't fully cycled, or the filter has crashed. How to fix: large (50%) water change now, and again tomorrow if needed. Stop feeding, add no new fish, and consider a beneficial-bacteria supplement.
+- **Above 0 but under 0.5 ppm: "Traces of nitrite"** (to watch). This includes a 0.25 reading. Nitrite is still toxic; it stops fish blood from carrying oxygen. It usually means a tank that's mid-cycle or a filter that was recently disturbed. How to fix: do a 25 to 50 percent water change, hold off on feeding and new fish, and give the filter time. The cycle is done when ammonia and nitrite both sit at zero.
+- **0.5 ppm or more: "Nitrite is too high"** (needs action). It's suffocating your fish, so you may see them gasping near the surface. The tank isn't fully cycled, or the filter has crashed. How to fix: large (50%) water change now, and again tomorrow if needed. Stop feeding, add no new fish, and consider a beneficial-bacteria supplement.
 
 ## What do my nitrate results mean?
 Nitrate is entered in ppm. It builds up between water changes, so lower is better.
@@ -79,22 +79,26 @@ The Water Check hint under the box says "most like 74-80," which is a narrower s
 ## What do my KH results mean?
 KH (carbonate hardness, entered in dKH) is your water's buffer: it keeps pH steady.
 
-- **Below 3 dKH: "Low carbonate hardness, pH can swing"** (heads-up). pH can drift or crash between water changes, which is harder on fish than a stable "wrong" pH. How to fix: a small amount of crushed coral in the filter, or a pinch of baking soda, raises KH and steadies your pH. Go slowly and re-test.
-- **3 dKH or more**: no result at all. It isn't listed as healthy, it simply isn't shown.
+- **3 dKH or more: "KH is holding your pH steady"** (healthy). Enough buffer that your pH shouldn't swing between water changes. How to fix: "Nothing to do."
+- **Below 3 dKH: "Low carbonate hardness, so pH can swing"** (heads-up). pH can drift or crash between water changes, which is harder on fish than a stable "wrong" pH. How to fix: a small amount of crushed coral in the filter, or a pinch of baking soda, raises KH and steadies your pH. Go slowly and re-test.
 
-## Does Water Check grade GH?
-No. GH (general hardness, entered in dGH) doesn't produce any result, in Water Check or in the Tank Builder. The hint under the box ("Soft 4-8, hard 8-12") is just a guide. You can still enter GH so it's recorded with readings you log in the Tank Builder. The Tank Builder doesn't compare GH against your fish either.
+## What do my GH results mean?
+GH (general hardness, entered in dGH) is how much calcium and magnesium your water has. There's no single right number, so only the extremes get a heads-up. GH never reaches amber or red.
 
-## What are the fish-fit checks in the Tank Builder?
-The Tank Builder's **Water test** tab adds two checks that Water Check can't do, because it knows your fish:
+- **3 to 18 dGH: "Hardness is in a common range"** (healthy). Moderate hardness that suits most community fish. How to fix: "Nothing to do."
+- **Under 3 dGH: "Very soft water"** (heads-up). Soft-water fish like tetras, rasboras and many South American cichlids love it, but livebearers, goldfish and snails struggle, and snail shells can thin out. How to fix: fine for soft-water fish. For livebearers or snails, a remineralizer or a little crushed coral raises it slowly.
+- **Over 18 dGH: "Very hard water"** (heads-up). Livebearers, goldfish and African cichlids do well in it, but soft-water fish like tetras and rasboras rarely show their best color or breed. How to fix: the easiest is picking fish that like hard water. To soften it, mix in some RO or distilled water at each water change.
+
+The hint under the box on Water Check ("Soft 4-8, hard 8-12") is just a rough guide; the grading uses the cutoffs above.
+
+## What are the fish-fit checks?
+When the tool knows your fish, it adds checks based on the range all of them share. That's the Tank Builder's **Water test** tab (using the fish in your build), and [Water Check](/water-check) when you pick one of your tanks under **Check against one of your tanks**:
 
 - **"pH doesn't match your stocked fish"** (to watch): your pH is outside the range all your fish share. It says, for example, "Your reading is 8.0, but the fish you've added overlap best around 6.5-7.5." How to fix: adjust slowly with natural methods (crushed coral to raise, driftwood or peat to lower), or keep fish that already suit your tap water. Steady beats perfect.
 - **"Temperature doesn't match your stocked fish"** (to watch): your temperature is outside the shared range, for example "your fish overlap best between 74-78°F." How to fix: nudge the heater a degree or two at a time until you're inside that range.
+- **"Water is softer than your fish like"** or **"Water is harder than your fish like"** (heads-up): your GH is outside the shared hardness range, for example "your fish overlap best between 6-12 dGH." It's only a heads-up because most fish settle in fine if it stays steady, though they may not color up or breed. How to fix: to raise it, a remineralizer or a little crushed coral, changed gradually over a few water changes; to lower it, mix some RO or distilled water into your water changes.
 
-These only appear when you've added fish with pH or temperature data and those fish actually share a range. If your fish don't overlap at all, there's no fish-fit result (the Compatibility tab flags that instead). When you haven't added fish, the tab reminds you: "Add fish and the pH and temperature checks will also tell you how well your water suits them."
-
-## Why does my reading show "Nothing to flag from what you've entered"?
-That message appears in the Tank Builder's **Water test** tab when you've entered something but none of it produces a result, for example only GH, or a KH of 3 or more. On the Water Check page the same situation shows a green **Your water looks healthy** banner with no cards. Either way, nothing was actually graded. Add ammonia, nitrite, nitrate, pH or temperature.
+These only appear when your fish have data for that value and actually share a range. If your fish don't overlap at all, there's no fish-fit result (the Compatibility tab flags that instead). When you haven't added fish, the tab reminds you: "Add fish and the pH and temperature checks will also tell you how well your water suits them."
 
 ## Common problems
 **Water Check says my ammonia is "at zero" but I typed a negative number.**
@@ -107,10 +111,13 @@ pH and temperature never reach red on their own; they top out at "to watch." Sti
 20 counts as healthy. 40 counts as a heads-up ("creeping up"). 80 counts as "high" (amber); only above 80 is red.
 
 **My kit shows a range, like 0.25 to 0.5.**
-Enter the value your color matches best. When in doubt, enter the higher number to be safe.
+Enter the value your color matches best. When in doubt, enter the higher number to be safe. Remember 0.25 is "to watch" and 0.5 is "needs action."
+
+**My ammonia is 0.25 and it's only amber now.**
+That's on purpose. A 0.25 trace calls for a 25 to 50 percent water change and lighter feeding, not an emergency. It turns red at 0.5 ppm.
 
 **I use test strips that give ppm hardness.**
 Divide the ppm number by about 17.9 to get dGH or dKH.
 
-**Why don't I get a green result for KH?**
-KH only produces a result when it's low. A KH of 3 or more simply shows nothing.
+**My GH is 2 and it's only a heads-up.**
+Very soft water is perfect for some fish and hard on others, so it's a note rather than a warning. Pick a tank on Water Check, or use the Tank Builder, to see whether it suits your fish.

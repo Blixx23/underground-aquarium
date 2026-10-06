@@ -3,7 +3,7 @@ title: Running email campaigns
 category: Email & campaigns
 summary: How campaigns enroll shops, plan and queue each email, and repeat; every control on the campaign pages, editing steps, placeholders, tests and stats.
 order: 20
-keywords: email sequence, drip campaign, outreach campaign, campaign steps, enrollments, planner, repeat interval, placeholders, merge tags, test email, dry run, run now, stop enrollment
+keywords: email sequence, placeholder address, address cleanup, bounce brake, drip campaign, outreach campaign, campaign steps, enrollments, planner, repeat interval, placeholders, merge tags, test email, dry run, run now, stop enrollment
 pages: /admin/campaigns, /admin/campaigns/[key]
 ---
 
@@ -36,6 +36,8 @@ On each run the planner adds (enrolls) every shop that:
 - isn't already in this campaign, and
 - whose address isn't on the Do not email list.
 
+Before enrolling, the planner tidies each address (fixing slips like "mailto:" or a "www." in the domain) and never enrolls website-template placeholders (like hi@mystore.com or your@shop.com) or scraped file names (like logo@2x.png). Those go straight onto the Do not email list as "Address doesn't work". The same check runs again when a step is queued and once more right before sending, so shops enrolled before this existed are covered too. The full list of rules is in [Shop outreach emails](/admin/help/shop-outreach#which-addresses-are-cleaned-up-or-never-mailed).
+
 A campaign with any other audience enrolls nobody.
 
 A shop is only ever enrolled once per campaign. Once it is stopped or finished, it is never re-added, even if it is later un-hidden or unclaimed.
@@ -54,6 +56,8 @@ You can also stop one by hand with **Stop** in the **Who is in it** list ("stopp
 The campaign planner job (/api/cron/campaign-planner) runs once a day according to its own notes. It runs every campaign that is **On**. For each, it enrolls, drops out, then queues whatever is due. The email worker then sends the queued mail every two minutes, subject to the switches and the cap.
 
 The planner keeps the queue about one day deep: it only queues as many as the daily bulk cap minus what has already been sent today and what is still waiting. People who have heard from you the fewest times go first, then whoever has been due the longest.
+
+Campaign mail is bulk mail, so the bounce brake on the [Email](/admin/help/email-queue-and-health#what-is-the-bounce-brake) page applies: when 5% or more of the last week's mail bounced, only addresses at Gmail, Yahoo, Outlook and other big providers are sent, and the rest wait for the next day until the rate drops back under 5%. Big-provider addresses also go first within each day's cap.
 
 **Known issue:** that budget is shared. The first campaign that runs can use all of it, leaving nothing for the others that day.
 
@@ -153,6 +157,8 @@ Every campaign email is wrapped in a plain letter layout: the wordmark, your tex
 
 **Run it now queued 0.** The budget is 0 (cap reached or the queue already holds a day's worth), nobody is due yet, or the campaign has no steps.
 
-**The campaign is on but nothing goes out.** Check the Email page: all email or bulk may be paused, the cap may be reached, or `RESEND_FROM_BULK` may be missing.
+**The campaign is on but nothing goes out.** Check the Email page: all email or bulk may be paused, the cap may be reached, the bounce brake may be holding mail to smaller providers, or `RESEND_FROM_BULK` may be missing. Bulk mail held because bulk is off isn't counted as stuck, so it won't set off the "emails are not going out" alert; the banner says how many messages are held instead.
+
+**Some shops were never emailed and are on Do not email as "Address doesn't work".** Their address was a website-template placeholder or a scraped file name, not a real mailbox. See [Shop outreach emails](/admin/help/shop-outreach#which-addresses-are-cleaned-up-or-never-mailed).
 
 **A shop I removed is still listed as active.** It drops out on the next run. Use **Stop** to end it now.

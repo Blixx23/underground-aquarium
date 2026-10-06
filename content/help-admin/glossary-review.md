@@ -1,9 +1,9 @@
 ---
 title: Reviewing glossary suggestions
 category: Content review
-summary: How to tidy, add or dismiss glossary terms members suggest, how the Category box works, and why a new term can take up to an hour to show.
+summary: How to tidy, add or dismiss glossary terms members suggest, how the Category box works, the full write-up every term has, merged terms and redirects, automatic glossary links, and why a new term can take up to an hour to show.
 order: 40
-keywords: glossary queue, suggested terms, add term, dismiss term, glossary category, topic, wordsmith trophy, definitions
+keywords: glossary queue, full write-up, common questions, search title, merged terms, redirects, aliases, old address, glossary links, auto links, structured data, suggested terms, add term, dismiss term, glossary category, topic, wordsmith trophy, definitions
 pages: /admin/glossary, /glossary, /glossary/[slug]
 ---
 
@@ -56,8 +56,39 @@ Press **Dismiss**. There's no confirmation and no reason box. The card leaves th
 ## What do members get?
 Approved terms count toward the Wordsmith trophy (in the Library & Glossary section of the trophy cabinet). The admin screen doesn't send a separate notification or bubbles itself; any notice comes from the database. See [Trophies](/help/trophies).
 
+## What does a full glossary write-up include?
+Every term in the glossary now has a full write-up, stored in its row in the glossary terms table:
+
+- the **definition** (the short meaning),
+- a **summary** paragraph under it,
+- **3 to 4 sections** that explain it in more depth,
+- **3 common questions** with answers,
+- a **search title**, the page title search engines show. Without one the page falls back to "What Is [term]? Meaning for Fish Tanks".
+
+After the bulk update (Claude outputs/step72_glossary_full.sql) there are 228 terms. Adding a suggestion from this screen only saves the term, definition and category, so write the rest of a new term to the same standard in Supabase afterwards.
+
+## Which terms were merged, and do old addresses still work?
+Six near-duplicate terms were merged into one page each. Their old addresses now redirect to the page that covers the topic:
+
+- quarantine-tank goes to quarantine
+- acclimate goes to acclimation
+- cycling-a-tank goes to cycling
+- hardscape-scape goes to hardscape
+- nitrifying-bacteria goes to beneficial-bacteria
+- partial-water-change goes to water-change
+
+Common other names redirect too, for example white-spot to ich, tail-rot to fin-rot and brown-algae to diatoms. The redirects live in the site's code (src/lib/glossary/aliases.ts), not in the database, so adding a new one needs a code change.
+
+## Where do glossary words link automatically?
+- On glossary pages, up to 12 other glossary words are linked to their own entries.
+- On species pages, up to 8 glossary words are linked.
+- Only the first mention of each word is linked. Very everyday words (algae, heater, substrate and similar) are never linked.
+- Water Check results link to their glossary entry.
+
+The main Glossary page also carries structured data listing every term, so search engines can read the whole set.
+
 ## Can I edit or delete a term that's already in the glossary?
-Not from the admin area. The screen only handles waiting suggestions. To fix or remove a live term, edit or delete its row in the glossary terms table in Supabase. Longer glossary pages (extra sections and common questions) are also stored there.
+Not from the admin area. The screen only handles waiting suggestions. To fix or remove a live term, edit or delete its row in the glossary terms table in Supabase. The full write-up (summary, sections, common questions and search title) is stored there too. If you delete a term that is a redirect target, its old addresses stop working too.
 
 ## Common problems
 **An error appears under the card after pressing a button.** The database message is shown as is. The most common cause is a term that already exists; dismiss the duplicate. A permission error means your admin flag isn't set.

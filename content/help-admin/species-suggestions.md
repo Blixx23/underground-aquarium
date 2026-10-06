@@ -1,9 +1,9 @@
 ---
 title: Reviewing species requests
 category: Content review
-summary: How to add a requested fish to the species library, file it as another name for a fish you already have, or turn it down, and what the member gets.
+summary: How to add a requested fish to the species library, file it as another name for a fish you already have, or turn it down, how the AI check helps, and what the member gets.
 order: 10
-keywords: species queue, species suggestions, requested fish, add species, new species page, alias, another name, turn down, cartographer trophy, tank builder species, library
+keywords: species queue, ai check, re-check, ai cost, ai's reason, turn down reason, species suggestions, requested fish, add species, new species page, alias, another name, turn down, cartographer trophy, tank builder species, library
 pages: /admin/species, /species, /species/[slug], /tank-builder
 ---
 
@@ -73,9 +73,9 @@ The database adds the member's name to that fish's other names, marks the reques
 **Known issue:** the page text says both actions give the requester 25 bubbles, but the server only hands out bubbles when the database reports the request as "added" (a new species). The member guide tells members that another-name results earn no bubbles. If you want to reward an another-name request, award the bubbles by hand on [Bubbles](/admin/help/bubbles-admin).
 
 ## What does the AI check do?
-Every request gets an **AI check** box as soon as the page opens. It reads the member's name, scientific name and note, then checks them against the whole species library: common names, scientific names, other names, former names, trade codes, groups and variants. It catches misspellings and plurals ("Corydora" for Corydoras) and hobby nicknames ("pleco", "cory").
+Every request that hasn't been checked yet gets an **AI check** box, and the check starts on its own as soon as you open Admin, Species. It does not run before you open the page, and its verdict isn't part of the morning brief, so open the page to see it. It reads the member's name, scientific name and note, then checks them against the whole species library: common names, scientific names, other names, former names, trade codes, groups and variants. It catches misspellings and plurals ("Corydora" for Corydoras) and hobby nicknames ("pleco", "cory").
 
-It gives one verdict:
+It gives one verdict, with how confident it is (high, medium or low):
 - **Already in the library**: the fish and that name are already there.
 - **Another name for a fish we have**: the fish is there but this name isn't recorded yet.
 - **Too broad: a group, not one species**: they asked for a whole group like "Corydora" or "tetra" and the library has species in it.
@@ -83,15 +83,25 @@ It gives one verdict:
 - **Turn it down**: saltwater, a plant, made up, or not an aquarium animal.
 - **Not sure: check it yourself**: with what to check.
 
-It also shows what it thinks they meant, the library fish that matter, the reason the member would see, anything to double-check, and what the check cost (usually a few cents).
+It also shows what it thinks they meant, up to 5 library fish that matter (each links to its species page), anything to double-check, and what that check actually cost.
 
 **Use this** puts the suggestion into the right form: picks the fish for **Another name for**, fills in the whole care sheet for **Add to library**, or writes the reason for **Turn down**. Nothing is sent until you check it and press the button. **Re-check** runs it again. Each check is saved, so it only runs once per request (that needs step70 SQL; without it the check runs again each time the page opens).
 
 The checks run one at a time, so with several requests waiting the later ones take a little longer to appear. If the box says the AI isn't set up, the ANTHROPIC_API_KEY setting is missing in Vercel.
 
+## What does the AI check cost?
+The fast model answers first. Only when it says "Not sure" or gives low confidence does the careful model take a second look. A typical check costs about 1.5 to 2 cents, and a harder one that needs the second look about 4 to 5 cents. The line under the box ("Cost about ...") shows the actual cost of that check.
+
+## What reason will the member see if I turn it down?
+The AI always writes the short reply the member would see if you turn the request down, whatever its verdict. It shows in the box as "If you turn it down, they see: ...".
+
+- Pressing **Turn down** fills the reason box with that reply for you. You can send it as is or edit it.
+- If you pick another ready-made reason or change the text, the purple **AI's reason** chip (with the sparkle icon) at the start of the reasons puts the AI's reply back.
+- Checks done before this change may have no reason for "New: add it to the library" or "Another name for a fish we have" verdicts. Press **Re-check** to get one.
+
 ## How do I turn a species request down?
 1. Press **Turn down**.
-2. Pick one of the ready-made reasons or write your own (up to 300 characters). A reason is required: the member sees it. An empty box shows "Pick or write a reason. The member sees it."
+2. The reason box starts with the AI's reply if the check wrote one. Keep it, edit it, pick one of the ready-made reasons (or the **AI's reason** chip to go back), or write your own (up to 300 characters). A reason is required: the member sees it. An empty box shows "Pick or write a reason. The member sees it."
 3. Leave **Thank them with 10 bubbles** ticked, or untick it for spam.
 4. Press **Turn down** inside the panel.
 
