@@ -1,3 +1,4 @@
+import BreedingSnapshot from "@/components/breeding/BreedingSnapshot";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -200,6 +201,9 @@ export default async function BreedingGuidePage({ params }: Params) {
           {guide.category && <span className="rounded-full border border-white/10 px-3 py-1 text-ocean-300">{guide.category}</span>}
         </div>
         {klass && <p className="mt-2 text-sm text-ocean-400">Society difficulty: {klass.blurb}</p>}
+
+        {/* The highlights first: difficulty, spawn-to-grown timeline and the key facts. */}
+        {guide.program === "bap" && <BreedingSnapshot guide={guide} speciesName={guide.name} reports={0} variant="guide" />}
 
         <p className="mt-6 text-lg leading-relaxed text-ocean-200">{gl.link(guide.intro)}</p>
 
