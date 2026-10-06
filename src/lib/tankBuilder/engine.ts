@@ -26,13 +26,17 @@ export type Species = {
   /** False for fish that eat or uproot live plants. Optional so older selects still fit. */
   plant_safe?: boolean | null;
   suitability: string | null;
+  /** The parent species for varieties and color forms. */
+  parent_slug?: string | null;
+  /** Species this one can crossbreed with (filled by the loader from species_crosses). */
+  crosses?: { slug: string; outcome: string; note: string }[];
 };
 
 export type StockItem = { species: Species; qty: number };
 
 /** The species columns the builder and Water Check read. */
 export const BUILDER_SPECIES_COLUMNS =
-  "slug, common_name, also_known_as, scientific_name, group_name, water_type, temp_min_f, temp_max_f, ph_min, ph_max, gh_min, gh_max, max_size_in, min_tank_gal, temperament, social, min_group_size, swim_level, diet, fin_nipper, plant_safe, suitability";
+  "slug, common_name, also_known_as, scientific_name, group_name, water_type, temp_min_f, temp_max_f, ph_min, ph_max, gh_min, gh_max, max_size_in, min_tank_gal, temperament, social, min_group_size, swim_level, diet, fin_nipper, plant_safe, suitability, parent_slug";
 
 /** A one-tap change the builder can make to clear an issue. */
 export type IssueFix =
@@ -279,6 +283,9 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   const g = Number.isFinite(gallons) && gallons > 0 ? gallons : 0;
   const species = stock.map((s) => s.species);
   const fish = species.filter((s) => !isInvert(s));
+
+  // Crossbreeding: two species known to hybridize, or two color lines of one species.
+  issues.push(...crossIssues(species));
 
   // Tank size vs. the species' recommended minimum: graduated, not all-or-nothing.
   for (const { species: s } of stock) {
@@ -631,6 +638,44 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
     water: { temp: temp.range, ph: ph.range, gh: hardness.range },
     score,
   };
+}
+
+const rootOf = (s: Species) => s.parent_slug || s.slug;
+const sameSpecies = (a: Species, b: Species) =>
+  rootOf(a) === rootOf(b) ||
+  rootOf(a) === b.slug ||
+  rootOf(b) === a.slug ||
+  (!!a.scientific_name && a.scientific_name === b.scientific_name && !/\bspp?\./.test(a.scientific_name));
+
+/** Pairs in the tank that will interbreed. A note, not a conflict: they live together fine. */
+export function crossIssues(species: Species[]): Issue[] {
+  const out: Issue[] = [];
+  for (let i = 0; i < species.length; i++) {
+    for (let j = i + 1; j < species.length; j++) {
+      const a = species[i], b = species[j];
+      if (a.slug === b.slug) continue;
+      if (sameSpecies(a, b)) {
+        out.push({
+          level: "note",
+          title: `${a.common_name} and ${b.common_name} will interbreed`,
+          detail: `They're color forms of the same species, so if they breed the young will be mixed and the colors fade over generations. Fine for a community tank; keep them apart if you want to breed true.`,
+          slugs: [a.slug, b.slug],
+        });
+        continue;
+      }
+      const c = (a.crosses ?? []).find((x) => x.slug === rootOf(b) || x.slug === b.slug);
+      if (c) {
+        // A note: they live together fine; it only matters if you breed them.
+        out.push({
+          level: "note",
+          title: `${a.common_name} and ${b.common_name} can crossbreed`,
+          detail: `${c.note} Keep only one of them if you plan to breed.`,
+          slugs: [a.slug, b.slug],
+        });
+      }
+    }
+  }
+  return out;
 }
 
 export function scoreLabel(score: number, conflicts: number): string {

@@ -36,6 +36,7 @@ Site search finds them too ("how to breed kribensis"), and a species care page s
 - **At a glance:** how they breed, telling the sexes apart, the best breeding group, breeding tank, conditioning, what triggers spawning, spawn size, eggs or pregnancy, the fry, first foods, growing out, and whether the parents care for or eat the young. Plant guides show light, CO2, substrate, how fast it spreads and what to cut first.
 - **The everyday care range** (temperature, pH, hardness, adult size) from the species care page, with a link to the full care guide. When spawning needs different water, the guide says so.
 - **The full guide:** setting up, conditioning, spawning, eggs, raising the fry week by week, growing out, and common mistakes. Glossary words link to their definitions.
+- **Keep the line pure:** on guides for fish that can crossbreed with another species, a short note names that species so you can breed them apart. The full list is at [Which fish can crossbreed?](/breeding/crossbreeding).
 - **Logging it for the Society:** a practical tip for documenting this species in a spawn log.
 - **Become a Certified [species] Breeder:** a sample of the certificate (see below) and buttons to start a spawn log.
 - **Want an easier start?:** up to four easier species in the same group to build your skills on first. On the easiest guides it suggests other beginner-friendly species instead.

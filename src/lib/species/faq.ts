@@ -32,7 +32,7 @@ const has = (v: unknown) => v !== null && v !== undefined && String(v).trim() !=
 
 export function speciesFaq(
   s: SpeciesFacts,
-  opts: { hasBreedingGuide?: boolean; tankmates?: { names: string[]; gallons: number } | null } = {}
+  opts: { hasBreedingGuide?: boolean; tankmates?: { names: string[]; gallons: number } | null; crossesWith?: string[] } = {}
 ): Faq[] {
   const n = s.common_name;
   const out: Faq[] = [];
@@ -111,6 +111,15 @@ export function speciesFaq(
       a:
         `The ${n} is ${/^[aeiou]/i.test(low(s.breeding_type)) ? "an" : "a"} ${low(s.breeding_type)}.` +
         (opts.hasBreedingGuide ? ` Our step-by-step breeding guide covers it, from setting up to raising the fry.` : ""),
+    });
+  }
+
+  if (opts.crossesWith && opts.crossesWith.length) {
+    const list = opts.crossesWith.map((x) => `the ${x}`);
+    const joined = list.length === 1 ? list[0] : `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+    out.push({
+      q: `Can the ${n} crossbreed with other fish?`,
+      a: `Yes. The ${n} can crossbreed with ${joined}. Keep only one of them in a tank if you want to breed true.`,
     });
   }
 

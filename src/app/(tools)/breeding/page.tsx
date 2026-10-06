@@ -213,6 +213,9 @@ export default async function BreedingIndex() {
             <Link href="/glossary" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-white hover:bg-white/10">
               <Leaf className="h-4 w-4" /> Glossary
             </Link>
+            <Link href="/breeding/crossbreeding" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-white hover:bg-white/10">
+              Which fish can crossbreed?
+            </Link>
             <Link href="/society" className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 px-4 py-2 text-amber-200 hover:bg-amber-500/10">
               <Award className="h-4 w-4" /> The Society <ArrowRight className="h-3.5 w-3.5" />
             </Link>

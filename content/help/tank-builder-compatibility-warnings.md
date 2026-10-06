@@ -120,6 +120,9 @@ Some species are marked in our data as eating or uprooting live plants. If your 
 
 It's only a Tip, because plenty of keepers enjoy these fish with tough plants or no live plants at all. It has no fix button.
 
+## Why does it say two fish "can crossbreed" or "will interbreed"?
+**"[Fish] and [Fish] can crossbreed"** (Tip) means the two are different species known to produce hybrids, like guppies and Endler's or platies and swordtails. **"[Fish] and [Fish] will interbreed"** (Tip) means they're color forms of the same species, like a red cherry shrimp and a blue dream. Either way they live together fine; it only matters if you want to breed true, so keep just one of them in a breeding tank. The full list is at [Which fish can crossbreed?](/breeding/crossbreeding).
+
 ## How does the temperament check work?
 The builder sorts fish by temperament from our data: **aggressive** (aggressive, territorial or predatory), **semi-aggressive**, and **peaceful** (peaceful, docile, calm or community). Shrimp and snails aren't counted as peaceful fish here.
 

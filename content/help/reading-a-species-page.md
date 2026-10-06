@@ -135,6 +135,9 @@ Species rated Advanced, Expert or Kept but not recommended also carry that tag o
 
 If the species has a written breeding guide, you'll see **Breeding [species] at a glance** further down: how hard it is on the Society's Class A to F scale, a spawn-to-grown timeline (how many eggs or fry, how long until they hatch or are born, when they swim and when they're grown), how to tell males from females, the breeding group and what the parents do, plus a **Full breeding guide** button. Species with members' breeding reports but no written guide show a **How to breed [species]** link instead. See [Breeding guides](/help/breeding-guides).
 
+## What is "Can [species] crossbreed?"
+Shown when the fish is known to produce hybrids with another species in the library. Each line names the other fish (tap it to open its page), says whether the young are fertile, usually sterile, or whether it only happens occasionally, and gives a one-line note. Hybrids like the blood parrot show **What [species] was bred from** instead. We only list well-documented crosses, so the list is short on purpose. See [Which fish can crossbreed?](/breeding/crossbreeding).
+
 ## What are the care notes and care questions?
 Under the stats you may see:
 

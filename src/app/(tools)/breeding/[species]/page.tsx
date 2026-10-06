@@ -16,6 +16,7 @@ import { glossaryLinker } from "@/lib/glossary/links";
 import { buildPath } from "@/lib/tankBuilder/share";
 import BreederCta from "@/components/breeding/BreederCta";
 import OpenOnWide from "@/components/breeding/OpenOnWide";
+import { crossesFor } from "@/lib/species/crosses";
 import { ldJson } from "@/lib/jsonLd";
 
 export const revalidate = 3600;
@@ -119,6 +120,12 @@ export default async function BreedingGuidePage({ params }: Params) {
       : Promise.resolve({ data: null }),
   ]);
   const care = (careRow.data as Care | null) ?? null;
+  // Species it can crossbreed with: a "keep the line pure" note for breeders.
+  const cross = guide.speciesSlug ? (await crossesFor(guide.speciesSlug)).crosses : [];
+  const { data: crossNameRows } = cross.length
+    ? await supabasePublic.from("species").select("slug, common_name").in("slug", cross.map((c) => c.slug))
+    : { data: [] as { slug: string; common_name: string }[] };
+  const crossNames = new Map(((crossNameRows ?? []) as { slug: string; common_name: string }[]).map((r) => [r.slug, r.common_name]));
   const easier = easierThan(guide, all, 4);
   const sameClass = all
     .filter((g) => g.slug !== guide.slug && g.program === guide.program && g.points === guide.points && g.category === guide.category)
@@ -256,6 +263,27 @@ export default async function BreedingGuidePage({ params }: Params) {
             </p>
           )}
         </OpenOnWide>
+
+        {cross.length > 0 && (
+          <aside className="mt-6 rounded-2xl border border-sky-500/25 bg-sky-500/5 p-4 text-sm">
+            <p className="font-medium text-white">Keep the line pure</p>
+            <p className="mt-1 text-ocean-200">
+              {guide.name} can crossbreed with{" "}
+              {cross.map((c, i) => (
+                <span key={c.slug}>
+                  {i > 0 ? (i === cross.length - 1 ? " and " : ", ") : ""}
+                  <Link href={`/species/${c.slug}`} className="text-sky-200 underline underline-offset-2 hover:text-white">
+                    {crossNames.get(c.slug) ?? c.slug}
+                  </Link>
+                </span>
+              ))}
+              . Breed them in a tank without the other, or the fry will be hybrids.{" "}
+              <Link href="/breeding/crossbreeding" className="text-emerald-300 hover:text-emerald-200">
+                Which fish can crossbreed?
+              </Link>
+            </p>
+          </aside>
+        )}
 
         {/* The guide itself */}
         <div className="mt-10 space-y-8">

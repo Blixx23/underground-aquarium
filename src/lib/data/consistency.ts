@@ -56,10 +56,11 @@ type Guide = { slug: string; species_slug: string | null; intro: string; section
 type Term = { slug: string; body: string; sections: unknown; faq: unknown };
 type Lesson = { id: string; title: string; content: string };
 type Award = { id: string; common_name: string; scientific_name: string | null; species_slug: string | null };
-export type DataSet = { species: Row[]; guides: Guide[]; glossary: Term[]; lessons: Lesson[]; awards: Award[] };
+type CrossPair = { species_a: string; species_b: string; result_slug: string | null };
+export type DataSet = { species: Row[]; guides: Guide[]; glossary: Term[]; lessons: Lesson[]; awards: Award[]; crosses?: CrossPair[] };
 
 export async function loadDataSet(): Promise<DataSet> {
-  const [species, guides, glossary, lessons, awards] = await Promise.all([
+  const [species, guides, glossary, lessons, awards, crosses] = await Promise.all([
     all<Row>(
       "species",
       "slug, common_name, scientific_name, entry_type, parent_slug, summary, body, temp_min_f, temp_max_f, ph_min, ph_max, gh_min, gh_max, diet, social, temperament, swim_level, breeding_type, min_group_size, max_size_in, min_tank_gal"
@@ -68,12 +69,13 @@ export async function loadDataSet(): Promise<DataSet> {
     all<Term>("glossary_terms", "slug, body, sections, faq"),
     all<Lesson>("course_sections", "id, title, content"),
     all<Award>("club_award_species", "id, common_name, scientific_name, species_slug"),
+    all<CrossPair>("species_crosses", "species_a, species_b, result_slug"),
   ]);
-  return { species, guides, glossary, lessons, awards };
+  return { species, guides, glossary, lessons, awards, crosses };
 }
 
 /** Pure rules, so they can be tested on a copy of the data. */
-export function findDataIssues({ species, guides, glossary, lessons, awards }: DataSet): DataIssue[] {
+export function findDataIssues({ species, guides, glossary, lessons, awards, crosses = [] }: DataSet): DataIssue[] {
   const issues: DataIssue[] = [];
   const add = (group: string, item: string) => issues.push({ group, item });
 
@@ -150,6 +152,12 @@ export function findDataIssues({ species, guides, glossary, lessons, awards }: D
     if (a.scientific_name !== s.scientific_name) add("Society list names that differ from the species page", `${a.common_name}: "${a.scientific_name}" vs "${s.scientific_name}"`);
   }
 
+  // 7. Crossbreeding pairs must point at species that exist.
+  for (const c of crosses) {
+    const missing = [c.species_a, c.species_b, c.result_slug].filter((x): x is string => !!x && !bySlug.has(x));
+    if (missing.length) add("Crossbreeding pairs pointing at missing species", `${c.species_a} x ${c.species_b}: ${missing.join(", ")} not in the library`);
+  }
+
   return issues;
 }
 
@@ -160,6 +168,7 @@ const LINKS: Record<string, string> = {
   "Breeding guides that misquote the species page": "/breeding",
   "Live numbers that can't be filled": "/admin/species",
   "Society list names that differ from the species page": "/society",
+  "Crossbreeding pairs pointing at missing species": "/breeding/crossbreeding",
 };
 
 /** Run the check and file (or refresh) one finding per kind of problem. */

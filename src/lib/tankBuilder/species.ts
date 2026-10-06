@@ -1,4 +1,5 @@
 import { supabasePublic } from "@/lib/supabase/public";
+import { crossMap, loadCrosses } from "@/lib/species/crosses";
 import { BUILDER_SPECIES_COLUMNS, COMMON_SIZES, computeStocking, suggestTankmates, type Species } from "@/lib/tankBuilder/engine";
 
 export { BUILDER_SPECIES_COLUMNS };
@@ -22,6 +23,12 @@ export async function loadBuilderSpecies(): Promise<Species[]> {
     if (error || !data) break;
     out.push(...(data as unknown as Species[]));
     if (data.length < PAGE) break;
+  }
+  // Who can crossbreed with whom; varieties take their parent species' pairs.
+  const crosses = crossMap(await loadCrosses());
+  for (const sp of out) {
+    const c = crosses.get(sp.slug) ?? (sp.parent_slug ? crosses.get(sp.parent_slug) : undefined);
+    if (c) sp.crosses = c.map(({ slug, outcome, note }) => ({ slug, outcome, note }));
   }
   return out;
 }

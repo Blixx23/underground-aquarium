@@ -86,6 +86,8 @@ ${MODERATION_QUEUES}
 - Text in species, breeding_guides, glossary_terms and course_sections can hold live numbers like {{temp}}, {{neon-tetra.ph}}
   or {{fact.nitrate_ok}}; the site fills them from the species rows and src/lib/data/facts.ts. Varieties (entry_type
   variety/form) take their water ranges and behavior from parent_slug automatically.
+- species_crosses (species_a, species_b, outcome 'fertile'/'sterile'/'rare', result_slug = the hybrid it makes, note):
+  fact-checked pairs of species that crossbreed; shown on species pages, guides, the Tank Builder and /breeding/crossbreeding.
 - club_award_species.species_slug links a Society point-list entry to its species page; its scientific_name follows the
   species page.
 

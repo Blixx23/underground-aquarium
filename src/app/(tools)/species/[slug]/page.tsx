@@ -19,6 +19,8 @@ import { glossaryLinker } from "@/lib/glossary/links";
 import { fillTokens, loadTokenRows, TOKEN_COLUMNS, type TokenRow } from "@/lib/data/tokens";
 import { classLabel, guideForSpecies, loadGuide } from "@/lib/breeding/guides";
 import BreedingSnapshot from "@/components/breeding/BreedingSnapshot";
+import CrossbreedingNote from "@/components/species/CrossbreedingNote";
+import { crossesFor } from "@/lib/species/crosses";
 
 export const revalidate = 3600;
 
@@ -196,6 +198,13 @@ export default async function SpeciesDetailPage({ params }: Params) {
   const hasBreedingGuide = !!breedingGuide || (breedingReports ?? 0) > 0;
   // Its highlights show right here; the full guide is one tap away.
   const snapshot = breedingGuide ? await loadGuide(breedingGuide.slug) : null;
+  // Species it can crossbreed with (a variety uses its parent's), with their names.
+  const cross = await crossesFor(s.slug as string, (s.parent_slug as string | null) ?? null);
+  const crossSlugs = [...new Set([...cross.crosses.flatMap((c) => [c.slug, c.resultSlug ?? ""]), ...cross.bredFrom.flatMap((r) => [r.species_a, r.species_b])].filter(Boolean))];
+  const { data: crossNames } = crossSlugs.length
+    ? await supabasePublic.from("species").select("slug, common_name").in("slug", crossSlugs)
+    : { data: [] as { slug: string; common_name: string }[] };
+  const crossNameMap = new Map(((crossNames ?? []) as { slug: string; common_name: string }[]).map((r) => [r.slug, r.common_name]));
   // Only real fish get a tank plan; group and genus pages don't have one set of numbers.
   const plannable = ["species", "variety", "form"].includes(String(s.entry_type ?? "species"));
   const mates = plannable ? await tankmatesFor(s.slug as string) : null;
@@ -211,6 +220,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
   const faq = speciesFaq(s, {
     hasBreedingGuide,
     tankmates: mates ? { names: mates.picks.map((p) => p.common_name), gallons: mates.gallons } : null,
+    crossesWith: cross.crosses.map((c) => crossNameMap.get(c.slug) ?? c.slug),
   });
 
   const fullName = s.scientific_name
@@ -497,6 +507,8 @@ export default async function SpeciesDetailPage({ params }: Params) {
         {s.body && (
           <p className="text-ocean-300 leading-relaxed mb-10">{gl.link(s.body)}</p>
         )}
+
+        <CrossbreedingNote name={s.common_name as string} crosses={cross.crosses} bredFrom={cross.bredFrom} names={crossNameMap} />
 
         {snapshot ? (
           <BreedingSnapshot guide={snapshot} speciesName={s.common_name as string} reports={breedingReports ?? 0} />
