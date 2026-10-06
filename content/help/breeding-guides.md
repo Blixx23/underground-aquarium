@@ -23,9 +23,11 @@ The boxes at the top of the page jump to each class. **Start here: the easiest f
 
 ## How do I find a guide?
 1. Open [Breeding Guides](/breeding).
-2. Choose **Fish & inverts** or **Plants**.
-3. Type in the search box (it matches common names, scientific names, groups like "Livebearers" and methods like "mouthbrooder"), or tap a group chip to narrow the list.
-4. Tap a guide.
+2. Start typing in the search box. Results update as you type, and it searches fish and plants together (the tabs show how many matched in each).
+3. It matches common names, other names and old scientific names ("Corydoras panda" finds Panda Corydoras), groups like "Livebearers", methods like "mouthbrooder", and forgives small typos ("gupy"). Type "class c" or tap a **Difficulty** chip to see one class, or type "easy" or "expert".
+4. Tap a guide, or press Enter to open the top match.
+
+Your search stays in the page address, so the back arrow returns you to the same results and you can share a search as a link. Press "/" to jump to the search box.
 
 Site search finds them too ("how to breed kribensis"), and a species care page shows a **How to breed [species]** box when a guide exists.
 

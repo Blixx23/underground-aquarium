@@ -26,6 +26,8 @@ export type GuideCard = {
   summary: string;
   speciesSlug: string | null;
   awardId: string | null;
+  /** Other names and old scientific names from the species library, for search. */
+  aliases: string[];
 };
 
 export type Guide = GuideCard & {
@@ -77,6 +79,7 @@ function toCard(g: GuideRow, a: AwardRow | undefined): GuideCard {
     summary: g.summary,
     speciesSlug: g.species_slug,
     awardId: a?.id ?? g.award_species_id,
+    aliases: [],
   };
 }
 
@@ -100,8 +103,24 @@ export async function loadGuideCards(): Promise<GuideCard[]> {
   if (error || !data) return [];
   const rows = data as unknown as GuideRow[];
   const awards = await awardsById(rows.map((r) => r.award_species_id).filter((x): x is string => !!x));
+  // Other names from the species library, so "X-ray tetra" or "Corydoras panda" finds its guide.
+  const slugs = [...new Set(rows.map((r) => r.species_slug).filter((x): x is string => !!x))];
+  const names = new Map<string, string[]>();
+  if (slugs.length) {
+    const { data: sp } = await supabasePublic
+      .from("species")
+      .select("slug, common_name, also_known_as, former_names, trade_codes")
+      .in("slug", slugs);
+    for (const s of (sp ?? []) as { slug: string; common_name: string; also_known_as: string[] | null; former_names: string[] | null; trade_codes: string[] | null }[]) {
+      names.set(s.slug, [s.common_name, ...(s.also_known_as ?? []), ...(s.former_names ?? []), ...(s.trade_codes ?? [])]);
+    }
+  }
   return rows
-    .map((r) => toCard(r, r.award_species_id ? awards.get(r.award_species_id) : undefined))
+    .map((r) => {
+      const card = toCard(r, r.award_species_id ? awards.get(r.award_species_id) : undefined);
+      card.aliases = (r.species_slug ? names.get(r.species_slug) ?? [] : []).filter((n) => n && n !== card.name);
+      return card;
+    })
     .sort((a, b) => (a.points ?? 999) - (b.points ?? 999) || a.name.localeCompare(b.name));
 }
 
