@@ -124,7 +124,7 @@ export async function optOut(opts: {
 
   const { data: cancelled } = await supabaseAdmin
     .from("email_queue")
-    .update({ status: "failed", fail_reason: "other", last_error: "Removed from outreach at their request", locked_at: null })
+    .update({ status: "failed", fail_reason: "other", last_error: "Removed from outreach at their request", locked_at: null, cleared_at: new Date().toISOString() })
     .in("to_email", list)
     .eq("status", "pending")
     .eq("bulk", true)

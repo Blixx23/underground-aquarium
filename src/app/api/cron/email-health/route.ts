@@ -47,6 +47,7 @@ export async function GET(req: Request) {
     .select("id, kind, to_email, fail_reason, last_error")
     .eq("status", "failed")
     .is("alerted_at", null)
+    .is("cleared_at", null)
     .order("created_at", { ascending: true })
     .limit(200);
   const fails = (newFails ?? []) as { id: string; kind: string; to_email: string; fail_reason: string | null; last_error: string | null }[];

@@ -45,7 +45,7 @@ If the check can't run at all, the page shows only "The health check couldn't ru
 - **Sending**: On or Off, with "bulk allowed" or "bulk paused too" underneath.
 - **Waiting**: messages still pending. The hint reads "queue is moving", or "N over 30 min" (red when sending is on).
 - **Sent 24h**: messages sent in the last day. Shows "nothing has ever sent" if the site has never sent anything.
-- **Failed**: messages that gave up and are still in the failed list, with how many failed in the last 24 hours. This is also the number on the Email badge in the admin menu and the "N waiting" pill on the Dashboard card.
+- **Failed**: messages that gave up and still need you, with how many failed in the last 24 hours. Mail skipped on purpose (the do-not-email list, placeholder addresses, a second copy to an address that already got it, cancels and opt-outs) and anything you've cleared don't count. This is also the number on the Email badge in the admin menu and the "N waiting" pill on the Dashboard card.
 - **Delivered 7d**: mail Resend confirmed as delivered in the last week. Needs the Resend webhook.
 - **Bounced 7d**: bounces as a percentage of delivered plus bounced, "keep under 5%". Amber from 2%, red from 5%.
 - **Spam 7d**: spam complaints this week, "keep at zero".
@@ -103,7 +103,7 @@ Each row shows the subject, a **bulk** tag for bulk mail, the recipient and the 
 - **"Waiting · queued 3m ago"** or **"Waiting until [time]"** for mail not yet due.
 - **"Retrying · N tries so far · next [time]"** for mail that failed for a temporary reason, with the last error in red.
 - **"Gave up after N tries · [reason]"** for failed mail, with the error in red. Reasons: **bad address**, **sending too fast**, **Resend problem**, **something else**.
-- **"Not sent · on the do-not-email list"** for mail the worker refused to send because the address was on the Do not email list by the time it came up. The red line explains which kind of block: "Not sent: this address is on the do-not-email list (bounce), so nothing can go to it." or "Not sent: this person opted out of marketing and outreach email (unsubscribe)." These rows have no **Try again** button, because they would only be held back again.
+- **"Not sent · on the do-not-email list"** for mail the worker refused to send because the address was on the Do not email list by the time it came up. The red line explains which kind of block: "Not sent: this address is on the do-not-email list (bounce), so nothing can go to it." or "Not sent: this person opted out of marketing and outreach email (unsubscribe)." These rows have no **Try again** button, because they would only be held back again. They never count as failed emails. The same goes for **"Not sent: this address already got this email"**: when two shop listings share one inbox, the outreach email goes once.
 
 Empty tabs show "Nothing here.", or "Nothing for "..."." when searching.
 
@@ -115,6 +115,7 @@ Empty tabs show "Nothing here.", or "Nothing for "..."." when searching.
 
 ## How do I retry or cancel a message?
 - On a failed row, **Try again** puts it back in the queue with its tries reset, due now.
+- On a failed row you don't want to retry (an old test, a shop that closed), **Clear** keeps it in the history but stops it counting: it leaves the Failed tab, the Email badge, the Dashboard and the AI team's brief. It's still under **Everything**.
 - On a waiting row, **Cancel** stops it. The row is kept as failed with "Cancelled from the admin panel", so the history has no holes.
 
 The worker re-checks the Do not email list right before it sends each queued row, so **Try again** on a row whose address has since bounced or opted out doesn't send it: the row comes back as "Not sent". If an address really should get mail again, remove it from Do not email first.

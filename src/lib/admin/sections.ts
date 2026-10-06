@@ -183,7 +183,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   {
     href: "/admin/email", label: "Email", sub: "Queue, health and delivery", group: "email", Icon: Mail,
     about: "Queue, delivery and health for everything the site sends.",
-    queues: [{ label: "Failed emails", table: "email_queue", where: [["status", "failed"]] }],
+    queues: [{ label: "Failed emails", table: "email_queue", where: [["status", "failed"]], whereNull: ["cleared_at"] }],
   },
   {
     href: "/admin/campaigns", label: "Campaigns", sub: "Sequences and who is in them", group: "email", Icon: Megaphone,

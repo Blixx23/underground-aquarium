@@ -92,7 +92,7 @@ ${MODERATION_QUEUES}
   species page.
 
 ## Email
-- email_queue: kind, status ('queued', 'sent', 'failed'), bulk, attempts, fail_reason, created_at, sent_at
+- email_queue: kind, status ('queued', 'sent', 'failed'), bulk, attempts, fail_reason, created_at, sent_at, cleared_at (set = skipped on purpose or cleared by Chris; only failed rows with cleared_at empty need attention)
   (addresses and contents are private).
 - email_campaigns (key, name, active), email_campaign_steps, email_campaign_enrollments (store_id, status, sent_count,
   next_send_at, stop_reason, cycle).

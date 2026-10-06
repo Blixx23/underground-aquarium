@@ -55,7 +55,10 @@ const MORNING: WorkerDef = {
   emailsReport: true,
   job: `You do three jobs in one session, in this order.
 COO: check every admin queue (live counts are in your context), email delivery and anything stuck. List what's new and
-what's waiting too long, with the admin link.
+what's waiting too long, with the admin link. Email is NOT stuck when bulk mail has a future scheduled_at: the daily
+bulk cap and the bounce brake (7-day bounce rate at 5% or more, when only Gmail, Yahoo, Outlook and other big providers
+get bulk mail) deliberately move it to the next morning. Only pending mail scheduled more than 30 minutes ago is
+stuck. Failed emails that are cleared (cleared_at set: do-not-email skips, cancels, duplicates) are not problems.
 Analyst: record yesterday's numbers (Pacific day) and compare them with the site's normal: sign-ups, active members,
 new Society members and dues, Society renewals coming due in the next 30 days, new listings, marketplace messages,
 forum threads and replies, course completions, shop claims and new shop reviews.

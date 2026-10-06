@@ -53,6 +53,14 @@ export async function readHealth(): Promise<HealthRead> {
     if (!stuck.error) health.stuck = stuck.count ?? 0;
     if (!held.error) health.held_bulk = held.count ?? 0;
   }
+  // Failed means "needs you": skipped and cleared rows (the do-not-email list
+  // doing its job, cancels, old tests you cleared) don't count.
+  const { count: open, error: openErr } = await supabaseAdmin
+    .from("email_queue")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "failed")
+    .is("cleared_at", null);
+  if (!openErr) health.failed_open = open ?? 0;
   return { ok: true, health };
 }
 

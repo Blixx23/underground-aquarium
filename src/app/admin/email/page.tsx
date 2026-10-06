@@ -88,12 +88,13 @@ export default async function AdminEmailPage({
   // The rows for whichever tab is open.
   let rowQuery = supabaseAdmin
     .from("email_queue")
-    .select("id, kind, bulk, to_email, subject, status, attempts, last_error, fail_reason, scheduled_at, sent_at, created_at, direct")
+    .select("id, kind, bulk, to_email, subject, status, attempts, last_error, fail_reason, scheduled_at, sent_at, created_at, direct, cleared_at")
     .order("created_at", { ascending: false })
     .limit(100);
   if (tab === "waiting") rowQuery = rowQuery.eq("status", "pending");
   if (tab === "sent") rowQuery = rowQuery.eq("status", "sent");
-  if (tab === "failed") rowQuery = rowQuery.eq("status", "failed");
+  // Failed shows what needs you; skipped and cleared rows are under Everything.
+  if (tab === "failed") rowQuery = rowQuery.eq("status", "failed").is("cleared_at", null);
   if (q) rowQuery = rowQuery.ilike("to_email", `%${q.toLowerCase()}%`);
 
   const [{ data: rowData }, { data: eventData }, { data: suppData }] = await Promise.all([
@@ -113,7 +114,7 @@ export default async function AdminEmailPage({
   type Row = {
     id: string; kind: string; bulk: boolean; to_email: string; subject: string;
     status: string; attempts: number; last_error: string | null; fail_reason: string | null;
-    scheduled_at: string; sent_at: string | null; created_at: string; direct: boolean;
+    scheduled_at: string; sent_at: string | null; created_at: string; direct: boolean; cleared_at?: string | null;
   };
   const rows = (rowData ?? []) as Row[];
   const events = (eventData ?? []) as { id: string; to_email: string | null; type: string; detail: string | null; created_at: string }[];
@@ -279,7 +280,7 @@ export default async function AdminEmailPage({
                     {/* A row held back by the do-not-email list would only be held back
                         again, so there's no Try again. Take the address off the list below
                         first if it really should get mail. */}
-                    {r.last_error?.startsWith(SKIPPED_PREFIX) ? null : <RowActions id={r.id} status={r.status} />}
+                    {r.last_error?.startsWith(SKIPPED_PREFIX) ? null : <RowActions id={r.id} status={r.status} cleared={!!r.cleared_at} />}
                   </span>
                 </li>
               ))}

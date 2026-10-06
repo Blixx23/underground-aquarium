@@ -355,7 +355,7 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
     if (problem) {
       const { error: badErr } = await supabaseAdmin
         .from("email_queue")
-        .update({ status: "failed", fail_reason: "other", last_error: `Not sent: ${problem}`, locked_at: null, alerted_at: new Date().toISOString() })
+        .update({ status: "failed", fail_reason: "other", last_error: `Not sent: ${problem}`, locked_at: null, alerted_at: new Date().toISOString(), cleared_at: new Date().toISOString() })
         .eq("id", row.id);
       if (badErr) await supabaseAdmin.from("email_queue").update({ locked_at: null }).eq("id", row.id);
       await suppress(row.to_email, "invalid", problem).catch(() => {});
@@ -366,6 +366,32 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
     if (tidy !== row.to_email) {
       await supabaseAdmin.from("email_queue").update({ to_email: tidy }).eq("id", row.id);
       row.to_email = tidy;
+    }
+  }
+  // The same outreach email to the same address twice (two shop listings can
+  // share one inbox) looks like spam. Send it once; record the rest as skipped.
+  const bulkRows = rows.filter((r) => r.to_email && r.bulk);
+  if (bulkRows.length) {
+    const { data: already } = await supabaseAdmin
+      .from("email_queue")
+      .select("to_email, kind")
+      .eq("status", "sent")
+      .eq("bulk", true)
+      .in("to_email", [...new Set(bulkRows.map((r) => r.to_email))]);
+    const seen = new Set(((already ?? []) as { to_email: string; kind: string }[]).map((r) => `${r.kind}|${r.to_email.toLowerCase()}`));
+    for (const row of bulkRows) {
+      const key = `${row.kind}|${row.to_email.toLowerCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        continue;
+      }
+      const now = new Date().toISOString();
+      await supabaseAdmin
+        .from("email_queue")
+        .update({ status: "failed", fail_reason: "other", last_error: "Not sent: this address already got this email", locked_at: null, alerted_at: now, cleared_at: now })
+        .eq("id", row.id);
+      row.to_email = "";
+      suppressed++;
     }
   }
   const sendable = rows.filter((r) => r.to_email);
@@ -426,6 +452,8 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
               last_error: skippedMessage(reason),
               locked_at: null,
               alerted_at: now,
+              // Nothing for anyone to fix, so it never counts as a failed email.
+              cleared_at: now,
             })
             .eq("id", row.id);
           if (skipErr) {

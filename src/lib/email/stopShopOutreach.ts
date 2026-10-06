@@ -47,7 +47,7 @@ export async function stopShopOutreach(storeIds: string[], why: string): Promise
   if (emails.length) {
     const { data } = await supabaseAdmin
       .from("email_queue")
-      .update({ status: "failed", fail_reason: "other", last_error: why, locked_at: null })
+      .update({ status: "failed", fail_reason: "other", last_error: why, locked_at: null, cleared_at: new Date().toISOString() })
       .in("to_email", emails)
       .eq("status", "pending")
       .eq("bulk", true)

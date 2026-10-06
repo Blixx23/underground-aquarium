@@ -76,12 +76,27 @@ export async function POST(req: Request) {
             fail_reason: null,
             locked_at: null,
             alerted_at: null,
+            cleared_at: null,
             scheduled_at: new Date().toISOString(),
           })
           .in("id", ids)
           .eq("status", "failed");
         if (error) throw new Error(error.message);
         return NextResponse.json({ ok: true, retried: ids.length });
+      }
+
+      case "clear": {
+        // A failure you've looked at and don't need to retry (an old test, a
+        // shop that closed): it stays in the ledger but stops counting as waiting.
+        const ids = body.ids?.length ? body.ids : body.id ? [body.id] : [];
+        if (!ids.length) return NextResponse.json({ error: "Nothing selected." }, { status: 400 });
+        const { error } = await supabaseAdmin
+          .from("email_queue")
+          .update({ cleared_at: new Date().toISOString(), alerted_at: new Date().toISOString() })
+          .in("id", ids)
+          .eq("status", "failed");
+        if (error) throw new Error(error.message);
+        return NextResponse.json({ ok: true, cleared: ids.length });
       }
 
       case "cancel": {
@@ -91,7 +106,7 @@ export async function POST(req: Request) {
         // a failure with a reason, so the history never has holes in it.
         const { error } = await supabaseAdmin
           .from("email_queue")
-          .update({ status: "failed", fail_reason: "other", last_error: "Cancelled from the admin panel", locked_at: null })
+          .update({ status: "failed", fail_reason: "other", last_error: "Cancelled from the admin panel", locked_at: null, cleared_at: new Date().toISOString() })
           .in("id", ids)
           .eq("status", "pending");
         if (error) throw new Error(error.message);
