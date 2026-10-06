@@ -88,6 +88,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     forumCats,
     forumThreads,
     breedingGuides,
+    writtenGuides,
     tanks,
     profiles,
     clubs,
@@ -150,6 +151,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ),
     all<{ species_slug: string }>((a, b) =>
       supabasePublic.from("public_breeding_guides").select("species_slug").range(a, b)
+    ),
+    all<{ slug: string; updated_at?: string }>((a, b) =>
+      supabasePublic.from("breeding_guides").select("slug, updated_at").range(a, b)
     ),
     all<{ id: string; updated_at?: string; user_id: string }>((a, b) =>
       supabasePublic.from("tanks").select("id, updated_at, user_id").eq("is_public", true).range(a, b)
@@ -285,12 +289,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // One guide page per species, however many logs feed it.
+  // One page per species: the written guides, plus members' reports for
+  // fish that don't have a written guide yet.
   const guideSlugs = new Set<string>();
-  for (const g of breedingGuides) {
-    if (g.species_slug) guideSlugs.add(g.species_slug);
+  for (const g of writtenGuides) {
+    guideSlugs.add(g.slug);
+    out.push(entry(`/breeding/${g.slug}`, 0.7, "monthly", when(g.updated_at)));
   }
-  for (const slug of guideSlugs) out.push(entry(`/breeding/${slug}`, 0.7, "monthly"));
+  for (const g of breedingGuides) {
+    if (g.species_slug && !guideSlugs.has(g.species_slug)) {
+      guideSlugs.add(g.species_slug);
+      out.push(entry(`/breeding/${g.species_slug}`, 0.6, "monthly"));
+    }
+  }
 
   // ---- Forums: mirror the pages' own indexing rules -------------------
   const catSlugById = new Map(forumCats.map((c) => [c.id, c.slug]));

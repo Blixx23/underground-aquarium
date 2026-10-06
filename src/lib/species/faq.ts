@@ -110,7 +110,7 @@ export function speciesFaq(
       q: `How does the ${n} breed?`,
       a:
         `The ${n} is ${/^[aeiou]/i.test(low(s.breeding_type)) ? "an" : "a"} ${low(s.breeding_type)}.` +
-        (opts.hasBreedingGuide ? ` Members who have bred it share their setups in our breeding guide.` : ""),
+        (opts.hasBreedingGuide ? ` Our step-by-step breeding guide covers it, from setting up to raising the fry.` : ""),
     });
   }
 

@@ -35,7 +35,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       // Share pictures live under /api/, and X and Facebook won't fetch a
       // picture robots.txt blocks, so these stay open.
-      allow: ["/", "/api/share-card", "/api/*/share-image", "/api/stores/*/share-image", "/api/species/*/share-image"],
+      allow: ["/", "/api/share-card", "/api/*/share-image", "/api/stores/*/share-image", "/api/species/*/share-image", "/api/breeding/certificate/"],
       disallow: [
         "/api/",
         "/admin",

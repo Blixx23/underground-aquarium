@@ -7,6 +7,7 @@ import { buildVocab, correctTerms, describeFix, type Vocab } from "@/lib/search/
 import { helpHref } from "@/lib/help/types";
 import { formatPrice, listingHref } from "@/lib/marketplace/listings";
 import { GROUP_LABELS, ORDER, type SiteGroupKey } from "@/lib/search/groups";
+import { classLabel, loadGuideCards } from "@/lib/breeding/guides";
 
 export { GROUP_LABELS, ORDER, isGroupKey, type SiteGroupKey } from "@/lib/search/groups";
 
@@ -399,19 +400,38 @@ async function speciesGroup(terms: string[], n: number): Promise<SiteHit[]> {
 }
 
 async function breedingGroup(terms: string[], n: number): Promise<SiteHit[]> {
-  const rows = await loadBreeding();
-  const bySpecies = new Map<string, { name: string; count: number; notes: string[] }>();
+  const [rows, guides] = await Promise.all([loadBreeding(), cached("breeding-guides", 10 * MIN, loadGuideCards)]);
+  // Written guides first, with members' reports counted on the same entry.
+  const bySlug = new Map<string, { name: string; count: number; notes: string[]; guide: string | null; points: number | null }>();
+  const guideForSpecies = new Map<string, string>();
+  for (const g of guides) {
+    bySlug.set(g.slug, {
+      name: g.name,
+      count: 0,
+      notes: [g.summary, g.method ?? "", g.category ?? "", g.scientific ?? ""],
+      guide: g.summary,
+      points: g.points,
+    });
+    if (g.speciesSlug) guideForSpecies.set(g.speciesSlug, g.slug);
+  }
   for (const b of rows) {
-    const e = bySpecies.get(b.species_slug) ?? { name: b.species_name, count: 0, notes: [] };
+    const key = guideForSpecies.get(b.species_slug) ?? b.species_slug;
+    const e = bySlug.get(key) ?? { name: b.species_name, count: 0, notes: [], guide: null, points: null };
     e.count++;
     if (b.notes) e.notes.push(b.notes);
-    bySpecies.set(b.species_slug, e);
+    bySlug.set(key, e);
   }
-  const list = [...bySpecies.entries()].map(([slug, e]) => ({ slug, ...e }));
-  return rank(list, (b) => score(terms, b.name, [...b.notes, "breeding spawn fry eggs"]), n).map(({ r: b }) => ({
-    title: `Breeding ${b.name}`,
+  const list = [...bySlug.entries()].map(([slug, e]) => ({ slug, ...e }));
+  return rank(list, (b) => score(terms, b.name, [...b.notes, "breeding spawn fry eggs how to breed"]), n).map(({ r: b }) => ({
+    title: `How to breed ${b.name}`,
     href: `/breeding/${b.slug}`,
-    subtitle: `${b.count} member breeding record${b.count === 1 ? "" : "s"}`,
+    subtitle: [
+      b.guide ? classLabel(b.points) : null,
+      b.count ? `${b.count} member breeding record${b.count === 1 ? "" : "s"}` : null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    snippet: b.guide ? clip(b.guide) : undefined,
   }));
 }
 

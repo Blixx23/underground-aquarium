@@ -1,77 +1,85 @@
 ---
 title: Breeding guides
 category: Tools & learning
-summary: Read real spawn and propagation reports from Society members, organized by species, and learn how to share your own approved report as a public guide.
+summary: Step-by-step breeding and propagation guides for every species on the Society's point list, sorted by difficulty class, plus members' own approved spawn reports and how to earn a Certified Breeder certificate.
 order: 50
-keywords: how to breed, spawning guide, breeding reports, spawn reports, spawn log, BAP, HAP, breeder award, plant propagation, fry raising, breeding setup, breeding tips, hobbyist reports
+keywords: how to breed, breeding guide, spawning guide, raising fry, fry food, propagation, propagate plants, difficulty class, class a, class f, easiest fish to breed, certified breeder, breeder certificate, sample certificate, BAP, HAP, breeder award, spawn log, spawn reports, member reports
 pages: /breeding, /breeding/[species], /species/[slug]
 ---
 
-[Breeding Guides](/breeding) collects real spawn reports and plant propagation write-ups from Underground Aquarium Society members, grouped by species. Anyone can read them, signed in or not.
+[Breeding Guides](/breeding) has a written, step-by-step guide for every fish, shrimp, snail and plant on the Underground Aquarium Society's point list: over 200 species. Anyone can read them, signed in or not. Find them under **Breeding Guides** in the Tools menu, next to the Tank Builder and Fish Species.
 
-## What are breeding guides?
-Breeding guides are write-ups from Society members who have actually bred a fish or propagated a plant. Each one comes from a breeding report the member submitted to their club and that was approved. The member chose to share it publicly.
+## How are the guides organized?
+By the Society's difficulty classes, the same classes that set how many points a verified spawn earns:
 
-They're organized by species, so one guide page can hold several members' reports for the same fish. Find them under **Breeding Guides** in the menu (under Learn) or in the site footer.
+- **Class A (5 points):** beginner. Breeds readily in a community tank.
+- **Class B (10 points):** straightforward with a dedicated tank.
+- **Class C (15 points):** needs conditioning and specific water.
+- **Class D (20 points):** difficult. Fry are the hard part.
+- **Class E (25 points):** expert. Few members will log one.
+- **Class F (40 points):** rarely bred in captivity at all.
 
-## How do I find a breeding guide for a species?
+The boxes at the top of the page jump to each class. **Start here: the easiest fish to breed** picks out a few reliable first projects.
+
+## How do I find a guide?
 1. Open [Breeding Guides](/breeding).
-2. Browse the cards, sorted A to Z by species name. Each card shows a photo (when a report has one), the species name and how many guides it has, for example "3 guides".
-3. Tap a card to open that species' guide page.
+2. Choose **Fish & inverts** or **Plants**.
+3. Type in the search box (it matches common names, scientific names, groups like "Livebearers" and methods like "mouthbrooder"), or tap a group chip to narrow the list.
+4. Tap a guide.
 
-There's no search box on the breeding guides page. You can also get there from a species care page: when a species has at least one report, its page shows a **How to breed [species]** box with the number of reports "from members who have spawned them". Tap it to open the guide.
+Site search finds them too ("how to breed kribensis"), and a species care page shows a **How to breed [species]** box when a guide exists.
 
-## What's on a species breeding guide page?
-- **All breeding guides**: back to the list.
-- A label saying **Breeding guide** for fish, or **Propagation guide** for plants.
-- The species name and how many reports there are, for example "2 reports from hobbyists who've bred [species]".
-- **[Species] care guide: tank size, water and diet**: a link to the species care page, when we have one for that species.
-- The reports, newest first.
+## What's in a guide?
+- **The difficulty class and points** for that species, its breeding method and its group.
+- **At a glance:** how they breed, telling the sexes apart, the best breeding group, breeding tank, conditioning, what triggers spawning, spawn size, eggs or pregnancy, the fry, first foods, growing out, and whether the parents care for or eat the young. Plant guides show light, CO2, substrate, how fast it spreads and what to cut first.
+- **The everyday care range** (temperature, pH, hardness, adult size) from the species care page, with a link to the full care guide. When spawning needs different water, the guide says so.
+- **The full guide:** setting up, conditioning, spawning, eggs, raising the fry week by week, growing out, and common mistakes. Glossary words link to their definitions.
+- **Logging it for the Society:** a practical tip for documenting this species in a spawn log.
+- **Become a Certified [species] Breeder:** a sample of the certificate (see below) and buttons to start a spawn log.
+- **Want an easier start?:** up to four easier species in the same group to build your skills on first. On the easiest guides it suggests other beginner-friendly species instead.
+- **Members who've bred it:** approved spawn reports members chose to share (see below).
+- **Common questions** about breeding that species, and related links: the care guide, **Plan the tank** in the Tank Builder, and other guides in the same class.
 
-## What's in each breeding report?
-Each report shows:
+## How accurate are the guides?
+Each guide was written, then checked separately, claim by claim, by a second reviewer, with special care on how each species breeds, how to sex them, and the numbers (temperatures, clutch sizes, hatch and pregnancy times). Where hobby sources disagree or a species is rarely bred, the guide says so and gives a range rather than a precise number. If you spot something wrong, email support@undergroundaquarium.com with the species and what you found, and we'll fix it.
 
-- **The breeder**: their name, linked to their profile. If the breeder's profile can't be shown, it says "A Society member".
-- **Their club**: linked to the club page if the club is public, otherwise just the name.
-- **The date**: the date the fish spawned (or the plant was propagated), or the date the report was submitted if no date was given.
-- **The write-up**: how they did it, such as tank setup, water parameters, conditioning and what triggered the spawn. If they didn't write anything, it says "No write-up provided."
-- **Photos**: up to 4. Tap a photo to open it full size.
+## What is the certificate on each guide?
+It's a sample of the real **Certified [species] Breeder** certificate the Society issues once your spawn log for that species is approved. When you're signed in, the sample shows your own name, so you can see what yours would look like. It's always stamped **SAMPLE** and says it's a sample only: real certificates carry a verification code and are issued only after Society peer review. Your name comes from your account, never from the page address, so nobody can put someone else's name on one.
 
-## Are plants included in breeding guides?
-Yes. Reports from the plant program (HAP) appear too, marked **Propagation guide** with a leaf icon when there's no photo. Fish reports come from the fish program (BAP).
+Plants don't have a breeder certificate. Plant guides invite you to submit the propagation to the Society's plant program (HAP) for points instead.
 
-## How do I get my breeding report published as a guide?
-You need to be a member of the Underground Aquarium Society and submit a breeding report through your club.
+## How do I earn a real Certified Breeder certificate?
+Join the Underground Aquarium Society, then tap **Start your spawn log** on the guide (it opens a new log with that species picked). Open the log before the spawn and add photos at each of the five stages, from pair and setup to the 60-day grow-out. Other members review the record, and once it's approved you can download the certificate. See the [Breeder Award Program](/help/breeder-award-program), [Spawn logs and submissions](/help/spawn-logs-and-submissions) and [Joining the Society](/help/joining-the-society).
+
+## What are the members' reports on a guide?
+Write-ups from Society members who actually bred the species, from breeding reports their club approved and they chose to share publicly. Each shows the breeder (linked to their profile, or "A Society member"), their club, the date, how they did it, and up to 4 photos. Species that have members' reports but no written guide yet are listed under **More from members' tanks** on the main page.
+
+## How do I get my breeding report published?
+You need to be a Society member and submit a breeding report through your club.
 
 1. Open your club's award submission form.
 2. Choose **Fish (BAP)** or **Plants (HAP)** and fill in the species, the date and **How you did it**. You can add up to 4 photos.
-3. Tick "Share my write-up and photos as a public breeding guide once it's approved." (Leave it unticked to keep the report private to the club.)
+3. Tick "Share my write-up and photos as a public breeding guide once it's approved."
 4. Tap **Submit for review**.
 
-A club officer reviews the report. Once it's approved, your write-up and photos appear in Breeding Guides, credited to your profile. For the full submission process see [Spawn logs and submissions](/help/spawn-logs-and-submissions) and the [Breeder Award Program](/help/breeder-award-program). To join, see [Joining the Society](/help/joining-the-society).
+Once a club officer approves it, it appears on that species' guide page, credited to your profile.
 
-## Can I remove my report from the public breeding guides?
+## Can I remove my report from the public guides?
 There's no button to un-share a report after it's published. Email support@undergroundaquarium.com with the species and your club, and we'll help.
 
-## Can anyone submit a breeding guide?
-No. Guides only come from approved Society breeding reports where the member chose to share publicly. If you're not a Society member but want to share how you bred a fish, you can post in the [forums](/forums) (see [Starting a forum thread](/help/starting-a-forum-thread)), or share a short clip on the species page (see [Breeding videos](/help/breeding-videos)).
-
-## Why is there no breeding guide for my fish?
-Nobody has shared an approved report for that species yet. If you've bred it and you're a Society member, yours could be the first. The species care page still shows how the species breeds under **Breeding** (for example Egg-scatterer or Livebearer). See [Reading a species page](/help/reading-a-species-page).
+## Why is there no guide for my fish?
+Written guides cover the species on the Society's point list. If your fish isn't on the list, there's no guide yet, but its care page still shows how it breeds under **Breeding**. You can also share how you bred it in the [forums](/forums) or with a clip on the species page (see [Breeding videos](/help/breeding-videos)).
 
 ## Common problems
 
-**The breeding guides page says "No breeding guides yet."**
-No reports have been shared publicly yet. When Society members share their approved spawn reports, they'll appear there.
+**The certificate sample shows "Your Name Here".**
+You're not signed in, or your profile has no name. Sign in, and add your name in your profile settings to see it on the sample.
 
-**My report was approved but isn't in Breeding Guides.**
-Check that you ticked "Share my write-up and photos as a public breeding guide once it's approved." when you submitted. If you didn't, or it still isn't showing, email support@undergroundaquarium.com with the species and your club.
+**My report was approved but isn't on the guide.**
+Check that you ticked "Share my write-up and photos as a public breeding guide once it's approved." when you submitted. If you did and it still isn't showing, email support@undergroundaquarium.com with the species and your club.
 
-**The species page has no "How to breed" box but a guide exists.**
-The box only appears when the guide is filed under the same species as the care page. Email support@undergroundaquarium.com if a guide seems to be under the wrong species.
+**Start your spawn log doesn't open a log.**
+Spawn logs are for Society members. If you're signed out you'll be asked to sign in, and if you're not a member yet you'll be taken to the Society to join first.
 
-**I can't open the club link on a report.**
-The club name is only a link when the club is public.
-
-**There's no care guide link on a breeding guide page.**
-We don't have a species care page matching that guide yet. Plants, for example, aren't in the species library.
+**There's no care guide link on a guide.**
+Not every species on the Society list has a care page in the species library yet; plants and saltwater fish, for example.

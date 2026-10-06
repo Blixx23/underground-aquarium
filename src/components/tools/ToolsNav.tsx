@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wrench, Droplets, Fish, BookOpen, MapPin, GraduationCap } from "lucide-react";
+import { Wrench, Droplets, Fish, BookOpen, MapPin, GraduationCap, Egg } from "lucide-react";
 
 const TOOLS = [
   { href: "/tank-builder", label: "Tank Builder", sub: "Plan a compatible tank", Icon: Wrench },
   { href: "/water-check", label: "Water Check", sub: "Read your test results", Icon: Droplets },
   { href: "/species", label: "Fish Species", sub: "Care guides", Icon: Fish },
+  { href: "/breeding", label: "Breeding Guides", sub: "Breed it, get certified", Icon: Egg },
   { href: "/glossary", label: "Glossary", sub: "Hobby terms explained", Icon: BookOpen },
   { href: "/stores?near=1", label: "Shops Near Me", sub: "Local fish stores", Icon: MapPin },
   { href: "/courses", label: "Courses", sub: "Free lessons", Icon: GraduationCap },

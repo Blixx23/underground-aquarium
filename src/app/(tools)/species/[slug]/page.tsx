@@ -16,6 +16,7 @@ import { ldJson } from "@/lib/jsonLd";
 import { tankmatesFor } from "@/lib/tankBuilder/species";
 import { buildPath } from "@/lib/tankBuilder/share";
 import { glossaryLinker } from "@/lib/glossary/links";
+import { classLabel, guideForSpecies } from "@/lib/breeding/guides";
 
 export const revalidate = 3600;
 
@@ -180,7 +181,9 @@ export default async function SpeciesDetailPage({ params }: Params) {
     .from("public_breeding_guides")
     .select("species_slug", { count: "exact", head: true })
     .eq("species_slug", s.slug);
-  const hasBreedingGuide = (breedingReports ?? 0) > 0;
+  // The written breeding guide, if this fish is on the Society's list.
+  const breedingGuide = await guideForSpecies(s.slug as string);
+  const hasBreedingGuide = !!breedingGuide || (breedingReports ?? 0) > 0;
   // Only real fish get a tank plan; group and genus pages don't have one set of numbers.
   const plannable = ["species", "variety", "form"].includes(String(s.entry_type ?? "species"));
   const mates = plannable ? await tankmatesFor(s.slug as string) : null;
@@ -485,13 +488,20 @@ export default async function SpeciesDetailPage({ params }: Params) {
 
         {hasBreedingGuide && (
           <Link
-            href={`/breeding/${s.slug}`}
+            href={`/breeding/${breedingGuide?.slug ?? s.slug}`}
             className="mb-10 flex items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-4 py-3.5 text-ocean-100 hover:border-emerald-400/50"
           >
             <span>
               <span className="block font-medium text-white">How to breed {s.common_name}</span>
               <span className="block text-sm text-ocean-300">
-                {breedingReports} {breedingReports === 1 ? "report" : "reports"} from members who have spawned them
+                {[
+                  breedingGuide ? `Step-by-step guide · ${classLabel(breedingGuide.points)}` : null,
+                  breedingReports
+                    ? `${breedingReports} ${breedingReports === 1 ? "report" : "reports"} from members who have spawned them`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </span>
             <ChevronRight className="h-5 w-5 shrink-0 text-emerald-300" />
