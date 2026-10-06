@@ -1,5 +1,6 @@
 "use client";
 
+import { useRestoreScroll, useUrlParam } from "@/lib/hooks/useUrlState";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Fish, Search, X, MapPin, Eye } from "lucide-react";
@@ -35,9 +36,13 @@ export default function ListingsBrowser({
   /** Pre-select a category, e.g. from ?category= on the nationwide page. */
   initialCategory?: string;
 }) {
-  const [active, setActive] = useState<string>(initialCategory);
-  const [sort, setSort] = useState<SortKey>("newest");
-  const [query, setQuery] = useState("");
+  // Kept in the address, so the back arrow returns to the same results and spot.
+  const [active, setActive, aReady] = useUrlParam("category", initialCategory);
+  const [sortRaw, setSortRaw, sReady] = useUrlParam("sort", "newest");
+  const sort = sortRaw as SortKey;
+  const setSort = (v: SortKey) => setSortRaw(v);
+  const [query, setQuery, qReady] = useUrlParam("q");
+  useRestoreScroll(aReady && sReady && qReady);
 
   // One timestamp for the whole render so "2 hours ago" can't differ
   // between server and client and trip a hydration warning.

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRestoreScroll, useUrlParam } from "@/lib/hooks/useUrlState";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import SuggestTerm from "@/components/glossary/SuggestTerm";
@@ -30,8 +31,10 @@ const CATEGORY_ORDER = [
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 export default function GlossaryExplorer({ terms }: { terms: Term[] }) {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string>("All");
+  // Kept in the address, so the back arrow returns to the same search and spot.
+  const [query, setQuery, qReady] = useUrlParam("q");
+  const [category, setCategory, cReady] = useUrlParam("category", "All");
+  useRestoreScroll(qReady && cReady);
   const [showFilters, setShowFilters] = useState(false);
 
   const categories = useMemo(() => {

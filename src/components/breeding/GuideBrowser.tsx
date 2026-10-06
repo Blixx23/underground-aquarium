@@ -1,5 +1,6 @@
 "use client";
 
+import { useRestoreScroll } from "@/lib/hooks/useUrlState";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Search, Fish, Leaf, ChevronRight, X } from "lucide-react";
@@ -96,6 +97,8 @@ export default function GuideBrowser({ guides, children }: { guides: GuideCard[]
   const input = useRef<HTMLInputElement>(null);
 
   const indexed = useMemo(() => guides.map(index), [guides]);
+  // Back from a guide lands on the same spot in the list.
+  useRestoreScroll(restored);
 
   // Keep the search in the address, so the back arrow from a guide lands on the same results
   // and a search can be shared as a link.

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRestoreScroll, useUrlParam } from "@/lib/hooks/useUrlState";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, ArrowRight } from "lucide-react";
@@ -38,8 +39,12 @@ export default function SpeciesBrowser({
   /** Where "Start a log" points, with ?species=<id> appended. */
   submitHref: string;
 }) {
-  const [query, setQuery] = useState("");
-  const [klass, setKlass] = useState<number | null>(null);
+  // Kept in the address, so the back arrow returns to the same results and spot.
+  const [query, setQuery, qReady] = useUrlParam("q");
+  const [klassRaw, setKlassRaw, kReady] = useUrlParam("points");
+  const klass = klassRaw ? Number(klassRaw) : null;
+  const setKlass = (v: number | null) => setKlassRaw(v == null ? "" : String(v));
+  useRestoreScroll(qReady && kReady);
 
   const classes = useMemo(
     () => Array.from(new Set(species.map((s) => s.points))).sort((a, b) => a - b),

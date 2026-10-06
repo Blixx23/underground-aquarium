@@ -1,5 +1,6 @@
 "use client";
 
+import { useRestoreScroll, useUrlParam } from "@/lib/hooks/useUrlState";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Fish, Search, X } from "lucide-react";
@@ -33,9 +34,13 @@ export default function MarketplaceBrowser({
 }: {
   products: Product[];
 }) {
-  const [active, setActive] = useState<string>("all");
-  const [sort, setSort] = useState<SortKey>("newest");
-  const [query, setQuery] = useState("");
+  // Kept in the address, so the back arrow returns to the same results and spot.
+  const [active, setActive, aReady] = useUrlParam("category", "all");
+  const [sortRaw, setSortRaw, sReady] = useUrlParam("sort", "newest");
+  const sort = sortRaw as SortKey;
+  const setSort = (v: SortKey) => setSortRaw(v);
+  const [query, setQuery, qReady] = useUrlParam("q");
+  useRestoreScroll(aReady && sReady && qReady);
 
   // Hide sold-out listings (stock === 0) entirely; null & positive stay.
   const available = useMemo(

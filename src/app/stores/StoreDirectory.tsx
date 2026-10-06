@@ -1,5 +1,6 @@
 "use client";
 
+import { useRestoreScroll, useUrlParam } from "@/lib/hooks/useUrlState";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -79,7 +80,9 @@ export default function StoreDirectory({
   /** Rough location from the visitor's connection, for when the browser won't share one. */
   approx?: { lat: number; lng: number; city: string | null } | null;
 }) {
-  const [query, setQuery] = useState(initialQuery);
+  // Kept in the address, so the back arrow returns to the same results and spot.
+  const [query, setQuery, qReady] = useUrlParam("q", "", initialQuery);
+  useRestoreScroll(qReady);
   const [stateCode, setStateCode] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<string | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);

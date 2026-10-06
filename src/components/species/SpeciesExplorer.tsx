@@ -1,5 +1,6 @@
 "use client";
 
+import { useRestoreScroll } from "@/lib/hooks/useUrlState";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, X, Filter, ChevronDown } from "lucide-react";
@@ -117,6 +118,8 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
   const [group, setGroup] = useState<string>("All");
   const [showFilters, setShowFilters] = useState(false);
   const [restored, setRestored] = useState(false);
+  // Back from a species page lands on the same spot in the list.
+  useRestoreScroll(restored);
 
   // Keep the search in the address (?q=…&group=…), so tapping a fish and
   // coming back with the back arrow lands on the same results.
