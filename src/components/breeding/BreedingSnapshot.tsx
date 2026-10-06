@@ -9,6 +9,16 @@ import { CLASS_LADDER } from "@/lib/society/classes";
  * all read from the written guide, with a link to the full guide.
  */
 
+// Difficulty runs neon green (Class A, easy) to neon red (Class F, rarely bred).
+const HEAT: Record<string, string> = {
+  A: "#39ff14",
+  B: "#b4ff1a",
+  C: "#ffe81a",
+  D: "#ffa31a",
+  E: "#ff5e1a",
+  F: "#ff1744",
+};
+
 // The first, plain part of a guide fact: "Cave spawner (biparental care)" -> "Cave spawner".
 function short(v: string | undefined, max = 80): string | null {
   if (!v) return null;
@@ -106,7 +116,7 @@ export default function BreedingSnapshot({
             : `Breeding ${speciesName} at a glance`}
         </h2>
         {klass && (
-          <span className="text-sm text-amber-300">
+          <span className="text-sm font-medium" style={{ color: HEAT[klass.letter] }}>
             Class {klass.letter} · {klass.points} points
           </span>
         )}
@@ -126,10 +136,16 @@ export default function BreedingSnapshot({
               return (
                 <div key={c.letter} className="text-center">
                   <div
-                    className={`h-2.5 rounded-full ${on ? "bg-amber-400" : passed ? "bg-amber-500/40" : "bg-white/10"}`}
+                    className="h-2.5 rounded-full"
+                    style={{
+                      backgroundColor: HEAT[c.letter],
+                      opacity: passed ? 1 : 0.15,
+                      boxShadow: on ? `0 0 10px ${HEAT[c.letter]}` : undefined,
+                    }}
                   />
                   <span
-                    className={`mt-1 block text-[11px] ${on ? "font-semibold text-amber-300" : "text-ocean-500"}`}
+                    className={`mt-1 block text-[11px] ${on ? "font-semibold" : "text-ocean-500"}`}
+                    style={on ? { color: HEAT[c.letter] } : undefined}
                   >
                     {c.letter}
                   </span>
