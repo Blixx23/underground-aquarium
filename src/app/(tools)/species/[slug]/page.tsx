@@ -17,7 +17,8 @@ import { tankmatesFor } from "@/lib/tankBuilder/species";
 import { buildPath } from "@/lib/tankBuilder/share";
 import { glossaryLinker } from "@/lib/glossary/links";
 import { fillTokens, loadTokenRows, TOKEN_COLUMNS, type TokenRow } from "@/lib/data/tokens";
-import { classLabel, guideForSpecies } from "@/lib/breeding/guides";
+import { classLabel, guideForSpecies, loadGuide } from "@/lib/breeding/guides";
+import BreedingSnapshot from "@/components/breeding/BreedingSnapshot";
 
 export const revalidate = 3600;
 
@@ -193,6 +194,8 @@ export default async function SpeciesDetailPage({ params }: Params) {
   // The written breeding guide, if this fish is on the Society's list.
   const breedingGuide = await guideForSpecies(s.slug as string);
   const hasBreedingGuide = !!breedingGuide || (breedingReports ?? 0) > 0;
+  // Its highlights show right here; the full guide is one tap away.
+  const snapshot = breedingGuide ? await loadGuide(breedingGuide.slug) : null;
   // Only real fish get a tank plan; group and genus pages don't have one set of numbers.
   const plannable = ["species", "variety", "form"].includes(String(s.entry_type ?? "species"));
   const mates = plannable ? await tankmatesFor(s.slug as string) : null;
@@ -495,7 +498,9 @@ export default async function SpeciesDetailPage({ params }: Params) {
           <p className="text-ocean-300 leading-relaxed mb-10">{gl.link(s.body)}</p>
         )}
 
-        {hasBreedingGuide && (
+        {snapshot ? (
+          <BreedingSnapshot guide={snapshot} speciesName={s.common_name as string} reports={breedingReports ?? 0} />
+        ) : hasBreedingGuide && (
           <Link
             href={`/breeding/${breedingGuide?.slug ?? s.slug}`}
             className="mb-10 flex items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-4 py-3.5 text-ocean-100 hover:border-emerald-400/50"

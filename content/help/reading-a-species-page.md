@@ -133,7 +133,7 @@ Species rated Advanced, Expert or Kept but not recommended also carry that tag o
   - **Livebearer**: gives birth to free-swimming young instead of laying eggs.
   - **Egg carrier**: the female carries the eggs under her tail until they hatch (shrimp, crayfish and crabs).
 
-If the species has a written breeding guide or members have shared breeding reports, you'll see a **How to breed [species]** box further down. See [Breeding guides](/help/breeding-guides).
+If the species has a written breeding guide, you'll see **Breeding [species] at a glance** further down: how hard it is on the Society's Class A to F scale, a spawn-to-grown timeline (how many eggs or fry, how long until they hatch or are born, when they swim and when they're grown), how to tell males from females, the breeding group and what the parents do, plus a **Full breeding guide** button. Species with members' breeding reports but no written guide show a **How to breed [species]** link instead. See [Breeding guides](/help/breeding-guides).
 
 ## What are the care notes and care questions?
 Under the stats you may see:
