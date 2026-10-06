@@ -24,7 +24,15 @@ function same(a: string, b: string): boolean {
   return s.length >= 4 && l.startsWith(s) && l.length - s.length <= 2;
 }
 
+/** Duplicate entries folded into the main one (step 74); word matching can't find these. */
+const MERGED: Record<string, string> = {
+  "x-ray-tetra": "pristella-tetra",
+  multifasciatus: "multifasciatus-shell-dweller",
+};
+
 export async function matchSpeciesSlug(oldSlug: string): Promise<string | null> {
+  const merged = MERGED[decodeURIComponent(oldSlug).toLowerCase()];
+  if (merged) return merged;
   const old = words(decodeURIComponent(oldSlug));
   if (old.length === 0) return null;
 

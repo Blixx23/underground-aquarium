@@ -16,6 +16,8 @@ export const SPECIES_OPTIONS = {
     "Mouthbrooder",
     "Bubble-nester",
     "Livebearer",
+    // Shrimp, crayfish and crabs: the female carries the eggs under her tail.
+    "Egg carrier",
   ],
 } as const;
 
