@@ -94,8 +94,11 @@ export function useRestoreScroll(ready: boolean) {
       // Only when coming back to the exact same list, within the hour.
       if (!cameBack() || s.url !== window.location.href || Date.now() - s.at > 3600_000 || s.y < 50) return;
       sessionStorage.removeItem(STORE);
-      // Two frames: let the restored results draw first.
-      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, s.y)));
+      // Jump, don't glide (the site scrolls smoothly by default), once the
+      // restored results have drawn; again a beat later in case images shifted things.
+      const go = () => window.scrollTo({ top: s.y, behavior: "instant" as ScrollBehavior });
+      requestAnimationFrame(() => requestAnimationFrame(go));
+      setTimeout(go, 120);
     } catch {
       // ignore
     }
