@@ -64,7 +64,7 @@ Water Check uses four levels, and the same colors appear on the result cards, th
 Every threshold is listed in [Water test results explained](/help/water-check-readings-explained).
 
 ## What is the Fishless cycle switch?
-Turn on **Fishless cycle** at the top of Water Check when you're cycling a new tank with no fish in it yet. The rules are different then: ammonia is food you add on purpose for the filter bacteria, and nitrite showing up means the cycle is making progress. Neither can hurt anything with no fish in the tank.
+Turn on the **Fishless cycle** switch (next to **Clear**, above your reading) when you're cycling a new tank with no fish in it yet. The rules are different then: ammonia is food you add on purpose for the filter bacteria, and nitrite showing up means the cycle is making progress. Neither can hurt anything with no fish in the tank.
 
 With the switch on:
 - A card at the top says which stage your cycle is at (feeding the first bacteria, the nitrite stage, or ready for the 24-hour test) and what to do next.

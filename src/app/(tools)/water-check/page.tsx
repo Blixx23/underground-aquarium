@@ -332,36 +332,6 @@ export default function WaterCheckPage() {
             Enter your test-kit numbers and get a plain-English read on what&apos;s healthy,
             what isn&apos;t, and how to fix it. Fill in only what you have.
           </p>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={fishless}
-            onClick={() => setMode(fishless ? "fish" : "fishless")}
-            className={
-              "mt-4 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors sm:w-auto " +
-              (fishless ? "border-emerald-500/50 bg-emerald-500/10" : "border-white/10 bg-white/5 hover:border-white/20")
-            }
-          >
-            <span
-              className={
-                "relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors " + (fishless ? "bg-emerald-500" : "bg-ocean-700")
-              }
-            >
-              <span
-                className={
-                  "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all " + (fishless ? "left-[22px]" : "left-0.5")
-                }
-              />
-            </span>
-            <span>
-              <span className="block text-sm font-medium text-white">Fishless cycle</span>
-              <span className="block text-xs text-ocean-400">
-                {fishless
-                  ? "On: no fish in the tank, so ammonia and nitrite are expected and the advice changes."
-                  : "Cycling a new tank with no fish yet? Turn this on. The rules are different."}
-              </span>
-            </span>
-          </button>
         </div>
 
         <div className="grid items-start gap-6 xl:grid-cols-2">
@@ -371,13 +341,41 @@ export default function WaterCheckPage() {
               <h2 className="text-sm font-medium uppercase tracking-wide text-ocean-400">
                 Your reading
               </h2>
-              <button
-                onClick={() => setWater(EMPTY_WATER)}
-                className="text-xs text-ocean-400 hover:text-white transition-colors"
-              >
-                Clear
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={fishless}
+                  onClick={() => setMode(fishless ? "fish" : "fishless")}
+                  className="flex items-center gap-2 text-xs text-ocean-200 hover:text-white"
+                >
+                  <span
+                    className={
+                      "relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors " +
+                      (fishless ? "bg-emerald-500" : "bg-ocean-700")
+                    }
+                  >
+                    <span
+                      className={
+                        "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all " + (fishless ? "left-[18px]" : "left-0.5")
+                      }
+                    />
+                  </span>
+                  Fishless cycle
+                </button>
+                <button
+                  onClick={() => setWater(EMPTY_WATER)}
+                  className="text-xs text-ocean-400 hover:text-white transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
+            <p className="-mt-3 mb-5 text-xs text-ocean-400">
+              {fishless
+                ? "Fishless cycle is on: no fish in the tank yet, so ammonia and nitrite are expected and the advice changes."
+                : "Cycling a new tank with no fish yet? Turn on Fishless cycle. The rules are different."}
+            </p>
 
             <div className="space-y-6">
               {GROUPS.map((group) => (
