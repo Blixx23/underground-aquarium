@@ -1,3 +1,4 @@
+import { cleanProposal } from "@/lib/ops/proposals";
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { OPS_LIMITS } from "@/lib/ops/config";
@@ -131,8 +132,41 @@ export function toolsFor(worker: WorkerDef): ToolDef[] {
           suggested_action: { type: "string" },
           evidence: { type: "string", description: "The numbers, ids or rows that prove it." },
           link: { type: "string", description: "Admin or site path, e.g. /admin/reports" },
+          proposal: {
+            type: "object",
+            description:
+              "What Chris's Yes button will do. Chris can edit it first, then answer Yes, No or Something else. " +
+              "Use {type:'email', subject, body, store_ids:[fish_stores.id...]} for an email to shops: the site sends one " +
+              "personal email per shop, filling {{shop_name}} and {{owner_first_name}}. Use {type:'fix'} for a bug Claude " +
+              "should fix in the code. Use {type:'approve'} for a plan or decision: Yes means go ahead and you'll act on " +
+              "it in your next run. Put the plain-English suggestion in suggested_action either way.",
+            properties: {
+              type: { type: "string", enum: ["email", "fix", "approve"] },
+              subject: { type: "string" },
+              body: { type: "string" },
+              store_ids: { type: "array", items: { type: "string" } },
+            },
+            required: ["type"],
+          },
         },
-        required: ["role", "kind", "risk", "title", "evidence"],
+        required: ["role", "kind", "risk", "title", "evidence", "suggested_action"],
+      },
+    },
+    {
+      name: "revise_finding",
+      description:
+        "Rewrite one of your open findings after Chris answered 'Something else'. Read his reply, then give a new " +
+        "suggestion (and proposal) that does what he asked. This clears his reply so the card shows the new version.",
+      input_schema: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          title: { type: "string" },
+          suggested_action: { type: "string" },
+          detail: { type: "string" },
+          proposal: { type: "object" },
+        },
+        required: ["id", "suggested_action"],
       },
     },
     {
@@ -256,6 +290,7 @@ export async function runTool(
             suggested_action: str(input.suggested_action, 1000) || null,
             evidence: str(input.evidence, 2000) || null,
             link: str(input.link, 300) || null,
+            proposal: cleanProposal(input.proposal),
             run_id: state.runId,
           })
           .select("id")
@@ -263,6 +298,26 @@ export async function runTool(
         if (error) return { content: error.message, isError: true };
         state.findingsCreated++;
         return { content: `Filed (${data.id}).` };
+      }
+      case "revise_finding": {
+        const { data: row } = await supabaseAdmin
+          .from("ops_findings")
+          .select("id, worker_key, status")
+          .eq("id", str(input.id))
+          .maybeSingle();
+        if (!row) return { content: "No finding with that id.", isError: true };
+        if (row.worker_key !== w.key) return { content: "You can only revise your own findings.", isError: true };
+        if (!["new", "open"].includes(row.status)) return { content: `It's ${row.status}; nothing to revise.`, isError: true };
+        const patch: Record<string, unknown> = {
+          suggested_action: str(input.suggested_action, 1000),
+          chris_reply: null,
+          updated_at: new Date().toISOString(),
+        };
+        if (str(input.title)) patch.title = str(input.title, 200);
+        if (str(input.detail)) patch.detail = str(input.detail, 6000);
+        if (input.proposal !== undefined) patch.proposal = cleanProposal(input.proposal);
+        const { error } = await supabaseAdmin.from("ops_findings").update(patch).eq("id", row.id);
+        return error ? { content: error.message, isError: true } : { content: "Revised. Chris will see the new version." };
       }
       case "update_finding": {
         const status = str(input.status);

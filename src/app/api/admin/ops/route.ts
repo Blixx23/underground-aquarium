@@ -5,6 +5,8 @@ import { runWorker } from "@/lib/ops/runner";
 import { openFixIssue } from "@/lib/ops/github";
 import { isWorkerKey, WORKERS } from "@/lib/ops/workers";
 import { setupNote } from "@/lib/ops/setup";
+import { opsConfigured } from "@/lib/ops/config";
+import { proposalFor, sendEmailProposal } from "@/lib/ops/proposals";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -138,6 +140,106 @@ export async function POST(req: Request) {
       } catch (e) {
         return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
       }
+    }
+
+    // The three answers on a finding: Yes, No, Something else.
+    case "finding_yes": {
+      const { data: f } = await supabaseAdmin
+        .from("ops_findings")
+        .select("id, worker_key, title, detail, evidence, suggested_action, link, kind, proposal, status")
+        .eq("id", s(body.id))
+        .maybeSingle();
+      if (!f) return NextResponse.json({ error: "No such finding." }, { status: 404 });
+      if (!["new", "open"].includes(f.status)) return NextResponse.json({ error: "This one is already handled." }, { status: 400 });
+      // Chris may have edited the suggestion before saying yes.
+      const suggestion = s(body.suggestion, 3000) || f.suggested_action || "";
+      const { kind, proposal } = proposalFor(f.kind, f.proposal, opsConfigured().github);
+      const done = (patch: Record<string, unknown> = {}) =>
+        supabaseAdmin
+          .from("ops_findings")
+          .update({ status: "fixed", suggested_action: suggestion || null, chris_reply: null, rating: 1, updated_at: now, ...patch })
+          .eq("id", f.id);
+
+      if (kind === "email" && proposal?.type === "email") {
+        const subject = s(body.subject, 200) || proposal.subject;
+        const text = s(body.body, 5000) || proposal.body;
+        const { data: settings } = await supabaseAdmin.from("ops_settings").select("brief_email").eq("id", 1).maybeSingle();
+        const { sent, skipped } = await sendEmailProposal(
+          { subject, body: text, store_ids: proposal.store_ids },
+          (settings?.brief_email as string | null) ?? undefined
+        );
+        if (sent === 0) {
+          return NextResponse.json({ error: `Nothing sent. ${skipped.join("; ") || "No shops with an email on file."}` }, { status: 400 });
+        }
+        await done({ proposal: { ...proposal, subject, body: text } });
+        await remember(f.worker_key, "example", `Chris approved and sent "${subject}" for "${f.title}".`);
+        const note = skipped.length ? ` Skipped: ${skipped.join("; ")}.` : "";
+        return NextResponse.json({ ok: true, message: `Sent to ${sent} shop${sent === 1 ? "" : "s"}.${note}` });
+      }
+
+      if (kind === "fix") {
+        try {
+          const url = await openFixIssue({ ...f, suggested_action: suggestion || null });
+          await supabaseAdmin
+            .from("ops_findings")
+            .update({ status: "in_progress", suggested_action: suggestion || null, chris_reply: null, rating: 1, github_issue_url: url, updated_at: now })
+            .eq("id", f.id);
+          return NextResponse.json({ ok: true, url, message: "Claude is on it. A preview link will show up on GitHub." });
+        } catch (e) {
+          return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+        }
+      }
+
+      await done();
+      if (kind === "approve") {
+        // Workers read memory every run, so this is how an approved plan gets carried out.
+        await remember(f.worker_key, "rule", `Chris said yes to "${f.title}". Go ahead with: ${suggestion}`);
+        return NextResponse.json({ ok: true, message: "Approved. The team will carry it out on its next run." });
+      }
+      return NextResponse.json({ ok: true, message: "Marked done." });
+    }
+
+    case "finding_no": {
+      const reason = s(body.reason, 500);
+      const { data: f } = await supabaseAdmin
+        .from("ops_findings")
+        .select("id, worker_key, title, kind, reviewer_verdict")
+        .eq("id", s(body.id))
+        .maybeSingle();
+      if (!f) return NextResponse.json({ error: "No such finding." }, { status: 404 });
+      await supabaseAdmin
+        .from("ops_findings")
+        .update({ status: "dismissed", rating: -1, rating_note: reason || null, chris_reply: null, updated_at: now })
+        .eq("id", f.id);
+      await remember(
+        f.worker_key,
+        "rule",
+        `Chris said no to "${f.title}" (${f.kind}).${reason ? ` He said: ${reason}` : ""} Don't suggest this again unless something changes.`
+      );
+      if (f.reviewer_verdict === "approve") {
+        await remember("reviewer", "rule", `You approved "${f.title}" but Chris said no.${reason ? ` He said: ${reason}` : ""}`);
+      }
+      return NextResponse.json({ ok: true, message: "Got it. The team won't bring this up again." });
+    }
+
+    case "finding_reply": {
+      const text = s(body.text, 1500);
+      if (!text) return NextResponse.json({ error: "What would you like instead?" }, { status: 400 });
+      const { data: f } = await supabaseAdmin.from("ops_findings").select("id, worker_key, title").eq("id", s(body.id)).maybeSingle();
+      if (!f) return NextResponse.json({ error: "No such finding." }, { status: 404 });
+      await supabaseAdmin
+        .from("ops_findings")
+        .update({ chris_reply: text, chris_reply_at: now, status: "open", updated_at: now })
+        .eq("id", f.id);
+      await remember(f.worker_key, "example", `On "${f.title}" Chris asked for something different: ${text}`);
+      if (body.reviseNow === true && isWorkerKey(f.worker_key)) {
+        const outcome = await runWorker(f.worker_key, "manual");
+        return NextResponse.json({
+          ok: outcome.status !== "error",
+          message: outcome.status === "error" ? "Saved, but the team couldn't run just now. It will pick this up next run." : "The team has revised it.",
+        });
+      }
+      return NextResponse.json({ ok: true, message: "Sent. The team will revise it on its next run." });
     }
 
     case "teach": {

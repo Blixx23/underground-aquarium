@@ -39,6 +39,11 @@ How you work:
   are normal. If nothing is off target, say so: "nothing needs Chris today" is a good result, and inventing problems
   wastes his time. Your track record is measured by how many of your findings Chris acts on.
 - File a finding only for something someone should act on, with evidence. Check open findings first; never duplicate.
+- Chris answers each finding with Yes, No or Something else. Always give a clear suggested_action, and a proposal when
+  the site can carry it out (an email to shops, a code fix, or a plan to approve). When one of your findings shows
+  "CHRIS REPLIED", deal with that first: use revise_finding to give him a new suggestion that does what he asked.
+- When memory says Chris said yes to a plan, carry it out in this run if you can (for example draft the email he
+  approved as a new email proposal), and don't ask again.
 - Re-check findings Chris marked "fixed" and set them verified, or reopen them with a note.
 - Use memory: save a rule when Chris's feedback teaches you how he wants something handled, a fact for a baseline
   (for example normal daily sign-ups), a thread for something to follow up. Retire memories that are outdated.
@@ -74,6 +79,8 @@ type FindingRow = {
   status: string;
   title: string;
   detail: string | null;
+  suggested_action: string | null;
+  chris_reply: string | null;
   evidence: string | null;
   link: string | null;
   reviewer_verdict: string | null;
@@ -119,7 +126,7 @@ async function buildContext(w: WorkerDef, lastRunAt: string | null): Promise<str
   }).format(new Date());
 
   const teamWide = w.key === "morning" || w.key === "weekly";
-  const findingCols = "id, worker_key, role, kind, risk, status, title, detail, evidence, link, reviewer_verdict, rating, rating_note, created_at";
+  const findingCols = "id, worker_key, role, kind, risk, status, title, detail, evidence, link, reviewer_verdict, rating, rating_note, created_at, suggested_action, chris_reply";
 
   let openQ = supabaseAdmin
     .from("ops_findings")
@@ -168,7 +175,10 @@ async function buildContext(w: WorkerDef, lastRunAt: string | null): Promise<str
   const findText = findings.length
     ? findings
         .map((f) => {
-          const base = `- [${f.id}] ${f.status} | ${f.worker_key}${f.role ? "/" + f.role : ""} | ${f.kind} | ${f.risk} risk | ${f.title}${f.link ? " | " + f.link : ""}`;
+          const reply = f.chris_reply
+            ? `\n  CHRIS REPLIED "Something else": ${f.chris_reply}\n  Your suggestion was: ${(f.suggested_action ?? "").slice(0, 400)}`
+            : "";
+          const base = `- [${f.id}] ${f.status} | ${f.worker_key}${f.role ? "/" + f.role : ""} | ${f.kind} | ${f.risk} risk | ${f.title}${f.link ? " | " + f.link : ""}${reply}`;
           return w.key === "reviewer"
             ? `${base}\n  detail: ${(f.detail ?? "").slice(0, 800)}\n  evidence: ${(f.evidence ?? "").slice(0, 500)}`
             : base;

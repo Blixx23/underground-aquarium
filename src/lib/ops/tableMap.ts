@@ -105,7 +105,8 @@ ${MODERATION_QUEUES}
   expired, and rows with no expires_on.
 
 ## The AI team itself
-- ops_findings (your tickets: worker_key, kind, risk, status, title, created_at), ops_runs (past runs, cost_cents),
+- ops_findings (your tickets: worker_key, kind, risk, status, title, suggested_action, created_at; proposal is what
+  Chris's Yes does, chris_reply is his "Something else" note to act on), ops_runs (past runs, cost_cents),
   ops_memory, ops_workers.
 `.trim();
 

@@ -1,13 +1,13 @@
 ---
 title: The AI team
 category: Admin basics
-summary: How the AI operating team works: the morning brief, findings, the reviewer, switching workers on and off, teaching them, the monthly cap, and the Fix with Claude button.
+summary: How the AI operating team works: the morning brief, answering findings with Yes, No or Something else, the reviewer, switching workers on and off, teaching them, the monthly cap, and Claude fixes.
 order: 15
-keywords: ai team, ops, digital workers, agents, morning brief, findings, coo, analyst, chief of staff, cmo, community manager, partnerships, reviewer, memory, cap, claude, github fix, anthropic api key
+keywords: ai team, yes no something else, dismiss finding, approve suggestion, send shop email, ops, digital workers, agents, morning brief, findings, coo, analyst, chief of staff, cmo, community manager, partnerships, reviewer, memory, cap, claude, github fix, anthropic api key
 pages: /admin/ops, /admin
 ---
 
-The AI team is a set of digital workers that read the site every day, keep score against goals, and draft work for you. They can only read the database. They never email members, post anything, change data or touch money. Everything they find lands on **/admin/ops** for you to act on.
+The AI team is a set of digital workers that read the site every day, keep score against goals, and draft work for you. They can only read the database. On their own they never email anyone, post anything, change data or touch money. Everything they find lands on **/admin/ops** with a suggestion, and nothing happens until you say yes.
 
 ## What does each worker do?
 - **Morning session** (COO, Analyst and Chief of Staff in one run, daily at 6:30 am): checks every admin queue, email delivery and anything stuck; records yesterday's numbers against the site's normal; then writes your morning brief and emails it to you.
@@ -21,20 +21,33 @@ The AI team is a set of digital workers that read the site every day, keep score
 Only the morning session is switched on at the start. Turn the others on from **The team** on /admin/ops.
 
 ## What is a finding?
-A finding is a ticket: something a worker thinks you should act on, with evidence. Each one has a kind (queue item, message draft, data problem, bug, decision, idea), a risk (low, medium, high) and a status:
+A finding is something a worker thinks you should act on. Each card under **Waiting on you** tells you:
 
-- **Not reviewed yet**: new, waiting for the reviewer (or for you, if the reviewer is off).
-- **Open**: waiting on you. "AI-checked" means the reviewer approved it.
-- **Fix in progress**: sent to GitHub for Claude to fix.
-- **Done**: you marked it done. The worker re-checks next run and marks it **verified fixed**, or reopens it.
-- **Dismissed**: you or the reviewer threw it out. Restore brings it back.
+- **How soon**: Urgent, This week, or When you have time.
+- **What it is**: Something is broken, Data to fix, A message to send, Your call, Waiting in a queue, or An idea.
+- **Who found it**: Morning check, Community manager, Marketing, Shop partnerships, Weekly review or Site health check. "Double-checked" means the reviewer agreed it's worth your time.
+- **The suggestion**, which you can edit, and **Show why** for the worker's reasoning and evidence.
+- **If you say yes**: one line saying exactly what will happen.
+
+## How do I answer a finding?
+Edit the suggestion if you like, then press one of three buttons:
+
+- **Yes** does it. What that means depends on the card, and the button says which:
+  - **Yes, send to N shops**: an email to shops. Edit the subject and text first if you like. The site sends one email per shop from support@, filling in each shop's name and owner's first name, and replies come to your brief address. Shops with no email on file are crossed out and skipped.
+  - **Yes, have Claude fix it**: a bug. Claude writes the fix on GitHub (see below).
+  - **Yes, go with this**: a plan or decision. The worker carries out your edited version on its next run.
+  - **Yes, it's handled**: something only you can do (approve a listing, answer a message). Use **Open** to go there, then press Yes once it's done.
+- **No** clears it. Add a reason if you like. The worker is told not to suggest it again.
+- **Something else** sends your note back to the worker ("only the Florida shops", "wait until next month"). Tick **revise it now** to have the worker rework it straight away (a few minutes, a few cents), or leave it for the next run. The card shows your note until the new suggestion arrives.
+
+Answered cards move to **Done** or **Dismissed** at the bottom of the page. **Bring it back** returns a dismissed one to Waiting on you.
 
 ## How do the workers learn?
-Every worker has a memory it reads before each run. It saves baselines (what's normal for this site), rules and threads it's following. You teach it three ways:
+Every worker has a memory it reads before each run. It saves baselines (what's normal for this site), rules and threads it's following. Every answer teaches it:
 
-1. **Thumbs up or down** on a finding, with an optional "why". Down means "don't flag things like this"; up means "more like this".
+1. **Yes** tells the worker the suggestion was useful. **No** (with your reason) tells it not to raise things like this. **Something else** shows it what you'd rather do.
 2. **Teach** under the latest brief: type an instruction and it's saved as a rule.
-3. **Restore** a finding the reviewer rejected, which teaches the reviewer it was wrong.
+3. **Bring it back** on a finding the reviewer rejected teaches the reviewer it was wrong.
 
 Open **What the team remembers** at the bottom of /admin/ops to see every memory and retire anything wrong.
 
@@ -43,13 +56,13 @@ Each run uses Claude through the site's Anthropic API key. The cost of every run
 
 To stop everything at once, press **Team is on** to pause the whole team.
 
-## How does Fix with Claude work?
-Bug findings show a **Fix with Claude** button once the GitHub token is set up. It opens a GitHub issue that mentions @claude. The Claude workflow in the repo writes the fix on a new branch and links a pull request; Vercel builds a preview of that branch. Check the preview, then merge the pull request on GitHub to deploy it. Nothing goes live without your merge. Claude is told not to touch payments, sign-in or database structure.
+## How does "Yes, have Claude fix it" work?
+Bug findings offer this once the GitHub token is set up. It opens a GitHub issue that mentions @claude. The Claude workflow in the repo writes the fix on a new branch and links a pull request; Vercel builds a preview of that branch. The card shows **Claude is working on a fix** with an **On GitHub** link. Check the preview, merge the pull request on GitHub to deploy it, then press **Done** on the card. Nothing goes live without your merge. Claude is told not to touch payments, sign-in or database structure.
 
 ## What needs setting up?
 - **ANTHROPIC_API_KEY** in Vercel (Settings, Environment Variables), then redeploy. Without it nothing runs and the page shows a warning.
 - **ops_team_setup.sql** run once in the Supabase SQL Editor. Without it the page says the tables are missing.
-- For Fix with Claude: **OPS_GITHUB_TOKEN** in Vercel (a fine-grained GitHub token with Issues read and write on the repo), plus the Claude GitHub App installed on the repo and **ANTHROPIC_API_KEY** added as a GitHub Actions secret.
+- For Claude fixes: **OPS_GITHUB_TOKEN** in Vercel (a fine-grained GitHub token with Issues read and write on the repo), plus the Claude GitHub App installed on the repo and **ANTHROPIC_API_KEY** added as a GitHub Actions secret.
 
 ## Who answers support@?
 The UA Support Desk scheduled task in your Claude account (claude.ai, Scheduled tasks). It reads support@ at 8:20 am, 12:20 pm and 4:20 pm and saves reply drafts in Gmail with the labels AI Support/Handled and Needs Chris. It isn't part of the site.

@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   AlertTriangle, Bot, Brain, Check, ChevronDown, ExternalLink, Github, Loader2, MessageSquarePlus,
-  Play, Power, RotateCcw, ShieldCheck, ThumbsDown, ThumbsUp, X,
+  Play, Power, RotateCcw, ShieldCheck, X,
 } from "lucide-react";
 
 export type Finding = {
@@ -28,7 +28,15 @@ export type Finding = {
   github_issue_url: string | null;
   created_at: string;
   updated_at: string;
+  proposal: { type: string; subject?: string; body?: string; store_ids?: string[] } | null;
+  chris_reply: string | null;
+  /** What Yes does, worked out on the server (lib/ops/proposals.ts). */
+  answer: Answer;
+  /** For email proposals: the shops it goes to. */
+  recipients?: { shop: string; hasEmail: boolean }[];
 };
+
+export type Answer = "email" | "fix" | "approve" | "done";
 
 export type OpsData = {
   setupMissing: boolean;
@@ -130,7 +138,8 @@ export default function OpsConsole({ data }: { data: OpsData }) {
             ? `Run finished${typeof o.costCents === "number" ? ` (${dollars(o.costCents)})` : ""}.`
             : `${o.status === "skipped" ? "Skipped" : "Error"}: ${o.reason ?? ""}`
         );
-      } else if (json.url) setMessage("Sent to GitHub. Claude will open a pull request there.");
+      } else if (json.message) setMessage(json.message);
+      else if (json.url) setMessage("Sent to GitHub. Claude will open a pull request there.");
       else if (okText) setMessage(okText);
       startTransition(() => router.refresh());
     } finally {
@@ -162,8 +171,8 @@ export default function OpsConsole({ data }: { data: OpsData }) {
             <Bot className="h-7 w-7 text-amber-300" /> AI team
           </h1>
           <p className="mt-1 max-w-xl text-sm text-ocean-400">
-            Your digital workers read the site, keep score and draft. You approve. Rate their findings and they learn what
-            matters to you.
+            Your digital workers read the site, keep score and suggest what to do. You answer Yes, No or Something else, and
+            they learn from every answer.
           </p>
         </div>
         <button
@@ -229,12 +238,18 @@ export default function OpsConsole({ data }: { data: OpsData }) {
         <h2 className="mb-3 text-lg font-medium text-white">
           Waiting on you <span className="text-ocean-500">({data.waiting.length})</span>
         </h2>
+        <p className="mb-3 max-w-2xl text-sm text-ocean-400">
+          Each item says who found it and what they suggest. Edit the suggestion if you like, then answer:{" "}
+          <span className="text-emerald-300">Yes</span> does it (the button says exactly what happens),{" "}
+          <span className="text-coral-300">No</span> clears it and the team stops suggesting it, and{" "}
+          <span className="text-sky-300">Something else</span> sends your note back so the team can rework it.
+        </p>
         {data.waiting.length === 0 ? (
           <p className={`${CARD} p-5 text-sm text-ocean-400`}>Nothing waiting. That&apos;s a good day.</p>
         ) : (
           <div className="space-y-3">
             {data.waiting.map((f) => (
-              <FindingCard key={f.id} f={f} busy={busy} act={act} github={data.configured.github} />
+              <FindingCard key={f.id} f={f} busy={busy} act={act} />
             ))}
           </div>
         )}
@@ -312,7 +327,7 @@ export default function OpsConsole({ data }: { data: OpsData }) {
       <Collapsible title={`Done in the last 30 days (${data.done.length})`}>
         <div className="space-y-3">
           {data.done.map((f) => (
-            <FindingCard key={f.id} f={f} busy={busy} act={act} github={false} compact />
+            <FindingCard key={f.id} f={f} busy={busy} act={act} compact />
           ))}
         </div>
       </Collapsible>
@@ -320,7 +335,7 @@ export default function OpsConsole({ data }: { data: OpsData }) {
       <Collapsible title={`Dismissed in the last 30 days (${data.dismissed.length})`}>
         <div className="space-y-3">
           {data.dismissed.map((f) => (
-            <FindingCard key={f.id} f={f} busy={busy} act={act} github={false} compact />
+            <FindingCard key={f.id} f={f} busy={busy} act={act} compact />
           ))}
         </div>
       </Collapsible>
@@ -461,150 +476,324 @@ function Teach({
   );
 }
 
+// Plain words for who found it and what it is.
+const FROM: Record<string, string> = {
+  morning: "Morning check",
+  community: "Community manager",
+  cmo: "Marketing",
+  partnerships: "Shop partnerships",
+  weekly: "Weekly review",
+  qa: "Site health check",
+  reviewer: "Reviewer",
+};
+const WHAT: Record<string, string> = {
+  bug: "Something is broken",
+  data: "Data to fix",
+  message: "A message to send",
+  decision: "Your call",
+  queue: "Waiting in a queue",
+  idea: "An idea",
+};
+const URGENCY: Record<string, string> = { high: "Urgent", medium: "This week", low: "When you have time" };
+
+// What the Yes button says, and what happens when Chris presses it.
+const YES: Record<Answer, { label: string; then: string }> = {
+  email: {
+    label: "Yes, send it",
+    then: "The site emails each shop below from support@, with replies coming to you. Edit the email first if you like.",
+  },
+  fix: {
+    label: "Yes, have Claude fix it",
+    then: "Claude writes the fix on GitHub and posts a preview link. Nothing goes live until you merge it.",
+  },
+  approve: {
+    label: "Yes, go with this",
+    then: "The team carries out the suggestion (as you edited it) on its next run.",
+  },
+  done: {
+    label: "Yes, it's handled",
+    then: "This needs you to do it. Use Open to go there, then press Yes once it's taken care of.",
+  },
+};
+
+const INPUT =
+  "w-full rounded-xl border border-ocean-700 bg-ocean-950 px-3 py-2 text-sm text-white placeholder:text-ocean-600 focus:border-emerald-500 focus:outline-none";
+
 function FindingCard({
   f,
   busy,
   act,
-  github,
   compact = false,
 }: {
   f: Finding;
   busy: string | null;
   act: (k: string, p: Record<string, unknown>, ok?: string) => Promise<void>;
-  github: boolean;
   compact?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const [note, setNote] = useState("");
+  const email = f.answer === "email" && f.proposal?.type === "email" ? f.proposal : null;
+  const [why, setWhy] = useState(false);
+  const [mode, setMode] = useState<"none" | "no" | "else">("none");
+  const [suggestion, setSuggestion] = useState(f.suggested_action ?? "");
+  const [subject, setSubject] = useState(email?.subject ?? "");
+  const [body, setBody] = useState(email?.body ?? "");
+  const [reason, setReason] = useState("");
+  const [reply, setReply] = useState("");
+  const [reviseNow, setReviseNow] = useState(true);
   // Only our own pages or plain https links: a finding's text can echo member content.
   const link = f.link && (/^\/(?!\/)/.test(f.link) || /^https:\/\//.test(f.link)) ? f.link : null;
+  const yes = YES[f.answer] ?? YES.done;
+  const canSend = (f.recipients ?? []).filter((r) => r.hasEmail).length;
+  const working = busy !== null;
 
-  return (
-    <div id={f.id} className={`${CARD} p-4`}>
-      <div className="flex flex-wrap items-center gap-2 text-[11px]">
-        <span className={`rounded-full border px-2 py-0.5 uppercase tracking-wide ${RISK[f.risk] ?? RISK.medium}`}>{f.risk}</span>
-        <span className="rounded-full border border-ocean-700 px-2 py-0.5 uppercase tracking-wide text-ocean-300">{f.kind}</span>
-        <span className="text-ocean-500">
-          {f.role ?? f.worker_key} · {when(f.created_at)}
+  const header = (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+      <span className={`rounded-full border px-2 py-0.5 font-medium ${RISK[f.risk] ?? RISK.medium}`}>{URGENCY[f.risk] ?? f.risk}</span>
+      <span className="font-medium text-ocean-200">{WHAT[f.kind] ?? f.kind}</span>
+      <span className="text-ocean-500">
+        · found by {FROM[f.worker_key] ?? f.worker_key} · {when(f.created_at)}
+      </span>
+      {f.reviewer_verdict === "approve" && (
+        <span className="inline-flex items-center gap-1 text-emerald-300">
+          <ShieldCheck className="h-3.5 w-3.5" /> double-checked
         </span>
-        {f.reviewer_verdict === "approve" && (
-          <span className="inline-flex items-center gap-1 text-emerald-300">
-            <ShieldCheck className="h-3.5 w-3.5" /> AI-checked
-          </span>
-        )}
-        {f.status === "new" && <span className="text-amber-300">not reviewed yet</span>}
-        {f.status === "in_progress" && <span className="text-sky-300">fix in progress</span>}
-        {f.status === "verified" && <span className="text-emerald-300">verified fixed</span>}
-      </div>
+      )}
+    </div>
+  );
 
-      <button onClick={() => setOpen(!open)} className="mt-2 block w-full text-left">
-        <p className="font-medium text-white">{f.title}</p>
-        {!open && f.suggested_action && <p className="mt-1 line-clamp-2 text-sm text-ocean-400">{f.suggested_action}</p>}
+  const whyBlock = (f.detail || f.evidence || f.reviewer_note) && (
+    <>
+      <button onClick={() => setWhy(!why)} className="mt-2 inline-flex items-center gap-1 text-xs text-ocean-400 hover:text-white">
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${why ? "" : "-rotate-90"}`} /> {why ? "Hide why" : "Show why"}
       </button>
-
-      {open && (
-        <div className="mt-3 space-y-3 text-sm">
+      {why && (
+        <div className="mt-2 space-y-3 rounded-xl bg-ocean-950/50 p-3 text-sm">
           {f.detail && <Markdown>{f.detail}</Markdown>}
-          {f.suggested_action && (
-            <p className="text-ocean-200">
-              <span className="text-ocean-400">Suggested: </span>
-              {f.suggested_action}
-            </p>
-          )}
-          {f.evidence && <p className="whitespace-pre-wrap rounded-lg bg-ocean-950/60 p-3 text-xs text-ocean-300">{f.evidence}</p>}
+          {f.evidence && <p className="whitespace-pre-wrap text-xs text-ocean-300">{f.evidence}</p>}
           {f.reviewer_note && <p className="text-xs text-ocean-400">Reviewer: {f.reviewer_note}</p>}
         </div>
       )}
+    </>
+  );
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {link && (
-          <a
-            href={link}
-            className="inline-flex items-center gap-1 rounded-full border border-ocean-700 px-3 py-1 text-xs text-ocean-200 hover:border-emerald-500 hover:text-white"
-          >
-            Open <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        )}
-        {f.github_issue_url && (
-          <a
-            href={f.github_issue_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-full border border-ocean-700 px-3 py-1 text-xs text-ocean-200 hover:border-emerald-500"
-          >
-            <Github className="h-3.5 w-3.5" /> Issue
-          </a>
-        )}
-        {!compact && (
-          <>
-            <button
-              onClick={() => act(`d-${f.id}`, { action: "finding_status", id: f.id, status: "fixed" })}
-              disabled={busy !== null}
-              className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
-            >
-              <Check className="h-3.5 w-3.5" /> Done
-            </button>
-            <button
-              onClick={() => act(`x-${f.id}`, { action: "finding_status", id: f.id, status: "dismissed" })}
-              disabled={busy !== null}
-              className="inline-flex items-center gap-1 rounded-full border border-ocean-700 px-3 py-1 text-xs text-ocean-300 hover:border-ocean-500 disabled:opacity-50"
-            >
-              <X className="h-3.5 w-3.5" /> Dismiss
-            </button>
-            {f.kind === "bug" && github && !f.github_issue_url && (
-              <button
-                onClick={() => act(`g-${f.id}`, { action: "finding_github", id: f.id })}
-                disabled={busy !== null}
-                className="inline-flex items-center gap-1 rounded-full border border-sky-500/50 px-3 py-1 text-xs text-sky-200 hover:border-sky-400 disabled:opacity-50"
-              >
-                {busy === `g-${f.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Github className="h-3.5 w-3.5" />} Fix with Claude
-              </button>
-            )}
-          </>
-        )}
-        {f.status === "dismissed" && (
-          <button
-            onClick={() => act(`o-${f.id}`, { action: "finding_restore", id: f.id })}
-            disabled={busy !== null}
-            className="inline-flex items-center gap-1 rounded-full border border-ocean-700 px-3 py-1 text-xs text-ocean-300 hover:border-emerald-500"
-          >
-            <RotateCcw className="h-3.5 w-3.5" /> Restore
-          </button>
-        )}
+  const links = (
+    <>
+      {link && (
+        <a
+          href={link}
+          className="inline-flex items-center gap-1 rounded-full border border-ocean-700 px-3 py-1.5 text-xs text-ocean-200 hover:border-emerald-500 hover:text-white"
+        >
+          Open <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      )}
+      {f.github_issue_url && (
+        <a
+          href={f.github_issue_url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 rounded-full border border-ocean-700 px-3 py-1.5 text-xs text-ocean-200 hover:border-emerald-500"
+        >
+          <Github className="h-3.5 w-3.5" /> On GitHub
+        </a>
+      )}
+    </>
+  );
 
-        <span className="ml-auto flex items-center gap-1">
-          {f.rating === null ? (
-            <>
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="why? (optional)"
-                className="hidden w-36 rounded-lg border border-ocean-800 bg-ocean-950 px-2 py-1 text-xs text-white placeholder:text-ocean-600 sm:block"
-              />
-              <button
-                onClick={() => act(`u-${f.id}`, { action: "finding_rate", id: f.id, rating: 1, note }, "Thanks: saved to its memory.")}
-                disabled={busy !== null}
-                className="rounded-full p-1.5 text-ocean-400 hover:bg-emerald-500/10 hover:text-emerald-300"
-                aria-label="Useful"
-              >
-                <ThumbsUp className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => act(`n-${f.id}`, { action: "finding_rate", id: f.id, rating: -1, note }, "Got it: it won't flag things like this.")}
-                disabled={busy !== null}
-                className="rounded-full p-1.5 text-ocean-400 hover:bg-coral-500/10 hover:text-coral-300"
-                aria-label="Not useful"
-              >
-                <ThumbsDown className="h-4 w-4" />
-              </button>
-            </>
-          ) : (
-            <span className={`text-xs ${f.rating > 0 ? "text-emerald-300" : "text-coral-300"}`}>
-              {f.rating > 0 ? "Rated useful" : "Rated not useful"}
-            </span>
+  // Done and dismissed: just the record, with a way back.
+  if (compact) {
+    return (
+      <div id={f.id} className={`${CARD} p-4`}>
+        {header}
+        <p className="mt-2 font-medium text-white">{f.title}</p>
+        {f.suggested_action && <p className="mt-1 text-sm text-ocean-400">{f.suggested_action}</p>}
+        {f.rating_note && <p className="mt-1 text-xs text-ocean-500">You said: {f.rating_note}</p>}
+        {whyBlock}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {links}
+          {f.status === "dismissed" && (
+            <button
+              onClick={() => act(`o-${f.id}`, { action: "finding_restore", id: f.id }, "Brought back to Waiting on you.")}
+              disabled={working}
+              className="inline-flex items-center gap-1 rounded-full border border-ocean-700 px-3 py-1.5 text-xs text-ocean-300 hover:border-emerald-500"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Bring it back
+            </button>
           )}
-        </span>
+        </div>
       </div>
+    );
+  }
+
+  // Claude is already fixing it: nothing to decide until the preview is ready.
+  if (f.status === "in_progress") {
+    return (
+      <div id={f.id} className={`${CARD} p-4`}>
+        {header}
+        <p className="mt-2 font-medium text-white">{f.title}</p>
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-sky-200">
+          <Loader2 className="h-4 w-4 animate-spin" /> Claude is working on a fix. Check GitHub for the preview link, merge it if it
+          looks right, then press Done.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {links}
+          <button
+            onClick={() => act(`d-${f.id}`, { action: "finding_status", id: f.id, status: "fixed" }, "Marked done.")}
+            disabled={working}
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+          >
+            <Check className="h-3.5 w-3.5" /> Done
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div id={f.id} className={`${CARD} p-4 sm:p-5`}>
+      {header}
+      <p className="mt-2 text-base font-medium text-white">{f.title}</p>
+      {whyBlock}
+
+      {f.chris_reply && (
+        <p className="mt-3 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm text-sky-100">
+          You asked for something else: &ldquo;{f.chris_reply}&rdquo;. The team will revise this on its next run.
+        </p>
+      )}
+
+      {/* The suggestion, editable */}
+      <div className="mt-4 space-y-3">
+        {email ? (
+          <>
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ocean-400">
+                Goes to {f.recipients?.length ?? 0} shop{f.recipients?.length === 1 ? "" : "s"}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {(f.recipients ?? []).map((r) => (
+                  <span
+                    key={r.shop}
+                    className={`rounded-full px-2.5 py-1 text-xs ${
+                      r.hasEmail ? "bg-ocean-800 text-ocean-100" : "bg-ocean-950 text-ocean-500 line-through"
+                    }`}
+                    title={r.hasEmail ? undefined : "No email on file, will be skipped"}
+                  >
+                    {r.shop}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ocean-400">Subject</span>
+              <input value={subject} onChange={(e) => setSubject(e.target.value)} className={INPUT} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ocean-400">Email</span>
+              <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} className={INPUT} />
+              <span className="mt-1 block text-xs text-ocean-500">
+                {"{{shop_name}}"} and {"{{owner_first_name}}"} are filled in for each shop.
+              </span>
+            </label>
+          </>
+        ) : (
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ocean-400">Suggestion (you can edit it)</span>
+            <textarea
+              value={suggestion}
+              onChange={(e) => setSuggestion(e.target.value)}
+              rows={Math.min(8, Math.max(2, Math.ceil(suggestion.length / 90)))}
+              placeholder="No suggestion given. Write what you'd like done, or press Something else."
+              className={INPUT}
+            />
+          </label>
+        )}
+        <p className="text-xs text-ocean-400">
+          <span className="font-semibold text-ocean-300">If you say yes: </span>
+          {yes.then}
+        </p>
+      </div>
+
+      {/* Yes / No / Something else */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() =>
+            act(`y-${f.id}`, {
+              action: "finding_yes",
+              id: f.id,
+              suggestion,
+              ...(email ? { subject, body } : {}),
+            })
+          }
+          disabled={working || (email !== null && (!subject.trim() || !body.trim() || canSend === 0))}
+          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+        >
+          {busy === `y-${f.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {email ? `Yes, send to ${canSend} shop${canSend === 1 ? "" : "s"}` : yes.label}
+        </button>
+        <button
+          onClick={() => setMode(mode === "no" ? "none" : "no")}
+          disabled={working}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm ${
+            mode === "no" ? "border-coral-400 text-coral-300" : "border-ocean-700 text-ocean-200 hover:border-coral-400"
+          }`}
+        >
+          <X className="h-4 w-4" /> No
+        </button>
+        <button
+          onClick={() => setMode(mode === "else" ? "none" : "else")}
+          disabled={working}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm ${
+            mode === "else" ? "border-sky-400 text-sky-200" : "border-ocean-700 text-ocean-200 hover:border-sky-400"
+          }`}
+        >
+          <MessageSquarePlus className="h-4 w-4" /> Something else
+        </button>
+        <span className="flex flex-wrap gap-2 sm:ml-auto">{links}</span>
+      </div>
+
+      {mode === "no" && (
+        <div className="mt-3 space-y-2 rounded-xl border border-ocean-800/60 bg-ocean-950/40 p-3">
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Why not? (optional, helps the team learn)"
+            className={INPUT}
+          />
+          <button
+            onClick={() => act(`n-${f.id}`, { action: "finding_no", id: f.id, reason })}
+            disabled={working}
+            className="inline-flex items-center gap-1.5 rounded-full bg-coral-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-coral-400 disabled:opacity-50"
+          >
+            {busy === `n-${f.id}` && <Loader2 className="h-4 w-4 animate-spin" />} Say no and clear it
+          </button>
+        </div>
+      )}
+
+      {mode === "else" && (
+        <div className="mt-3 space-y-2 rounded-xl border border-ocean-800/60 bg-ocean-950/40 p-3">
+          <textarea
+            value={reply}
+            onChange={(e) => setReply(e.target.value)}
+            rows={3}
+            placeholder="What would you like instead? e.g. send it only to the Florida shops, or wait until next month"
+            className={INPUT}
+          />
+          <label className="flex items-center gap-2 text-xs text-ocean-300">
+            <input type="checkbox" checked={reviseNow} onChange={(e) => setReviseNow(e.target.checked)} className="accent-emerald-500" />
+            Have the team revise it now (takes a few minutes, costs a few cents)
+          </label>
+          <button
+            onClick={async () => {
+              await act(`e-${f.id}`, { action: "finding_reply", id: f.id, text: reply, reviseNow });
+              setReply("");
+              setMode("none");
+            }}
+            disabled={working || !reply.trim()}
+            className="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-sky-500 disabled:opacity-50"
+          >
+            {busy === `e-${f.id}` && <Loader2 className="h-4 w-4 animate-spin" />}
+            {busy === `e-${f.id}` && reviseNow ? "Revising (up to 4 min)" : "Send to the team"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

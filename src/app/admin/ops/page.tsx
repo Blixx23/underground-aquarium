@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { opsConfigured } from "@/lib/ops/config";
 import { WORKERS, WORKER_ORDER } from "@/lib/ops/workers";
 import { setupNote } from "@/lib/ops/setup";
+import { proposalFor, recipientsFor } from "@/lib/ops/proposals";
 import OpsConsole, { type OpsData } from "./OpsConsole";
 
 export const metadata: Metadata = { title: "Admin · AI team" };
@@ -34,7 +35,7 @@ export default async function AdminOpsPage() {
   const since30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
   const findingCols =
-    "id, worker_key, role, kind, risk, status, title, detail, suggested_action, evidence, link, reviewer_verdict, reviewer_note, rating, rating_note, github_issue_url, created_at, updated_at";
+    "id, worker_key, role, kind, risk, status, title, detail, suggested_action, evidence, link, reviewer_verdict, reviewer_note, rating, rating_note, github_issue_url, created_at, updated_at, proposal, chris_reply";
 
   const [settingsRes, workersRes, monthRunsRes, waitingRes, doneRes, dismissedRes, runsRes, memoryRes, briefRes] =
     await Promise.all([
@@ -134,6 +135,19 @@ export default async function AdminOpsPage() {
     };
   });
 
+  // What Yes does on each finding, and who an email suggestion goes to.
+  const github = opsConfigured().github;
+  type Row = Omit<OpsData["waiting"][number], "answer" | "recipients">;
+  const withAnswer = (rows: unknown[] | null) =>
+    ((rows ?? []) as Row[]).map((f) => ({ ...f, answer: proposalFor(f.kind, f.proposal, github).kind }));
+  const waiting: OpsData["waiting"] = await Promise.all(
+    withAnswer(waitingRes.data).map(async (f) => {
+      if (f.answer !== "email" || !f.proposal?.store_ids) return f;
+      const r = await recipientsFor(f.proposal.store_ids);
+      return { ...f, recipients: r.map((x) => ({ shop: x.shop, hasEmail: Boolean(x.email) })) };
+    })
+  );
+
   const data: OpsData = {
     setupMissing,
     configured: opsConfigured(),
@@ -152,9 +166,9 @@ export default async function AdminOpsPage() {
           startedAt: briefRes.data.started_at as string,
         }
       : null,
-    waiting: (waitingRes.data ?? []) as OpsData["waiting"],
-    done: (doneRes.data ?? []) as OpsData["done"],
-    dismissed: (dismissedRes.data ?? []) as OpsData["dismissed"],
+    waiting,
+    done: withAnswer(doneRes.data),
+    dismissed: withAnswer(dismissedRes.data),
     runs: (runsRes.data ?? []) as OpsData["runs"],
     memory: (memoryRes.data ?? []) as OpsData["memory"],
   };
