@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailLayout } from "@/lib/email";
 import { MESSAGING_ENABLED } from "@/lib/config";
 import { limit } from "@/lib/rateLimit";
+import { notificationFooter, wantsEmail } from "@/lib/notificationEmail";
 
 export const dynamic = "force-dynamic";
 
@@ -262,7 +263,8 @@ export async function POST(request: Request) {
       const { data: recipientAuth } =
         await supabaseAdmin.auth.admin.getUserById(recipientId);
       const to = recipientAuth?.user?.email;
-      if (to) {
+      // Members can switch message emails off in their notification settings.
+      if (to && (await wantsEmail(recipientId, "messages"))) {
         const preview =
           body.length > 300 ? `${body.slice(0, 297)}…` : body;
         await sendEmail({
@@ -278,9 +280,7 @@ export async function POST(request: Request) {
               : `About your listing <strong>${escapeHtml(listingTitle)}</strong>.`,
             bodyHtml: `<p style="margin:0;padding:16px 18px;background:#f3f7fa;border:1px solid #e6ecf1;border-radius:12px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#0c2740;white-space:pre-wrap;">${escapeHtml(preview)}</p>`,
             cta: { label: "Read and reply", url: `${SITE}${threadLink}` },
-            footerNote: isDirect
-              ? "You're receiving this because another member messaged you on Underground Aquarium."
-              : "You're receiving this because someone replied to a listing you posted on Underground Aquarium.",
+            footerNote: notificationFooter(recipientId),
           }),
         });
       }

@@ -96,7 +96,7 @@ The pages under Account (like [Account & data](/account) and [Password](/account
 When it's saved you're taken back to [Your profile](/profile). Errors you might see: "Password must be at least 8 characters." or "Passwords do not match." If you signed up with Google you don't need a password. See [Signing in and passwords](/help/signing-in-and-passwords).
 
 ## Where do I control notifications and emails?
-Notification switches are on the [Notifications](/notifications) page, under **Choose what you get notified about**. You can also reach them from the gear icon in the bell menu. See [Notifications](/help/notifications) and [Emails we send](/help/emails-we-send).
+Notification switches are on the [Notifications](/notifications) page, under **Choose what you hear about, on the site and by email**. You can also reach them from the gear icon in the bell menu. See [Notifications](/help/notifications) and [Emails we send](/help/emails-we-send).
 
 ## How do I sign out?
 Go to [Your profile](/profile) and click **Sign out** under the shortcut tiles. The button shows **Signing out…** and then you land on the home page, signed out.

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { cronAuthorised } from "@/lib/email/cronAuth";
 import { dispatchOne } from "@/lib/email/queue";
+import { wantsEmail } from "@/lib/notificationEmail";
 import {
   fixEmail,
   milestoneEmail,
@@ -117,6 +118,8 @@ export async function GET(req: Request) {
     const to = emails.get(uid);
     const d = (n.data ?? {}) as ShopCard & Record<string, unknown>;
     if (!to || !d.slug) continue;
+    // The owner can switch each kind of shop email off in their notification settings.
+    if (!(await wantsEmail(uid, n.type as string))) continue;
 
     const msg =
       n.type === "shop_review"

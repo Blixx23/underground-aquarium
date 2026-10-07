@@ -11,7 +11,7 @@ When someone messages you, you're told in two ways: an unread count on the chat 
 
 ## How will I know I have a new message?
 - **Chat bubble badge.** On a computer, the chat bubble icon in the top bar shows a red number when you have unread conversations. On a phone, the same number appears on the **Messages** tab in the bottom bar.
-- **Email.** Every new message sends you an email with a preview and a **Read and reply** button.
+- **Email.** Every new message sends you an email with a preview and a **Read and reply** button. You can switch message emails off with the envelope switch next to **Messages** in your [notification settings](/notifications#settings).
 - **Your inbox.** In [Messages](/messages), unread conversations are grouped at the top under **Unread**, highlighted, with a **New** tag, and a pill at the top shows how many are unread.
 - **My listings.** If the message is about one of your ads, [My listings](/my/listings) shows an unread count on that ad. Tap it to go to your inbox.
 

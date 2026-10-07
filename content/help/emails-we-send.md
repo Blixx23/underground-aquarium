@@ -19,6 +19,7 @@ Underground Aquarium only emails you about things that involve you directly: a m
 | Bubbles from our team | When our team awards or removes bubbles |
 | Society and club emails | Application approved or declined, honorary membership, dues requests, dues reminders, dues receipts, club invites |
 | Shop alerts | Only if you manage a claimed shop: new reviews, listing fix reports, milestones, weekly report |
+| Notification emails | Forum replies, comments, mentions, trophies, shop updates and more that you haven't seen on the site yet. Bundled at most once an hour, or once a day, as you choose |
 
 Each email ends with a line explaining why you received it, like "You're receiving this because another member messaged you on Underground Aquarium."
 
@@ -60,11 +61,11 @@ If you manage a claimed fish store, you get an email for each shop alert:
 Each one says at the bottom: "You're getting this because you run [shop] on Underground Aquarium," with a link to notification settings. See [Shop notifications and emails](/help/shop-notifications-and-emails).
 
 ## Which emails can I turn off?
-**You can turn off:** the four shop alert emails. On [Notifications](/notifications), open **Choose what you get notified about** and switch off **Your shop: new reviews**, **Your shop: listing reports**, **Your shop: milestones** or **Your shop: weekly report**. Each switch stops both the in-app notice and its email.
+**You choose by category.** On [Notifications](/notifications), open **Choose what you hear about, on the site and by email**. Pick how often under **Emails** (As it happens, Once a day or Never), then use the envelope switch on each category: messages, comments, mentions, forum replies, likes, trophies and new tiers, bubbles, your contributions, shop updates, review replies, the four shop alerts, Society, events and site news. Every notification email also has a one-click **stop notification emails** link at the bottom.
 
-**You can't turn off from settings:** new message emails, bubble emails, Society and club emails, and sign-in emails. The other notification switches only control the bell, not email.
+**Always sent:** sign-in emails, Society dues requests, reminders and receipts, and notices about your own account.
 
-If you want any of these stopped, email support@undergroundaquarium.com and we'll take care of it. Be aware that when our team blocks an address by hand, that stops all of our emails to it, including message alerts and dues reminders.
+If you want something else stopped, email support@undergroundaquarium.com and we'll take care of it. Be aware that when our team blocks an address by hand, that stops all of our emails to it, including message alerts and dues reminders.
 
 ## Is there an unsubscribe link?
 Only on outreach emails, which go to shops listed in our store directory. Those have an **Unsubscribe** link at the bottom.
@@ -86,7 +87,7 @@ Emails come from "Underground Aquarium" and have a dark header with the UNDERGRO
 We never ask for your password by email. If you get something asking for your password or payment details that claims to be us, don't click it. Forward it to support@undergroundaquarium.com.
 
 ## Do I get an email for forum replies, likes or comments?
-No. Forum replies, feed likes, comments, trophies, shop updates and review replies only appear in the bell. See [Notifications](/help/notifications).
+Yes, if you haven't seen them on the site within about 10 minutes. Forum replies, comments, mentions and most other notices are emailed, bundled so you get at most one email an hour (or one a day if you choose). Likes and bubbles start switched off for email because they're frequent. Change any of it in your [notification settings](/notifications#settings). See [Notifications](/help/notifications).
 
 ## Common problems
 

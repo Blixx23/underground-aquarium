@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { bubbleTier } from "@/lib/bubbles";
 import { sendEmail, tierUpEmail } from "@/lib/email";
+import { wantsEmail } from "@/lib/notificationEmail";
 
 // Notify the earner in-app only for meaningful grants (a +1 daily login would
 // be spam). Tier-ups always notify, regardless of the triggering amount.
@@ -95,7 +96,7 @@ export async function awardBubbles(
             userId
           );
           const to = authUser?.user?.email ?? null;
-          if (to) {
+          if (to && (await wantsEmail(userId, "trophy"))) {
             const t = tierUpEmail({
               tierName: afterTier.name,
               balance: afterBal,

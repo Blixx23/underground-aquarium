@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { bubbleTier } from "@/lib/bubbles";
 import { sendEmail, tierUpEmail } from "@/lib/email";
 import { checkUpvoteMilestones } from "@/lib/bubbleMilestones";
+import { wantsEmail } from "@/lib/notificationEmail";
 
 export async function POST(req: Request) {
   let body: { post_id?: string; value?: number };
@@ -120,7 +121,7 @@ export async function POST(req: Request) {
           authorId as string
         );
         const to = authUser?.user?.email ?? null;
-        if (to) {
+        if (to && (await wantsEmail(authorId as string, "trophy"))) {
           const t = tierUpEmail({
             tierName: tier.name,
             balance: afterBalance,

@@ -59,6 +59,10 @@
     {
       "path": "/api/cron/ops/qa",
       "schedule": "0 16 * * 3"
+    },
+    {
+      "path": "/api/cron/notification-emails",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

@@ -106,6 +106,11 @@ ${MODERATION_QUEUES}
   remind_days; it shows on the Dashboard from that day). Flag anything expiring within 14 days, anything already
   expired, and rows with no expires_on.
 
+## Notification emails
+- profiles.email_off (categories a member doesn't want emailed), profiles.email_digest ('bundled' max hourly, 'daily', 'off'),
+  profiles.last_digest_at. notifications.emailed_at is set once a notice was emailed or skipped. The job is
+  /api/cron/notification-emails (src/lib/notificationEmail.ts), every 15 minutes.
+
 ## Site safety
 - rate_limits (key = "<action>:<member id or address>", window_start, hits): short-lived counters behind the limits on
   repeated attempts (src/lib/rateLimit.ts). Rows clear themselves after a day. Many hits for one key means a script or spammer.

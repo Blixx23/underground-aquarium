@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { bubbleTier } from "@/lib/bubbles";
 import { sendEmail, tierUpEmail } from "@/lib/email";
+import { wantsEmail } from "@/lib/notificationEmail";
 
 export async function POST(req: Request) {
   let body: { tank_id?: string; value?: number };
@@ -114,7 +115,7 @@ export async function POST(req: Request) {
           ownerId as string
         );
         const to = authUser?.user?.email ?? null;
-        if (to) {
+        if (to && (await wantsEmail(ownerId as string, "trophy"))) {
           const t = tierUpEmail({
             tierName: tier.name,
             balance: afterBalance,

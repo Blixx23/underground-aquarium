@@ -60,29 +60,34 @@ Every notification has a **…** button (on computers it appears when you hover;
 Removed notifications can't be brought back.
 
 ## How do I choose which notifications I get?
-1. Go to [Notifications](/notifications), or click the gear icon in the bell panel.
-2. Open **Choose what you get notified about**.
-3. Flip the switch next to any group. Blue is on, dark is off.
+1. Go to [Notifications](/notifications), or click the gear icon in the bell panel. Every notification email also has a **Choose which emails you get** link.
+2. Open **Choose what you hear about, on the site and by email**.
+3. Under **Emails**, pick how often: **As it happens** (bundled, at most one email an hour), **Once a day** (one email each morning) or **Never** (only the bell).
+4. Each category has two switches: the bell (on the site) and the envelope (email). Blue is on, dark is off.
 
 Changes save immediately. If one doesn't save you'll see "Couldn't save that. Try again."
 
-| Switch | What it covers |
-| --- | --- |
-| **Feed likes** | Someone likes your post, tank, listing or comment |
-| **Mentions** | Someone tags you with @ in a post or comment |
-| **Feed comments** | Someone comments on your post or replies to your comment |
-| **Forum replies** | Someone replies to your post or comment |
-| **Trophies** | You earn a new trophy |
-| **Bubbles** | You earn bubbles or reach a new tier |
-| **Shop updates** | A shop you follow posts something |
-| **Review replies** | A shop replies to a review you wrote |
-| **Your shop: new reviews** | Someone reviews a shop you run. In-app and by email |
-| **Your shop: listing reports** | A shopper says your hours, address or details are wrong |
-| **Your shop: milestones** | Your shop passes a views or followers milestone |
-| **Your shop: weekly report** | Monday morning: views, calls, directions and a tip |
-| **Society** | Membership applications and dues |
+| Category | What it covers | Email starts |
+| --- | --- | --- |
+| **Messages** | A member messages you or asks about your listing (always on the Messages icon) | On, sent right away |
+| **Feed comments** | Someone comments on your post or replies to your comment | On |
+| **Mentions** | Someone tags you with @ in a post or comment | On |
+| **Forum replies** | Someone replies to your post or comment | On |
+| **Feed likes** | Someone likes your post, tank, listing or comment | Off |
+| **Trophies and new tiers** | You earn a trophy or reach a new bubbles tier | On, tiers sent right away |
+| **Bubbles** | You earn bubbles for something you did | Off |
+| **Your contributions** | Species, photos, videos and shops you suggested are approved | On |
+| **Shop updates** | A shop you follow posts something | On |
+| **Review replies** | A shop replies to a review you wrote | On |
+| **Your shop: new reviews, listing reports, milestones, weekly report** | Alerts for a shop you run | On, sent right away |
+| **Society** | Membership applications, dues and Society notices | On |
+| **Events** | Events you're part of | On |
+| **Site news** | Occasional news from Underground Aquarium | On |
 
-The four **Your shop** switches matter only if you manage a claimed shop. Turning off a **Your shop** switch also stops that alert's email. See [Shop notifications and emails](/help/shop-notifications-and-emails).
+You're only emailed about things you haven't already seen. A notice waits about 10 minutes, and if you've opened it on the site by then, no email goes out. Nothing older than three days is ever emailed.
+
+## How do I stop notification emails?
+Click **stop notification emails** at the bottom of any notification email. It works in one click, no sign-in needed, and the bell keeps working. Or pick **Never** under **Emails** in your settings. Either way you can turn them back on anytime.
 
 ## What notifications can't I turn off?
 Some notices always come through because they're about your account or something you asked for:
@@ -126,9 +131,7 @@ New messages don't use the bell at all. They show as a badge on the Messages ico
 | Shop alerts | For shop owners: new reviews, listing fix reports, milestones, weekly report | Your shop dashboard or page |
 
 ## Does turning off a notification stop the email too?
-Only for the four **Your shop** switches, which control both the in-app notice and its email. Other switches control the bell only.
-
-For example, turning off **Bubbles** stops bubble notices in the bell, but you may still get a "You reached [tier]" email when you move up a tier. See [Emails we send](/help/emails-we-send).
+The bell and email have separate switches, so you can have one without the other. Turning off a category's bell doesn't stop its email, and the other way round. Choosing **Never** under **Emails** stops all notification emails.
 
 ## Turning off one kind from a notification vs. the settings switch
 The **Turn off …** option in a notification's **…** menu turns off that one kind only. The switches in settings sometimes cover two kinds together. For example, **Feed likes** covers likes on your posts and likes on your comments.
