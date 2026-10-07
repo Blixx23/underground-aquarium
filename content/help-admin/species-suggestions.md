@@ -35,7 +35,7 @@ Under that are three buttons: **Add to library**, **Another name for…** and **
 ## How do I add a requested fish to the library?
 1. Press **Add to library**. A form opens, pre-filled with the member's common and scientific names.
 2. Fill in the care details (see the next section). **Group**, **Temp low °F**, **Temp high °F**, **Adult size (")** and **Min tank (gal)** are required.
-3. Press **Add to library and reward**.
+3. Press **Save to library and reward** (for a variant it says **Save variant of [fish] and reward**).
 
 The card disappears from the queue. Behind the scenes the database creates the species page, marks the request as added, sends the member a notification and updates their trophies, then the site gives the member their species bubbles (tier-up notices and emails go out if the bubbles move them up a tier). The species list, the new species page and the [Tank Builder](/tank-builder) are refreshed straight away instead of waiting out their hour-long cache.
 
@@ -86,7 +86,7 @@ It starts with a **Recommendation**: one plain sentence saying what it would do,
 
 It also shows what it thinks they meant, up to 5 library fish that matter (each links to its species page), anything to double-check, and what that check actually cost.
 
-The purple button says exactly what it sets up: **Add the name to [fish]**, **Add as a variant of [fish]**, **Add it to the library**, or **Turn it down with this reply**. It opens the right form already filled in. For a variant, the form says "Adding as a variant of [fish]", with a link to add it as its own species instead. Nothing is sent until you check it and press the button. **Re-check** runs it again. Each check is saved, so it only runs once per request (that needs step70 SQL; without it the check runs again each time the page opens).
+The purple button says exactly what it sets up: **Add the name to [fish]**, **Add as a variant of [fish]**, **Add it to the library**, or **Turn it down with this reply**. It opens the right form already filled in and scrolls down to it. Check it, then press the green Save button at the bottom. For a variant, the form says "Adding as a variant of [fish]", with a link to add it as its own species instead. Nothing is sent until you check it and press the button. **Re-check** runs it again. Each check is saved, so it only runs once per request (that needs step70 SQL; without it the check runs again each time the page opens).
 
 The checks run one at a time, so with several requests waiting the later ones take a little longer to appear. If the box says the AI isn't set up, the ANTHROPIC_API_KEY setting is missing in Vercel.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Loader2, Fish, Link2, Plus, Sparkles, RefreshCw } from "lucide-react";
 import { SPECIES_OPTIONS, type AiReview } from "@/lib/species/fields";
@@ -163,6 +163,12 @@ function Request({
   const [aiError, setAiError] = useState<string | null>(null);
   // Set when the new entry is a color or fin form of a library fish.
   const [parentSlug, setParentSlug] = useState<string | null>(null);
+  // The form opens below the buttons, often off screen: bring it into view so the click visibly does something.
+  const formRef = useRef<HTMLDivElement>(null);
+  const [scrollToForm, setScrollToForm] = useState(0);
+  useEffect(() => {
+    if (scrollToForm) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [scrollToForm]);
   const [f, setF] = useState<Record<string, string>>({
     common_name: s.common_name,
     scientific_name: s.scientific_name ?? "",
@@ -212,6 +218,7 @@ function Request({
   /** Put the AI's suggestion into the right form. Nothing is sent until the admin presses the button. */
   function applySuggestion() {
     if (!ai) return;
+    setScrollToForm((n) => n + 1);
     if (ai.verdict === "another_name" && ai.alias_slug) {
       setAliasSlug(ai.alias_slug);
       setMode("alias");
@@ -438,7 +445,7 @@ function Request({
               </button>
             )}
             <p className="text-[11px] text-ocean-600">
-              This opens the form filled in for you to check. Nothing is saved until you press the green button. Cost about {ai.cost_cents.toFixed(1)}¢.
+              This opens the form below, filled in. Check it, then press the green Save button at the bottom. Cost about {ai.cost_cents.toFixed(1)}¢.
             </p>
           </div>
         ) : null}
@@ -472,7 +479,7 @@ function Request({
       </div>
 
       {mode === "create" && (
-        <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div ref={formRef} className="mt-4 scroll-mt-24 space-y-3 rounded-xl border border-emerald-400/30 bg-white/[0.03] p-4">
           {parentSlug && (
             <p className="flex flex-wrap items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
               Adding as a variant of {nameOf(parentSlug)}. It gets its own page under that fish and keeps the same care
@@ -527,13 +534,13 @@ function Request({
             onClick={() => send("create")}
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-ocean-950 hover:bg-emerald-400 disabled:opacity-50"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Add to library and reward
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {parentSlug ? `Save variant of ${nameOf(parentSlug)} and reward` : "Save to library and reward"}
           </button>
         </div>
       )}
 
       {mode === "alias" && (
-        <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div ref={formRef} className="mt-4 scroll-mt-24 space-y-3 rounded-xl border border-emerald-400/30 bg-white/[0.03] p-4">
           <p className="text-sm text-ocean-200">
             “{s.common_name}” gets added as another name, so people searching it find the right fish.
           </p>
@@ -585,7 +592,7 @@ function Request({
       )}
 
       {mode === "dismiss" && (
-        <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div ref={formRef} className="mt-4 scroll-mt-24 space-y-3 rounded-xl border border-emerald-400/30 bg-white/[0.03] p-4">
           <div className="flex flex-wrap gap-1.5">
             {ai?.member_reason && (
               <button
