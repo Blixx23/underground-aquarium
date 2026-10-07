@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { limit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Generous limit on repeats: stops scripts and spam, never a real member.
+  {
+    const limited = await limit("accountExport", request, user?.id);
+    if (limited) return limited;
+  }
   if (!user) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }

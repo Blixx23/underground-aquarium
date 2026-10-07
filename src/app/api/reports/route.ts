@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { limit } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   let body: {
@@ -30,6 +31,11 @@ export async function POST(req: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Generous limit on repeats: stops scripts and spam, never a real member.
+  {
+    const limited = await limit("report", req, user?.id);
+    if (limited) return limited;
+  }
   if (!user) {
     return NextResponse.json(
       { error: "Please sign in to report." },

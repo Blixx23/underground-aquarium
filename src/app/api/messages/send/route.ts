@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailLayout } from "@/lib/email";
 import { MESSAGING_ENABLED } from "@/lib/config";
+import { limit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,11 @@ export async function POST(request: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    // Generous limit on repeats: stops scripts and spam, never a real member.
+    {
+      const limited = await limit("message", request, user?.id);
+      if (limited) return limited;
+    }
     if (!user) {
       return NextResponse.json(
         { error: "Please sign in to send a message." },

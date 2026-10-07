@@ -5,6 +5,7 @@ import { awardBubbles } from "@/lib/awardBubbles";
 import { checkPostMilestones } from "@/lib/bubbleMilestones";
 import { MAX_REPLY, tooLongMessage } from "@/lib/forum/limits";
 import { notifyMentions } from "@/lib/mentions.server";
+import { limit } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   let body: { thread_id?: string; parent_id?: string | null; body?: string };
@@ -35,6 +36,11 @@ export async function POST(req: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Generous limit on repeats: stops scripts and spam, never a real member.
+  {
+    const limited = await limit("forumPost", req, user?.id);
+    if (limited) return limited;
+  }
   if (!user) {
     return NextResponse.json({ error: "Sign in to reply." }, { status: 401 });
   }

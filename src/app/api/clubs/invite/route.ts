@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { emailLayout, sendEmail } from "@/lib/email";
+import { limit } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
   try {
@@ -8,6 +9,11 @@ export async function POST(request: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    // Generous limit on repeats: stops scripts and spam, never a real member.
+    {
+      const limited = await limit("invite", request, user?.id);
+      if (limited) return limited;
+    }
     if (!user) {
       return NextResponse.json({ error: "Please sign in." }, { status: 401 });
     }

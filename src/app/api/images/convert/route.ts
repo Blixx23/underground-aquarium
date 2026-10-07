@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { limit } from "@/lib/rateLimit";
 
 // heic-convert is a WebAssembly build of libheif and sharp is a native
 // binary, so this has to be the Node runtime, not Edge.
@@ -30,6 +31,11 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Generous limit on repeats: stops scripts and spam, never a real member.
+  {
+    const limited = await limit("imageConvert", request, user?.id);
+    if (limited) return limited;
+  }
   if (!user) {
     return NextResponse.json(
       { error: "Please sign in before uploading photos." },

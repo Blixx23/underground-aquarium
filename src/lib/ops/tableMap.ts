@@ -106,6 +106,10 @@ ${MODERATION_QUEUES}
   remind_days; it shows on the Dashboard from that day). Flag anything expiring within 14 days, anything already
   expired, and rows with no expires_on.
 
+## Site safety
+- rate_limits (key = "<action>:<member id or address>", window_start, hits): short-lived counters behind the limits on
+  repeated attempts (src/lib/rateLimit.ts). Rows clear themselves after a day. Many hits for one key means a script or spammer.
+
 ## The AI team itself
 - ops_findings (your tickets: worker_key, kind, risk, status, title, suggested_action, created_at; proposal is what
   Chris's Yes does, chris_reply is his "Something else" note to act on), ops_runs (past runs, cost_cents),

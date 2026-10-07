@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { limit } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   let body: { kind?: string; message?: string; page_url?: string | null };
@@ -28,6 +29,11 @@ export async function POST(req: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Generous limit on repeats: stops scripts and spam, never a real member.
+  {
+    const limited = await limit("feedback", req, user?.id);
+    if (limited) return limited;
+  }
 
   const pageUrl = body.page_url ? String(body.page_url).slice(0, 500) : null;
 

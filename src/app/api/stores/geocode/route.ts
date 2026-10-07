@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { limit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -20,6 +21,11 @@ async function geocode(query: string) {
 }
 
 export async function GET(request: Request) {
+  // Generous limit per address: these call paid map and search services.
+  {
+    const limited = await limit("geocode", request);
+    if (limited) return limited;
+  }
   const key = new URL(request.url).searchParams.get("key");
   if (!process.env.GEOCODE_SECRET || key !== process.env.GEOCODE_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

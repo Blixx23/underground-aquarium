@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { siteSearch, isGroupKey } from "@/lib/search/site";
+import { limit } from "@/lib/rateLimit";
 
 /**
  * Site-wide search: GET /api/search?q=cherry+shrimp (add &type=people for one kind only)
@@ -7,6 +8,11 @@ import { siteSearch, isGroupKey } from "@/lib/search/site";
  * so a burst of people typing the same thing costs one database round trip.
  */
 export async function GET(request: Request) {
+  // Generous limit per address: these call paid map and search services.
+  {
+    const limited = await limit("search", request);
+    if (limited) return limited;
+  }
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get("q") ?? "").trim();
   const n = Number(searchParams.get("n")) || 5;
