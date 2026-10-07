@@ -93,7 +93,7 @@ The purple button says exactly what it sets up: **Add the name to [fish]**, **Ad
 The checks run one at a time, so with several requests waiting the later ones take a little longer to appear. If the box says the AI isn't set up, the ANTHROPIC_API_KEY setting is missing in Vercel.
 
 ## What does the AI check cost?
-The fast model answers first. Only when it says "Not sure" or gives low confidence does the careful model take a second look. A typical check costs about 1.5 to 2 cents, and a harder one that needs the second look about 4 to 5 cents. The line under the box ("Cost about ...") shows the actual cost of that check.
+The fast model answers first. When it says "Not sure", gives low confidence, or the fish would be added to the library, the careful model takes over, and anything that would be added also gets the second check. A name or turn-down check costs about 1 to 3 cents; one that would add a fish costs about 6 to 12 cents. The line under the box ("Cost about ...") shows the actual cost of that check.
 
 ## What reason will the member see if I turn it down?
 The AI always writes the short reply the member would see if you turn the request down, whatever its verdict. It shows in the box as "If you turn it down, they see: ...".

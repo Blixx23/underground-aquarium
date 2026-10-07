@@ -112,6 +112,16 @@ function parseJson(text: string): Record<string, unknown> | null {
 const str = (v: unknown, max = 600): string | null =>
   typeof v === "string" && v.trim() ? v.replace(/\s*\u2014\s*/g, ", ").trim().slice(0, max) : null;
 
+/** A turn-down reply must never promise the fish will be added. */
+function safeReason(reason: string | null, verdict: AiVerdict): string | null {
+  if (reason && /we'?ll add|we will add|will be added|adding it soon/i.test(reason)) {
+    return verdict === "add_new" || verdict === "add_variant"
+      ? "Thanks for the suggestion. We're not adding it right now, but we've noted the request."
+      : null;
+  }
+  return reason;
+}
+
 /** Keep only values the form accepts; anything odd is dropped, never guessed. */
 function cleanSpecies(raw: unknown, groups: string[]): AiReview["species"] {
   if (!raw || typeof raw !== "object") return null;
@@ -173,6 +183,7 @@ claim in summary and body against well established hobby knowledge for this exac
 
 - Correct anything wrong, overstated or unsafe. Ranges should sit on the safer side of what hobby sources give.
 - Remove any claim in summary or body you can't confirm (for example a habitat need that isn't true of this species).
+- If the form is empty or nearly empty, fill it in completely from what you know.
 - Fill a blank field only if you are confident. Leave it blank otherwise, and say why in "blank".
 - No em dashes. Keep summary under 140 characters and body to 2 or 3 plain sentences.
 - group_name must be one of: ${groups.join(", ")}
@@ -253,7 +264,14 @@ Decide, then answer with the JSON object only.`;
   let model: (typeof OPS_MODELS)[keyof typeof OPS_MODELS] = OPS_MODELS.fast;
   let first = await ask(model).catch(() => ({ raw: null, cents: 0 }));
   let cents = first.cents;
-  const unsettled = !first.raw || first.raw.verdict === "unsure" || first.raw.confidence === "low";
+  // Anything that would be added to the library always gets the careful model:
+  // the fast one is fine for sorting out names, not for writing care data.
+  const unsettled =
+    !first.raw ||
+    first.raw.verdict === "unsure" ||
+    first.raw.confidence === "low" ||
+    first.raw.verdict === "add_new" ||
+    first.raw.verdict === "add_variant";
   if (unsettled) {
     model = OPS_MODELS.smart;
     const second = await ask(model);
@@ -319,6 +337,7 @@ Decide, then answer with the JSON object only.`;
   let corrections: string[] = [];
   let blanks: Partial<Record<SpeciesField, string>> = {};
   let checkedTwice = false;
+  if (finalVerdict === "add_new" && !species) species = {};
   if (species && (finalVerdict === "add_new" || finalVerdict === "add_variant")) {
     try {
       const v = await verifySpecies(request, species, groups, finalVerdict === "add_variant" && parentSlug ? bySlug.get(parentSlug)?.common_name ?? null : null);
@@ -352,7 +371,7 @@ Decide, then answer with the JSON object only.`;
     matches,
     alias_slug: aliasSlug,
     parent_slug: parentSlug,
-    member_reason: str(raw.member_reason, 300),
+    member_reason: safeReason(str(raw.member_reason, 300), finalVerdict),
     species,
     double_check: doubleCheck,
     model,
