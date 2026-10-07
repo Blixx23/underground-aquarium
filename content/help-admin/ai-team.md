@@ -18,7 +18,7 @@ The AI team is a set of digital workers that read the site every day, keep score
 - **AI reviewer** (after runs): checks new findings before you see them. Approves, rejects with a reason, or passes to you.
 - **QA / Site Health** (Wednesdays at 9 am): loads the main pages and a sample of shops, species, listings and courses as a signed-out visitor, checks links, and files anything broken, slow or out of date (old fee or checkout wording, family plans and so on). Pages under /my, /account and /admin redirecting to login is expected.
 
-Only the morning session is switched on at the start. Turn the others on from **The team** on /admin/ops.
+Only the morning session is switched on at the start. Turn the others on with the switch on each worker's row under **The team** on /admin/ops. Tap a row to see what that worker does, its last result, its cost and a **Run now** button. A green dot means it's running fine, red means its last run didn't finish, and gray means it's off.
 
 ## What is a finding?
 A finding is something a worker thinks you should act on. Each card under **Waiting on you** tells you:
@@ -54,7 +54,9 @@ Open **What the team remembers** at the bottom of /admin/ops to see every memory
 ## What does it cost, and how is it capped?
 Each run uses Claude through the site's Anthropic API key. The cost of every run is logged in the run log. The monthly cap (default $50) is shown at the top of the page; edit it there. When the month's spend reaches the cap, every worker stops until the 1st. At today's traffic expect roughly $8 to $15 a month. Quiet days cost almost nothing because workers that wait for activity don't wake up.
 
-To stop everything at once, press **Team is on** to pause the whole team.
+To stop everything at once, flip the **Team on** switch at the top of the page to **Team paused**.
+
+The page shows what needs you first (**Waiting on you**), then the headline of the latest brief (tap **Read the full brief** for the rest), then the team, then this month's spending.
 
 ## How does "Yes, have Claude fix it" work?
 Bug findings offer this once the GitHub token is set up. It opens a GitHub issue that mentions @claude. The Claude workflow in the repo writes the fix on a new branch and links a pull request; Vercel builds a preview of that branch. The card shows **Claude is working on a fix** with an **On GitHub** link. Check the preview, merge the pull request on GitHub to deploy it, then press **Done** on the card. Nothing goes live without your merge. Claude is told not to touch payments, sign-in or database structure.

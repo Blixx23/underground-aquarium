@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   AlertTriangle, Bot, Brain, Check, ChevronDown, ExternalLink, Github, Loader2, MessageSquarePlus,
-  Play, Power, RotateCcw, ShieldCheck, X,
+  Play, RotateCcw, ShieldCheck, X,
 } from "lucide-react";
 
 export type Finding = {
@@ -157,27 +157,26 @@ export default function OpsConsole({ data }: { data: OpsData }) {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-amber-300/70">Admin</p>
           <h1 className="flex items-center gap-2 font-display text-3xl text-white">
             <Bot className="h-7 w-7 text-amber-300" /> AI team
           </h1>
-          <p className="mt-1 max-w-xl text-sm text-ocean-400">
-            Your digital workers read the site, keep score and suggest what to do. You answer Yes, No or Something else, and
-            they learn from every answer.
-          </p>
+          <p className="mt-1 text-sm text-ocean-400">Your workers suggest. You answer Yes, No or Something else.</p>
         </div>
         <button
+          role="switch"
+          aria-checked={data.settings.enabled}
           onClick={() => act("master", { action: "settings", enabled: !data.settings.enabled })}
           disabled={busy !== null}
-          className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-            data.settings.enabled
-              ? "bg-emerald-600 text-white hover:bg-emerald-500"
-              : "border border-ocean-700 bg-ocean-900 text-ocean-300 hover:border-ocean-500"
-          }`}
+          className="flex shrink-0 items-center gap-2 text-sm text-ocean-200 disabled:opacity-50"
         >
-          <Power className="h-4 w-4" /> {data.settings.enabled ? "Team is on" : "Team is paused"}
+          <span className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${data.settings.enabled ? "bg-emerald-500" : "bg-ocean-700"}`}>
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${data.settings.enabled ? "left-[22px]" : "left-0.5"}`}
+            />
+          </span>
+          {data.settings.enabled ? "Team on" : "Team paused"}
         </button>
       </div>
 
@@ -193,49 +192,14 @@ export default function OpsConsole({ data }: { data: OpsData }) {
 
       {message && <p className="rounded-xl border border-ocean-700 bg-ocean-900/60 px-4 py-3 text-sm text-ocean-100">{message}</p>}
 
-      {/* Spend */}
-      <div className={`${CARD} p-5`}>
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="text-sm text-ocean-300">
-            This month: <span className="font-display text-2xl text-white">{dollars(data.spentCents)}</span> of a{" "}
-            {dollars(data.settings.capCents)} cap
-          </p>
-          <CapEditor cap={data.settings.capCents} onSave={(c) => act("cap", { action: "settings", monthly_cap_cents: c }, "Cap saved.")} />
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-ocean-950">
-          <div className={`h-full rounded-full ${pct >= 90 ? "bg-coral-500" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
-        </div>
-        <p className="mt-2 text-xs text-ocean-500">Briefs go to {data.settings.briefEmail}. When the cap is reached every worker stops until next month.</p>
-      </div>
-
-      {/* Latest brief */}
+      {/* Waiting: the part that needs Chris, so it comes first */}
       <section>
-        <h2 className="mb-3 text-lg font-medium text-white">Latest brief</h2>
-        <div className={`${CARD} p-5`}>
-          {data.brief ? (
-            <>
-              <p className="mb-3 text-xs text-ocean-500">
-                {data.brief.workerKey === "weekly" ? "Weekly review" : "Morning brief"} · {when(data.brief.startedAt)}
-              </p>
-              <Markdown>{data.brief.report}</Markdown>
-              <Teach workerKey={data.brief.workerKey} busy={busy} act={act} />
-            </>
-          ) : (
-            <p className="text-sm text-ocean-400">No brief yet. The morning session runs at 6:30 am, or press Run now below.</p>
-          )}
-        </div>
-      </section>
-
-      {/* Waiting */}
-      <section>
-        <h2 className="mb-3 text-lg font-medium text-white">
+        <h2 className="text-lg font-medium text-white">
           Waiting on you <span className="text-ocean-500">({data.waiting.length})</span>
         </h2>
-        <p className="mb-3 max-w-2xl text-sm text-ocean-400">
-          Each item says who found it and what they suggest. Edit the suggestion if you like, then answer:{" "}
-          <span className="text-emerald-300">Yes</span> does it (the button says exactly what happens),{" "}
-          <span className="text-coral-300">No</span> clears it and the team stops suggesting it, and{" "}
-          <span className="text-sky-300">Something else</span> sends your note back so the team can rework it.
+        <p className="mb-3 text-sm text-ocean-400">
+          <span className="text-emerald-300">Yes</span> does it, <span className="text-coral-300">No</span> clears it,{" "}
+          <span className="text-sky-300">Something else</span> sends it back with your note.
         </p>
         {data.waiting.length === 0 ? (
           <p className={`${CARD} p-5 text-sm text-ocean-400`}>Nothing waiting. That&apos;s a good day.</p>
@@ -248,6 +212,13 @@ export default function OpsConsole({ data }: { data: OpsData }) {
         )}
       </section>
 
+      {/* Latest brief: the headline, the rest on tap */}
+      {data.brief ? (
+        <BriefCard brief={data.brief} busy={busy} act={act} />
+      ) : (
+        <p className={`${CARD} p-5 text-sm text-ocean-400`}>No brief yet. The morning check runs at 6:30 am.</p>
+      )}
+
       {/* Team: one quiet row per worker, details on tap */}
       <section>
         <h2 className="mb-1 text-lg font-medium text-white">The team</h2>
@@ -258,6 +229,23 @@ export default function OpsConsole({ data }: { data: OpsData }) {
           ))}
         </div>
       </section>
+
+      {/* Spending: one quiet line */}
+      <section className={`${CARD} p-4`}>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <p className="text-ocean-300">
+            <span className="text-white">{dollars(data.spentCents)}</span> spent this month of a {dollars(data.settings.capCents)} cap
+          </p>
+          <CapEditor cap={data.settings.capCents} onSave={(c) => act("cap", { action: "settings", monthly_cap_cents: c }, "Cap saved.")} />
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ocean-950">
+          <div className={`h-full rounded-full ${pct >= 90 ? "bg-coral-500" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+        </div>
+        <p className="mt-2 text-xs text-ocean-500">
+          At the cap every worker stops until next month. Briefs go to {data.settings.briefEmail}.
+        </p>
+      </section>
+
 
       <Collapsible title={`Done in the last 30 days (${data.done.length})`}>
         <div className="space-y-3">
@@ -813,5 +801,46 @@ function WorkerRow({
         </div>
       )}
     </div>
+  );
+}
+
+/** The brief's first real line, without headings, tables or markdown marks. */
+function headline(report: string): string {
+  return (
+    report
+      .split("\n")
+      .filter((l) => !/^\s*(#|\|)/.test(l))
+      .map((l) => l.replace(/^[>\-*\d.)\s]+/, "").replace(/\*\*/g, "").trim())
+      .find((l) => l.length > 0) ?? ""
+  );
+}
+
+function BriefCard({
+  brief,
+  busy,
+  act,
+}: {
+  brief: NonNullable<OpsData["brief"]>;
+  busy: string | null;
+  act: (k: string, p: Record<string, unknown>, ok?: string) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className={`${CARD} p-4 sm:p-5`}>
+      <p className="text-xs text-ocean-500">
+        {brief.workerKey === "weekly" ? "Weekly review" : "Morning brief"} · {when(brief.startedAt)}
+      </p>
+      <p className="mt-1 text-white">{headline(brief.report)}</p>
+      <button onClick={() => setOpen(!open)} className="mt-2 inline-flex items-center gap-1 text-xs text-ocean-400 hover:text-white">
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "" : "-rotate-90"}`} />
+        {open ? "Hide the full brief" : "Read the full brief"}
+      </button>
+      {open && (
+        <div className="mt-3">
+          <Markdown>{brief.report}</Markdown>
+          <Teach workerKey={brief.workerKey} busy={busy} act={act} />
+        </div>
+      )}
+    </section>
   );
 }
