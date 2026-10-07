@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import WaterPlanCard from "@/components/water/WaterPlanCard";
+import { useUrlParam } from "@/lib/hooks/useUrlState";
 import { BUILDER_SPECIES_COLUMNS, type Species, type StockItem } from "@/lib/tankBuilder/engine";
 import {
   checkWater,
+  checkFishlessCycle,
   waterPlans,
   type WaterReading,
   type WaterLevel,
@@ -133,6 +135,10 @@ type MyTank = { id: string; name: string; items: { slug: string; qty: number }[]
 
 export default function WaterCheckPage() {
   const [water, setWater] = useState<Record<WaterFieldKey, string>>(EMPTY_WATER);
+  // Fishless cycle: no fish yet, so ammonia and nitrite are expected and the rules change.
+  // Kept in the address so a shared link opens in the same mode.
+  const [mode, setMode] = useUrlParam("mode", "fish");
+  const fishless = mode === "fishless";
 
   // Signed-in members can pick one of their tanks: the check then looks at
   // their actual fish, and the reading can be logged to that tank's history.
@@ -211,9 +217,12 @@ export default function WaterCheckPage() {
     };
   }, [water]);
 
-  const waterResult = useMemo(() => checkWater(reading, stock), [reading, stock]);
+  const fishlessCheck = useMemo(() => checkFishlessCycle(reading), [reading]);
+  const normalResult = useMemo(() => checkWater(reading, stock), [reading, stock]);
+  const waterResult = fishless ? fishlessCheck.result : normalResult;
   // Readings that share a cause get one explanation and one set of steps.
-  const plans = useMemo(() => waterPlans(reading), [reading]);
+  const normalPlans = useMemo(() => waterPlans(reading), [reading]);
+  const plans = fishless ? (fishlessCheck.plan ? [fishlessCheck.plan] : []) : normalPlans;
   const covered = new Set(plans.flatMap((p) => p.covers));
 
   async function logReading() {
@@ -225,7 +234,7 @@ export default function WaterCheckPage() {
       user_id: userId,
       measured_at: new Date().toISOString(),
       ...reading,
-      note: note.trim() || null,
+      note: note.trim() || (fishless ? "Fishless cycle" : null),
     });
     if (error) setSaveMsg({ ok: false, text: "Couldn't log the reading. Please try again." });
     else {
@@ -296,6 +305,23 @@ export default function WaterCheckPage() {
           };
   }
 
+  if (fishless && banner) {
+    banner =
+      waterResult.status === "warning"
+        ? {
+            text: "Something is slowing your cycle",
+            sub: "With no fish in the tank nothing is at risk, but fix the items below to keep the cycle moving.",
+            className: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+            Icon: Info,
+          }
+        : {
+            text: "Your fishless cycle is on track",
+            sub: "Ammonia and nitrite are expected while you cycle. Each card says why your reading is fine.",
+            className: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+            Icon: CheckCircle2,
+          };
+  }
+
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
       <div className="max-w-6xl mx-auto">
@@ -306,6 +332,36 @@ export default function WaterCheckPage() {
             Enter your test-kit numbers and get a plain-English read on what&apos;s healthy,
             what isn&apos;t, and how to fix it. Fill in only what you have.
           </p>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={fishless}
+            onClick={() => setMode(fishless ? "fish" : "fishless")}
+            className={
+              "mt-4 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors sm:w-auto " +
+              (fishless ? "border-emerald-500/50 bg-emerald-500/10" : "border-white/10 bg-white/5 hover:border-white/20")
+            }
+          >
+            <span
+              className={
+                "relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors " + (fishless ? "bg-emerald-500" : "bg-ocean-700")
+              }
+            >
+              <span
+                className={
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all " + (fishless ? "left-[22px]" : "left-0.5")
+                }
+              />
+            </span>
+            <span>
+              <span className="block text-sm font-medium text-white">Fishless cycle</span>
+              <span className="block text-xs text-ocean-400">
+                {fishless
+                  ? "On: no fish in the tank, so ammonia and nitrite are expected and the advice changes."
+                  : "Cycling a new tank with no fish yet? Turn this on. The rules are different."}
+              </span>
+            </span>
+          </button>
         </div>
 
         <div className="grid items-start gap-6 xl:grid-cols-2">
@@ -481,12 +537,18 @@ export default function WaterCheckPage() {
                   </p>
                   <div className="space-y-2">
                     {healthy.map((f, i) => (
-                      <div key={i} className="flex items-center gap-2.5 text-sm">
-                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                        <span className="text-ocean-200">{f.title}</span>
-                        <span className="text-ocean-500 text-xs ml-auto whitespace-nowrap">
-                          {f.value}
-                        </span>
+                      <div key={i}>
+                        <div className="flex items-center gap-2.5 text-sm">
+                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                          <span className="text-ocean-200">{f.title}</span>
+                          <span className="text-ocean-500 text-xs ml-auto whitespace-nowrap">
+                            {f.value}
+                          </span>
+                        </div>
+                        {/* In a fishless cycle "fine" often looks alarming, so say why. */}
+                        {fishless && (
+                          <p className="ml-[26px] mt-0.5 text-xs leading-relaxed text-ocean-400">{f.whatsHappening}</p>
+                        )}
                       </div>
                     ))}
                   </div>

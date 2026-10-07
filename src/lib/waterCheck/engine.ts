@@ -621,3 +621,259 @@ export function waterPlans(reading: WaterReading): WaterPlan[] {
 
   return plans;
 }
+
+
+// ---------- Fishless cycle ----------
+// With no fish in the tank the rules change: ammonia is food you add on
+// purpose, nitrite is a sign of progress, and the only things that matter
+// are what keeps the bacteria growing. Every card says why a reading is fine
+// here. Advice stays on the cautious side (dose to 2 ppm, not 4 or more).
+
+const FISHLESS_DOSE = 2; // ppm of ammonia to feed the bacteria
+const FISHLESS_REDOSE = 0.5; // dose back up once ammonia falls below this
+const FISHLESS_AMMONIA_HIGH = 4; // above this, ammonia starts to hold the cycle back
+const FISHLESS_NITRITE_HIGH = 5; // above this (off most test charts), nitrite can stall it
+const FISHLESS_PH_STALL = 6.5;
+
+export function checkFishlessCycle(reading: WaterReading): { result: WaterResult; plan: WaterPlan | null } {
+  const f: WaterFinding[] = [];
+  const a = has(reading.ammonia_ppm) ? reading.ammonia_ppm : null;
+  const n = has(reading.nitrite_ppm) ? reading.nitrite_ppm : null;
+  const no3 = has(reading.nitrate_ppm) ? reading.nitrate_ppm : null;
+  const ph = has(reading.ph) ? reading.ph : null;
+  const kh = has(reading.kh) ? reading.kh : null;
+  const t = has(reading.temp_f) ? reading.temp_f : null;
+  const nitrateSeen = (no3 ?? 0) > 0;
+  const nitriteSeen = (n ?? 0) > 0;
+
+  if (a != null) {
+    if (a > FISHLESS_AMMONIA_HIGH) {
+      f.push({
+        parameter: "Ammonia", level: "warning", value: fmt(a, " ppm"),
+        title: "More ammonia than the bacteria need",
+        whatsHappening:
+          "With no fish, ammonia can't hurt anything, but this much can slow the cycle down. Very high ammonia holds back the bacteria that deal with nitrite, so the cycle drags on.",
+        howToFix: `Do a water change to bring it down to about ${FISHLESS_DOSE} ppm, and dose less next time. ${FISHLESS_DOSE} ppm is plenty.`,
+      });
+    } else if (a > 0) {
+      f.push({
+        parameter: "Ammonia", level: "ok", value: fmt(a, " ppm"),
+        title: "Ammonia is fine during a fishless cycle",
+        whatsHappening:
+          "This is the food you add on purpose. The first group of bacteria eats ammonia and multiplies, and with no fish in the tank it can't harm anything.",
+        howToFix: a < FISHLESS_REDOSE ? `It's nearly used up. Dose back up to about ${FISHLESS_DOSE} ppm.` : "Nothing to do. Let the bacteria work on it.",
+      });
+    } else {
+      f.push({
+        parameter: "Ammonia", level: nitriteSeen || nitrateSeen ? "ok" : "note", value: fmt(a, " ppm"),
+        title: nitriteSeen || nitrateSeen ? "Ammonia is used up, a good sign" : "No ammonia yet",
+        whatsHappening: nitriteSeen || nitrateSeen
+          ? "The bacteria ate everything you gave them. That's exactly what you want to see."
+          : "A fishless cycle needs ammonia to feed the bacteria. Without it, nothing grows.",
+        howToFix: `Dose pure ammonia (no soap, scent or surfactant) up to about ${FISHLESS_DOSE} ppm.`,
+      });
+    }
+  }
+
+  if (n != null) {
+    if (n > FISHLESS_NITRITE_HIGH) {
+      f.push({
+        parameter: "Nitrite", level: "warning", value: fmt(n, " ppm"),
+        title: "Nitrite is high enough to stall the cycle",
+        whatsHappening:
+          "Some nitrite is normal now, but above about 5 ppm (off the chart on most kits) it can slow the very bacteria that clear it, and the cycle sits stuck for weeks.",
+        howToFix: "Do a 50% water change with dechlorinated water, then keep feeding ammonia at a smaller dose (1 to 2 ppm) until nitrite starts to fall.",
+      });
+    } else if (n > 0) {
+      f.push({
+        parameter: "Nitrite", level: "ok", value: fmt(n, " ppm"),
+        title: "Nitrite is fine during a fishless cycle",
+        whatsHappening:
+          "Nitrite showing up is progress: the ammonia-eating bacteria are working and making it. The second group, which turns nitrite into nitrate, grows more slowly, so nitrite climbs for a while before it drops. With no fish, it harms nothing.",
+        howToFix: "Nothing to do. This is usually the longest stage, often 2 to 4 weeks.",
+      });
+    } else {
+      f.push({
+        parameter: "Nitrite", level: "ok", value: fmt(n, " ppm"),
+        title: nitrateSeen ? "Nitrite is at zero, the goal" : "No nitrite yet",
+        whatsHappening: nitrateSeen
+          ? "Zero nitrite with nitrate showing means the second group of bacteria is keeping up."
+          : "Normal early on. Nitrite usually appears after the first week or two, once the ammonia-eating bacteria get going.",
+        howToFix: "Nothing to do.",
+      });
+    }
+  }
+
+  if (no3 != null) {
+    f.push(
+      no3 > 0
+        ? {
+            parameter: "Nitrate", level: no3 > NITRATE_HIGH ? "note" : "ok", value: fmt(no3, " ppm"),
+            title: no3 > NITRATE_HIGH ? "Nitrate is high, which is normal near the end" : "Nitrate is showing, a good sign",
+            whatsHappening:
+              "Nitrate is the end of the chain, so seeing it means the whole cycle is working. It builds up the longer you cycle, and it doesn't slow the bacteria.",
+            howToFix: "Leave it for now. You'll do a big water change before any fish go in.",
+          }
+        : {
+            parameter: "Nitrate", level: "ok", value: fmt(no3, " ppm"),
+            title: "No nitrate yet",
+            whatsHappening: "Normal until the second group of bacteria gets going. It shows up after nitrite does.",
+            howToFix: "Nothing to do.",
+          }
+    );
+  }
+
+  if (ph != null) {
+    f.push(
+      ph < FISHLESS_PH_STALL
+        ? {
+            parameter: "pH", level: "warning", value: String(ph),
+            title: "pH is low enough to slow the cycle",
+            whatsHappening:
+              "The cycle makes water more acidic as it runs, and the bacteria slow down a lot below about 6.5 and can stop near 6. This is one of the most common reasons a fishless cycle stalls.",
+            howToFix:
+              "Raise KH and the pH comes with it: about 1 teaspoon of baking soda per 50 gallons raises KH by roughly 1 dKH. Raise it 1 to 2 dKH a day until pH sits at 7 or above. With no fish in the tank, this is safe to do.",
+          }
+        : {
+            parameter: "pH", level: ph > PH_HIGH ? "note" : "ok", value: String(ph),
+            title: ph > PH_HIGH ? "pH is high but the bacteria cope" : "pH suits the bacteria",
+            whatsHappening:
+              ph > PH_HIGH
+                ? "The bacteria do fine in hard, alkaline water. Just check it suits the fish you plan to keep."
+                : "Cycle bacteria work best between about 7 and 8, and anything from 6.5 up keeps them going.",
+            howToFix: "Nothing to do. Keep an eye on it, since the cycle slowly pulls pH down.",
+          }
+    );
+  }
+
+  if (t != null) {
+    f.push(
+      t > TEMP_HIGH
+        ? {
+            parameter: "Temperature", level: "warning", value: fmt(t, "°F"),
+            title: "Too hot, even for cycling",
+            whatsHappening: "Warm water speeds the bacteria up, but past the mid 80s it starts to work against them.",
+            howToFix: "Bring it down to about 80°F.",
+          }
+        : t >= 78
+        ? {
+            parameter: "Temperature", level: "ok", value: fmt(t, "°F"),
+            title: "Warm water speeds up the cycle",
+            whatsHappening:
+              "Cycle bacteria grow fastest in warm water, and with no fish you can run it warmer than you would later.",
+            howToFix: "Nothing to do. Set the heater to suit your fish before they go in.",
+          }
+        : {
+            parameter: "Temperature", level: "note", value: fmt(t, "°F"),
+            title: "Cooler water means a slower cycle",
+            whatsHappening:
+              t < TEMP_LOW
+                ? "This is cold for cycle bacteria. They grow very slowly, so the cycle can take months."
+                : "The cycle still works, just more slowly than it would in warmer water.",
+            howToFix: "Set a heater to about 80°F while you cycle. It can come down to suit your fish later.",
+          }
+    );
+  }
+
+  if (kh != null) {
+    f.push(
+      kh < KH_LOW
+        ? {
+            parameter: "KH", level: "warning", value: fmt(kh, " dKH"),
+            title: "Low KH can crash the cycle",
+            whatsHappening:
+              "The bacteria use up KH as they work. Once it runs out, pH can suddenly drop and the cycle stops.",
+            howToFix:
+              "Raise it with baking soda, about 1 teaspoon per 50 gallons for each 1 dKH, no more than 1 to 2 dKH a day. Aim for 4 dKH or more and re-test every few days.",
+          }
+        : {
+            parameter: "KH", level: "ok", value: fmt(kh, " dKH"),
+            title: "Enough KH to keep the cycle going",
+            whatsHappening: "The bacteria use up KH as they work, and you have enough buffer to keep pH steady.",
+            howToFix: "Nothing to do. Re-test weekly, since cycling slowly uses it up.",
+          }
+    );
+  }
+
+  if (has(reading.gh)) {
+    f.push({
+      parameter: "GH", level: "ok", value: fmt(reading.gh, " dGH"),
+      title: "Hardness doesn't affect the cycle",
+      whatsHappening: "GH matters for the fish you choose later, not for the bacteria.",
+      howToFix: "Nothing to do now. Check it suits the fish you plan to keep.",
+    });
+  }
+
+  const entered = f.length > 0;
+  const status: WaterResult["status"] = !entered ? "empty" : f.some((x) => x.level === "warning") ? "warning" : "ok";
+
+  // Where the cycle is, from the three nitrogen readings.
+  let plan: WaterPlan | null = null;
+  if (a != null || n != null || no3 != null) {
+    const general = [
+      "Keep the filter running day and night, and don't clean or replace the media. The bacteria live there.",
+      "Keep the water around 78 to 82°F, and pH at 7 or above. If pH drops under 6.5, raise KH with a little baking soda (safe with no fish).",
+      "Test every day or two and write the numbers down, so you can see the trend.",
+    ];
+    const doseStep = `Whenever ammonia falls below ${FISHLESS_REDOSE} ppm, dose pure ammonia back up to about ${FISHLESS_DOSE} ppm. Don't go higher; more doesn't make it faster.`;
+    if ((a ?? 0) === 0 && (n ?? 0) === 0 && nitrateSeen) {
+      plan = {
+        level: "note",
+        title: "Nearly done: time for the 24-hour test",
+        why:
+          "Zero ammonia and zero nitrite with nitrate showing means both groups of bacteria are working. The last step is proving they can handle a full day's load quickly.",
+        steps: [
+          `Dose ammonia to ${FISHLESS_DOSE} ppm, then test again 24 hours later.`,
+          "If ammonia and nitrite both read zero after 24 hours, two days in a row, the tank is cycled.",
+          "If either still shows, keep dosing and try the test again in a few days.",
+          ...general,
+        ],
+        doneWhen: `${FISHLESS_DOSE} ppm of ammonia is gone, with zero nitrite, within 24 hours, two days running. Then do a big (about 75%) water change with dechlorinated, temperature-matched water to bring nitrate under 20 ppm, and add your first fish within a day or two, a few at a time. If the fish are delayed, keep dosing ammonia daily so the bacteria don't starve.`,
+        covers: [],
+      };
+    } else if (nitriteSeen) {
+      plan = {
+        level: "note",
+        title: nitriteSeen ? "Stage 2: the nitrite stage" : "Waiting for the cycle to start",
+        why: nitriteSeen
+          ? "Ammonia is being turned into nitrite, so the first group of bacteria is established. Now the second group, which turns nitrite into nitrate, has to grow. It's slower, so nitrite usually climbs for a while before it falls. This is normal and is often the longest part of the cycle."
+          : "There's no ammonia, nitrite or nitrate yet, so there's nothing for the bacteria to eat. A fishless cycle needs a steady supply of ammonia.",
+        steps: nitriteSeen
+          ? [
+              doseStep,
+              `Don't do water changes unless nitrite goes above ${FISHLESS_NITRITE_HIGH} ppm or ammonia above ${FISHLESS_AMMONIA_HIGH} ppm. Every other number is fine with no fish.`,
+              ...general,
+            ]
+          : [`Dose pure ammonia (no soap, scent or surfactant) up to about ${FISHLESS_DOSE} ppm, and note how much it took.`, ...general],
+        doneWhen: "Nitrite starts falling and nitrate starts showing. Then you're close to the 24-hour test.",
+        covers: [],
+      };
+    } else if ((a ?? 0) > 0) {
+      plan = {
+        level: "note",
+        title: "Stage 1: feeding the first bacteria",
+        why:
+          "The ammonia in the tank is food for the first group of bacteria. While they multiply, ammonia sits there with little or no nitrite. It's slow at first, often a week or two, and with no fish nothing is at risk.",
+        steps: [
+          doseStep,
+          "Don't do water changes. The ammonia is supposed to be there.",
+          "A bottled beneficial-bacteria product can speed this stage up. It's optional.",
+          ...general,
+        ],
+        doneWhen: "Nitrite shows up on your test. That's stage 2.",
+        covers: [],
+      };
+    } else {
+      plan = {
+        level: "note",
+        title: "Waiting for the cycle to start",
+        why: "There's no ammonia yet, so there's nothing for the bacteria to eat. A fishless cycle needs a steady supply of ammonia.",
+        steps: [`Dose pure ammonia (no soap, scent or surfactant) up to about ${FISHLESS_DOSE} ppm, and note how much it took.`, ...general],
+        doneWhen: "Ammonia starts dropping on its own and nitrite appears.",
+        covers: [],
+      };
+    }
+  }
+
+  return { result: { status, findings: f }, plan };
+}

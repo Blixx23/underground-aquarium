@@ -63,6 +63,16 @@ Water Check uses four levels, and the same colors appear on the result cards, th
 
 Every threshold is listed in [Water test results explained](/help/water-check-readings-explained).
 
+## What is the Fishless cycle switch?
+Turn on **Fishless cycle** at the top of Water Check when you're cycling a new tank with no fish in it yet. The rules are different then: ammonia is food you add on purpose for the filter bacteria, and nitrite showing up means the cycle is making progress. Neither can hurt anything with no fish in the tank.
+
+With the switch on:
+- A card at the top says which stage your cycle is at (feeding the first bacteria, the nitrite stage, or ready for the 24-hour test) and what to do next.
+- Every reading says why it's fine during a fishless cycle, or what's slowing the cycle down: too much ammonia (over 4 ppm), nitrite over 5 ppm, pH under 6.5, low KH, or cold water.
+- The advice stays cautious. Dose ammonia to about 2 ppm, never more. The tank is cycled when it clears 2 ppm of ammonia to zero ammonia and zero nitrite within 24 hours, two days in a row. Then do a big water change before adding your first few fish.
+
+The switch stays in the page address, so a link you share opens in the same mode. A reading logged to a tank in this mode is noted as "Fishless cycle" unless you write your own note.
+
 ## Why do some readings share one plan?
 Some readings are really one problem. Ammonia, nitrite and nitrate are links in one chain, the nitrogen cycle, and low pH with low KH is one buffering problem. When readings like these show up together, a single card at the top explains how they connect and gives one set of steps that covers all of them, so you never get two fixes that disagree. The individual cards below it then say **Covered in the plan above** instead of their own fix.
 
