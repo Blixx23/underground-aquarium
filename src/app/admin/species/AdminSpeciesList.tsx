@@ -166,6 +166,8 @@ function Request({
   // The form opens below the buttons, often off screen: bring it into view so the click visibly does something.
   const formRef = useRef<HTMLDivElement>(null);
   const [scrollToForm, setScrollToForm] = useState(0);
+  // The care form is filled from the AI once, so a second open doesn't wipe Chris's edits.
+  const [prefilled, setPrefilled] = useState(false);
   useEffect(() => {
     if (scrollToForm) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [scrollToForm]);
@@ -223,7 +225,8 @@ function Request({
       setAliasSlug(ai.alias_slug);
       setMode("alias");
     } else if (ai.verdict === "add_new" || (ai.verdict === "add_variant" && ai.parent_slug)) {
-      setF((cur) => ({ ...cur, ...(ai.species ?? {}) }));
+      if (!prefilled) setF((cur) => ({ ...cur, ...(ai.species ?? {}) }));
+      setPrefilled(true);
       setParentSlug(ai.verdict === "add_variant" ? ai.parent_slug ?? null : null);
       setMode("create");
     } else if (ai.member_reason) {
@@ -463,8 +466,15 @@ function Request({
             key={m}
             type="button"
             onClick={() => {
-              // Turning down starts from the AI's reason, ready to send or edit.
+              // Every button starts from what the AI already worked out, ready to check or edit.
               if (m === "dismiss" && mode !== "dismiss" && !note.trim() && ai?.member_reason) setNote(ai.member_reason);
+              if (m === "alias" && mode !== "alias" && ai?.alias_slug) setAliasSlug(ai.alias_slug);
+              if (m === "create" && mode !== "create" && !prefilled && ai?.species) {
+                setF((cur) => ({ ...cur, ...(ai.species ?? {}) }));
+                if (ai.verdict === "add_variant" && ai.parent_slug) setParentSlug(ai.parent_slug);
+                setPrefilled(true);
+              }
+              if (mode !== m) setScrollToForm((n) => n + 1);
               setMode(mode === m ? "none" : m);
             }}
             className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
