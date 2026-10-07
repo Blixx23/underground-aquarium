@@ -509,3 +509,115 @@ export function checkWater(
 
   return { status, findings };
 }
+
+// ---------- One plan for readings that share a cause ----------
+// Ammonia, nitrite and nitrate are links in one chain (the nitrogen cycle), and
+// low pH with low KH are one buffering problem. Listing them separately gives
+// several overlapping, sometimes clashing fixes. The plan explains how they
+// connect and gives one set of steps, always on the safe, conservative side.
+
+export type WaterPlan = {
+  level: "danger" | "warning" | "note";
+  title: string;
+  /** Why these readings belong together, in plain words. */
+  why: string;
+  /** One ordered set of steps that covers every linked reading. */
+  steps: string[];
+  /** How to know it's fixed. */
+  doneWhen: string;
+  /** Findings (by parameter) whose fix is covered here. */
+  covers: string[];
+};
+
+export function waterPlans(reading: WaterReading): WaterPlan[] {
+  const plans: WaterPlan[] = [];
+  const a = has(reading.ammonia_ppm) ? reading.ammonia_ppm : null;
+  const n = has(reading.nitrite_ppm) ? reading.nitrite_ppm : null;
+  const no3 = has(reading.nitrate_ppm) ? reading.nitrate_ppm : null;
+  const ph = has(reading.ph) ? reading.ph : null;
+  const kh = has(reading.kh) ? reading.kh : null;
+  const t = has(reading.temp_f) ? reading.temp_f : null;
+
+  const ammonia = (a ?? 0) > 0;
+  const nitrite = (n ?? 0) > 0;
+  if (ammonia || nitrite) {
+    const harsh = (ph != null && ph >= WATER.ammoniaHarshPh) || (t != null && t >= WATER.ammoniaHarshTemp);
+    const worst = Math.max(a ?? 0, n ?? 0);
+    const urgent = worst >= TOXIC_DANGER || (ammonia && harsh);
+    const veryHighNitrate = no3 != null && no3 > NITRATE_HIGH;
+
+    let what: string;
+    if (ammonia && nitrite) {
+      what =
+        "Ammonia and nitrite showing up together means your tank's filter bacteria haven't caught up with the waste. Fish waste and leftover food turn into ammonia, one group of bacteria turns ammonia into nitrite, and a second group turns nitrite into nitrate, which is far safer. Both of the first two are toxic, and seeing both means neither group is keeping up yet.";
+    } else if (nitrite) {
+      what =
+        "Nitrite with no ammonia means the first half of your cycle is working (ammonia is being turned into nitrite), but the bacteria that turn nitrite into the much safer nitrate haven't caught up yet.";
+    } else {
+      what =
+        "Ammonia with no nitrite means more waste is going in than your filter bacteria can handle. Fish waste and leftover food become ammonia, and the bacteria that remove it are being outpaced.";
+    }
+    const causes =
+      " The usual causes are a tank that's still cycling, a filter that was recently cleaned, replaced or treated with medication, too much food, too many fish, or something dead or rotting in the tank. These readings are one problem, not several, so one plan fixes all of them.";
+    const nitrateNote =
+      no3 == null
+        ? ""
+        : no3 <= 5 && (ammonia || nitrite)
+        ? " Your very low nitrate fits this picture: little is making it all the way through the cycle yet."
+        : veryHighNitrate
+        ? " Your nitrate is also very high, which means waste has been building for a while. The same water changes bring it down, done in smaller steps so the change itself doesn't shock the fish."
+        : " Some nitrate is a good sign: part of the cycle is working, so it should recover with a little help.";
+    const harshNote = harsh && ammonia
+      ? ` Your ${ph != null && ph >= WATER.ammoniaHarshPh ? "high pH" : "warm water"} makes ammonia more toxic, so this is more urgent than the number alone suggests.`
+      : "";
+
+    const changeStep = urgent
+      ? veryHighNitrate
+        ? "Do a 25% water change now and another 25% a few hours later, rather than one big one. Match the new water's temperature to the tank and treat it with dechlorinator first."
+        : "Do a 50% water change now. Match the new water's temperature to the tank and treat it with dechlorinator first. If the tank hasn't had a water change in a month or more, split it into two 25% changes a few hours apart so the fish aren't shocked."
+      : "Do a 25 to 30% water change today. Match the new water's temperature to the tank and treat it with dechlorinator first.";
+
+    const steps = [
+      changeStep,
+      "Use a water conditioner that says it detoxifies ammonia and nitrite. It makes them safer for about a day while the bacteria catch up, but it doesn't remove them, so keep testing.",
+      "Stop feeding for a day or two, then feed a small amount every other day until the readings are back to zero. Less food means less ammonia.",
+      "Don't add any fish, and don't clean, rinse in tap water or replace the filter media. The bacteria you need live there. If the filter is clogged, swish it gently in a bucket of old tank water.",
+      "Test ammonia and nitrite every day. Whenever ammonia and nitrite together reach 0.25 ppm or more, do another 25 to 30% water change.",
+      ...(nitrite || (t != null && t >= WATER.tempWarm)
+        ? ["Add extra air: an air stone, or point the filter outflow at the surface. Nitrite and warm water both make it harder for fish to breathe."]
+        : []),
+      "Don't add anything to raise the pH right now, even if it reads low. Higher pH makes ammonia more toxic.",
+      "Check for anything dead or rotting (a missing fish, old food, a melting plant) and remove it. A bottled beneficial-bacteria product can help the cycle along, but it's optional.",
+    ];
+
+    plans.push({
+      level: urgent ? "danger" : "warning",
+      title: ammonia && nitrite ? "Your tank's cycle is behind" : nitrite ? "The last step of your cycle is behind" : "Your filter isn't keeping up with the waste",
+      why: what + causes + nitrateNote + harshNote,
+      steps,
+      doneWhen:
+        "Ammonia and nitrite both read zero for a full week, with a little nitrate showing. Then go back to normal feeding and a weekly 25% water change, and add new fish a few at a time.",
+      covers: ["Ammonia", "Nitrite", ...(no3 != null && no3 > NITRATE_OK ? ["Nitrate"] : [])],
+    });
+  }
+
+  // Low pH with weak buffering is one problem: the buffer is used up, so pH sinks.
+  if (ph != null && kh != null && kh < KH_LOW && ph < PH_SOFT_EDGE && !(ammonia || nitrite)) {
+    plans.push({
+      level: "note",
+      title: "Weak buffering is pulling your pH down",
+      why:
+        "Your low pH and low KH are the same issue. KH is the buffer that holds pH steady. As fish waste breaks down it slowly uses the buffer up, and once it's low the pH sinks and can drop suddenly, which is harder on fish than a steady low number.",
+      steps: [
+        "Raise KH slowly, not the pH directly. A small bag of crushed coral in the filter is the gentlest way.",
+        "For faster results use baking soda, about 1 teaspoon per 50 gallons for each 1 dKH. Raise KH by no more than 1 dKH a day.",
+        "Keep up regular water changes, which put buffer back each time.",
+        "Test pH and KH every couple of days while you raise it.",
+      ],
+      doneWhen: "KH holds at 4 dKH or more and pH stays steady from one test to the next.",
+      covers: ["pH", "KH"],
+    });
+  }
+
+  return plans;
+}

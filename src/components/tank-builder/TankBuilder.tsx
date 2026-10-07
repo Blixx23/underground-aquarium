@@ -45,7 +45,8 @@ import { buildPath, parseBuild } from "@/lib/tankBuilder/share";
 import { nearestSize } from "@/lib/tankBuilder/sizes";
 import { MAX_TANK_PHOTOS } from "@/lib/tanks/showcase";
 import { TANK_PHOTO_MAX_MB, uploadTankPhoto } from "@/components/tanks/tankPhotoUpload";
-import { checkWater, type WaterReading, type WaterLevel } from "@/lib/waterCheck/engine";
+import { checkWater, waterPlans, type WaterReading, type WaterLevel } from "@/lib/waterCheck/engine";
+import WaterPlanCard from "@/components/water/WaterPlanCard";
 import TankVisual, { speciesColor } from "@/components/tank-builder/TankVisual";
 import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
 import { RangeChart, ScoreDial, WaterTrends } from "@/components/tank-builder/Insights";
@@ -433,6 +434,8 @@ export default function TankBuilder({
   }, [water]);
 
   const waterResult = useMemo(() => checkWater(reading, stock), [reading, stock]);
+  const plans = useMemo(() => waterPlans(reading), [reading]);
+  const covered = new Set(plans.flatMap((p) => p.covers));
 
   function addSpecies(s: Species, qty?: number) {
     setStock((prev) =>
@@ -1584,6 +1587,9 @@ export default function TankBuilder({
                 </div>
               ) : waterResult.findings.length > 0 ? (
                 <div className="space-y-2">
+                  {plans.map((p) => (
+                    <WaterPlanCard key={p.title} plan={p} />
+                  ))}
                   {waterResult.findings.map((f, i) => {
                     const st = findingStyle(f.level);
                     return (
@@ -1595,10 +1601,14 @@ export default function TankBuilder({
                             <span className="shrink-0 whitespace-nowrap text-xs text-ocean-400">{f.value}</span>
                           </div>
                           <p className="mt-1 text-sm leading-relaxed text-ocean-200">{f.whatsHappening}</p>
-                          <p className="mt-2 text-xs leading-relaxed text-ocean-400">
-                            <span className="font-medium text-ocean-200">How to fix: </span>
-                            {f.howToFix}
-                          </p>
+                          {covered.has(f.parameter) && f.level !== "ok" ? (
+                            <p className="mt-2 text-xs leading-relaxed text-ocean-400">Covered in the plan above.</p>
+                          ) : (
+                            <p className="mt-2 text-xs leading-relaxed text-ocean-400">
+                              <span className="font-medium text-ocean-200">How to fix: </span>
+                              {f.howToFix}
+                            </p>
+                          )}
                         </div>
                       </div>
                     );

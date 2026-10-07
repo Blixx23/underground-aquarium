@@ -14,9 +14,11 @@ import {
   Save,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import WaterPlanCard from "@/components/water/WaterPlanCard";
 import { BUILDER_SPECIES_COLUMNS, type Species, type StockItem } from "@/lib/tankBuilder/engine";
 import {
   checkWater,
+  waterPlans,
   type WaterReading,
   type WaterLevel,
 } from "@/lib/waterCheck/engine";
@@ -210,6 +212,9 @@ export default function WaterCheckPage() {
   }, [water]);
 
   const waterResult = useMemo(() => checkWater(reading, stock), [reading, stock]);
+  // Readings that share a cause get one explanation and one set of steps.
+  const plans = useMemo(() => waterPlans(reading), [reading]);
+  const covered = new Set(plans.flatMap((p) => p.covers));
 
   async function logReading() {
     if (!userId || !tankId || saving || waterResult.status === "empty") return;
@@ -420,9 +425,16 @@ export default function WaterCheckPage() {
                 </div>
               )}
 
+              {plans.map((p) => (
+                <WaterPlanCard key={p.title} plan={p} />
+              ))}
+
               {/* Anything that warrants a note, sorted by severity */}
               {detailed.length > 0 && (
                 <div className="space-y-2">
+                  {plans.length > 0 && (
+                    <p className="pt-1 text-[11px] uppercase tracking-wide text-ocean-400">Each reading</p>
+                  )}
                   {detailed.map((f, i) => {
                     const st = findingStyle(f.level);
                     return (
@@ -438,10 +450,14 @@ export default function WaterCheckPage() {
                           <p className="text-ocean-300 text-sm mt-1 leading-relaxed">
                             {f.whatsHappening}
                           </p>
-                          <p className="text-ocean-400 text-xs mt-2 leading-relaxed">
-                            <span className="text-ocean-200 font-medium">How to fix: </span>
-                            {f.howToFix}
-                          </p>
+                          {covered.has(f.parameter) && f.level !== "ok" ? (
+                            <p className="text-ocean-400 text-xs mt-2 leading-relaxed">Covered in the plan above.</p>
+                          ) : (
+                            <p className="text-ocean-400 text-xs mt-2 leading-relaxed">
+                              <span className="text-ocean-200 font-medium">How to fix: </span>
+                              {f.howToFix}
+                            </p>
+                          )}
                           {GLOSSARY_FOR[f.parameter] && (
                             <Link
                               href={`/glossary/${GLOSSARY_FOR[f.parameter].slug}`}
