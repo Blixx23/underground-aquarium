@@ -107,7 +107,10 @@ Snails are only safe from fish under 8 inches as adults, because small fish can'
 
 You get one message per big fish, titled "[Fish] may eat [smaller fish]" or "[Fish] may eat smaller tankmates" when there are several. It gives the big fish's size and lists each smaller fish with its size, adding "Anything that fits in its mouth is at risk, often at night."
 
-**Severity**: it's a **Check** if the big fish is a predator or aggressive (not just semi-aggressive), or if any tankmate is a quarter of its size or less. The Check has a **Remove [big fish]** button. Otherwise it's a **Tip**, with the extra advice "Adding them as adults, bigger than a mouthful, lowers the risk."
+**Severity**: it's always a **Check**. The sizes it compares are full-grown sizes, so the smaller fish is at risk even as an adult.
+
+- **Predator, aggressive, or a tankmate a quarter of its size or less:** the fish is a clear mouthful. The Check has a **Remove [big fish]** button.
+- **Borderline (about half its size):** the message says the smaller fish sits right at the edge of what the big one can catch, and young ones are well within it. The safe choice is tankmates that stay more than half its size. If you keep them together, add them fully grown, keep the big fish well fed and count them often.
 
 ## Why does it warn about my crayfish or crab?
 If your build has a crayfish or crab (spotted by group or name) plus any fish, you get a **Check** titled "[Crayfish or crab] can catch fish." It says it "will grab slow or sleeping fish, especially bottom dwellers like..." (naming up to 3 of your fish) and that "Fast, mid-water fish fare best, and lots of cover helps." This applies whatever the sizes, because they grab from the bottom.

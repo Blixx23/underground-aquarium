@@ -478,15 +478,20 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
     prey.sort((x, y) => y.ratio - x.ratio);
     const serious = isPredator(a) || isAggressive(a) || prey.some((p) => p.ratio >= 4);
     const names = prey.map((p) => p.s.common_name);
+    const sizes = list(prey.map((p) => `${p.s.common_name} (${p.s.max_size_in}")`));
+    // Sizes here are already full-grown, so "add them as adults" can't make the
+    // risk go away. Borderline pairs get the honest, cautious version instead.
+    const detail = serious
+      ? `${a.common_name} grows to about ${aSize}", big enough to swallow ${sizes} even when they're full grown. Anything that fits in its mouth is at risk, often at night.`
+      : `A full-grown ${a.common_name} (about ${aSize}") can catch fish half its size, and ${sizes} ${
+          prey.length === 1 ? "sits" : "sit"
+        } right at that edge even fully grown. Young ones are well within it, and the risk grows as the ${a.common_name} does. The safe choice is tankmates that stay more than half its size. If you keep them together, add them fully grown, keep the ${a.common_name} well fed, and count them often.`;
     issues.push({
-      level: serious ? "caution" : "note",
+      // On the safe side: a borderline pair is still worth a caution, not a quiet note.
+      level: "caution",
       title:
         prey.length === 1 ? `${a.common_name} may eat ${names[0]}` : `${a.common_name} may eat smaller tankmates`,
-      detail: `${a.common_name} grows to about ${aSize}", big enough to swallow ${list(
-        prey.map((p) => `${p.s.common_name} (${p.s.max_size_in}")`)
-      )}. Anything that fits in its mouth is at risk, often at night.${
-        serious ? "" : " Adding them as adults, bigger than a mouthful, lowers the risk."
-      }`,
+      detail,
       slugs: [a.slug, ...prey.map((p) => p.s.slug)],
       fixes: serious ? [{ label: `Remove ${a.common_name}`, type: "remove", slug: a.slug }] : undefined,
     });
