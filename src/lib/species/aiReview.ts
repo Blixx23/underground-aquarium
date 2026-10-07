@@ -69,6 +69,7 @@ ${opts}
 Numbers: temp_min_f and temp_max_f in °F, ph_min/ph_max (one decimal), gh_min/gh_max in dGH, max_size_in in inches
 (adult size, one decimal), min_tank_gal in US gallons, min_group_size (blank for solitary fish). lifespan like
 "5-8 years". summary: one line, under 140 characters. body: 2 or 3 plain sentences of practical care.
+fin_nipper: "Yes" if it is known to nip long-finned tankmates. plant_safe: "No" if it eats or uproots live plants.
 Use well established hobby values. If you're not sure of a value, leave it out and say so in double_check.
 Never invent a scientific name.
 
@@ -118,8 +119,10 @@ function cleanSpecies(raw: unknown, groups: string[]): AiReview["species"] {
   const out: Partial<Record<SpeciesField, string>> = {};
   const numeric = new Set(["temp_min_f", "temp_max_f", "ph_min", "ph_max", "gh_min", "gh_max", "max_size_in", "min_tank_gal", "min_group_size"]);
   for (const k of SPECIES_FIELDS) {
-    const v = r[k];
+    let v = r[k];
     if (v === null || v === undefined || v === "") continue;
+    // Yes/No fields come from the database as true/false.
+    if (typeof v === "boolean") v = v ? "Yes" : "No";
     if (numeric.has(k)) {
       const n = Number(v);
       if (Number.isFinite(n) && n >= 0 && n < 2000) out[k] = String(Math.round(n * 10) / 10);
@@ -148,6 +151,71 @@ function cleanSpecies(raw: unknown, groups: string[]): AiReview["species"] {
     }
   }
   return Object.keys(out).length ? out : null;
+}
+
+/**
+ * The second check: a separate, careful pass that fact-checks every value on
+ * the care form and the text, fixes what's wrong, fills what it's sure of and
+ * says why anything is left blank. Chris wants it right, period.
+ */
+async function verifySpecies(
+  request: { common_name: string; scientific_name: string | null; note: string | null },
+  species: NonNullable<AiReview["species"]>,
+  groups: string[],
+  parentName: string | null
+): Promise<{ species: NonNullable<AiReview["species"]>; corrections: string[]; blanks: Partial<Record<SpeciesField, string>>; cents: number }> {
+  const opts = Object.entries(SPECIES_OPTIONS)
+    .map(([k, v]) => `- ${k}: ${v.join(", ")}`)
+    .join("\n");
+  const system = `You fact-check species care data for Underground Aquarium, a freshwater aquarium site that wants to be the
+most trusted source of fishkeeping data. A first pass filled in the care form below. Check every value and every
+claim in summary and body against well established hobby knowledge for this exact species${parentName ? ` (a color or fin form of the ${parentName}; its care values come from the parent, so focus on the name, summary and body)` : ""}.
+
+- Correct anything wrong, overstated or unsafe. Ranges should sit on the safer side of what hobby sources give.
+- Remove any claim in summary or body you can't confirm (for example a habitat need that isn't true of this species).
+- Fill a blank field only if you are confident. Leave it blank otherwise, and say why in "blank".
+- No em dashes. Keep summary under 140 characters and body to 2 or 3 plain sentences.
+- group_name must be one of: ${groups.join(", ")}
+- Choice fields must use these exact values:
+${opts}
+
+Reply with ONLY a JSON object:
+{"species": {every field, corrected}, "corrections": ["field: old -> new, because ...", ...],
+ "blank": {"field": "why it's left blank", ...}}`;
+  const reply = await callClaude({
+    model: OPS_MODELS.smart,
+    system,
+    tools: [],
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Request: ${request.common_name}${request.scientific_name ? ` (${request.scientific_name})` : ""}\nMember's note: ${request.note?.trim() || "(none)"}\n\nCare form from the first pass:\n${JSON.stringify(species, null, 1)}`,
+          },
+        ],
+      },
+    ],
+    maxTokens: 2500,
+    timeoutMs: 60_000,
+  });
+  const text = reply.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+  const raw = parseJson(text);
+  const cents = costCents(OPS_MODELS.smart, reply.usage);
+  const checked = cleanSpecies(raw?.species, groups);
+  // Anything the checker dropped by mistake falls back to the first pass, except fields it says to leave blank.
+  const blanks: Partial<Record<SpeciesField, string>> = {};
+  for (const [k, v] of Object.entries((raw?.blank ?? {}) as Record<string, unknown>)) {
+    if ((SPECIES_FIELDS as readonly string[]).includes(k) && typeof v === "string") blanks[k as SpeciesField] = str(v, 200) ?? "";
+  }
+  const merged = { ...species, ...(checked ?? {}) };
+  for (const k of Object.keys(blanks) as SpeciesField[]) if (!checked?.[k]) delete merged[k];
+  const corrections = (Array.isArray(raw?.corrections) ? raw!.corrections : [])
+    .map((x) => str(x, 240))
+    .filter((x): x is string => !!x)
+    .slice(0, 10);
+  return { species: merged, corrections, blanks, cents };
 }
 
 export async function reviewSpeciesRequest(
@@ -247,7 +315,35 @@ Decide, then answer with the JSON object only.`;
     species = { ...base, ...own };
   }
 
+  // The second check, for anything that would be added to the library.
+  let corrections: string[] = [];
+  let blanks: Partial<Record<SpeciesField, string>> = {};
+  let checkedTwice = false;
+  if (species && (finalVerdict === "add_new" || finalVerdict === "add_variant")) {
+    try {
+      const v = await verifySpecies(request, species, groups, finalVerdict === "add_variant" && parentSlug ? bySlug.get(parentSlug)?.common_name ?? null : null);
+      species = v.species;
+      corrections = v.corrections;
+      blanks = v.blanks;
+      cents += v.cents;
+      checkedTwice = true;
+    } catch {
+      doubleCheck.unshift("The second check didn't finish. Press Re-check before adding it.");
+    }
+  }
+  // Every field the form needs, with a reason when it's still empty.
+  if (species) {
+    for (const k of SPECIES_FIELDS) {
+      if (!species[k] && !blanks[k] && !["common_name", "scientific_name", "min_group_size"].includes(k)) {
+        blanks[k] = "Not filled in by either check.";
+      }
+    }
+  }
+
   return {
+    checked_twice: checkedTwice,
+    corrections,
+    blank_reasons: blanks,
     verdict: finalVerdict,
     confidence,
     identified_as: { common_name: str(id.common_name, 120), scientific_name: str(id.scientific_name, 120) },

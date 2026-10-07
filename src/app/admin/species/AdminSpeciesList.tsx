@@ -99,6 +99,12 @@ function actionLabel(ai: AiReview, nameOf: (slug: string | null | undefined) => 
   }
 }
 
+/** Checks saved before recommendations, or before the second check for fish that would be added, are redone. */
+function needsRecheck(ai: AiReview): boolean {
+  if (!ai.recommendation) return true;
+  return (ai.verdict === "add_new" || ai.verdict === "add_variant") && !ai.checked_twice;
+}
+
 function whenLabel(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -159,7 +165,7 @@ function Request({
   const [note, setNote] = useState("");
   const [thanks, setThanks] = useState(true);
   const [ai, setAi] = useState<AiReview | null>(s.ai);
-  const [aiBusy, setAiBusy] = useState(!s.ai?.recommendation);
+  const [aiBusy, setAiBusy] = useState(!s.ai || needsRecheck(s.ai));
   const [aiError, setAiError] = useState<string | null>(null);
   // Set when the new entry is a color or fin form of a library fish.
   const [parentSlug, setParentSlug] = useState<string | null>(null);
@@ -192,6 +198,8 @@ function Request({
     care_level: "Beginner",
     suitability: "Common",
     breeding_type: "",
+    fin_nipper: "",
+    plant_safe: "",
     lifespan: "",
     family: "",
     origin: "",
@@ -213,7 +221,7 @@ function Request({
   // Checks from before recommendations existed are redone so every card gets one.
   useEffect(() => {
     if (!s.ai) runAi(false);
-    else if (!s.ai.recommendation) runAi(true);
+    else if (needsRecheck(s.ai)) runAi(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -311,6 +319,15 @@ function Request({
     "w-full rounded-lg border border-ocean-800/60 bg-ocean-950/60 px-3 py-2 text-sm text-white placeholder:text-ocean-600 focus:border-emerald-500/50 focus:outline-none";
   const label = "mb-1 block text-[11px] font-semibold uppercase tracking-wide text-ocean-400";
 
+  // A box the AI left empty is outlined, with its reason, so nothing is missed by accident.
+  const blankWhy = (k: string) =>
+    !f[k]?.trim() && ai?.blank_reasons ? (ai.blank_reasons as Record<string, string | undefined>)[k] ?? null : null;
+  const boxClass = (k: string) => (blankWhy(k) ? `${input} border-amber-400/70` : input);
+  const why = (k: string) => {
+    const w = blankWhy(k);
+    return w ? <p className="mt-1 text-[11px] leading-snug text-amber-200/90">Left blank: {w}</p> : null;
+  };
+
   const field = (k: string, text: string, opts?: { type?: string; step?: string; placeholder?: string }) => (
     <div>
       <label className={label} htmlFor={`${s.id}-${k}`}>
@@ -323,8 +340,9 @@ function Request({
         value={f[k]}
         placeholder={opts?.placeholder}
         onChange={(e) => set(k, e.target.value)}
-        className={input}
+        className={boxClass(k)}
       />
+      {why(k)}
     </div>
   );
   const select = (k: keyof typeof OPTIONS | "group_name", text: string, values: readonly string[]) => (
@@ -332,14 +350,15 @@ function Request({
       <label className={label} htmlFor={`${s.id}-${k}`}>
         {text}
       </label>
-      <select id={`${s.id}-${k}`} value={f[k]} onChange={(e) => set(k, e.target.value)} className={input}>
-        {k === "group_name" || k === "breeding_type" ? <option value="">Choose…</option> : null}
+      <select id={`${s.id}-${k}`} value={f[k]} onChange={(e) => set(k, e.target.value)} className={boxClass(k)}>
+        {["group_name", "breeding_type", "fin_nipper", "plant_safe"].includes(k) ? <option value="">Choose…</option> : null}
         {values.map((v) => (
           <option key={v} value={v}>
             {v}
           </option>
         ))}
       </select>
+      {why(k)}
     </div>
   );
 
@@ -430,6 +449,26 @@ function Request({
               <p className="text-xs text-ocean-400">
                 If you turn it down, they see: <span className="text-ocean-200">{ai.member_reason}</span>
               </p>
+            )}
+            {ai.checked_twice && (
+              <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-100/90">
+                <p className="font-semibold text-emerald-200">Checked twice</p>
+                {ai.corrections?.length ? (
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                    {ai.corrections.map((c, i) => (
+                      <li key={i}>{c}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-0.5">A second, separate check went over every value and found nothing to change.</p>
+                )}
+                {Object.keys(ai.blank_reasons ?? {}).length > 0 && (
+                  <p className="mt-1 text-amber-200/90">
+                    Left blank on purpose: {Object.keys(ai.blank_reasons ?? {}).map((k) => k.replace(/_/g, " ")).join(", ")}. They&apos;re
+                    outlined in the form.
+                  </p>
+                )}
+              </div>
             )}
             {ai.double_check.length > 0 && (
               <ul className="list-disc space-y-0.5 pl-4 text-xs text-amber-200/90">
@@ -524,6 +563,8 @@ function Request({
             {select("care_level", "Care", OPTIONS.care_level)}
             {select("suitability", "Suitability", OPTIONS.suitability)}
             {select("breeding_type", "Breeding", OPTIONS.breeding_type)}
+            {select("fin_nipper", "Nips fins?", OPTIONS.fin_nipper)}
+            {select("plant_safe", "Plant safe?", OPTIONS.plant_safe)}
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {field("family", "Family")}
@@ -532,11 +573,13 @@ function Request({
           </div>
           <div>
             <label className={label}>Summary (one line)</label>
-            <input value={f.summary} maxLength={140} onChange={(e) => set("summary", e.target.value)} className={input} />
+            <input value={f.summary} maxLength={140} onChange={(e) => set("summary", e.target.value)} className={boxClass("summary")} />
+            {why("summary")}
           </div>
           <div>
             <label className={label}>Care notes (2-3 sentences)</label>
-            <textarea value={f.body} rows={3} onChange={(e) => set("body", e.target.value)} className={input} />
+            <textarea value={f.body} rows={3} onChange={(e) => set("body", e.target.value)} className={boxClass("body")} />
+            {why("body")}
           </div>
           <button
             type="button"

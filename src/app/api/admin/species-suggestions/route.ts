@@ -66,6 +66,17 @@ export async function POST(req: Request) {
     }
   }
 
+  // Yes/No answers are saved after the entry exists, as true/false (the
+  // database function only knows the original form fields).
+  const yesNo: Record<string, boolean> = {};
+  if (action === "create" && body.species && typeof body.species === "object") {
+    const sp = body.species as Record<string, unknown>;
+    for (const k of ["fin_nipper", "plant_safe"]) {
+      if (sp[k] === "Yes" || sp[k] === "No") yesNo[k] = sp[k] === "Yes";
+      delete sp[k];
+    }
+  }
+
   // resolve_species_request checks the caller is an admin.
   const { data, error } = await supabase.rpc("resolve_species_request", {
     p_id: id,
@@ -80,6 +91,10 @@ export async function POST(req: Request) {
   if (result.status === "added" && result.suggester_id) {
     await awardBubbles(result.suggester_id, "species_approved", `species_sugg_${id}`);
   }
+  if (action === "create" && result.slug && Object.keys(yesNo).length) {
+    await supabaseAdmin.from("species").update(yesNo).eq("slug", result.slug);
+  }
+
   // A variant hangs under its parent: the database copies the parent's care
   // numbers onto it and keeps them in step from then on (step 76 triggers).
   if (action === "create" && result.slug && typeof body.parentSlug === "string" && body.parentSlug !== result.slug) {

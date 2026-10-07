@@ -84,6 +84,8 @@ It starts with a **Recommendation**: one plain sentence saying what it would do,
 - **Turn it down**: saltwater, a plant, made up, or not an aquarium animal.
 - **Not sure: check it yourself**: only when it really can't identify the fish, with what to look up. It always shows low confidence.
 
+For anything that would be added (a new species or a new variant), a second, separate check then goes over every value on the care form and the summary and care notes, fixes anything wrong or unsafe, and fills in what it's sure of. The box shows **Checked twice** with what it changed. Any box still empty is outlined in the form with the reason it was left blank, so nothing is missed by accident. The form also has **Nips fins?** and **Plant safe?**, which the Tank Builder uses for its warnings.
+
 It also shows what it thinks they meant, up to 5 library fish that matter (each links to its species page), anything to double-check, and what that check actually cost.
 
 The purple button says exactly what it sets up: **Add the name to [fish]**, **Add as a variant of [fish]**, **Add it to the library**, or **Turn it down with this reply**. It opens the right form already filled in and scrolls down to it. Check it, then press the green Save button at the bottom. For a variant, the form says "Adding as a variant of [fish]", with a link to add it as its own species instead. Nothing is sent until you check it and press the button. **Re-check** runs it again. Each check is saved, so it only runs once per request (that needs step70 SQL; without it the check runs again each time the page opens).

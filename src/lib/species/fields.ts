@@ -19,6 +19,9 @@ export const SPECIES_OPTIONS = {
     // Shrimp, crayfish and crabs: the female carries the eggs under her tail.
     "Egg carrier",
   ],
+  // Yes/No on the form; saved as true/false. The Tank Builder warns with these.
+  fin_nipper: ["No", "Yes"],
+  plant_safe: ["Yes", "No"],
 } as const;
 
 /** Every field on the "Add to library" form. */
@@ -43,6 +46,8 @@ export const SPECIES_FIELDS = [
   "care_level",
   "suitability",
   "breeding_type",
+  "fin_nipper",
+  "plant_safe",
   "lifespan",
   "family",
   "origin",
@@ -70,6 +75,12 @@ export type AiReview = {
   parent_slug?: string | null;
   /** One plain sentence: what the AI recommends Chris does. Missing on checks from before Oct 2026. */
   recommendation?: string | null;
+  /** True once a second, separate pass has fact-checked the care form. */
+  checked_twice?: boolean;
+  /** What the second pass corrected, in plain words. */
+  corrections?: string[];
+  /** Fields left blank on purpose, and why. */
+  blank_reasons?: Partial<Record<SpeciesField, string>>;
   /** For already_listed, too_broad, turn_down: the reason the member will see. */
   member_reason: string | null;
   /** For add_new and add_variant: the filled-in care form. */
