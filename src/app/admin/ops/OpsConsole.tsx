@@ -91,14 +91,7 @@ function when(iso: string | null): string {
 
 const dollars = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-/** The worker's last status in plain words. */
-const STATUS_WORDS: Record<string, string> = {
-  done: "finished",
-  "all quiet": "finished, nothing needed you",
-  quiet: "stayed asleep, nothing new",
-  capped: "stopped, monthly cap reached",
-  error: "didn't finish",
-};
+
 
 function Markdown({ children }: { children: string }) {
   return (
@@ -255,71 +248,13 @@ export default function OpsConsole({ data }: { data: OpsData }) {
         )}
       </section>
 
-      {/* Team */}
+      {/* Team: one quiet row per worker, details on tap */}
       <section>
-        <h2 className="mb-3 text-lg font-medium text-white">The team</h2>
-        <div className="grid gap-3 md:grid-cols-2">
+        <h2 className="mb-1 text-lg font-medium text-white">The team</h2>
+        <p className="mb-3 text-sm text-ocean-400">Tap a worker to see what it does and run it by hand.</p>
+        <div className={`${CARD} divide-y divide-ocean-800/60`}>
           {data.workers.map((w) => (
-            <div key={w.key} className={`${CARD} p-4`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium text-white">{w.name}</p>
-                  <p className="text-xs text-ocean-500">
-                    {w.schedule} · {w.model}
-                  </p>
-                </div>
-                {!w.needsNote && (
-                  <button
-                    onClick={() => act(`t-${w.key}`, { action: "worker_toggle", key: w.key, enabled: !w.enabled })}
-                    disabled={busy !== null}
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-                      w.enabled ? "bg-emerald-600/80 text-white" : "border border-ocean-700 text-ocean-400"
-                    }`}
-                  >
-                    {w.enabled ? "On" : "Off"}
-                  </button>
-                )}
-              </div>
-              <p className="mt-3 text-sm text-ocean-200">{w.about.job}</p>
-              <div className="mt-3 space-y-1.5 text-xs">
-                <p className={w.enabled && !w.needsNote ? "text-emerald-200" : "text-ocean-500"}>
-                  <span className="font-semibold uppercase tracking-wide">When on: </span>
-                  {w.about.whenOn}
-                </p>
-                <p className={!w.enabled && !w.needsNote ? "text-amber-200/90" : "text-ocean-500"}>
-                  <span className="font-semibold uppercase tracking-wide">When off: </span>
-                  {w.about.whenOff}
-                </p>
-              </div>
-              {w.needsNote ? (
-                <p className="mt-3 rounded-lg bg-sky-500/10 px-3 py-2 text-xs text-sky-200">{w.needsNote}</p>
-              ) : (
-                <>
-                  <div className="mt-3 rounded-lg bg-ocean-950/50 px-3 py-2 text-xs text-ocean-300">
-                    <p>
-                      <span className="text-ocean-500">Last run:</span> {when(w.lastRunAt)}
-                      {w.lastStatus ? ` · ${STATUS_WORDS[w.lastStatus] ?? w.lastStatus}` : ""} · {dollars(w.spentCents)} this month
-                    </p>
-                    {w.lastResult && (
-                      <p className="mt-1 text-ocean-200">
-                        <span className="text-ocean-500">Result:</span> {w.lastResult}
-                      </p>
-                    )}
-                    <p className="mt-1">
-                      <span className="text-ocean-500">30 days:</span> {w.filed30} findings, {w.acted30} acted on
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => act(`r-${w.key}`, { action: "run", key: w.key })}
-                    disabled={busy !== null || w.running}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-ocean-700 px-3 py-1 text-xs text-ocean-200 hover:border-emerald-500 hover:text-white disabled:opacity-50"
-                  >
-                    {busy === `r-${w.key}` || w.running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                    {busy === `r-${w.key}` || w.running ? "Running (up to 4 min)" : "Run now"}
-                  </button>
-                </>
-              )}
-            </div>
+            <WorkerRow key={w.key} w={w} busy={busy} act={act} />
           ))}
         </div>
       </section>
@@ -792,6 +727,89 @@ function FindingCard({
             {busy === `e-${f.id}` && <Loader2 className="h-4 w-4 animate-spin" />}
             {busy === `e-${f.id}` && reviseNow ? "Revising (up to 4 min)" : "Send to the team"}
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WorkerRow({
+  w,
+  busy,
+  act,
+}: {
+  w: OpsData["workers"][number];
+  busy: string | null;
+  act: (k: string, p: Record<string, unknown>, ok?: string) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const running = busy === `r-${w.key}` || w.running;
+  const failed = w.lastStatus === "error";
+  const dot = w.needsNote ? "bg-ocean-600" : !w.enabled ? "bg-ocean-600" : failed ? "bg-coral-400" : "bg-emerald-400";
+  const state = w.needsNote ? "Needs setup" : !w.enabled ? "Off" : failed
+    ? "Last run didn't finish"
+    : `Ran ${when(w.lastRunAt)}${
+        w.lastStatus === "all quiet" ? ", nothing needed you" : w.lastStatus === "capped" ? ", stopped at the monthly cap" : ""
+      }`;
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 px-4 py-3">
+        <button onClick={() => setOpen(!open)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dot}`} aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium text-white">{FROM[w.key] ?? w.name}</span>
+            <span className="block truncate text-xs text-ocean-500">
+              {w.schedule} · {state}
+            </span>
+          </span>
+          <ChevronDown className={`h-4 w-4 shrink-0 text-ocean-500 transition-transform ${open ? "" : "-rotate-90"}`} />
+        </button>
+        {!w.needsNote && (
+          <button
+            role="switch"
+            aria-checked={w.enabled}
+            aria-label={`${FROM[w.key] ?? w.name} ${w.enabled ? "on" : "off"}`}
+            onClick={() => act(`t-${w.key}`, { action: "worker_toggle", key: w.key, enabled: !w.enabled })}
+            disabled={busy !== null}
+            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+              w.enabled ? "bg-emerald-500" : "bg-ocean-700"
+            }`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${w.enabled ? "left-[22px]" : "left-0.5"}`} />
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="space-y-3 px-4 pb-4 pl-[38px] text-sm">
+          <p className="text-ocean-200">{w.about.job}</p>
+          {w.needsNote ? (
+            <p className="rounded-lg bg-sky-500/10 px-3 py-2 text-xs text-sky-200">{w.needsNote}</p>
+          ) : (
+            <>
+              <p className="text-xs text-ocean-400">
+                {w.enabled ? w.about.whenOn : `While it's off: ${w.about.whenOff}`}
+              </p>
+              {w.lastResult && (
+                <p className="text-xs text-ocean-300">
+                  <span className="text-ocean-500">Last result: </span>
+                  {w.lastResult}
+                </p>
+              )}
+              <p className="text-xs text-ocean-500">
+                {dollars(w.spentCents)} this month · {w.filed30} {w.filed30 === 1 ? "finding" : "findings"} in 30 days, {w.acted30} acted on
+              </p>
+              <button
+                onClick={() => act(`r-${w.key}`, { action: "run", key: w.key })}
+                disabled={busy !== null || w.running}
+                className="inline-flex items-center gap-1.5 rounded-full border border-ocean-700 px-3 py-1 text-xs text-ocean-200 hover:border-emerald-500 hover:text-white disabled:opacity-50"
+              >
+                {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                {running ? "Running (up to 4 min)" : "Run now"}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
