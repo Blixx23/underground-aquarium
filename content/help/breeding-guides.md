@@ -71,7 +71,7 @@ Once a club officer approves it, it appears on that species' guide page, credite
 There's no button to un-share a report after it's published. Email support@undergroundaquarium.com with the species and your club, and we'll help.
 
 ## Why is there no guide for my fish?
-Written guides cover the species on the Society's point list. If your fish isn't on the list, there's no guide yet, but its care page still shows how it breeds under **Breeding**. You can also share how you bred it in the [forums](/forums) or with a clip on the species page (see [Breeding videos](/help/breeding-videos)).
+Written guides started with the species on the Society's point list, and more species are being added (they're listed under **More species** on the main page, without points or a certificate). Color and fin forms, like Electric Blue Ram, show their parent species' guide. If your fish has no guide yet, its care page still shows how it breeds under **Breeding**. You can also share how you bred it in the [forums](/forums) or with a clip on the species page (see [Breeding videos](/help/breeding-videos)).
 
 ## Common problems
 

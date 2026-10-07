@@ -1,10 +1,14 @@
 import { tokenizeOwnNumbers, type TokenRow } from "@/lib/data/tokens";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { draftGuide } from "@/lib/breeding/draftGuide";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { thankForSubmission } from "@/lib/species/thankYou";
+
+// Long enough for the breeding guide draft that runs after a new species is added.
+export const maxDuration = 300;
 
 /**
  * Admin decision on a species request. The database does the work (creates
@@ -86,6 +90,18 @@ export async function POST(req: Request) {
     }
   }
 
+  // A new full species gets a breeding guide drafted and fact-checked in the
+  // background, waiting on Admin, Breeding guides for Chris's yes. Varieties
+  // show their parent's guide instead.
+  let guideDrafting = false;
+  if (action === "create" && result.slug && !body.parentSlug && process.env.ANTHROPIC_API_KEY) {
+    const slug = result.slug;
+    guideDrafting = true;
+    after(async () => {
+      await draftGuide(slug).catch(() => undefined);
+    });
+  }
+
   let bubbles = 0;
   if (action === "dismiss") {
     bubbles = await thankForSubmission({
@@ -104,5 +120,5 @@ export async function POST(req: Request) {
   revalidatePath("/tank-builder");
   if (result.slug) revalidatePath(`/species/${result.slug}`);
 
-  return NextResponse.json({ ok: true, slug: result.slug ?? null, bubbles });
+  return NextResponse.json({ ok: true, slug: result.slug ?? null, bubbles, guideDrafting });
 }

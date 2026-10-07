@@ -47,10 +47,13 @@ export default function BreedingSnapshot({
   speciesName,
   reports,
   variant = "profile",
+  sameAs,
 }: {
   guide: Guide;
   speciesName: string;
   reports: number;
+  /** On a variant's page: the parent species whose guide this is. */
+  sameAs?: string;
   /** "guide": the summary at the top of the guide itself, so no link back to it. */
   variant?: "profile" | "guide";
 }) {
@@ -113,6 +116,12 @@ export default function BreedingSnapshot({
           </span>
         )}
       </div>
+
+      {sameAs && (
+        <p className="mt-1 text-sm text-ocean-300">
+          {speciesName} is a form of the {sameAs} and is bred the same way, so this is the {sameAs} guide.
+        </p>
+      )}
 
       {/* How hard: the six Society classes, this fish's lit up. */}
       {klass && (
@@ -201,7 +210,7 @@ export default function BreedingSnapshot({
             href={`/breeding/${guide.slug}`}
             className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-ocean-950 hover:bg-emerald-400"
           >
-            Full breeding guide <ArrowRight className="h-4 w-4" />
+            {sameAs ? `${sameAs} breeding guide` : "Full breeding guide"} <ArrowRight className="h-4 w-4" />
           </Link>
           {reports > 0 && (
             <span className="inline-flex items-center gap-1.5 text-sm text-ocean-300">

@@ -1,0 +1,20 @@
+/** Labels for the quick-facts box, in display order. */
+export const FACT_LABELS: [string, string][] = [
+  ["method", "How they breed"],
+  ["sexing", "Telling the sexes apart"],
+  ["group", "Breeding group"],
+  ["breeding_tank", "Breeding tank"],
+  ["conditioning", "Conditioning"],
+  ["trigger", "What triggers spawning"],
+  ["spawn", "Spawn size"],
+  ["eggs", "Eggs or pregnancy"],
+  ["fry", "Fry"],
+  ["first_foods", "First foods"],
+  ["grow_out", "Growing out"],
+  ["parents", "Parents"],
+  ["light", "Light"],
+  ["co2", "CO2"],
+  ["substrate", "Substrate"],
+  ["timeline", "How fast"],
+  ["first_steps", "First steps"],
+];

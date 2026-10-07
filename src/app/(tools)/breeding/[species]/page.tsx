@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     const url = `/breeding/${guide.slug}`;
     // Fish guides share their certificate preview; plants the general card.
     const image =
-      guide.program === "bap"
+      guide.program === "bap" && guide.awardId
         ? [{ url: `/api/breeding/certificate/${guide.slug}`, width: 1200, height: 927, alt: `Certified ${guide.name} Breeder certificate (sample)` }]
         : [{ url: `/api/share-card?path=${encodeURIComponent(url)}`, width: 1200, height: 630, alt: guide.seoTitle }];
     return {
@@ -155,7 +155,7 @@ export default async function BreedingGuidePage({ params }: Params) {
       author: { "@type": "Organization", name: "Underground Aquarium", url: SITE },
       publisher: { "@type": "Organization", name: "Underground Aquarium", url: SITE, logo: { "@type": "ImageObject", url: `${SITE}/icon-512.png` } },
       ...(guide.updatedAt ? { dateModified: guide.updatedAt } : {}),
-      ...(guide.program === "bap" ? { image: `${SITE}/api/breeding/certificate/${guide.slug}` } : {}),
+      ...(guide.program === "bap" && guide.awardId ? { image: `${SITE}/api/breeding/certificate/${guide.slug}` } : {}),
     },
     {
       "@context": "https://schema.org",
@@ -226,7 +226,7 @@ export default async function BreedingGuidePage({ params }: Params) {
         <nav aria-label="In this guide" className="-mx-6 mt-5 flex snap-x scroll-px-6 gap-1.5 overflow-x-auto px-6 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
           {[
             ...guide.sections.map((sec) => [sectionId(sec.heading), sec.heading.replace(/:.*$/, "")]),
-            ["certificate", "Get certified"],
+            ...(guide.awardId ? [["certificate", "Get certified"]] : []),
             ...(guide.faq.length ? [["questions", "Questions"]] : []),
           ].map(([id, label]) => (
             <a
@@ -321,6 +321,7 @@ export default async function BreedingGuidePage({ params }: Params) {
           </aside>
         )}
 
+        {guide.awardId && (
         <div id="certificate" className="mt-8 scroll-mt-24">
           <BreederCta
             slug={guide.slug}
@@ -331,6 +332,7 @@ export default async function BreedingGuidePage({ params }: Params) {
             awardId={guide.awardId}
           />
         </div>
+        )}
 
         {easier.length > 0 && (
           <section className="mt-10 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-5">

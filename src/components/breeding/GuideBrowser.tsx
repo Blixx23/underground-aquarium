@@ -201,11 +201,12 @@ export default function GuideBrowser({ guides, children }: { guides: GuideCard[]
   const byPoints = useMemo(() => {
     const m = new Map<number, { g: GuideCard; s: number }[]>();
     for (const r of shown) {
-      const p = r.g.points ?? 0;
+      // -1: guides for species not on the Society's points list, shown last.
+      const p = r.g.points ?? -1;
       m.set(p, [...(m.get(p) ?? []), r]);
     }
     for (const list of m.values()) list.sort((a, b) => b.s - a.s || a.g.name.localeCompare(b.g.name));
-    return [...m.entries()].sort((a, b) => a[0] - b[0]);
+    return [...m.entries()].sort((a, b) => (a[0] < 0 ? 1 : b[0] < 0 ? -1 : a[0] - b[0]));
   }, [shown]);
 
   // A strong name match goes straight to the top so Enter can open it.
@@ -361,10 +362,11 @@ export default function GuideBrowser({ guides, children }: { guides: GuideCard[]
               <section key={points} id={c ? `class-${c.letter.toLowerCase()}` : `points-${points}`} className="scroll-mt-52 sm:scroll-mt-28">
                 <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <h2 className="font-display text-2xl text-white">
-                    {c ? `Class ${c.letter}` : `${points} points`}
-                    <span className="ml-2 text-base text-amber-300">{points} points</span>
+                    {c ? `Class ${c.letter}` : points < 0 ? "More species" : `${points} points`}
+                    {points >= 0 && <span className="ml-2 text-base text-amber-300">{points} points</span>}
                   </h2>
                   {c && <p className="text-sm text-ocean-400">{c.blurb}</p>}
+                  {points < 0 && <p className="text-sm text-ocean-400">Not on the Society&apos;s points list.</p>}
                 </div>
                 <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {list.map(({ g }) => {

@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Mail, Megaphone, Store, Wrench, Flag, Fish, BookOpen,
   GraduationCap, Droplets, MessageSquare, Users, Camera, Clapperboard, BarChart3, LifeBuoy,
-  CalendarDays, MapPin, Warehouse, Bot,
+  CalendarDays, MapPin, Warehouse, Bot, Egg,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SOCIETY_CLUB_PATH, SOCIETY_NAME } from "@/lib/config";
@@ -167,6 +167,11 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     href: "/admin/species-videos", label: "Breeding videos", sub: "Member clips to review", group: "content", Icon: Clapperboard,
     about: "Members' courtship, spawning, egg and fry clips to review.",
     queues: [{ label: "Breeding videos", table: "species_videos", where: [["status", "pending"]] }],
+  },
+  {
+    href: "/admin/breeding-guides", label: "Breeding guides", sub: "AI drafts to approve", group: "content", Icon: Egg,
+    about: "Breeding guides the AI drafted and fact-checked for new species, waiting for a yes before they go live.",
+    queues: [{ label: "Breeding guide drafts", table: "breeding_guides", where: [["is_published", false]], since: "drafted_at" }],
   },
   {
     href: "/admin/glossary", label: "Glossary", sub: "Suggested terms", group: "content", Icon: BookOpen,

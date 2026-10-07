@@ -136,3 +136,6 @@ Only site admins (profiles marked as admin). The database function that does the
 **The species page still shows "not found" after adding.** The page is refreshed when you add it, so reload with a hard refresh. If the add failed, the card would still be in the queue with an error under it.
 
 **Similar in library shows nothing, but the fish is already there.** Matching only compares whole words longer than two letters. Search the library in the **Another name for…** panel, or open the species list, before adding a duplicate.
+
+## Does a new species get a breeding guide?
+Yes. After you add a new full species, the AI writes and fact-checks a breeding guide in the background and puts it on [Breeding guide drafts](/admin/help/breeding-guide-drafts) for your yes. A variety doesn't need one: its page shows the parent species' guide.

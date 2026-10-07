@@ -82,7 +82,9 @@ ${MODERATION_QUEUES}
   species_suggestions (member species requests; status, ai_review = the AI check's verdict, ai_reviewed_at),
   glossary_terms, public_breeding_guides (members' approved spawn reports),
   breeding_guides (written breeding guide per Society point-list species; slug, award_species_id -> club_award_species,
-  species_slug, glossary_slug, seo_title, summary, facts, sections, faq, is_published).
+  species_slug, glossary_slug, seo_title, summary, facts, sections, faq, is_published). Guides for species not on the
+  list have award_species_id null. AI drafts for new species sit with is_published false (review_notes, drafted_at,
+  draft_cost_cents) until Chris approves them on /admin/breeding-guides; varieties show their parent's guide.
 - Text in species, breeding_guides, glossary_terms and course_sections can hold live numbers like {{temp}}, {{neon-tetra.ph}}
   or {{fact.nitrate_ok}}; the site fills them from the species rows and src/lib/data/facts.ts. Varieties (entry_type
   variety/form) take their water ranges and behavior from parent_slug automatically.

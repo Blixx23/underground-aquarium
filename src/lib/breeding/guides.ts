@@ -121,6 +121,8 @@ export async function loadGuideCards(): Promise<GuideCard[]> {
   return rows
     .map((r) => {
       const card = toCard(r, r.award_species_id ? awards.get(r.award_species_id) : undefined);
+      // Guides for species not on the Society list take their name from the species page.
+      if (!r.award_species_id && r.species_slug && names.get(r.species_slug)?.[0]) card.name = names.get(r.species_slug)![0];
       card.aliases = (r.species_slug ? names.get(r.species_slug) ?? [] : []).filter((n) => n && n !== card.name);
       card.summary = fillTokens(card.summary, r.species_slug ? tokenRows.get(r.species_slug) : null, tokenRows);
       return card;
@@ -138,6 +140,18 @@ export async function loadGuide(slug: string): Promise<Guide | null> {
   const others = await loadTokenRows(g.species_slug ? [...texts, `{{${g.species_slug}.name}}`] : texts);
   const self = g.species_slug ? others.get(g.species_slug) ?? null : null;
   const card = toCard(g, g.award_species_id ? awards.get(g.award_species_id) : undefined);
+  if (!g.award_species_id && g.species_slug) {
+    const { data: sp } = await supabasePublic
+      .from("species")
+      .select("common_name, scientific_name, group_name")
+      .eq("slug", g.species_slug)
+      .maybeSingle();
+    if (sp) {
+      card.name = sp.common_name as string;
+      card.scientific = (sp.scientific_name as string | null) ?? null;
+      card.category = (sp.group_name as string | null) ?? null;
+    }
+  }
   return {
     ...card,
     summary: fillTokens(card.summary, self, others),
@@ -171,9 +185,11 @@ export async function guideForSpecies(speciesSlug: string): Promise<{ slug: stri
  * any group. Easiest-class guides suggest other easy ones in their group.
  */
 export function easierThan(guide: GuideCard, all: GuideCard[], n = 4): GuideCard[] {
-  const pts = guide.points ?? 999;
   const others = all.filter((g) => g.slug !== guide.slug && g.program === guide.program && g.points != null);
   const sameGroup = others.filter((g) => g.category === guide.category);
+  // Not on the points list: suggest the easiest guides in the same group.
+  if (guide.points == null) return [...sameGroup].sort((a, b) => (a.points ?? 0) - (b.points ?? 0)).slice(0, n);
+  const pts = guide.points;
   const lowest = CLASS_LADDER[0].points;
   const pool =
     pts <= lowest
@@ -191,26 +207,7 @@ export function easierThan(guide: GuideCard, all: GuideCard[], n = 4): GuideCard
   return picked;
 }
 
-/** Labels for the quick-facts box, in display order. */
-export const FACT_LABELS: [string, string][] = [
-  ["method", "How they breed"],
-  ["sexing", "Telling the sexes apart"],
-  ["group", "Breeding group"],
-  ["breeding_tank", "Breeding tank"],
-  ["conditioning", "Conditioning"],
-  ["trigger", "What triggers spawning"],
-  ["spawn", "Spawn size"],
-  ["eggs", "Eggs or pregnancy"],
-  ["fry", "Fry"],
-  ["first_foods", "First foods"],
-  ["grow_out", "Growing out"],
-  ["parents", "Parents"],
-  ["light", "Light"],
-  ["co2", "CO2"],
-  ["substrate", "Substrate"],
-  ["timeline", "How fast"],
-  ["first_steps", "First steps"],
-];
+export { FACT_LABELS } from "@/lib/breeding/factLabels";
 
 /** "Class C · 15 points", or just the points when off the ladder. */
 export function classLabel(points: number | null): string {

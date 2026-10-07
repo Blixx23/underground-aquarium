@@ -194,7 +194,11 @@ export default async function SpeciesDetailPage({ params }: Params) {
     .select("species_slug", { count: "exact", head: true })
     .eq("species_slug", s.slug);
   // The written breeding guide, if this fish is on the Society's list.
-  const breedingGuide = await guideForSpecies(s.slug as string);
+  // A color or fin form is bred exactly like its parent, so it shows the parent's guide.
+  const ownGuide = await guideForSpecies(s.slug as string);
+  const isForm = ["variety", "form"].includes(String(s.entry_type ?? ""));
+  const parentGuide = !ownGuide && parent && isForm ? await guideForSpecies(parent.slug) : null;
+  const breedingGuide = ownGuide ?? parentGuide;
   const hasBreedingGuide = !!breedingGuide || (breedingReports ?? 0) > 0;
   // Its highlights show right here; the full guide is one tap away.
   const snapshot = breedingGuide ? await loadGuide(breedingGuide.slug) : null;
@@ -511,7 +515,12 @@ export default async function SpeciesDetailPage({ params }: Params) {
         <CrossbreedingNote name={s.common_name as string} crosses={cross.crosses} bredFrom={cross.bredFrom} names={crossNameMap} />
 
         {snapshot ? (
-          <BreedingSnapshot guide={snapshot} speciesName={s.common_name as string} reports={breedingReports ?? 0} />
+          <BreedingSnapshot
+            guide={snapshot}
+            speciesName={s.common_name as string}
+            reports={breedingReports ?? 0}
+            sameAs={parentGuide && parent ? parent.common_name : undefined}
+          />
         ) : hasBreedingGuide && (
           <Link
             href={`/breeding/${breedingGuide?.slug ?? s.slug}`}
