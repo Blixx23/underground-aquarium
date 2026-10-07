@@ -1,5 +1,6 @@
 import "server-only";
 import { callClaude, costCents } from "@/lib/ops/claude";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { OPS_MODELS } from "@/lib/ops/config";
 import { findCandidates, libraryText, type LibraryEntry } from "@/lib/species/library";
 import { SPECIES_FIELDS, SPECIES_OPTIONS, type AiReview, type AiVerdict, type SpeciesField } from "@/lib/species/fields";
@@ -12,7 +13,7 @@ import { SPECIES_FIELDS, SPECIES_OPTIONS, type AiReview, type AiVerdict, type Sp
  * never acts on its own; the admin still presses the button.
  */
 
-const VERDICTS: AiVerdict[] = ["already_listed", "another_name", "too_broad", "add_new", "turn_down", "unsure"];
+const VERDICTS: AiVerdict[] = ["already_listed", "another_name", "too_broad", "add_variant", "add_new", "turn_down", "unsure"];
 
 function systemPrompt(library: LibraryEntry[], groups: string[]): string {
   const opts = Object.entries(SPECIES_OPTIONS)
@@ -37,18 +38,31 @@ corals, no plants, no pond-only or non-aquarium animals.
   "cichlid", "shrimp") rather than one species, and the library has species under it. Turn down kindly, name a few
   of the matching library species, and invite them to request the exact species if theirs isn't listed. If the
   library has an entry whose type is a group or genus page for exactly that name, use already_listed instead.
-- add_new: a real freshwater or brackish aquarium species (or a distinct, established variant) that is not in the
-  library under any name. Fill in the care form.
+- add_variant: an established color, fin or line-bred form of a species that IS in the library (albino, gold,
+  electric blue, longfin, veil or "angel" fins, balloon, and so on) that hobbyists buy and search for by that name,
+  and the library doesn't list yet. It gets its own page under the parent species and copies the parent's care
+  numbers. Give parent_slug (the base species, not another variant). Write species.common_name (the variant's proper
+  name, in title case), species.summary and species.body describing what's different about this form; leave the care
+  numbers out unless this form really differs (for example a longfin form needing gentler tankmates).
+- add_new: a real freshwater or brackish aquarium species that is not in the library under any name. Fill in the care
+  form.
 - turn_down: saltwater, plant, made-up or unidentifiable name, not kept in aquariums, or spam.
 - unsure: you can't tell with reasonable confidence. Say exactly what the admin should check.
 
 Check spelling carefully: members misspell (corydora, pleco, cardnial tetra) and use plurals. Check the scientific
 name, genus, akas, former names and trade codes (L-numbers, C-numbers), not only common names. A species that was
-renamed (for example a genus change) is the same fish. Color forms and line-bred variants of one species are usually
-variants of that species, not new species: if the base species is in the library, prefer another_name for a plain
-alias, or add_new only for a well established, distinct variant, and say "variant of <slug>" in double_check.
+renamed (for example a genus change) is the same fish. Color forms and line-bred variants are not new species: if
+the base species is in the library, use add_variant for an established, recognizable form, or another_name when the
+name is just a different label for a form or species already listed. Never use add_new for a variant.
 
-## The care form (add_new only)
+## Make the call
+Chris wants a recommendation, not homework. Pick the verdict you would act on and say so in "recommendation": one
+plain sentence that starts with what to do, for example "Add it as a variant of German Blue Ram." or "Add 'Angel
+Veil Ram' as another name for German Blue Ram." or "Turn it down: it's a saltwater fish." Use unsure only when you
+truly can't identify the fish, and then the recommendation says what to look up. double_check is only for specific
+facts you aren't sure of (a number, a scientific name), never "decide whether to add it".
+
+## The care form (add_new; for add_variant only the fields listed above)
 group_name must be one of: ${groups.join(", ")}
 Pick each choice field from its list exactly:
 ${opts}
@@ -63,7 +77,7 @@ member_reason: ALWAYS write it, whatever the verdict. It is what the member sees
 down, so write it as that reply: one or two short, friendly, plain sentences, no em dashes, naming library fish by
 their common names. Examples: "That's another name for the Panda Cory, which is already in the library." "Cory cats
 are a whole group; we have 30 of them listed. Request the exact species if yours isn't there." "That's a saltwater
-fish, and the library is freshwater only." For add_new, say kindly that it isn't being added right now.
+fish, and the library is freshwater only." For add_new and add_variant, say kindly that it isn't being added right now.
 summary is for the admin: two to four sentences. No em dashes anywhere.
 
 ## Answer
@@ -73,7 +87,8 @@ Reply with ONLY a JSON object, no other text:
  "identified_as": {"common_name": "...", "scientific_name": "..."},
  "summary": "...",
  "matches": [{"slug": "...", "relation": "same species|variant|same genus|same group|related", "why": "..."}],
- "alias_slug": "... or null", "member_reason": "...",
+ "recommendation": "...",
+ "alias_slug": "... or null", "parent_slug": "... or null", "member_reason": "...",
  "species": {field: value, ...} or null,
  "double_check": ["..."]}
 Only use slugs that appear in the library below. List at most 5 matches, most relevant first.
@@ -192,26 +207,57 @@ Decide, then answer with the JSON object only.`;
       relation: str(m.relation, 40) ?? "related",
       why: str(m.why, 200) ?? "",
     }));
-  const aliasSlug = typeof raw.alias_slug === "string" && bySlug.has(raw.alias_slug) ? raw.alias_slug : null;
+  const sameSpecies = matches.find((m) => m.relation === "same species")?.slug ?? null;
+  const validSlug = (v: unknown) => (typeof v === "string" && bySlug.has(v) ? v : null);
   const id = (raw.identified_as ?? {}) as Record<string, unknown>;
   const doubleCheck = (Array.isArray(raw.double_check) ? raw.double_check : [])
     .map((x) => str(x, 240))
     .filter((x): x is string => !!x)
     .slice(0, 6);
 
-  // An alias verdict that names a fish not in the library can't be acted on.
-  const finalVerdict: AiVerdict = verdict === "another_name" && !aliasSlug ? "unsure" : verdict;
-  if (finalVerdict !== verdict) doubleCheck.unshift("The AI said 'another name' but didn't point to a fish in the library.");
+  // A name or variant needs a real fish to attach to. Fall back to the match the AI
+  // itself called the same species before giving up.
+  const aliasSlug = verdict === "another_name" ? validSlug(raw.alias_slug) ?? sameSpecies : validSlug(raw.alias_slug);
+  let parentSlug = verdict === "add_variant" ? validSlug(raw.parent_slug) ?? sameSpecies : null;
+  // Point at the base species, not at another variant of it.
+  if (parentSlug && bySlug.get(parentSlug)?.parent_slug && bySlug.has(bySlug.get(parentSlug)!.parent_slug!)) {
+    parentSlug = bySlug.get(parentSlug)!.parent_slug!;
+  }
+  let finalVerdict: AiVerdict = verdict;
+  let confidence: AiReview["confidence"] = raw.confidence === "high" || raw.confidence === "low" ? raw.confidence : "medium";
+  let recommendation = str(raw.recommendation, 300);
+  if ((verdict === "another_name" && !aliasSlug) || (verdict === "add_variant" && !parentSlug)) {
+    finalVerdict = "unsure";
+    confidence = "low";
+    recommendation = "Check it yourself: the AI couldn't point to the fish in the library this belongs to.";
+  }
+
+  // A variant starts from its parent's care page; the AI only writes what's different.
+  let species: AiReview["species"] = null;
+  if (finalVerdict === "add_new") species = cleanSpecies(raw.species, groups);
+  if (finalVerdict === "add_variant" && parentSlug) {
+    const { data: parent } = await supabaseAdmin.from("species").select(SPECIES_FIELDS.join(", ")).eq("slug", parentSlug).maybeSingle();
+    const own = cleanSpecies(raw.species, groups) ?? {};
+    const base = cleanSpecies(parent, groups) ?? {};
+    // The parent's name and write-up describe the parent, not this form.
+    delete base.common_name;
+    delete base.summary;
+    delete base.body;
+    delete own.scientific_name;
+    species = { ...base, ...own };
+  }
 
   return {
     verdict: finalVerdict,
-    confidence: raw.confidence === "high" || raw.confidence === "low" ? raw.confidence : "medium",
+    confidence,
     identified_as: { common_name: str(id.common_name, 120), scientific_name: str(id.scientific_name, 120) },
     summary: str(raw.summary, 900) ?? "",
+    recommendation,
     matches,
     alias_slug: aliasSlug,
+    parent_slug: parentSlug,
     member_reason: str(raw.member_reason, 300),
-    species: finalVerdict === "add_new" ? cleanSpecies(raw.species, groups) : null,
+    species,
     double_check: doubleCheck,
     model,
     cost_cents: Math.round(cents * 10) / 10,

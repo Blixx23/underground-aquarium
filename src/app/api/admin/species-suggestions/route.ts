@@ -17,6 +17,8 @@ export async function POST(req: Request) {
     action?: string;
     species?: Record<string, unknown> | null;
     existingSlug?: string | null;
+    /** Create only: the library fish this is a color or fin form of. */
+    parentSlug?: string | null;
     note?: string | null;
     /** Turn-downs: give the thank-you bubbles (off for spam). */
     thanks?: boolean;
@@ -74,6 +76,16 @@ export async function POST(req: Request) {
   if (result.status === "added" && result.suggester_id) {
     await awardBubbles(result.suggester_id, "species_approved", `species_sugg_${id}`);
   }
+  // A variant hangs under its parent: the database copies the parent's care
+  // numbers onto it and keeps them in step from then on (step 76 triggers).
+  if (action === "create" && result.slug && typeof body.parentSlug === "string" && body.parentSlug !== result.slug) {
+    const { data: parent } = await supabaseAdmin.from("species").select("slug").eq("slug", body.parentSlug).maybeSingle();
+    if (parent) {
+      await supabaseAdmin.from("species").update({ entry_type: "variety", parent_slug: parent.slug }).eq("slug", result.slug);
+      revalidatePath(`/species/${parent.slug}`);
+    }
+  }
+
   let bubbles = 0;
   if (action === "dismiss") {
     bubbles = await thankForSubmission({

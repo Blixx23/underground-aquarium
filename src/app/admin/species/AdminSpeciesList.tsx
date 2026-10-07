@@ -62,10 +62,42 @@ const VERDICT_LABEL: Record<AiReview["verdict"], { text: string; tone: string }>
   already_listed: { text: "Already in the library", tone: "border-sky-400/40 bg-sky-500/10 text-sky-200" },
   another_name: { text: "Another name for a fish we have", tone: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200" },
   too_broad: { text: "Too broad: a group, not one species", tone: "border-amber-400/40 bg-amber-400/10 text-amber-200" },
+  add_variant: { text: "New variant of a fish we have", tone: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200" },
   add_new: { text: "New: add it to the library", tone: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200" },
   turn_down: { text: "Turn it down", tone: "border-coral-400/40 bg-coral-500/10 text-coral-300" },
   unsure: { text: "Not sure: check it yourself", tone: "border-white/15 bg-white/5 text-ocean-200" },
 };
+
+/** What the AI recommends, in one sentence. Older checks have no sentence, so it's built from the verdict. */
+function recommendationText(ai: AiReview, nameOf: (slug: string | null | undefined) => string): string {
+  if (ai.recommendation) return ai.recommendation;
+  switch (ai.verdict) {
+    case "another_name":
+      return `Add this name to ${nameOf(ai.alias_slug)}.`;
+    case "add_variant":
+      return `Add it as a variant of ${nameOf(ai.parent_slug)}.`;
+    case "add_new":
+      return "Add it to the library as a new species.";
+    case "unsure":
+      return "Check it yourself; see the notes below.";
+    default:
+      return "Turn it down with the reply below.";
+  }
+}
+
+/** The AI button says exactly what it sets up. */
+function actionLabel(ai: AiReview, nameOf: (slug: string | null | undefined) => string): string {
+  switch (ai.verdict) {
+    case "another_name":
+      return `Add the name to ${nameOf(ai.alias_slug)}`;
+    case "add_variant":
+      return `Add as a variant of ${nameOf(ai.parent_slug)}`;
+    case "add_new":
+      return "Add it to the library";
+    default:
+      return "Turn it down with this reply";
+  }
+}
 
 function whenLabel(iso: string | null): string {
   if (!iso) return "";
@@ -127,8 +159,10 @@ function Request({
   const [note, setNote] = useState("");
   const [thanks, setThanks] = useState(true);
   const [ai, setAi] = useState<AiReview | null>(s.ai);
-  const [aiBusy, setAiBusy] = useState(!s.ai);
+  const [aiBusy, setAiBusy] = useState(!s.ai?.recommendation);
   const [aiError, setAiError] = useState<string | null>(null);
+  // Set when the new entry is a color or fin form of a library fish.
+  const [parentSlug, setParentSlug] = useState<string | null>(null);
   const [f, setF] = useState<Record<string, string>>({
     common_name: s.common_name,
     scientific_name: s.scientific_name ?? "",
@@ -168,8 +202,10 @@ function Request({
   }
 
   // Check every request that hasn't been checked yet, as soon as the page opens.
+  // Checks from before recommendations existed are redone so every card gets one.
   useEffect(() => {
     if (!s.ai) runAi(false);
+    else if (!s.ai.recommendation) runAi(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -179,14 +215,20 @@ function Request({
     if (ai.verdict === "another_name" && ai.alias_slug) {
       setAliasSlug(ai.alias_slug);
       setMode("alias");
-    } else if (ai.verdict === "add_new") {
+    } else if (ai.verdict === "add_new" || (ai.verdict === "add_variant" && ai.parent_slug)) {
       setF((cur) => ({ ...cur, ...(ai.species ?? {}) }));
+      setParentSlug(ai.verdict === "add_variant" ? ai.parent_slug ?? null : null);
       setMode("create");
     } else if (ai.member_reason) {
       setNote(ai.member_reason);
       setMode("dismiss");
     }
   }
+
+  const nameOf = (slug: string | null | undefined) =>
+    (slug && (library.find((x) => x.slug === slug)?.common_name ?? ai?.matches.find((m) => m.slug === slug)?.common_name)) ||
+    slug ||
+    "that fish";
 
   // Alias choices: the name matches plus any fish the AI pointed to.
   const aliasChoices = useMemo(() => {
@@ -238,6 +280,7 @@ function Request({
           action,
           species,
           existingSlug: action === "alias" ? aliasSlug : null,
+          parentSlug: action === "create" ? parentSlug : null,
           note: note.trim() || null,
           thanks: action === "dismiss" ? thanks : undefined,
         }),
@@ -355,7 +398,11 @@ function Request({
                 </span>
               )}
             </div>
-            {ai.summary && <p className="text-ocean-200">{ai.summary}</p>}
+            <p className="rounded-lg bg-violet-500/10 px-3 py-2 text-[15px] font-medium text-white">
+              <span className="text-violet-200">Recommendation: </span>
+              {recommendationText(ai, nameOf)}
+            </p>
+            {ai.summary && <p className="text-ocean-300">{ai.summary}</p>}
             {ai.matches.length > 0 && (
               <ul className="space-y-0.5 text-xs text-ocean-300">
                 {ai.matches.map((m) => (
@@ -385,13 +432,13 @@ function Request({
               <button
                 type="button"
                 onClick={applySuggestion}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-violet-500/80 px-4 py-1.5 text-xs font-semibold text-white hover:bg-violet-500"
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-violet-500/80 px-4 py-1.5 text-sm font-semibold text-white hover:bg-violet-500"
               >
-                <Sparkles className="h-3.5 w-3.5" /> Use this
+                <Sparkles className="h-4 w-4" /> {actionLabel(ai, nameOf)}
               </button>
             )}
             <p className="text-[11px] text-ocean-600">
-              Suggestion only. Nothing happens until you press the button below. Cost about {ai.cost_cents.toFixed(1)}¢.
+              This opens the form filled in for you to check. Nothing is saved until you press the green button. Cost about {ai.cost_cents.toFixed(1)}¢.
             </p>
           </div>
         ) : null}
@@ -426,6 +473,15 @@ function Request({
 
       {mode === "create" && (
         <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          {parentSlug && (
+            <p className="flex flex-wrap items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+              Adding as a variant of {nameOf(parentSlug)}. It gets its own page under that fish and keeps the same care
+              numbers when they change.
+              <button type="button" onClick={() => setParentSlug(null)} className="text-xs text-ocean-300 underline hover:text-white">
+                Add as its own species instead
+              </button>
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             {field("common_name", "Common name")}
             {field("scientific_name", "Scientific name")}

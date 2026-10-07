@@ -53,7 +53,7 @@ export const SPECIES_FIELDS = [
 export type SpeciesField = (typeof SPECIES_FIELDS)[number];
 
 /** What the AI check decided about a species request. */
-export type AiVerdict = "already_listed" | "another_name" | "too_broad" | "add_new" | "turn_down" | "unsure";
+export type AiVerdict = "already_listed" | "another_name" | "too_broad" | "add_variant" | "add_new" | "turn_down" | "unsure";
 
 export type AiReview = {
   verdict: AiVerdict;
@@ -66,9 +66,13 @@ export type AiReview = {
   matches: { slug: string; common_name: string; relation: string; why: string }[];
   /** For another_name: the fish to add the name to. */
   alias_slug: string | null;
+  /** For add_variant: the library species it's a color or fin form of. */
+  parent_slug?: string | null;
+  /** One plain sentence: what the AI recommends Chris does. Missing on checks from before Oct 2026. */
+  recommendation?: string | null;
   /** For already_listed, too_broad, turn_down: the reason the member will see. */
   member_reason: string | null;
-  /** For add_new: the filled-in care form. */
+  /** For add_new and add_variant: the filled-in care form. */
   species: Partial<Record<SpeciesField, string>> | null;
   /** Anything the admin should double-check. */
   double_check: string[];

@@ -75,17 +75,18 @@ The database adds the member's name to that fish's other names, marks the reques
 ## What does the AI check do?
 Every request that hasn't been checked yet gets an **AI check** box, and the check starts on its own as soon as you open Admin, Species. It does not run before you open the page, and its verdict isn't part of the morning brief, so open the page to see it. It reads the member's name, scientific name and note, then checks them against the whole species library: common names, scientific names, other names, former names, trade codes, groups and variants. It catches misspellings and plurals ("Corydora" for Corydoras) and hobby nicknames ("pleco", "cory").
 
-It gives one verdict, with how confident it is (high, medium or low):
+It starts with a **Recommendation**: one plain sentence saying what it would do, like "Add it as a variant of German Blue Ram." Under that is its verdict, with how confident it is (high, medium or low):
 - **Already in the library**: the fish and that name are already there.
 - **Another name for a fish we have**: the fish is there but this name isn't recorded yet.
 - **Too broad: a group, not one species**: they asked for a whole group like "Corydora" or "tetra" and the library has species in it.
+- **New variant of a fish we have**: an established color or fin form (albino, gold, longfin, veil and so on) of a species that's in the library. It gets its own page under the parent fish and copies the parent's care numbers.
 - **New: add it to the library**: a real freshwater species that isn't listed under any name.
 - **Turn it down**: saltwater, a plant, made up, or not an aquarium animal.
-- **Not sure: check it yourself**: with what to check.
+- **Not sure: check it yourself**: only when it really can't identify the fish, with what to look up. It always shows low confidence.
 
 It also shows what it thinks they meant, up to 5 library fish that matter (each links to its species page), anything to double-check, and what that check actually cost.
 
-**Use this** puts the suggestion into the right form: picks the fish for **Another name for**, fills in the whole care sheet for **Add to library**, or writes the reason for **Turn down**. Nothing is sent until you check it and press the button. **Re-check** runs it again. Each check is saved, so it only runs once per request (that needs step70 SQL; without it the check runs again each time the page opens).
+The purple button says exactly what it sets up: **Add the name to [fish]**, **Add as a variant of [fish]**, **Add it to the library**, or **Turn it down with this reply**. It opens the right form already filled in. For a variant, the form says "Adding as a variant of [fish]", with a link to add it as its own species instead. Nothing is sent until you check it and press the button. **Re-check** runs it again. Each check is saved, so it only runs once per request (that needs step70 SQL; without it the check runs again each time the page opens).
 
 The checks run one at a time, so with several requests waiting the later ones take a little longer to appear. If the box says the AI isn't set up, the ANTHROPIC_API_KEY setting is missing in Vercel.
 
@@ -97,7 +98,7 @@ The AI always writes the short reply the member would see if you turn the reques
 
 - Pressing **Turn down** fills the reason box with that reply for you. You can send it as is or edit it.
 - If you pick another ready-made reason or change the text, the purple **AI's reason** chip (with the sparkle icon) at the start of the reasons puts the AI's reply back.
-- Checks done before this change may have no reason for "New: add it to the library" or "Another name for a fish we have" verdicts. Press **Re-check** to get one.
+- Checks saved before recommendations were added are redone automatically when you open the page.
 
 ## How do I turn a species request down?
 1. Press **Turn down**.
