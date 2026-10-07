@@ -9,6 +9,22 @@ import { OPS_SITE } from "@/lib/ops/config";
 
 const UA = "UndergroundAquarium-QA/1.0 (+https://www.undergroundaquarium.com)";
 
+// Vercel's firewall challenges automated requests ("Security Checkpoint"). With
+// Protection Bypass for Automation turned on in the Vercel project, Vercel puts
+// its secret in this variable and the header lets our own checker through.
+function headers(accept: string): Record<string, string> {
+  const h: Record<string, string> = { "user-agent": UA, accept };
+  const secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (secret) h["x-vercel-protection-bypass"] = secret;
+  return h;
+}
+
+/** The firewall's challenge page instead of ours. */
+const CHECKPOINT = /Vercel Security Checkpoint|x-vercel-challenge|vercel\.com\/security/i;
+export const CHECKPOINT_NOTE = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+  ? "Vercel's Security Checkpoint blocked the checker even with the bypass secret. This happens during an active attack; try again later."
+  : "Vercel's Security Checkpoint blocked the checker. Chris needs to turn on Protection Bypass for Automation in Vercel (see Admin help, AI team).";
+
 /** Words that should never show on the live site any more. */
 const RETIRED = [
   /platform fee/i,
@@ -55,7 +71,7 @@ async function get(path: string, timeoutMs = 15_000) {
   for (let i = 0; i < 4; i++) {
     const res = await fetch(url, {
       redirect: "manual",
-      headers: { "user-agent": UA, accept: "text/html" },
+      headers: headers("text/html"),
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
@@ -76,6 +92,7 @@ export async function fetchPage(input: string) {
   if (!path) return { error: "Only pages on undergroundaquarium.com can be checked." };
   try {
     const r = await get(path);
+    if (CHECKPOINT.test(r.html)) return { path, status: r.status, blocked: true, error: CHECKPOINT_NOTE };
     const title = r.html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? "";
     const h1 = textOf(r.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? "");
     const text = textOf(r.html.replace(/<head[\s\S]*?<\/head>/i, ""));
@@ -110,6 +127,7 @@ export async function checkLinks(input: string) {
   const path = toPath(input);
   if (!path) return { error: "Only pages on undergroundaquarium.com can be checked." };
   const page = await get(path);
+  if (CHECKPOINT.test(page.html)) return { path, blocked: true, error: CHECKPOINT_NOTE };
   const links = [
     ...new Set(
       [...page.html.matchAll(/href="([^"#]+)"/g)]
@@ -133,7 +151,7 @@ export async function checkLinks(input: string) {
 
 /** What the sitemap lists: a count per section and a few sample pages from each. */
 export async function listSitePages(section?: string) {
-  const res = await fetch(`${OPS_SITE}/sitemap.xml`, { headers: { "user-agent": UA }, signal: AbortSignal.timeout(20_000) });
+  const res = await fetch(`${OPS_SITE}/sitemap.xml`, { headers: headers("application/xml"), signal: AbortSignal.timeout(20_000) });
   if (!res.ok) return { error: `Sitemap returned ${res.status}` };
   const xml = await res.text();
   const paths = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => toPath(m[1])).filter((p): p is string => Boolean(p));

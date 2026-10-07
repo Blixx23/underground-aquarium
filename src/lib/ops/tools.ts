@@ -138,8 +138,10 @@ export function toolsFor(worker: WorkerDef): ToolDef[] {
               "What Chris's Yes button will do. Chris can edit it first, then answer Yes, No or Something else. " +
               "Use {type:'email', subject, body, store_ids:[fish_stores.id...]} for an email to shops: the site sends one " +
               "personal email per shop, filling {{shop_name}} and {{owner_first_name}}. Use {type:'fix'} for a bug Claude " +
-              "should fix in the code. Use {type:'approve'} for a plan or decision: Yes means go ahead and you'll act on " +
-              "it in your next run. Put the plain-English suggestion in suggested_action either way.",
+              "should fix in the code. Use {type:'approve'} ONLY for a plan the team can carry out itself with what it has " +
+              "(drafting emails, captions or replies, changing what it watches): Yes means go ahead and you'll do it next run. " +
+              "If Chris has to do it himself (a setting in Vercel, Supabase, Resend or GitHub, a phone call, a purchase), leave " +
+              "proposal out and write the steps for him in suggested_action. Put the plain-English suggestion in suggested_action either way.",
             properties: {
               type: { type: "string", enum: ["email", "fix", "approve"] },
               subject: { type: "string" },

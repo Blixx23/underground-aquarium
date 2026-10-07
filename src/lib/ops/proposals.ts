@@ -24,8 +24,10 @@ export function proposalFor(kind: string, raw: unknown, github: boolean): { kind
     if (e.subject && e.body && e.store_ids.length) return { kind: "email", proposal: e };
   }
   if ((p?.type === "fix" || kind === "bug") && github) return { kind: "fix", proposal: { type: "fix" } };
-  if (kind === "bug" || kind === "queue" || kind === "message") return { kind: "done", proposal: null };
-  return { kind: "approve", proposal: { type: "approve" } };
+  // Only a plan the team said it can carry out itself is "approve". Anything else
+  // needs Chris to do it, so Yes means "I've done it".
+  if (p?.type === "approve") return { kind: "approve", proposal: { type: "approve" } };
+  return { kind: "done", proposal: null };
 }
 
 /** Check a proposal from a worker before it's saved. */

@@ -508,11 +508,11 @@ const YES: Record<Answer, { label: string; then: string }> = {
   },
   approve: {
     label: "Yes, go with this",
-    then: "The team carries out the suggestion (as you edited it) on its next run.",
+    then: "The team does this itself on its next run, as you edited it. Nothing for you to do.",
   },
   done: {
-    label: "Yes, it's handled",
-    then: "This needs you to do it. Use Open to go there, then press Yes once it's taken care of.",
+    label: "Yes, I've done it",
+    then: "The team can't do this one for you. Follow the suggestion yourself, then press Yes. The team re-checks it on its next run.",
   },
 };
 

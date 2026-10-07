@@ -35,8 +35,8 @@ Edit the suggestion if you like, then press one of three buttons:
 - **Yes** does it. What that means depends on the card, and the button says which:
   - **Yes, send to N shops**: an email to shops. Edit the subject and text first if you like. The site sends one email per shop from support@, filling in each shop's name and owner's first name, and replies come to your brief address. Shops with no email on file are crossed out and skipped.
   - **Yes, have Claude fix it**: a bug. Claude writes the fix on GitHub (see below).
-  - **Yes, go with this**: a plan or decision. The worker carries out your edited version on its next run.
-  - **Yes, it's handled**: something only you can do (approve a listing, answer a message). Use **Open** to go there, then press Yes once it's done.
+  - **Yes, go with this**: a plan the team can carry out itself, like drafting emails or captions. It does your edited version on its next run, with nothing for you to do.
+  - **Yes, I've done it**: something the team can't do for you (a Vercel or Supabase setting, approving a listing, answering a message). The suggestion says how. Do it, then press Yes, and the team re-checks it on its next run.
 - **No** clears it. Add a reason if you like. The worker is told not to suggest it again.
 - **Something else** sends your note back to the worker ("only the Florida shops", "wait until next month"). Tick **revise it now** to have the worker rework it straight away (a few minutes, a few cents), or leave it for the next run. The card shows your note until the new suggestion arrives.
 
@@ -60,6 +60,7 @@ To stop everything at once, press **Team is on** to pause the whole team.
 Bug findings offer this once the GitHub token is set up. It opens a GitHub issue that mentions @claude. The Claude workflow in the repo writes the fix on a new branch and links a pull request; Vercel builds a preview of that branch. The card shows **Claude is working on a fix** with an **On GitHub** link. Check the preview, merge the pull request on GitHub to deploy it, then press **Done** on the card. Nothing goes live without your merge. Claude is told not to touch payments, sign-in or database structure.
 
 ## What needs setting up?
+- For the Site health check: in Vercel, open the project's **Settings**, then **Deployment Protection**, then **Protection Bypass for Automation**, and create a secret. Then redeploy. Without it, Vercel's Security Checkpoint can block the checker and it can't load any pages. With it, only our own checker gets through; visitors are unaffected.
 - **ANTHROPIC_API_KEY** in Vercel (Settings, Environment Variables), then redeploy. Without it nothing runs and the page shows a warning.
 - **ops_team_setup.sql** run once in the Supabase SQL Editor. Without it the page says the tables are missing.
 - For Claude fixes: **OPS_GITHUB_TOKEN** in Vercel (a fine-grained GitHub token with Issues read and write on the repo), plus the Claude GitHub App installed on the repo and **ANTHROPIC_API_KEY** added as a GitHub Actions secret.
