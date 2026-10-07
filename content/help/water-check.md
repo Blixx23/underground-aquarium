@@ -63,6 +63,11 @@ Water Check uses four levels, and the same colors appear on the result cards, th
 
 Every threshold is listed in [Water test results explained](/help/water-check-readings-explained).
 
+## Why do some readings share one plan?
+Some readings are really one problem. Ammonia, nitrite and nitrate are links in one chain, the nitrogen cycle, and low pH with low KH is one buffering problem. When readings like these show up together, a single card at the top explains how they connect and gives one set of steps that covers all of them, so you never get two fixes that disagree. The individual cards below it then say **Covered in the plan above** instead of their own fix.
+
+The plan always errs on the safe side: matched-temperature, dechlorinated water changes, smaller changes split over a few hours when the tank has gone a long time without one, light feeding, no new fish, no pH chemicals while ammonia is present, and no cleaning of the filter media. It ends with **It's fixed when**, so you know when to go back to normal.
+
 ## How do I read the result cards?
 Anything that isn't healthy gets its own card, sorted most urgent first (red, then amber, then blue). Each card shows:
 
