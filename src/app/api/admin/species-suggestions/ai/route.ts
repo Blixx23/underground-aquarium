@@ -6,7 +6,8 @@ import { reviewSpeciesRequest } from "@/lib/species/aiReview";
 import type { AiReview } from "@/lib/species/fields";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+// Two careful passes that can search the web.
+export const maxDuration = 300;
 
 /**
  * Admin only. The AI check for one species request: { id, force? }.

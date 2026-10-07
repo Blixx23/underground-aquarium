@@ -29,4 +29,4 @@ Then answer:
 A guide for a species that isn't on the Society's points list has no class, points or certificate. On the breeding guides page it's listed under **More species**, after the classes. If the species is on the Society list, the draft also gets a spawn log tip and the certificate shows as usual.
 
 ## Where do the facts come from?
-The AI's own knowledge of the hobby, checked by the second pass. It's told to say when sources disagree or a species is rarely bred, and to give ranges rather than made-up precise numbers. Read the "Worth confirming" list before you publish.
+Both passes search the web first (breeders' reports, specialist societies, care sheets and papers), like the research behind the original guides, and the checker verifies against what it finds. It's told to say when sources disagree or a species is rarely bred, and to give ranges rather than made-up precise numbers. Read the "Worth confirming" list before you publish.

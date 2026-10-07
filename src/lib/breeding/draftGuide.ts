@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { callClaude, costCents } from "@/lib/ops/claude";
+import { callClaude, costCents, finalText } from "@/lib/ops/claude";
 import { OPS_MODELS } from "@/lib/ops/config";
 import { FACT_LABELS } from "@/lib/breeding/factLabels";
 
@@ -29,6 +29,8 @@ const STANDARD = `You write breeding guides for Underground Aquarium, a freshwat
 most trusted source of fishkeeping data. Every guide must be accurate, practical and plain.
 
 Rules:
+- Research first: search the web for how this species is bred (breeders' reports, specialist societies, care
+  sheets, papers) before writing or checking. Base every fact on what you find, not on memory alone.
 - Plain, friendly words a hobbyist understands. Short paragraphs. No em dashes anywhere. No hype.
 - Be accurate above all. Where hobby sources disagree, or the species is rarely bred, say so and give a range, not a
   falsely precise number. Never invent a spawn size, hatch time or method you aren't confident of; say what is
@@ -99,10 +101,11 @@ async function ask(system: string, text: string) {
     tools: [],
     messages: [{ role: "user", content: [{ type: "text", text }] }],
     maxTokens: 8000,
-    timeoutMs: 120_000,
+    timeoutMs: 130_000,
+    // Researched like the original guides: specialist keepers, breeders' reports and papers.
+    webSearch: 5,
   });
-  const out = reply.content.map((b) => (b.type === "text" ? b.text : "")).join("");
-  return { json: parseJson(out), cents: costCents(OPS_MODELS.smart, reply.usage) };
+  return { json: parseJson(finalText(reply.content)), cents: costCents(OPS_MODELS.smart, reply.usage) + (reply.webSearches ?? 0) };
 }
 
 export type DraftResult = { ok: true; slug: string; cents: number } | { ok: false; error: string; cents: number };

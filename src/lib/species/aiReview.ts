@@ -1,5 +1,5 @@
 import "server-only";
-import { callClaude, costCents } from "@/lib/ops/claude";
+import { callClaude, costCents, finalText } from "@/lib/ops/claude";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { OPS_MODELS } from "@/lib/ops/config";
 import { findCandidates, libraryText, type LibraryEntry } from "@/lib/species/library";
@@ -21,7 +21,8 @@ function systemPrompt(library: LibraryEntry[], groups: string[]): string {
     .join("\n");
   return `You review species requests for Underground Aquarium, a freshwater aquarium hobby site. Members ask for a
 fish, shrimp, snail or crayfish that they think is missing from the species library. Your job is to work out
-exactly what they meant and whether the library already covers it. Be careful and precise: a wrong "add new"
+exactly what they meant and whether the library already covers it. When you can search the web, look up any species you aren't certain of (scientific name, care data, whether
+it's kept in aquariums) before deciding. Be careful and precise: a wrong "add new"
 creates a duplicate page, and a wrong "already listed" turns away a real gap.
 
 ## What the library covers
@@ -178,7 +179,8 @@ async function verifySpecies(
     .map(([k, v]) => `- ${k}: ${v.join(", ")}`)
     .join("\n");
   const system = `You fact-check species care data for Underground Aquarium, a freshwater aquarium site that wants to be the
-most trusted source of fishkeeping data. A first pass filled in the care form below. Check every value and every
+most trusted source of fishkeeping data. A first pass filled in the care form below. Search the web for this species (specialist keepers, retailers'
+care sheets, scientific sources) and check every value and every
 claim in summary and body against well established hobby knowledge for this exact species${parentName ? ` (a color or fin form of the ${parentName}; its care values come from the parent, so focus on the name, summary and body)` : ""}.
 
 - Correct anything wrong, overstated or unsafe. Ranges should sit on the safer side of what hobby sources give.
@@ -208,12 +210,12 @@ Reply with ONLY a JSON object:
         ],
       },
     ],
-    maxTokens: 2500,
-    timeoutMs: 60_000,
+    maxTokens: 3000,
+    timeoutMs: 110_000,
+    webSearch: 4,
   });
-  const text = reply.content.map((b) => (b.type === "text" ? b.text : "")).join("");
-  const raw = parseJson(text);
-  const cents = costCents(OPS_MODELS.smart, reply.usage);
+  const raw = parseJson(finalText(reply.content));
+  const cents = costCents(OPS_MODELS.smart, reply.usage) + (reply.webSearches ?? 0);
   const checked = cleanSpecies(raw?.species, groups);
   // Anything the checker dropped by mistake falls back to the first pass, except fields it says to leave blank.
   const blanks: Partial<Record<SpeciesField, string>> = {};
@@ -253,11 +255,12 @@ Decide, then answer with the JSON object only.`;
       system,
       tools: [],
       messages: [{ role: "user", content: [{ type: "text", text: userText }] }],
-      maxTokens: 2000,
-      timeoutMs: 55_000,
+      maxTokens: 3000,
+      timeoutMs: model === OPS_MODELS.smart ? 110_000 : 55_000,
+      // The careful pass looks the fish up instead of relying on memory.
+      webSearch: model === OPS_MODELS.smart ? 4 : undefined,
     });
-    const text = reply.content.map((b) => (b.type === "text" ? b.text : "")).join("");
-    return { raw: parseJson(text), cents: costCents(model, reply.usage) };
+    return { raw: parseJson(finalText(reply.content)), cents: costCents(model, reply.usage) + (reply.webSearches ?? 0) };
   }
 
   // Fast model first; the careful one only for the cases it can't settle.

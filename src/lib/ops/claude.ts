@@ -36,6 +36,8 @@ export type ClaudeReply = {
   content: ContentBlock[];
   stopReason: string;
   usage: Usage;
+  /** Web searches the model ran (billed at about 1 cent each). */
+  webSearches?: number;
 };
 
 const API = "https://api.anthropic.com/v1/messages";
@@ -61,6 +63,8 @@ export async function callClaude(args: {
   toolChoice?: "auto" | "none";
   /** Give up on a call that takes longer than this. */
   timeoutMs?: number;
+  /** Let the model search the web, up to this many times (Anthropic's web search tool). */
+  webSearch?: number;
 }): Promise<ClaudeReply> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY is not set in Vercel.");
@@ -74,8 +78,10 @@ export async function callClaude(args: {
     system: [{ type: "text", text: args.system, cache_control: { type: "ephemeral" } }],
     messages: withCacheMark(args.messages),
   };
-  if (tools.length > 0) {
-    body.tools = tools;
+  const allTools: unknown[] = [...tools];
+  if (args.webSearch) allTools.push({ type: "web_search_20250305", name: "web_search", max_uses: args.webSearch });
+  if (allTools.length > 0) {
+    body.tools = allTools;
     body.tool_choice = { type: args.toolChoice ?? "auto" };
   }
 
@@ -95,9 +101,10 @@ export async function callClaude(args: {
       const data = (await res.json()) as {
         content: ContentBlock[];
         stop_reason: string;
-        usage: Partial<Usage>;
+        usage: Partial<Usage> & { server_tool_use?: { web_search_requests?: number } };
       };
       return {
+        webSearches: data.usage?.server_tool_use?.web_search_requests ?? 0,
         content: data.content ?? [],
         stopReason: data.stop_reason,
         usage: {
@@ -109,6 +116,13 @@ export async function callClaude(args: {
       };
     }
     lastError = `${res.status} ${(await res.text()).slice(0, 300)}`;
+    // Web search not available on this key: carry on without it rather than fail.
+    if (res.status === 400 && args.webSearch && /web_search/i.test(lastError)) {
+      body.tools = tools.length ? tools : undefined;
+      if (!tools.length) delete body.tool_choice;
+      args.webSearch = 0;
+      continue;
+    }
     // Busy or rate limited: wait and try again. Anything else is a real error.
     if (![429, 500, 502, 503, 529].includes(res.status)) break;
     await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
@@ -143,3 +157,20 @@ export const ZERO_USAGE: Usage = {
   cache_read_input_tokens: 0,
   cache_creation_input_tokens: 0,
 };
+
+/**
+ * The model's final written answer. With web search the reply also holds the
+ * searches and "let me look that up" text, so only text after the last
+ * search counts.
+ */
+export function finalText(content: ContentBlock[]): string {
+  const blocks = content as { type: string; text?: string }[];
+  let start = 0;
+  blocks.forEach((b, i) => {
+    if (b.type !== "text") start = i + 1;
+  });
+  return blocks
+    .slice(start)
+    .map((b) => (b.type === "text" ? b.text ?? "" : ""))
+    .join("");
+}
