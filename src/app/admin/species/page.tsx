@@ -89,8 +89,7 @@ export default async function AdminSpeciesPage() {
           Fish the community asked for. <strong className="text-white">Add to library</strong> creates the care page and
           puts it in the Tank Builder. <strong className="text-white">Another name for</strong> adds their name to a fish
           we already have. Both give the requester 25 bubbles and count toward their species trophies. Each request is checked by AI against
-          the whole library first; <strong className="text-white">Use this</strong> fills in its suggestion for you to
-          check.{" "}
+          the whole library first and gives a recommendation; its purple button fills in the form for you to check.{" "}
           <Link href="/species" target="_blank" className="text-emerald-400 hover:text-emerald-300">
             Open the species list
           </Link>

@@ -77,7 +77,7 @@ member_reason: ALWAYS write it, whatever the verdict. It is what the member sees
 down, so write it as that reply: one or two short, friendly, plain sentences, no em dashes, naming library fish by
 their common names. Examples: "That's another name for the Panda Cory, which is already in the library." "Cory cats
 are a whole group; we have 30 of them listed. Request the exact species if yours isn't there." "That's a saltwater
-fish, and the library is freshwater only." For add_new and add_variant, say kindly that it isn't being added right now.
+fish, and the library is freshwater only." For add_new and add_variant, say kindly that it isn't being added right now (never promise it will be).
 summary is for the admin: two to four sentences. No em dashes anywhere.
 
 ## Answer
