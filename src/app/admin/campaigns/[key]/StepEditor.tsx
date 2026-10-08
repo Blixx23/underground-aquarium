@@ -99,10 +99,10 @@ export default function StepEditor({
             <p className="text-xs text-ocean-500">
               {data.step === 1
                 ? repeatDays && isLast
-                  ? `Goes out when a shop joins, then again every ${repeatDays} days`
+                  ? `Goes out when a shop joins, then only news emails, at most every ${repeatDays} days`
                   : "Goes out when a shop joins"
                 : `Waits ${data.delay_days} day${data.delay_days === 1 ? "" : "s"} after the previous one`}
-              {repeatDays && isLast && data.step > 1 ? ` · then back to the first one after ${repeatDays} days` : ""}
+              {repeatDays && isLast && data.step > 1 ? ` · then only news emails, at most every ${repeatDays} days` : ""}
             </p>
           </div>
         </div>

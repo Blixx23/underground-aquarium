@@ -9,6 +9,8 @@ type Result = {
   stopped?: number;
   queued?: number;
   finished?: number;
+  news?: number;
+  quiet?: number;
   budget?: number;
   active?: boolean;
   error?: string;
@@ -78,7 +80,9 @@ export default function CampaignControls({
             run("dry", { action: "dry-run", key: campaignKey }, (r) =>
               `${r.active === false ? "This campaign is off, so nothing will run. If it were on, a" : "A"} run right now would add ${
                 r.enrolled ?? 0
-              } shops, drop ${r.stopped ?? 0}, and queue ${r.queued ?? 0} emails to shops already on the list. Nothing was changed.`
+              } shops, drop ${r.stopped ?? 0}, and queue ${r.queued ?? 0} emails to shops already on the list${
+                r.news ? ` (${r.news} of them "new review" news)` : ""
+              }. ${r.quiet ?? 0} shops past the sequence have no news, so they'd get nothing. Nothing was changed.`
             )
           }
           className="inline-flex items-center gap-2 rounded-full border border-ocean-700 px-4 py-2 text-sm text-ocean-200 hover:text-white disabled:opacity-40"
@@ -92,7 +96,9 @@ export default function CampaignControls({
           title={active ? undefined : "Turn the campaign on first"}
           onClick={() =>
             run("run", { action: "run-now", key: campaignKey }, (r) =>
-              `Added ${r.enrolled ?? 0}, dropped ${r.stopped ?? 0}, queued ${r.queued ?? 0}. The queue sends them, subject to the pause switch and the daily cap.`
+              `Added ${r.enrolled ?? 0}, dropped ${r.stopped ?? 0}, queued ${r.queued ?? 0}${
+                r.news ? ` (${r.news} "new review" news)` : ""
+              }. ${r.quiet ?? 0} had no news and got nothing. The queue sends them, subject to the pause switch and the daily cap.`
             )
           }
           className="inline-flex items-center gap-2 rounded-full border border-ocean-700 px-4 py-2 text-sm text-ocean-200 hover:text-white disabled:opacity-40"
@@ -113,7 +119,7 @@ export default function CampaignControls({
 
       <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-ocean-800/60 bg-ocean-950/40 px-4 py-3">
         <label htmlFor="every" className="text-sm text-ocean-300">
-          Write to each shop every
+          After the last email, news emails no more than every
         </label>
         <input
           id="every"
@@ -131,8 +137,8 @@ export default function CampaignControls({
           onClick={() =>
             run("interval", { action: "set-interval", key: campaignKey, repeatDays: Number(every) }, () =>
               Number(every) > 0
-                ? `They'll hear from you every ${Number(every)} days until they claim or opt out.`
-                : "Repeating turned off. Each shop gets it once."
+                ? `After the sequence, a shop hears from you only when it gets new reviews, at most every ${Number(every)} days.`
+                : "News emails turned off. Each shop gets the sequence once."
             )
           }
           className="rounded-lg border border-ocean-700 px-3 py-1.5 text-sm text-ocean-200 hover:text-white disabled:opacity-40"
@@ -140,7 +146,7 @@ export default function CampaignControls({
           Save
         </button>
         <span className="w-full text-[11px] text-ocean-500 sm:w-auto sm:pl-2">
-          0 means send it once and stop.
+          0 means no news emails: the sequence once, then stop.
         </span>
       </div>
 

@@ -30,8 +30,9 @@ const AUDIENCE: Record<string, string> = {
 
 function describeSchedule(repeatDays: number | null, stepCount: number): string {
   if (!repeatDays) return stepCount === 1 ? "One email, once." : `${stepCount} emails, then it stops.`;
-  if (stepCount <= 1) return `One email, and again every ${repeatDays} days until they claim or opt out.`;
-  return `${stepCount} emails, then back to the first one every ${repeatDays} days.`;
+  const then = `then only when there's news: a "new review on your page" email, at most every ${repeatDays} days, until they claim or opt out.`;
+  if (stepCount <= 1) return `One email, ${then}`;
+  return `${stepCount} emails, ${then}`;
 }
 
 const STOP: Record<string, string> = {
@@ -170,7 +171,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ key: 
           Edits save straight to the database and take effect on the next run. Nobody is ever sent the same thing
           twice in the same round, so fixing a typo now will not re-send an email that already went out.
           {campaign.repeat_days
-            ? ` Whatever it says when a shop comes back around in ${campaign.repeat_days} days is what they get.`
+            ? " Each shop gets these once. After the last one, the site writes the news emails itself, only when a shop gets new reviews."
             : ""}
         </p>
 

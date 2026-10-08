@@ -81,7 +81,7 @@ export default async function CampaignsPage() {
                       <span className="mt-1 block text-sm text-ocean-400">{c.description}</span>
                       <span className="mt-2 block text-xs text-ocean-500">
                         {AUDIENCE[c.audience] ?? c.audience}
-                        {c.repeat_days ? ` · every ${c.repeat_days} days` : " · once each"}
+                        {c.repeat_days ? ` · then news only, at most every ${c.repeat_days} days` : " · once each"}
                       </span>
                       {s && (
                         <span className="mt-2 block text-xs text-ocean-400">

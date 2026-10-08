@@ -9,6 +9,7 @@ import { outreachProblem, tidyOutreachEmail } from "@/lib/email/outreach";
 import { letterShell } from "@/lib/email/shell";
 import { previewLine, renderBody, renderSubject, varsForStore } from "@/lib/campaigns/render";
 import { factsFor, subjectHook, whatsHappening, whatsMissing } from "@/lib/campaigns/facts";
+import { newsEmail, reviewsSince, type ReviewNews } from "@/lib/campaigns/news";
 import { claimToken } from "@/lib/stores/claimToken";
 import { SITE } from "@/lib/email/queue";
 
@@ -46,6 +47,7 @@ type Enrollment = {
   next_step: number;
   sent_count: number;
   cycle: number;
+  last_sent_at: string | null;
 };
 
 type Store = { id: string; slug: string; name: string; city: string | null; state: string | null };
@@ -60,7 +62,14 @@ export type PlanResult = {
   budget: number;
   /** Addresses whose domain can't receive mail, put on the do-not-email list instead of sent. */
   undeliverable: number;
+  /** Shops past the sequence that got a "new review" email this run. */
+  news: number;
+  /** Shops past the sequence with nothing new, so nothing was sent. Checked again in a week. */
+  quiet: number;
 };
+
+/** A shop with no news is looked at again this often. */
+const NEWS_RECHECK_DAYS = 7;
 
 const day = 86_400_000;
 
@@ -273,13 +282,13 @@ async function todaysBudget(): Promise<number> {
  * Run one campaign: enrol, stop, then queue whatever is due.
  *
  * A campaign with repeat_days never finishes. When someone reaches the
- * end of the steps they go back to the start, one cycle higher, due
- * again in repeat_days. The cycle number is part of the dedup key, so
- * the same email can go out again in six weeks without the queue
- * treating it as a duplicate of the last one.
+ * end of the steps they move up a cycle, and from then on they get no
+ * more of the sequence: only a news email when their page has new
+ * reviews, at most once every repeat_days, checked weekly. The cycle
+ * number is part of the dedup key, so each news email goes out once.
  */
 export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; limit?: number } = {}): Promise<PlanResult> {
-  const out: PlanResult = { enrolled: 0, stopped: 0, queued: 0, finished: 0, recycled: 0, skipped: 0, budget: 0, undeliverable: 0 };
+  const out: PlanResult = { enrolled: 0, stopped: 0, queued: 0, finished: 0, recycled: 0, skipped: 0, budget: 0, undeliverable: 0, news: 0, quiet: 0 };
 
   // On a dry run both of these only count; nothing is written anywhere.
   const enrol = await enrolAudience(campaign, Boolean(opts.dry));
@@ -306,7 +315,7 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
 
   const { data: dueData } = await supabaseAdmin
     .from("email_campaign_enrollments")
-    .select("id, campaign_id, store_id, email, next_step, sent_count, cycle")
+    .select("id, campaign_id, store_id, email, next_step, sent_count, cycle, last_sent_at")
     .eq("campaign_id", campaign.id)
     .eq("status", "active")
     .lte("next_send_at", new Date().toISOString())
@@ -330,6 +339,17 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
   // what makes the email worth opening: everything in it can be checked
   // on their own page in about two seconds.
   const facts = await factsFor(storeIds);
+
+  // A shop that has been through every email once doesn't get the sequence
+  // again. It hears from us only when there's news on its page (see
+  // lib/campaigns/news), at most once every repeat_days.
+  const newsMode = (e: Enrollment) => Boolean(repeat) && e.cycle > 0;
+  const fallbackSince = new Date(Date.now() - (repeat ?? 30) * day).toISOString();
+  const news = await reviewsSince(
+    due
+      .filter((e) => newsMode(e) && e.store_id)
+      .map((e) => ({ storeId: e.store_id as string, since: e.last_sent_at ?? fallbackSince }))
+  );
 
   // Shops enrolled before domain checks existed (and domains that have
   // died since) get checked here, right before anything is queued.
@@ -393,6 +413,60 @@ export async function runCampaign(campaign: Campaign, opts: { dry?: boolean; lim
 
     const step = byNumber.get(e.next_step);
     const store = e.store_id ? storeById.get(e.store_id) : undefined;
+
+    if (newsMode(e) && store) {
+      const n: ReviewNews | undefined = news.get(store.id);
+      if (!n || n.count === 0) {
+        // Nothing new: send nothing, look again next week.
+        out.quiet++;
+        if (!opts.dry) {
+          await supabaseAdmin
+            .from("email_campaign_enrollments")
+            .update({ next_send_at: new Date(Date.now() + NEWS_RECHECK_DAYS * day).toISOString() })
+            .eq("id", e.id);
+        }
+        continue;
+      }
+      if (opts.dry) {
+        out.news++;
+        out.queued++;
+        continue;
+      }
+      const vars = varsForStore(store, { claim_link: `${SITE}/claim/${store.slug}?t=${claimToken(store.id)}` });
+      const mail = newsEmail(n);
+      const { error } = await supabaseAdmin.from("email_queue").insert({
+        kind: `campaign:${campaign.key}`,
+        bulk: true,
+        dedup_key: dedupKey(["campaign-news", campaign.id, e.id, e.cycle]),
+        to_email: e.email,
+        subject: renderSubject(mail.subject, vars),
+        html: letterShell({
+          preheader: previewLine(mail.body, vars),
+          contentHtml: renderBody(mail.body, vars),
+          unsubscribeUrl: unsubscribeUrlFor(e.email),
+        }),
+        reply_to: campaign.reply_to,
+        context: { campaign: campaign.key, news: "reviews", reviews: n.count, cycle: e.cycle, enrollment_id: e.id, store_id: e.store_id },
+      });
+      if (error && error.code !== "23505") throw new Error(error.message);
+      if (!error) {
+        out.queued++;
+        out.news++;
+      } else out.skipped++;
+      const now = new Date();
+      await supabaseAdmin
+        .from("email_campaign_enrollments")
+        .update({
+          last_sent_at: now.toISOString(),
+          sent_count: e.sent_count + 1,
+          cycle: e.cycle + 1,
+          next_step: firstLive ?? e.next_step,
+          // The gap before the next possible news email.
+          next_send_at: new Date(now.getTime() + (repeat ?? 30) * day).toISOString(),
+        })
+        .eq("id", e.id);
+      continue;
+    }
 
     // A step that was turned off, or a shop that vanished: move past it
     // rather than stalling the enrolment there forever.
