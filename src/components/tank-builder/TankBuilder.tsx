@@ -24,8 +24,10 @@ import {
   Flame,
   RotateCcw,
   ChevronDown,
-  ArrowDown,
   ExternalLink,
+  Minimize2,
+  Maximize2,
+  Wrench,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -54,6 +56,7 @@ import { RangeChart, ScoreDial, WaterTrends } from "@/components/tank-builder/In
 const FREE_TANK_LIMIT = 4;
 const MAX_PHOTOS = MAX_TANK_PHOTOS;
 const DRAFT_KEY = "ua.tankBuilder.draft.v1";
+const COMPACT_KEY = "ua.tankBuilder.compact.v1";
 const QUICK_SIZES = [5, 10, 20, 29, 40, 55, 75, 125];
 
 // Water reading form: which fields we show and how they're labelled.
@@ -186,6 +189,47 @@ export default function TankBuilder({
   const [readings, setReadings] = useState<WaterLog[]>([]);
   const [readingMsg, setReadingMsg] = useState<string | null>(null);
   const [readingBusy, setReadingBusy] = useState(false);
+
+  // Phones show one panel at a time (build or results) behind a sticky tab
+  // bar, so the tools and the score are each one tap away instead of a long
+  // scroll. Desktop keeps both columns side by side.
+  const [panel, setPanel] = useState<"build" | "results">("build");
+  // Compact hides the tank picture and the long explanations; remembered per device.
+  const [compact, setCompact] = useState(false);
+  const [openIssue, setOpenIssue] = useState<number | null>(null);
+  const [showAllIssues, setShowAllIssues] = useState(false);
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
+  const [showAllReadings, setShowAllReadings] = useState(false);
+  const panelTop = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(COMPACT_KEY) === "1") setCompact(true);
+    } catch {
+      /* storage blocked: start in the full view */
+    }
+  }, []);
+
+  function toggleCompact() {
+    setCompact((c) => {
+      const next = !c;
+      try {
+        window.localStorage.setItem(COMPACT_KEY, next ? "1" : "0");
+      } catch {
+        /* not remembered, still works for this visit */
+      }
+      return next;
+    });
+    setOpenIssue(null);
+  }
+
+  // Switch panels and bring the top of the panel into view if we've scrolled past it.
+  function showPanel(next: "build" | "results", v?: "compatibility" | "water") {
+    setPanel(next);
+    if (v) setView(v);
+    const el = panelTop.current;
+    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   // Saved tanks
   const [authChecked, setAuthChecked] = useState(false);
@@ -756,52 +800,173 @@ export default function TankBuilder({
   const card = "rounded-2xl border border-white/10 bg-white/[0.03]";
   const label = "text-[11px] font-semibold uppercase tracking-wider text-ocean-400";
 
+  // Built once, shown above the columns on desktop and under the fish list on phones,
+  // so on a phone the size and fish tools come first.
+  const tankPicture = (
+    <div className="relative">
+      <TankVisual stock={stock} flagged={flagged} stockingPct={gallons > 0 ? result.stocking.pct : 0} />
+      <div className="mt-2 flex flex-wrap items-start justify-between gap-2 sm:pointer-events-none sm:absolute sm:inset-x-0 sm:top-0 sm:mt-0 sm:p-4">
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur sm:bg-black/50">
+            {galShown ? `${galShown} gal` : "No size yet"}
+            {galShown && unit === "gal" ? ` · ${Math.round(galToL(galShown))} L` : ""}
+          </span>
+          {hasStock && (
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur sm:bg-black/50">
+              {fishCount} {fishCount === 1 ? "animal" : "animals"} · {stock.length} species
+            </span>
+          )}
+          {hasStock && gallons > 0 && (
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold backdrop-blur ${
+                result.stocking.level === "over"
+                  ? "bg-red-500/80 text-white"
+                  : result.stocking.level === "near"
+                  ? "bg-amber-400/90 text-ocean-950"
+                  : "bg-emerald-500/80 text-ocean-950"
+              }`}
+            >
+              {result.stocking.pct}% stocked
+            </span>
+          )}
+        </div>
+        {hasStock && (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-bold backdrop-blur ${
+              tone === "good" ? "bg-emerald-400 text-ocean-950" : tone === "warn" ? "bg-amber-400 text-ocean-950" : "bg-red-500 text-white"
+            }`}
+          >
+            {result.score}/100 · {verdict}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
   const Root = embedded ? "div" : "main";
 
   return (
     <Root className="font-sans">
       {/* Header */}
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-4 flex items-end justify-between gap-3 sm:mb-5">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/80">
+          <p className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/80 sm:block">
             {embedded ? "Try it yourself" : "Free aquarium planner"}
           </p>
           {embedded ? (
-            <h2 className="mt-1 font-display text-2xl text-white sm:text-3xl">
+            <h2 className="font-display text-2xl text-white sm:mt-1 sm:text-3xl">
               Build your own {initialGallons ? `${initialGallons} gallon ` : ""}tank
             </h2>
           ) : (
-            <h1 className="mt-1 font-display text-3xl text-white sm:text-4xl">Tank Builder</h1>
+            <h1 className="font-display text-2xl text-white sm:mt-1 sm:text-4xl">Tank Builder</h1>
           )}
-          <p className="mt-1 max-w-2xl text-[15px] text-ocean-200">
+          <p className="mt-1 hidden max-w-2xl text-[15px] text-ocean-200 sm:block">
             Pick your tank size, add fish, and instantly see if they get along, how full the tank is, and the heater
             and filter you need.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={toggleCompact}
+            aria-pressed={compact}
+            className="hidden items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-medium text-ocean-200 transition-colors hover:bg-white/10 hover:text-white xl:inline-flex"
+          >
+            {compact ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+            {compact ? "Show more" : "Compact"}
+          </button>
           <button
             type="button"
             onClick={shareBuild}
             disabled={!hasStock && !gallons}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-40"
+            aria-label="Share build"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-40 sm:px-3.5"
           >
-            <Share2 className="h-4 w-4" /> Share build
+            <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share build</span>
           </button>
           <button
             type="button"
             onClick={newBuild}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-medium text-ocean-200 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="New build"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-ocean-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3.5"
           >
-            <RotateCcw className="h-4 w-4" /> New
+            <RotateCcw className="h-4 w-4" /> <span className="hidden sm:inline">New</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Phone and tablet tab bar: stays under the site menu while scrolling. The ! margins
+          beat the tools frame's margin reset so the bar runs edge to edge. */}
+      <div ref={panelTop} className="scroll-mt-[65px] xl:hidden" />
+      <div className="sticky top-[65px] z-20 !-mx-4 mb-4 border-b border-white/10 bg-ocean-950/95 px-4 py-2 backdrop-blur-xl sm:!-mx-6 sm:px-6 xl:hidden">
+        <div className="flex items-center gap-2">
+          <div className="grid flex-1 grid-cols-3 gap-1 rounded-xl border border-white/10 bg-white/5 p-1" role="tablist" aria-label="Tank Builder">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={panel === "build"}
+              onClick={() => showPanel("build")}
+              className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${
+                panel === "build" ? "bg-emerald-500/15 text-emerald-200" : "text-ocean-300"
+              }`}
+            >
+              <Wrench className="h-4 w-4 shrink-0" /> Build
+              {hasStock && (
+                <span className="rounded-full bg-white/10 px-1.5 text-[11px] font-semibold tabular-nums text-white">{fishCount}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={panel === "results" && view === "compatibility"}
+              onClick={() => showPanel("results", "compatibility")}
+              className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${
+                panel === "results" && view === "compatibility" ? "bg-emerald-500/15 text-emerald-200" : "text-ocean-300"
+              }`}
+            >
+              Results
+              {hasStock && (
+                <span
+                  className={`rounded-full px-1.5 text-[11px] font-bold tabular-nums ${
+                    tone === "good" ? "bg-emerald-400 text-ocean-950" : tone === "warn" ? "bg-amber-400 text-ocean-950" : "bg-red-500 text-white"
+                  }`}
+                >
+                  {result.score}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={panel === "results" && view === "water"}
+              onClick={() => showPanel("results", "water")}
+              className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${
+                panel === "results" && view === "water" ? "bg-emerald-500/15 text-emerald-200" : "text-ocean-300"
+              }`}
+            >
+              <Droplets className="h-4 w-4 shrink-0" /> Water
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={toggleCompact}
+            aria-pressed={compact}
+            aria-label={compact ? "Show more detail" : "Compact view"}
+            title={compact ? "Show more detail" : "Compact view"}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+              compact ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200" : "border-white/10 bg-white/5 text-ocean-300"
+            }`}
+          >
+            {compact ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
           </button>
         </div>
       </div>
 
       {/* Saved-tank switcher */}
       {user && savedTanks.length > 0 && (
-        <div className="mb-5">
+        <div className={`mb-5 ${panel !== "build" ? "max-xl:hidden" : ""}`}>
           <p className={`${label} mb-2`}>Your tanks</p>
-          <div className="flex snap-x gap-3 overflow-x-auto pb-1">
+          <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
             {savedTanks.map((t) => {
               const active = t.id === currentTankId;
               return (
@@ -813,11 +978,11 @@ export default function TankBuilder({
                       loadTank(t);
                     }}
                     className={
-                      "flex h-[5.5rem] w-64 overflow-hidden rounded-xl border text-left transition-colors " +
+                      `flex ${compact ? "h-14 w-48" : "h-[5.5rem] w-60 sm:w-64"} overflow-hidden rounded-xl border text-left transition-colors ` +
                       (active ? "border-emerald-500/50 bg-emerald-500/10" : "border-white/10 bg-white/5 hover:border-white/25")
                     }
                   >
-                    {t.images?.[0] && (
+                    {!compact && t.images?.[0] && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={t.images[0]} alt="" className="h-full w-20 shrink-0 object-cover" />
                     )}
@@ -827,7 +992,7 @@ export default function TankBuilder({
                         {t.gallons ? `${t.gallons} gal · ` : ""}
                         {t.items?.length ?? 0} species
                       </span>
-                      {t.is_public && (
+                      {t.is_public && !compact && (
                         <span className="inline-flex w-fit items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-emerald-300">
                           <Globe className="h-2.5 w-2.5" /> Public
                         </span>
@@ -850,49 +1015,12 @@ export default function TankBuilder({
         </div>
       )}
 
-      {/* The tank itself, with the headline numbers on top */}
-      <div className="relative mb-6">
-        <TankVisual stock={stock} flagged={flagged} stockingPct={gallons > 0 ? result.stocking.pct : 0} />
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-2 sm:pointer-events-none sm:absolute sm:inset-x-0 sm:top-0 sm:mt-0 sm:p-4">
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur sm:bg-black/50">
-              {galShown ? `${galShown} gal` : "No size yet"}
-              {galShown && unit === "gal" ? ` · ${Math.round(galToL(galShown))} L` : ""}
-            </span>
-            {hasStock && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur sm:bg-black/50">
-                {fishCount} {fishCount === 1 ? "animal" : "animals"} · {stock.length} species
-              </span>
-            )}
-            {hasStock && gallons > 0 && (
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold backdrop-blur ${
-                  result.stocking.level === "over"
-                    ? "bg-red-500/80 text-white"
-                    : result.stocking.level === "near"
-                    ? "bg-amber-400/90 text-ocean-950"
-                    : "bg-emerald-500/80 text-ocean-950"
-                }`}
-              >
-                {result.stocking.pct}% stocked
-              </span>
-            )}
-          </div>
-          {hasStock && (
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-bold backdrop-blur ${
-                tone === "good" ? "bg-emerald-400 text-ocean-950" : tone === "warn" ? "bg-amber-400 text-ocean-950" : "bg-red-500 text-white"
-              }`}
-            >
-              {result.score}/100 · {verdict}
-            </span>
-          )}
-        </div>
-      </div>
+      {/* The tank itself, with the headline numbers on top. Desktop shows it above both columns. */}
+      {!compact && <div className="mb-6 hidden xl:block">{tankPicture}</div>}
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] xl:gap-8">
         {/* ---------------- Build column ---------------- */}
-        <div className="min-w-0 space-y-5">
+        <div className={`min-w-0 space-y-5 ${panel !== "build" ? "max-xl:hidden" : ""}`}>
           {/* Size */}
           <section className={`${card} p-4 sm:p-5`}>
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -937,13 +1065,14 @@ export default function TankBuilder({
                 <Ruler className="h-4 w-4" /> Measure it
               </button>
             </div>
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            {/* One swipeable row on phones instead of two wrapped rows */}
+            <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden">
               {QUICK_SIZES.map((g) => (
                 <button
                   key={g}
                   type="button"
                   onClick={() => pickSize(g)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                     unit === "gal" && rawSize === g
                       ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200"
                       : "border-white/10 text-ocean-300 hover:border-white/25 hover:text-white"
@@ -1005,9 +1134,13 @@ export default function TankBuilder({
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-white">2. Add fish</h2>
               {hasStock && (
-                <a href="#tb-results" className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300 xl:hidden">
-                  See results <ArrowDown className="h-3.5 w-3.5" />
-                </a>
+                <button
+                  type="button"
+                  onClick={() => showPanel("results", "compatibility")}
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200 xl:hidden"
+                >
+                  See results · {result.score}/100
+                </button>
               )}
             </div>
             <div className="relative" ref={searchBox}>
@@ -1126,7 +1259,7 @@ export default function TankBuilder({
                   return (
                     <li
                       key={sp.slug}
-                      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 sm:px-4 ${
+                      className={`flex items-center gap-3 rounded-xl border px-3 sm:px-4 ${compact ? "py-1.5" : "py-2.5"} ${
                         hot ? "border-amber-500/30 bg-amber-500/[0.05]" : "border-white/10 bg-white/5"
                       }`}
                     >
@@ -1140,15 +1273,19 @@ export default function TankBuilder({
                           <span className="truncate">{sp.common_name}</span>
                           <ExternalLink className="h-3 w-3 shrink-0 text-ocean-500 opacity-0 group-hover:opacity-100" />
                         </Link>
-                        <p className="truncate text-xs text-ocean-400">
-                          {[
-                            sp.max_size_in != null ? `${sp.max_size_in}" adult` : null,
-                            sp.min_tank_gal != null ? `${sp.min_tank_gal}+ gal` : null,
-                            short ? `keep ${sp.min_group_size}+` : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
+                        {compact ? (
+                          short && <p className="truncate text-xs text-amber-300">keep {sp.min_group_size}+</p>
+                        ) : (
+                          <p className="truncate text-xs text-ocean-400">
+                            {[
+                              sp.max_size_in != null ? `${sp.max_size_in}" adult` : null,
+                              sp.min_tank_gal != null ? `${sp.min_tank_gal}+ gal` : null,
+                              short ? `keep ${sp.min_group_size}+` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
                         <button
@@ -1202,34 +1339,49 @@ export default function TankBuilder({
               </div>
             )}
 
-            {/* Suggestions */}
-            {suggestions.length > 0 && (
-              <div className="mt-5">
-                <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+          </section>
+
+          {/* Tank picture on phones and tablets, after the tools */}
+          {!compact && <div className="xl:hidden">{tankPicture}</div>}
+
+          {/* Suggestions */}
+          {suggestions.length > 0 && (
+            <section className={`${card} p-4 sm:p-5`}>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-white">
                   <Sparkles className="h-4 w-4 text-emerald-300" /> Tankmates that fit
                 </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {suggestions.map((s) => (
-                    <button
-                      type="button"
-                      key={s.species.slug}
-                      onClick={() => addSpecies(s.species, s.qty)}
-                      className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/[0.06]"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-white">
-                          {s.qty > 1 ? `${s.qty} × ` : ""}
-                          {s.species.common_name}
-                        </span>
-                        <span className="block truncate text-xs text-ocean-400">{s.why}</span>
-                      </span>
-                      <Plus className="h-4 w-4 shrink-0 text-ocean-400 group-hover:text-emerald-300" />
-                    </button>
-                  ))}
-                </div>
+                {compact && suggestions.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllSuggestions((v) => !v)}
+                    className="text-xs font-medium text-emerald-300 hover:text-emerald-200"
+                  >
+                    {showAllSuggestions ? "Show fewer" : `Show all ${suggestions.length}`}
+                  </button>
+                )}
               </div>
-            )}
-          </section>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {(compact && !showAllSuggestions ? suggestions.slice(0, 2) : suggestions).map((s) => (
+                  <button
+                    type="button"
+                    key={s.species.slug}
+                    onClick={() => addSpecies(s.species, s.qty)}
+                    className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/[0.06]"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-white">
+                        {s.qty > 1 ? `${s.qty} × ` : ""}
+                        {s.species.common_name}
+                      </span>
+                      {!compact && <span className="block truncate text-xs text-ocean-400">{s.why}</span>}
+                    </span>
+                    <Plus className="h-4 w-4 shrink-0 text-ocean-400 group-hover:text-emerald-300" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Save */}
           {user ? (
@@ -1345,9 +1497,12 @@ export default function TankBuilder({
         {/* ---------------- Analysis column ---------------- */}
         <div
           id="tb-results"
-          className={`${card} min-w-0 scroll-mt-24 space-y-5 p-4 sm:p-5 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto`}
+          className={`${card} min-w-0 scroll-mt-24 space-y-5 p-4 sm:p-5 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto ${
+            panel !== "results" ? "max-xl:hidden" : ""
+          }`}
         >
-          <div className="grid grid-cols-2 rounded-xl border border-white/10 bg-white/5 p-1" role="tablist">
+          {/* Phones use the sticky tab bar above instead */}
+          <div className="hidden grid-cols-2 rounded-xl border border-white/10 bg-white/5 p-1 xl:grid" role="tablist">
             {(
               [
                 ["compatibility", "Compatibility", Fish],
@@ -1388,34 +1543,59 @@ export default function TankBuilder({
                 </div>
 
                 {result.issues.length > 0 ? (
-                  <ul className="space-y-2">
-                    {result.issues.map((issue, i) => {
-                      const st = issueStyle(issue.level);
-                      return (
-                        <li key={i} className={"flex gap-3 rounded-xl border p-3.5 " + st.box}>
-                          <st.I className={"mt-0.5 h-5 w-5 shrink-0 " + st.icon} />
-                          <div className="min-w-0">
-                            <p className="text-[15px] font-semibold text-white">{issue.title}</p>
-                            <p className="mt-0.5 text-sm leading-relaxed text-ocean-200">{issue.detail}</p>
-                            {issue.fixes && issue.fixes.length > 0 && (
-                              <div className="mt-2.5 flex flex-wrap gap-2">
-                                {issue.fixes.map((fix) => (
-                                  <button
-                                    key={fix.label}
-                                    type="button"
-                                    onClick={() => applyFix(fix)}
-                                    className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/20"
-                                  >
-                                    {fix.label}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <div>
+                    {compact && <p className="mb-2 text-xs text-ocean-400">Tap a problem to read why.</p>}
+                    <ul className="space-y-2">
+                      {(compact && !showAllIssues ? result.issues.slice(0, 3) : result.issues).map((issue, i) => {
+                        const st = issueStyle(issue.level);
+                        const open = !compact || openIssue === i;
+                        return (
+                          <li key={i} className={`flex gap-3 rounded-xl border ${compact ? "p-3" : "p-3.5"} ${st.box}`}>
+                            <st.I className={"mt-0.5 h-5 w-5 shrink-0 " + st.icon} />
+                            <div className="min-w-0 flex-1">
+                              {compact ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenIssue(open ? null : i)}
+                                  aria-expanded={open}
+                                  className="flex w-full items-start justify-between gap-2 text-left"
+                                >
+                                  <span className="text-[15px] font-semibold text-white">{issue.title}</span>
+                                  <ChevronDown className={`mt-1 h-4 w-4 shrink-0 text-ocean-400 transition-transform ${open ? "rotate-180" : ""}`} />
+                                </button>
+                              ) : (
+                                <p className="text-[15px] font-semibold text-white">{issue.title}</p>
+                              )}
+                              {open && <p className="mt-0.5 text-sm leading-relaxed text-ocean-200">{issue.detail}</p>}
+                              {issue.fixes && issue.fixes.length > 0 && (
+                                <div className="mt-2.5 flex flex-wrap gap-2">
+                                  {issue.fixes.map((fix) => (
+                                    <button
+                                      key={fix.label}
+                                      type="button"
+                                      onClick={() => applyFix(fix)}
+                                      className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/20"
+                                    >
+                                      {fix.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {compact && result.issues.length > 3 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllIssues((v) => !v)}
+                        className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-sm font-medium text-emerald-300 hover:bg-white/10"
+                      >
+                        {showAllIssues ? "Show fewer" : `Show ${result.issues.length - 3} more`}
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.07] p-4">
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
@@ -1486,7 +1666,11 @@ export default function TankBuilder({
                   </p>
                 )}
 
-                <details className="group rounded-xl border border-white/10 bg-white/5 p-4" open={stock.length > 1}>
+                <details
+                  key={compact ? "c" : "f"}
+                  className="group rounded-xl border border-white/10 bg-white/5 p-4"
+                  open={!compact && stock.length > 1}
+                >
                   <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-white">
                     Water each fish likes
                     <ChevronDown className="h-4 w-4 text-ocean-400 transition-transform group-open:rotate-180" />
@@ -1515,6 +1699,14 @@ export default function TankBuilder({
                     />
                   </div>
                 </details>
+
+                <button
+                  type="button"
+                  onClick={() => showPanel("build")}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-white hover:bg-white/10 xl:hidden"
+                >
+                  <Wrench className="h-4 w-4" /> Keep building
+                </button>
               </div>
             ) : (
               <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
@@ -1524,6 +1716,13 @@ export default function TankBuilder({
                   Compatibility, stocking level, heater and filter sizes, and the water each fish likes all show up here as
                   you build.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => showPanel("build")}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-ocean-950 hover:bg-emerald-400 xl:hidden"
+                >
+                  <Plus className="h-4 w-4" /> Add fish
+                </button>
               </div>
             )
           ) : (
@@ -1665,9 +1864,20 @@ export default function TankBuilder({
 
               {user && currentTankId && readings.length > 0 && (
                 <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <h3 className="mb-3 text-sm font-semibold text-white">Recent readings</h3>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-white">Recent readings</h3>
+                    {readings.length > (compact ? 3 : 5) && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllReadings((v) => !v)}
+                        className="text-xs font-medium text-emerald-300 hover:text-emerald-200"
+                      >
+                        {showAllReadings ? "Show fewer" : `Show all ${readings.length}`}
+                      </button>
+                    )}
+                  </div>
                   <div className="space-y-2">
-                    {readings.map((r) => (
+                    {(showAllReadings ? readings : readings.slice(0, compact ? 3 : 5)).map((r) => (
                       <div key={r.id} className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-ocean-400">{fmtReadingDate(r.measured_at)}</p>
