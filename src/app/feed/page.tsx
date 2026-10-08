@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * The home feed. Signed-in people land on who they follow; "Everyone"
- * is the whole site. Signed-out visitors just see Everyone.
+ * The home feed. Everyone lands on the whole site's feed; signed-in people
+ * can switch to "Following" for just the people they follow.
  */
 export default async function FeedPage({
   searchParams,
@@ -28,12 +28,12 @@ export default async function FeedPage({
   const { tab, compose } = await searchParams;
   const { viewer, supabase } = await getViewer();
   const scope: FeedScope =
-    viewer && tab !== "everyone" ? "following" : "everyone";
+    viewer && tab === "following" ? "following" : "everyone";
   const { items } = await fetchFeed(supabase, { scope });
 
   const tabs: { key: FeedScope; label: string; href: string }[] = [
-    { key: "following", label: "Following", href: "/feed" },
-    { key: "everyone", label: "Everyone", href: "/feed?tab=everyone" },
+    { key: "everyone", label: "Everyone", href: "/feed" },
+    { key: "following", label: "Following", href: "/feed?tab=following" },
   ];
 
   return (
