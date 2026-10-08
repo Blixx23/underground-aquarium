@@ -28,7 +28,7 @@ export const NOTIFICATION_GROUPS: NotificationGroup[] = [
   { key: "shop_fix", label: "Your shop: listing reports", sub: "A shopper says your hours, address or details are wrong", types: ["shop_fix"] },
   { key: "shop_milestone", label: "Your shop: milestones", sub: "Your shop passes a views or followers milestone", types: ["shop_milestone"] },
   { key: "shop_weekly", label: "Your shop: weekly report", sub: "Monday morning: views, calls, directions and a tip", types: ["shop_weekly"] },
-  { key: "society", label: "Society", sub: "Membership applications, dues and Society notices", types: ["club_application", "club_dues", "club_approved", "club_honorary"] },
+  { key: "society", label: "Society", sub: "Membership applications, dues and Society notices", types: ["club_application", "club_dues", "club_approved", "club_honorary", "club_invite"] },
   { key: "events", label: "Events", sub: "Events you're part of", types: ["event"] },
   { key: "site", label: "Site news", sub: "Occasional news from Underground Aquarium", types: ["site"] },
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   UserPlus,
@@ -9,6 +9,7 @@ import {
   Loader2,
   Lock,
   Search,
+  Send,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -60,6 +61,61 @@ export default function MemberManager({
   const [role, setRole] = useState("member");
   const [tier, setTier] = useState("individual");
   const [paidThrough, setPaidThrough] = useState("");
+
+  // Invite someone who already has an account: search, pick, invite.
+  type Person = { id: string; username: string | null; full_name: string | null; avatar_url: string | null };
+  const [findQ, setFindQ] = useState("");
+  const [found, setFound] = useState<Person[]>([]);
+  const [inviting, setInviting] = useState<string | null>(null);
+  const [invited, setInvited] = useState<Set<string>>(new Set());
+  const onRoster = useMemo(
+    () => new Set(initialMembers.map((m) => m.user_id).filter(Boolean) as string[]),
+    [initialMembers]
+  );
+
+  useEffect(() => {
+    const q = findQ.trim().replace(/^@/, "").replace(/[%_,()]/g, "");
+    if (q.length < 2) {
+      setFound([]);
+      return;
+    }
+    let alive = true;
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, username, full_name, avatar_url")
+        .not("username", "is", null)
+        .is("deleted_at", null)
+        .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
+        .limit(8);
+      if (alive) setFound((data ?? []) as Person[]);
+    }, 200);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [findQ, supabase]);
+
+  async function inviteMember(p: Person) {
+    setError(null);
+    setNotice(null);
+    setInviting(p.id);
+    try {
+      const res = await fetch("/api/clubs/invite-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId, userId: p.id }),
+      });
+      const r = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; label?: string };
+      if (!r.ok) throw new Error(r.error || "Couldn't send the invite.");
+      setInvited((prev) => new Set(prev).add(p.id));
+      setNotice(`Invite sent to ${r.label}. They'll get a notification and can join with one tap.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't send the invite.");
+    } finally {
+      setInviting(null);
+    }
+  }
 
   const [titleDraft, setTitleDraft] = useState<Record<string, string>>(
     Object.fromEntries(initialMembers.map((m) => [m.id, m.officer_title ?? ""]))
@@ -621,8 +677,67 @@ export default function MemberManager({
 
       {/* Add member */}
       <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-4">
-        <p className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-          <UserPlus className="w-4 h-4 text-ocean-300" /> Add a member
+        <p className="text-sm font-medium text-white mb-1 flex items-center gap-2">
+          <Send className="w-4 h-4 text-ocean-300" /> Invite a site member
+        </p>
+        <p className="text-xs text-ocean-500 mb-3">
+          Find someone who already has an account. They get a notification and join with one tap.
+        </p>
+        <div className="relative mb-2">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-500" />
+          <input
+            value={findQ}
+            onChange={(e) => setFindQ(e.target.value)}
+            placeholder="Search name or @username"
+            className={`${inputClass} pl-9`}
+          />
+        </div>
+        {findQ.trim().replace(/^@/, "").length >= 2 && (
+          <ul className="mb-4 divide-y divide-ocean-800/60 overflow-hidden rounded-xl border border-ocean-800/60">
+            {found.length === 0 ? (
+              <li className="px-3 py-3 text-sm text-ocean-500">No members match that.</li>
+            ) : (
+              found.map((p) => {
+                const member = onRoster.has(p.id);
+                const sent = invited.has(p.id);
+                return (
+                  <li key={p.id} className="flex items-center gap-3 px-3 py-2.5">
+                    {p.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.avatar_url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                    ) : (
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ocean-800 text-xs font-semibold text-ocean-200">
+                        {(p.full_name || p.username || "?").slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm text-white">{p.full_name || p.username}</span>
+                      <span className="block truncate text-xs text-ocean-500">@{p.username}</span>
+                    </span>
+                    {member ? (
+                      <span className="shrink-0 text-xs text-ocean-500">On the roster</span>
+                    ) : sent ? (
+                      <span className="shrink-0 text-xs text-emerald-300">Invited</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => inviteMember(p)}
+                        disabled={inviting !== null}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ocean-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-ocean-600 disabled:opacity-60"
+                      >
+                        {inviting === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                        Invite
+                      </button>
+                    )}
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        )}
+
+        <p className="mt-5 mb-3 flex items-center gap-2 border-t border-ocean-800/60 pt-4 text-sm font-medium text-white">
+          <UserPlus className="w-4 h-4 text-ocean-300" /> Or add someone by name
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <input
