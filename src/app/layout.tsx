@@ -9,6 +9,7 @@ import DailyHeartbeat from "@/components/DailyHeartbeat";
 import TrophySync from "@/components/trophies/TrophySync";
 import SiteAnalytics from "@/components/SiteAnalytics";
 import NavProgress from "@/components/NavProgress";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Fonts are self-hosted from src/app/fonts and served from our own domain, so the
 // page never waits on Google Fonts, and a build can't fail because Google Fonts
@@ -129,6 +130,7 @@ export default function RootLayout({
         <Footer />
         <BottomNav />
         <SiteAnalytics />
+        <SpeedInsights />
       </body>
     </html>
   );
