@@ -1,6 +1,8 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { emailLayout, sendEmail } from "@/lib/email";
+import { dispatchToEach, unsubscribeUrlFor, type Recipient } from "@/lib/email/queue";
+import { suppressedSet } from "@/lib/email/suppress";
 
 const SITE = "https://www.undergroundaquarium.com";
 const KIND = "welcome";
@@ -44,7 +46,14 @@ function tile(f: (typeof FEATURES)[number]): string {
     </td>`;
 }
 
-export function welcomeEmail(username: string | null): { subject: string; html: string } {
+/**
+ * `existing` is the one-time send to members who joined before this email
+ * existed: different opening line, honest footer, and an unsubscribe link.
+ */
+export function welcomeEmail(
+  username: string | null,
+  opts: { existing?: boolean; email?: string } = {}
+): { subject: string; html: string } {
   const name = username ? esc(username) : null;
   const rows: string[] = [];
   for (let i = 0; i < FEATURES.length; i += 2) {
@@ -75,16 +84,32 @@ export function welcomeEmail(username: string | null): { subject: string; html: 
     </p>`;
 
   return {
-    subject: name ? `Welcome to Underground Aquarium, ${username}` : "Welcome to Underground Aquarium",
+    subject: opts.existing
+      ? name
+        ? `${username}, here's everything on Underground Aquarium`
+        : "Here's everything on Underground Aquarium"
+      : name
+      ? `Welcome to Underground Aquarium, ${username}`
+      : "Welcome to Underground Aquarium",
     html: emailLayout({
       preheader: "Shops near you, free classifieds, a tank planner and a whole community of fishkeepers.",
-      title: name ? `Welcome aboard, ${name} 🐠` : "Welcome aboard 🐠",
-      intro:
-        "You just joined the one place built for the aquarium hobby. Here's everything you can do, all free. Tap any tile to dive in.",
+      title: opts.existing
+        ? name
+          ? `Thanks for being here early, ${name} 🐠`
+          : "Thanks for being here early 🐠"
+        : name
+        ? `Welcome aboard, ${name} 🐠`
+        : "Welcome aboard 🐠",
+      intro: opts.existing
+        ? "You were one of the first to join, and the site has grown a lot since. Here's everything you can do now, all free. Tap any tile to dive in."
+        : "You just joined the one place built for the aquarium hobby. Here's everything you can do, all free. Tap any tile to dive in.",
       bodyHtml,
       cta: { label: "Explore Underground Aquarium", url: `${SITE}/feed` },
-      footerNote:
-        `You're getting this one-time welcome because you just made an account. Questions? Write to <a href="mailto:support@undergroundaquarium.com" style="color:${C.accent};text-decoration:none;">support@undergroundaquarium.com</a>.`,
+      footerNote: opts.existing
+        ? `You're getting this one-time update because you have an account on Underground Aquarium.${
+            opts.email ? ` <a href="${unsubscribeUrlFor(opts.email)}" style="color:${C.muted};">Unsubscribe</a> from updates like this.` : ""
+          } Questions? Write to <a href="mailto:support@undergroundaquarium.com" style="color:${C.accent};text-decoration:none;">support@undergroundaquarium.com</a>.`
+        : `You're getting this one-time welcome because you just made an account. Questions? Write to <a href="mailto:support@undergroundaquarium.com" style="color:${C.accent};text-decoration:none;">support@undergroundaquarium.com</a>.`,
     }),
   };
 }
@@ -121,4 +146,68 @@ export async function sendWelcomeOnce(userId: string): Promise<void> {
   } catch (e) {
     console.error("[welcome] could not send:", e);
   }
+}
+
+/**
+ * One-time catch-up: the welcome email for members who joined before it
+ * existed. Skips anyone who already got one, unconfirmed, suspended or
+ * deleted accounts, and anyone who unsubscribed or bounced. Goes through
+ * the queue, so the worker sends it in paced batches. `dry` only counts.
+ */
+export async function welcomeExistingMembers({ dry = true }: { dry?: boolean } = {}) {
+  // Every confirmed account, a page at a time.
+  const users: { id: string; email: string }[] = [];
+  for (let page = 1; page <= 100; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw new Error(error.message);
+    for (const u of data.users) {
+      if (u.email && u.email_confirmed_at) users.push({ id: u.id, email: u.email.trim().toLowerCase() });
+    }
+    if (data.users.length < 1000) break;
+  }
+
+  const profiles = new Map<string, { username: string | null; ok: boolean }>();
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, username, needs_username, deleted_at, suspended_at")
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    for (const p of data ?? []) {
+      profiles.set(p.id, { username: p.username ?? null, ok: !p.needs_username && !p.deleted_at && !p.suspended_at });
+    }
+    if (!data || data.length < 1000) break;
+  }
+
+  const already = new Set<string>();
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAdmin
+      .from("email_queue")
+      .select("to_email")
+      .eq("kind", KIND)
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) already.add(String(r.to_email).toLowerCase());
+    if (!data || data.length < 1000) break;
+  }
+
+  const eligible = users.filter((u) => profiles.get(u.id)?.ok && !already.has(u.email));
+  // A catch-up nobody asked for today respects marketing opt-outs, not just bounces.
+  const blocked = await suppressedSet(eligible.map((u) => u.email), "marketing");
+  const send = eligible.filter((u) => !blocked.has(u.email));
+
+  const summary = {
+    accounts: users.length,
+    alreadyWelcomed: users.filter((u) => already.has(u.email)).length,
+    optedOutOrBounced: blocked.size,
+    willSend: send.length,
+  };
+  if (dry) return { dry: true, ...summary };
+
+  const recipients: Recipient[] = send.map((u) => {
+    const { subject, html } = welcomeEmail(profiles.get(u.id)?.username ?? null, { existing: true, email: u.email });
+    return { email: u.email, subject, html, context: { user_id: u.id, catchup: true } };
+  });
+  const result = await dispatchToEach({ kind: KIND, recipients, batchKey: "welcome-catchup-2026-10" });
+  return { dry: false, ...summary, ...result };
 }
