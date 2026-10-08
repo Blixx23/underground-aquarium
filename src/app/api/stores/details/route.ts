@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { adminUnlocked, LOCKED_MESSAGE } from "@/lib/admin/unlockCheck";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
     if (store.claimed_by !== user.id) {
       const { data: me } = await supabaseAdmin.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
       if (!me?.is_admin) return NextResponse.json({ error: "Only the shop's owner can change this." }, { status: 403 });
+      if (!(await adminUnlocked(user.id))) return NextResponse.json({ error: LOCKED_MESSAGE }, { status: 403 });
     }
 
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };

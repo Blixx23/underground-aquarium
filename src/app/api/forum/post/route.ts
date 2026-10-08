@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { adminUnlocked, LOCKED_MESSAGE } from "@/lib/admin/unlockCheck";
 import {
   MAX_OPENER,
   MAX_REPLY,
@@ -70,7 +71,9 @@ async function authorize(postId: string | undefined) {
     .select("is_admin")
     .eq("id", user.id)
     .maybeSingle();
-  const isAdmin = Boolean(me?.is_admin);
+  // Moderating needs the admin password too; an admin who hasn't unlocked
+  // is treated like any other member here.
+  const isAdmin = Boolean(me?.is_admin) && (await adminUnlocked(user.id));
 
   const { data: post } = await supabaseAdmin
     .from("forum_posts")
