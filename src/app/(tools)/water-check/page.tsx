@@ -25,6 +25,12 @@ import {
   type WaterLevel,
 } from "@/lib/waterCheck/engine";
 
+// The Celsius equivalent of a typed Fahrenheit temperature, to one decimal.
+function toC(f: string): string | null {
+  const n = parseFloat(f);
+  return Number.isFinite(n) && f.trim() !== "" ? String(Math.round(((n - 32) * 5) / 9 * 10) / 10) : null;
+}
+
 type WaterFieldKey =
   | "temp_f"
   | "ph"
@@ -65,7 +71,7 @@ const GROUPS: {
     blurb: "The basics: comfort and acidity.",
     Icon: Thermometer,
     fields: [
-      { key: "temp_f", parameter: "Temperature", label: "Temperature", unit: "°F", placeholder: "78", step: "1", hint: "Safe 66-86°F · most like 74-80" },
+      { key: "temp_f", parameter: "Temperature", label: "Temperature", unit: "°F", placeholder: "78", step: "1", hint: "Safe 66-86°F (19-30°C) · most like 74-80°F (23-27°C)" },
       { key: "ph", parameter: "pH", label: "pH", unit: "", placeholder: "7.2", step: "0.1", hint: "Safe 6.0-8.4 · ideal varies by fish" },
     ],
   },
@@ -402,6 +408,9 @@ export default function WaterCheckPage() {
                               />
                             )}
                             {f.label}
+                            {f.key === "temp_f" && toC(water.temp_f) && (
+                              <span className="ml-auto normal-case tracking-normal text-ocean-300">= {toC(water.temp_f)}°C</span>
+                            )}
                           </label>
                           <div className="relative">
                             <input

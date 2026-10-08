@@ -1735,8 +1735,13 @@ export default function TankBuilder({
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {WATER_FIELDS.map((f) => (
                     <div key={f.key}>
-                      <label htmlFor={`tb-w-${f.key}`} className="mb-1 block text-[11px] uppercase tracking-wide text-ocean-400">
+                      <label htmlFor={`tb-w-${f.key}`} className="mb-1 flex text-[11px] uppercase tracking-wide text-ocean-400">
                         {f.label}
+                        {f.key === "temp_f" && water.temp_f.trim() !== "" && Number.isFinite(parseFloat(water.temp_f)) && (
+                          <span className="ml-auto normal-case tracking-normal text-ocean-300">
+                            = {Math.round(((parseFloat(water.temp_f) - 32) * 5) / 9 * 10) / 10}°C
+                          </span>
+                        )}
                       </label>
                       <div className="relative">
                         <input
