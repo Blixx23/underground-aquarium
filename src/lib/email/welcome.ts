@@ -23,7 +23,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 // The tour. Order is what a new member most likely came for first.
 const FEATURES: { emoji: string; title: string; text: string; path: string }[] = [
-  { emoji: "📍", title: "Shops Near Me", text: "Every local fish store on one map, with reviews.", path: "/stores?near=1" },
+  { emoji: "📍", title: "Shops Near Me", text: "Every local fish store on one map. Read reviews and leave your own.", path: "/stores?near=1" },
   { emoji: "🏷️", title: "Free Classifieds", text: "Buy and sell fish, plants and gear locally. Free to post.", path: "/marketplace" },
   { emoji: "🧪", title: "Tank Builder", text: "Check if your fish get along, how full the tank is, and the gear you need.", path: "/tank-builder" },
   { emoji: "💧", title: "Water Check", text: "Type in your test results and get a plain-English fix.", path: "/water-check" },
@@ -60,7 +60,31 @@ export function welcomeEmail(
     rows.push(`<tr>${tile(FEATURES[i])}${FEATURES[i + 1] ? tile(FEATURES[i + 1]) : '<td width="50%"></td>'}</tr>`);
   }
 
+  // Reviews are what we most want from every new member, so they lead.
+  const reviewAsk = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px;">
+      <tr>
+        <td style="background:#fff8e6;border:1px solid #f3d98b;border-radius:14px;padding:20px 22px;">
+          <div style="font-size:22px;line-height:1;">⭐⭐⭐⭐⭐</div>
+          <div style="margin-top:10px;font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1.3;color:${C.ink};">Review your local fish store</div>
+          <div style="margin-top:6px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${C.body};">
+            The best shops deserve to be found, and your review is how other fishkeepers find them. It takes a minute,
+            and it helps the shops that look after our hobby.
+          </div>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">
+            <tr>
+              <td bgcolor="${C.ink}" style="border-radius:10px;">
+                <a href="${SITE}/stores?near=1" style="display:inline-block;padding:12px 22px;font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1;color:#ffffff;text-decoration:none;border-radius:10px;">Find my shop and review it</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>`;
+
   const bodyHtml = `
+    ${reviewAsk}
+    <p style="margin:0 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.muted};">Everything else you can do</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:4px;">
       ${rows.join("")}
     </table>
@@ -78,9 +102,9 @@ export function welcomeEmail(
     </table>
 
     <p style="margin:24px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${C.body};">
-      <strong style="color:${C.ink};">Three quick wins to start:</strong> add a photo to your profile, post your tank in the
-      <a href="${SITE}/feed" style="color:${C.accent};">Feed</a>, and find your nearest
-      <a href="${SITE}/stores?near=1" style="color:${C.accent};">fish store</a>.
+      <strong style="color:${C.ink};">Three quick wins to start:</strong> review your
+      <a href="${SITE}/stores?near=1" style="color:${C.accent};">local fish store</a>, add a photo to your profile, and post
+      your tank in the <a href="${SITE}/feed" style="color:${C.accent};">Feed</a>.
     </p>`;
 
   return {
@@ -92,7 +116,7 @@ export function welcomeEmail(
       ? `Welcome to Underground Aquarium, ${username}`
       : "Welcome to Underground Aquarium",
     html: emailLayout({
-      preheader: "Shops near you, free classifieds, a tank planner and a whole community of fishkeepers.",
+      preheader: "Start by reviewing your local fish store. Plus free classifieds, a tank planner and a whole community.",
       title: opts.existing
         ? name
           ? `Thanks for being here early, ${name} 🐠`
