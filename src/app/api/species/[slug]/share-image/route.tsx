@@ -13,6 +13,7 @@ import {
   ogCache,
 } from "@/lib/og/card";
 
+import { tempF } from "@/lib/units";
 export const dynamic = "force-dynamic";
 
 const CX = 905;
@@ -52,7 +53,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const facts = [
     s.max_size_in != null ? `Up to ${num(s.max_size_in)} in` : null,
     s.min_tank_gal != null ? `${num(s.min_tank_gal)} gal+` : null,
-    s.temp_min_f != null && s.temp_max_f != null ? `${num(s.temp_min_f)}-${num(s.temp_max_f)}°F` : null,
+    s.temp_min_f != null && s.temp_max_f != null ? tempF(s.temp_min_f, s.temp_max_f) : null,
     s.care_level ? `${s.care_level.charAt(0).toUpperCase()}${s.care_level.slice(1)} care` : null,
   ].filter((x): x is string => !!x);
 

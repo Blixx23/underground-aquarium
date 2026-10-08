@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Search, X, Filter, ChevronDown } from "lucide-react";
 import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
 
+import { tempF } from "@/lib/units";
 type Species = {
   slug: string;
   entry_type: string;
@@ -219,7 +220,7 @@ export default function SpeciesExplorer({ species }: { species: Species[] }) {
     if (s.max_size_in != null) parts.push(`${s.max_size_in}"`);
     if (s.min_tank_gal != null) parts.push(`${s.min_tank_gal} gal`);
     if (s.temp_min_f != null && s.temp_max_f != null)
-      parts.push(`${s.temp_min_f}–${s.temp_max_f}°F`);
+      parts.push(tempF(s.temp_min_f, s.temp_max_f) as string);
     return parts.join("  ·  ");
   }
 

@@ -25,10 +25,11 @@ import {
   type WaterLevel,
 } from "@/lib/waterCheck/engine";
 
-// The Celsius equivalent of a typed Fahrenheit temperature, to one decimal.
+import { fToC1 } from "@/lib/units";
+// The Celsius equivalent of a typed Fahrenheit temperature (one formula site-wide: lib/units).
 function toC(f: string): string | null {
   const n = parseFloat(f);
-  return Number.isFinite(n) && f.trim() !== "" ? String(Math.round(((n - 32) * 5) / 9 * 10) / 10) : null;
+  return Number.isFinite(n) && f.trim() !== "" ? String(fToC1(n)) : null;
 }
 
 type WaterFieldKey =

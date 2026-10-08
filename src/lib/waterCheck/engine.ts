@@ -1,6 +1,7 @@
 import type { Species, StockItem } from "@/lib/tankBuilder/engine";
 import { WATER, CARE } from "@/lib/data/facts";
 
+import { celsiusDeep } from "@/lib/units";
 const HEAT = `${CARE.heaterSetPoint[0]}-${CARE.heaterSetPoint[1]}`;
 
 export type WaterReading = {
@@ -507,7 +508,8 @@ export function checkWater(
     else status = "ok";
   }
 
-  return { status, findings };
+  // Every °F in the results also shows its °C (see lib/units).
+  return celsiusDeep({ status, findings });
 }
 
 // ---------- One plan for readings that share a cause ----------
@@ -619,7 +621,7 @@ export function waterPlans(reading: WaterReading): WaterPlan[] {
     });
   }
 
-  return plans;
+  return celsiusDeep(plans);
 }
 
 
@@ -875,5 +877,5 @@ export function checkFishlessCycle(reading: WaterReading): { result: WaterResult
     }
   }
 
-  return { result: { status, findings: f }, plan };
+  return celsiusDeep({ result: { status, findings: f }, plan });
 }

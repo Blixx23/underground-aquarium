@@ -19,6 +19,7 @@ import OpenOnWide from "@/components/breeding/OpenOnWide";
 import { crossesFor } from "@/lib/species/crosses";
 import { ldJson } from "@/lib/jsonLd";
 
+import { tempF } from "@/lib/units";
 export const revalidate = 3600;
 
 const SITE = "https://www.undergroundaquarium.com";
@@ -136,7 +137,7 @@ export default async function BreedingGuidePage({ params }: Params) {
   const range = (a: number | null, b: number | null, unit: string) => (a != null && b != null ? `${a}-${b}${unit}` : null);
   const careFacts = care
     ? ([
-        ["Temperature", range(care.temp_min_f, care.temp_max_f, "°F")],
+        ["Temperature", care.temp_min_f != null && care.temp_max_f != null ? tempF(care.temp_min_f, care.temp_max_f) : null],
         ["pH", range(care.ph_min, care.ph_max, "")],
         ["Hardness", range(care.gh_min, care.gh_max, " dGH")],
         ["Adult size", care.max_size_in != null ? `${care.max_size_in} in` : null],

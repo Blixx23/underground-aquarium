@@ -22,6 +22,7 @@ import BreedingSnapshot from "@/components/breeding/BreedingSnapshot";
 import CrossbreedingNote from "@/components/species/CrossbreedingNote";
 import { crossesFor } from "@/lib/species/crosses";
 
+import { tempF } from "@/lib/units";
 export const revalidate = 3600;
 
 const SITE = "https://www.undergroundaquarium.com";
@@ -379,7 +380,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
 
         <dl className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-8">
           <Stat label="Water" value={s.water_type} />
-          <Stat label="Temperature" value={range(s.temp_min_f, s.temp_max_f, "°F")} />
+          <Stat label="Temperature" value={tempF(s.temp_min_f, s.temp_max_f)} />
           <Stat label="pH" value={range(s.ph_min, s.ph_max, "")} />
           <Stat label="Hardness" value={range(s.gh_min, s.gh_max, " dGH")} />
           <Stat label="Max size" value={s.max_size_in != null ? `${s.max_size_in} in` : null} />

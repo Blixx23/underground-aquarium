@@ -1,6 +1,7 @@
 import { popularityRank } from "@/lib/tankBuilder/popular";
 import { CARE } from "@/lib/data/facts";
 
+import { celsiusDeep } from "@/lib/units";
 export type Species = {
   slug: string;
   common_name: string;
@@ -637,9 +638,10 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   score = stock.length === 0 ? 0 : Math.max(5, Math.min(100, score));
 
   return {
-    equipment,
+    // Problems and the heater note read in °F with the °C alongside (lib/units).
+    equipment: celsiusDeep(equipment),
     stocking,
-    issues,
+    issues: celsiusDeep(issues),
     water: { temp: temp.range, ph: ph.range, gh: hardness.range },
     score,
   };

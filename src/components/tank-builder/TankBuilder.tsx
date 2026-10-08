@@ -53,6 +53,7 @@ import TankVisual, { speciesColor } from "@/components/tank-builder/TankVisual";
 import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
 import { RangeChart, ScoreDial, WaterTrends } from "@/components/tank-builder/Insights";
 
+import { fToC1, readingF, tempF } from "@/lib/units";
 const FREE_TANK_LIMIT = 4;
 const MAX_PHOTOS = MAX_TANK_PHOTOS;
 const DRAFT_KEY = "ua.tankBuilder.draft.v1";
@@ -101,7 +102,7 @@ function readingSummary(r: {
   kh: number | null;
 }): string {
   const parts: string[] = [];
-  if (r.temp_f != null) parts.push(`Temp ${r.temp_f}°F`);
+  if (r.temp_f != null) parts.push(`Temp ${readingF(r.temp_f)}`);
   if (r.ph != null) parts.push(`pH ${r.ph}`);
   if (r.ammonia_ppm != null) parts.push(`Ammonia ${r.ammonia_ppm} ppm`);
   if (r.nitrite_ppm != null) parts.push(`Nitrite ${r.nitrite_ppm} ppm`);
@@ -1651,7 +1652,7 @@ export default function TankBuilder({
                             <Thermometer className="h-3 w-3" /> Set to
                           </dt>
                           <dd className="mt-0.5 text-sm font-semibold text-white">
-                            {result.equipment.setPointF ? `${result.equipment.setPointF}°F` : "--"}
+                            {result.equipment.setPointF ? tempF(result.equipment.setPointF) : "--"}
                           </dd>
                         </div>
                       </dl>
@@ -1739,7 +1740,7 @@ export default function TankBuilder({
                         {f.label}
                         {f.key === "temp_f" && water.temp_f.trim() !== "" && Number.isFinite(parseFloat(water.temp_f)) && (
                           <span className="ml-auto normal-case tracking-normal text-ocean-300">
-                            = {Math.round(((parseFloat(water.temp_f) - 32) * 5) / 9 * 10) / 10}°C
+                            = {fToC1(parseFloat(water.temp_f))}°C
                           </span>
                         )}
                       </label>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Egg, Fish, Sparkles, Ruler, Users } from "lucide-react";
 import type { Guide } from "@/lib/breeding/guides";
 import { CLASS_COLORS, CLASS_LADDER } from "@/lib/society/classes";
+import { withCelsius } from "@/lib/units";
 
 /**
  * Breeding at a glance, on a species profile: how hard it is (the Society
@@ -19,7 +20,8 @@ function short(v: string | undefined, max = 80): string | null {
     .replace(/\s*\([^)]*\)/g, "")
     .trim();
   if (t.length > max) t = `${t.slice(0, max).replace(/\s+\S*$/, "")}...`;
-  return t || null;
+  // Brackets are trimmed for space above, so put the °C back on any °F.
+  return withCelsius(t) || null;
 }
 
 // "Hatch in about 2 to 4 days at 78°F" -> "2 to 4 days"

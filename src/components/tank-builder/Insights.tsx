@@ -4,6 +4,7 @@ import type { Range, StockItem } from "@/lib/tankBuilder/engine";
 import { speciesColor } from "@/components/tank-builder/TankVisual";
 import { checkWater, type WaterLevel } from "@/lib/waterCheck/engine";
 
+import { fToC1, tempF } from "@/lib/units";
 /** A ring that fills with the build's score. */
 export function ScoreDial({ score, label, tone }: { score: number; label: string; tone: "good" | "warn" | "bad" | "none" }) {
   const r = 34;
@@ -81,7 +82,9 @@ export function RangeChart({
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <h3 className="text-sm font-semibold text-white">{title}</h3>
         <span className={`text-xs ${shared ? "text-emerald-300" : "text-red-300"}`}>
-          {shared ? `Shared: ${fmt(shared.lo)}-${fmt(shared.hi)}${unit}` : "No overlap"}
+          {shared
+            ? `Shared: ${unit === "°F" ? tempF(shared.lo, shared.hi) : `${fmt(shared.lo)}-${fmt(shared.hi)}${unit}`}`
+            : "No overlap"}
         </span>
       </div>
       <div className="relative">
@@ -101,7 +104,7 @@ export function RangeChart({
                 <span
                   className="absolute inset-y-0 rounded-full"
                   style={{ left: pct(a), width: width(a, b), background: speciesColor(it.species, i), opacity: 0.85 }}
-                  title={`${fmt(a)}-${fmt(b)}${unit}`}
+                  title={unit === "°F" ? tempF(a, b) ?? "" : `${fmt(a)}-${fmt(b)}${unit}`}
                 />
               </span>
             </li>
@@ -192,6 +195,9 @@ export function WaterTrends({ readings }: { readings: TrendReading[] }) {
                   {latest}
                   {r.unit}
                 </span>
+                {r.key === "temp_f" && (
+                  <span className="block text-[11px] tabular-nums text-ocean-400">{fToC1(latest)}°C</span>
+                )}
               </span>
               <svg viewBox={`0 0 ${W} ${H}`} className="h-8 min-w-0 flex-1" preserveAspectRatio="none" aria-hidden="true">
                 <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />

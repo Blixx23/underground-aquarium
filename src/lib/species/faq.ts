@@ -1,3 +1,4 @@
+import { tempF } from "@/lib/units";
 /**
  * The questions people actually type about a fish ("neon tetra tank size",
  * "how big do angelfish get"), answered from the species' own care data.
@@ -49,7 +50,7 @@ export function speciesFaq(
   }
 
   if (has(s.temp_min_f) && has(s.temp_max_f)) {
-    let a = `Keep a ${n} at ${s.temp_min_f}-${s.temp_max_f}°F`;
+    let a = `Keep a ${n} at ${tempF(Number(s.temp_min_f), Number(s.temp_max_f))}`;
     if (has(s.ph_min) && has(s.ph_max)) a += `, pH ${s.ph_min}-${s.ph_max}`;
     if (has(s.gh_min) && has(s.gh_max)) a += `, and ${s.gh_min}-${s.gh_max} dGH hardness`;
     a += ".";

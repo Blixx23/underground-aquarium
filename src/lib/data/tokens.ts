@@ -1,6 +1,7 @@
 import { supabasePublic } from "@/lib/supabase/public";
 import { FACT_TEXT } from "@/lib/data/facts";
 
+import { withCelsius } from "@/lib/units";
 /**
  * Live numbers inside written text, so a page can never disagree with the
  * species data or the shared facts.
@@ -81,13 +82,16 @@ export function fillTokens(text: null | undefined, self?: TokenRow | null, other
 export function fillTokens(text: string | null | undefined, self?: TokenRow | null, others?: Map<string, TokenRow>): string | null;
 export function fillTokens(text: string | null | undefined, self?: TokenRow | null, others?: Map<string, TokenRow>): string | null {
   if (text == null) return null;
-  if (!text.includes("{{")) return text;
-  return text.replace(TOKEN, (_all, a: string, b?: string) => {
-    if (!b) return (self && field(self, a)) ?? "varies";
-    if (a === "fact") return FACT_TEXT[b] ?? "varies";
-    const row = others?.get(a) ?? (self?.slug === a ? self : undefined);
-    return (row && field(row, b)) ?? "varies";
-  });
+  // Every °F a reader sees gets its °C alongside (see lib/units).
+  if (!text.includes("{{")) return withCelsius(text);
+  return withCelsius(
+    text.replace(TOKEN, (_all, a: string, b?: string) => {
+      if (!b) return (self && field(self, a)) ?? "varies";
+      if (a === "fact") return FACT_TEXT[b] ?? "varies";
+      const row = others?.get(a) ?? (self?.slug === a ? self : undefined);
+      return (row && field(row, b)) ?? "varies";
+    })
+  );
 }
 
 /** Load the species rows a set of texts refers to. */
