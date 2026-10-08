@@ -942,6 +942,7 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
               currentUserId={user?.id ?? null}
               currentUserName={currentUserName}
               isOwner={isOwner}
+              claimHref={claimed ? null : `/stores/${store.slug}#claim`}
             />
           </div>
         )}

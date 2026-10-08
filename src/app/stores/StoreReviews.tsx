@@ -24,12 +24,15 @@ export default function StoreReviews({
   currentUserId,
   currentUserName,
   isOwner,
+  claimHref = null,
 }: {
   storeId: string;
   initialReviews: Review[];
   currentUserId: string | null;
   currentUserName: string | null;
   isOwner: boolean;
+  /** Set only for a shop nobody has claimed: where the owner goes to claim it and reply. */
+  claimHref?: string | null;
 }) {
   const [supabase] = useState(() => createClient());
   // The page header (stars, count) and search results are drawn on the
@@ -236,7 +239,7 @@ export default function StoreReviews({
 
       {count === 0 ? (
         <p className="text-ocean-400 text-sm mb-6">
-          No reviews yet{isOwner ? "." : " — be the first to leave one."}
+          No reviews yet{isOwner ? "." : ". Be the first to leave one."}
         </p>
       ) : (
         <div className="space-y-3 mb-6">
@@ -405,6 +408,15 @@ export default function StoreReviews({
                     {r.response}
                   </p>
                 </div>
+              ) : claimHref ? (
+                // Unclaimed shop: say plainly that nobody has answered yet,
+                // and show the real owner the way in.
+                <p className="mt-3 text-xs text-ocean-400">
+                  The owner hasn&apos;t replied yet.{" "}
+                  <Link href={claimHref} className="font-medium text-emerald-300 hover:text-emerald-200">
+                    Own this shop? Claim it free to reply.
+                  </Link>
+                </p>
               ) : (
                 isOwner && (
                   <button
