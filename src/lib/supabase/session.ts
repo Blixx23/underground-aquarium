@@ -4,6 +4,11 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
    // Refreshes the Supabase auth session on every matched request and keeps the
    // session cookies in sync between browser and server. This is what keeps
    // users logged in smoothly as their tokens expire.
+   // Pages a member who hasn't finished /welcome can still reach: the page
+   // itself, sign-in and sign-out, the terms they're agreeing to, and the API.
+   const WELCOME_EXEMPT =
+     /^\/(welcome|api|auth|login|logout|terms|privacy|rules|account-suspended|account\/deletion-pending)(\/|$)/
+
    export async function updateSession(request: NextRequest) {
      let supabaseResponse = NextResponse.next({ request })
 
@@ -29,7 +34,30 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
      // IMPORTANT: don't run code between creating the client above and getUser()
      // below. getUser() revalidates the token with Supabase and refreshes it if
      // needed. (Never use getSession() in server code.)
-     await supabase.auth.getUser()
+     const {
+       data: { user },
+     } = await supabase.auth.getUser()
+
+     // A Google sign-up who left /welcome before picking a username and
+     // accepting the terms gets sent back there from any page until they
+     // finish. Everyone who has accepted carries terms_accepted_at in their
+     // account, so only the rare account without it costs a database check,
+     // and the profile flag (not the metadata) decides, so nobody can loop.
+     if (user && !user.user_metadata?.terms_accepted_at && !WELCOME_EXEMPT.test(request.nextUrl.pathname)) {
+       const { data: profile } = await supabase
+         .from('profiles')
+         .select('needs_username')
+         .eq('id', user.id)
+         .maybeSingle()
+       if (profile?.needs_username) {
+         const url = request.nextUrl.clone()
+         url.pathname = '/welcome'
+         url.search = `?next=${encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)}`
+         const redirect = NextResponse.redirect(url)
+         supabaseResponse.cookies.getAll().forEach((c) => redirect.cookies.set(c))
+         return redirect
+       }
+     }
 
      // Public marketplace: we only refresh the session here — we do NOT force a
      // login redirect. Pages that need protection (like /profile) check for a
