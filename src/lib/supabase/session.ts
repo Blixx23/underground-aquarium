@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
    import { NextResponse, type NextRequest } from 'next/server'
+   import { ADMIN_COOKIE, adminGateEnabled, validUnlockToken } from '@/lib/admin/unlock'
 
    // Refreshes the Supabase auth session on every matched request and keeps the
    // session cookies in sync between browser and server. This is what keeps
@@ -56,6 +57,20 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
          const redirect = NextResponse.redirect(url)
          supabaseResponse.cookies.getAll().forEach((c) => redirect.cookies.set(c))
          return redirect
+       }
+     }
+
+     // The admin area needs the admin password too (see lib/admin/unlock).
+     // Pages go to the password screen; API calls get a plain 401.
+     const path = request.nextUrl.pathname
+     if (user && adminGateEnabled() && /^\/(admin|api\/admin)(\/|$)/.test(path)) {
+       const ok = await validUnlockToken(request.cookies.get(ADMIN_COOKIE)?.value, user.id)
+       if (!ok) {
+         const locked = path.startsWith('/api/')
+           ? NextResponse.json({ error: 'The admin area is locked. Enter the admin password.' }, { status: 401 })
+           : NextResponse.redirect(new URL(`/admin-unlock?next=${encodeURIComponent(path + request.nextUrl.search)}`, request.url))
+         supabaseResponse.cookies.getAll().forEach((c) => locked.cookies.set(c))
+         return locked
        }
      }
 
