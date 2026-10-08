@@ -109,6 +109,30 @@ export default function JoinClubForm({
         p_heard_about: heard || null,
       });
       if (e) throw e;
+
+      // Signing up from the website: pay right away, no waiting for approval.
+      const ready = await fetch("/api/clubs/join-pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId }),
+      })
+        .then((r) => r.json())
+        .catch(() => null);
+      if (ready?.pay) {
+        const checkout = await fetch("/api/clubs/dues/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clubId }),
+        })
+          .then((r) => r.json())
+          .catch(() => null);
+        if (checkout?.url) {
+          window.location.href = checkout.url;
+          return;
+        }
+      }
+      // Payments unavailable or checkout didn't start: the club page shows
+      // the pay button (or the application status) from here.
       router.refresh();
     } catch (err) {
       setError(
@@ -290,7 +314,7 @@ export default function JoinClubForm({
           ) : (
             <Send className="w-4 h-4" />
           )}
-          Submit application
+          {dues > 0 ? "Continue to payment" : "Submit application"}
         </button>
         <button
           onClick={() => setOpen(false)}

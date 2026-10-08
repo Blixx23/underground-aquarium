@@ -68,6 +68,7 @@ export default function MemberManager({
   const [found, setFound] = useState<Person[]>([]);
   const [inviting, setInviting] = useState<string | null>(null);
   const [invited, setInvited] = useState<Set<string>>(new Set());
+  const [inviteTier, setInviteTier] = useState<"individual" | "lifetime" | "honorary">("individual");
   const onRoster = useMemo(
     () => new Set(initialMembers.map((m) => m.user_id).filter(Boolean) as string[]),
     [initialMembers]
@@ -104,12 +105,24 @@ export default function MemberManager({
       const res = await fetch("/api/clubs/invite-member", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, userId: p.id }),
+        body: JSON.stringify({ clubId, userId: p.id, tier: inviteTier }),
       });
-      const r = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; label?: string };
+      const r = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        label?: string;
+        memberId?: string;
+        honorary?: boolean;
+      };
       if (!r.ok) throw new Error(r.error || "Couldn't send the invite.");
+      if (r.honorary && r.memberId) await sendHonoraryEmail(r.memberId);
       setInvited((prev) => new Set(prev).add(p.id));
-      setNotice(`Invite sent to ${r.label}. They'll get a notification and can join with one tap.`);
+      setNotice(
+        r.honorary
+          ? `${r.label} is now an honorary lifetime member. They've been notified.`
+          : `Invite sent to ${r.label}. They're on the roster as a prospect until they pay.`
+      );
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't send the invite.");
     } finally {
@@ -681,8 +694,22 @@ export default function MemberManager({
           <Send className="w-4 h-4 text-ocean-300" /> Invite a site member
         </p>
         <p className="text-xs text-ocean-500 mb-3">
-          Find someone who already has an account. They get a notification and join with one tap.
+          Find someone who already has an account and choose how they join. Yearly and lifetime members get a
+          notification that takes them straight to paying. Honorary members are in right away, free.
         </p>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-ocean-400">Invite as</span>
+          <select
+            value={inviteTier}
+            onChange={(e) => setInviteTier(e.target.value as "individual" | "lifetime" | "honorary")}
+            className={fieldClass}
+            aria-label="Invite as"
+          >
+            <option value="individual">Yearly member</option>
+            <option value="lifetime">Lifetime member</option>
+            <option value="honorary">Honorary lifetime (free)</option>
+          </select>
+        </div>
         <div className="relative mb-2">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-500" />
           <input

@@ -362,7 +362,7 @@ export default async function SocietyJoinPage({
             {user ? (
               <div className={`${SOC_CARD} px-6 py-8 text-center`}>
                 <p className="mb-4 text-amber-100/70">
-                  Apply below. Once you&apos;re approved you pay dues and you&apos;re in.
+                  Fill in your details, pay your dues, and you&apos;re in.
                 </p>
                 <JoinClubForm
                   clubId={club.id}
