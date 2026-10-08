@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { TERMS_VERSION } from "@/lib/terms";
+import { sendWelcomeOnce } from "@/lib/email/welcome";
 
 /**
  * Saves the username a new Google account picked on /welcome, records that
@@ -65,6 +66,10 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+
+  // Google sign-ups get their welcome email now that they have a name.
+  const uid = user.id;
+  after(() => sendWelcomeOnce(uid));
 
   return NextResponse.json({ ok: true });
 }

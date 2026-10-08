@@ -1,8 +1,9 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
-import { type NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/safeNext";
+import { sendWelcomeOnce } from "@/lib/email/welcome";
 
 /**
  * Where sign-in links land: the sign-up confirmation email (a one-time code
@@ -67,6 +68,10 @@ export async function GET(request: NextRequest) {
     if (profile?.needs_username) {
       redirect(`/welcome?next=${encodeURIComponent(next)}`);
     }
+    // Email sign-ups land here when they confirm. Sent after the redirect so
+    // it never slows sign-in; it skips anyone who isn't brand new.
+    const uid = user.id;
+    after(() => sendWelcomeOnce(uid));
   }
 
   redirect(next);
