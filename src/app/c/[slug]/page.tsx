@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Clock, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { SOCIETY_SLUG, SOCIETY_HOME_PATH, SOCIETY_PATH } from "@/lib/config";
 import { SOC_EYEBROW, SOC_CARD, SOC_BTN_PRIMARY, SOC_BTN_GHOST } from "@/lib/society/theme";
 import SocietySeal from "@/components/society/SocietySeal";
@@ -68,6 +69,7 @@ export default async function SocietyJoinPage({
 
   // Who's asking.
   let me: {
+    id: string;
     role: string | null;
     status: string | null;
     paid_through: string | null;
@@ -79,7 +81,7 @@ export default async function SocietyJoinPage({
   if (user) {
     const { data, error } = await supabase
       .from("club_members")
-      .select("role, status, paid_through, display_name, email, tier")
+      .select("id, role, status, paid_through, display_name, email, tier")
       .eq("club_id", club.id)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -100,6 +102,18 @@ export default async function SocietyJoinPage({
   const myDuesCents = isLifetime ? club.lifetime_dues_amount_cents ?? 0 : club.dues_amount_cents;
   const owesDues = isMember && me?.role !== "owner" && myDuesCents > 0 && renewalOpen;
   const duesDue = owesDues && canCollect;
+
+  // An invited member (added by an officer, never filled in the application)
+  // gives the same details first, then pays. Applicants already gave them.
+  let needsDetails = false;
+  if (duesDue && me?.status === "prospect" && me.id) {
+    const { data: d } = await supabaseAdmin
+      .from("club_member_details")
+      .select("phone")
+      .eq("member_id", me.id)
+      .maybeSingle();
+    needsDetails = !d?.phone;
+  }
 
   // A member in good standing has nothing to do here unless they asked to
   // manage their membership or just came back from paying.
@@ -199,7 +213,26 @@ export default async function SocietyJoinPage({
               </div>
             )}
 
-            {duesDue && (
+            {duesDue && needsDetails && (
+              <div id="renew" className={`${SOC_CARD} mb-6 scroll-mt-28 px-6 py-6`}>
+                <p className="font-medium text-white">Finish joining</p>
+                <p className="mb-4 text-sm text-amber-100/60">
+                  Add your details, then pay {money(myDuesCents)}
+                  {isLifetime ? " once" : " for the year"} and you&apos;re in.
+                </p>
+                <JoinClubForm
+                  clubId={club.id}
+                  clubName={club.name}
+                  defaultName={me?.display_name ?? ""}
+                  dues={club.dues_amount_cents}
+                  lifetimeDues={club.lifetime_dues_amount_cents}
+                  society
+                  finish
+                />
+              </div>
+            )}
+
+            {duesDue && !needsDetails && (
               <div
                 id="renew"
                 className="mb-6 scroll-mt-28 rounded-2xl border border-amber-500/40 bg-amber-500/[0.08] px-6 py-5"

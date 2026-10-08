@@ -33,6 +33,7 @@ export default function JoinClubForm({
   dues = 0,
   lifetimeDues = null,
   society = false,
+  finish = false,
 }: {
   clubId: string;
   clubName?: string;
@@ -41,6 +42,11 @@ export default function JoinClubForm({
   lifetimeDues?: number | null;
   /** Brass styling and Society wording, rather than the generic club form. */
   society?: boolean;
+  /**
+   * An invited member finishing up: they're already on the roster with the
+   * plan the officer chose, so this saves their details and goes to payment.
+   */
+  finish?: boolean;
 }) {
   const tierOptions = [
     {
@@ -53,7 +59,7 @@ export default function JoinClubForm({
   ];
   const [supabase] = useState(() => createClient());
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(finish);
   const [name, setName] = useState(defaultName);
   const [phone, setPhone] = useState("");
   const [line1, setLine1] = useState("");
@@ -92,6 +98,32 @@ export default function JoinClubForm({
       return;
     }
     setSubmitting(true);
+    if (finish) {
+      try {
+        const saved = await fetch("/api/clubs/my-details", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clubId, name, phone, line1, line2, city, state, zip, experience, interests, heard, note }),
+        }).then((r) => r.json());
+        if (!saved?.ok) throw new Error(saved?.error || "Couldn't save your details.");
+        const checkout = await fetch("/api/clubs/dues/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clubId }),
+        })
+          .then((r) => r.json())
+          .catch(() => null);
+        if (checkout?.url) {
+          window.location.href = checkout.url;
+          return;
+        }
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't save your details.");
+        setSubmitting(false);
+      }
+      return;
+    }
     try {
       const { error: e } = await supabase.rpc("join_club", {
         p_club: clubId,
@@ -234,20 +266,22 @@ export default function JoinClubForm({
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>Membership</label>
-          <select
-            value={tier}
-            onChange={(e) => setTier(e.target.value)}
-            className={inputClass}
-          >
-            {tierOptions.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!finish && (
+          <div>
+            <label className={labelClass}>Membership</label>
+            <select
+              value={tier}
+              onChange={(e) => setTier(e.target.value)}
+              className={inputClass}
+            >
+              {tierOptions.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label className={labelClass}>Experience</label>
           <select
@@ -316,13 +350,15 @@ export default function JoinClubForm({
           )}
           {dues > 0 ? "Continue to payment" : "Submit application"}
         </button>
-        <button
-          onClick={() => setOpen(false)}
-          disabled={submitting}
-          className="text-sm text-ocean-400 hover:text-ocean-200 transition-colors"
-        >
-          Cancel
-        </button>
+        {!finish && (
+          <button
+            onClick={() => setOpen(false)}
+            disabled={submitting}
+            className="text-sm text-ocean-400 hover:text-ocean-200 transition-colors"
+          >
+            Cancel
+          </button>
+        )}
       </div>
     </div>
   );
