@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Droplets,
@@ -12,6 +12,7 @@ import {
   FlaskConical,
   Gauge,
   Save,
+  ChevronDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import WaterPlanCard from "@/components/water/WaterPlanCard";
@@ -158,6 +159,18 @@ export default function WaterCheckPage() {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Phones: results sit below the form, so a slim verdict bar follows the
+  // reader until the results themselves are on screen.
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [resultsOnScreen, setResultsOnScreen] = useState(false);
+  useEffect(() => {
+    const el = resultsRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setResultsOnScreen(e.isIntersecting), { rootMargin: "0px 0px -35% 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -456,7 +469,7 @@ export default function WaterCheckPage() {
           </div>
 
           {/* Results stay beside the form on wide screens. */}
-          <div className="space-y-6 xl:sticky xl:top-24">
+          <div ref={resultsRef} id="wc-results" className="space-y-6 scroll-mt-24 xl:sticky xl:top-24">
           {/* Empty state */}
           {waterResult.status === "empty" ? (
             <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center">
@@ -655,6 +668,37 @@ export default function WaterCheckPage() {
           </div>
         </div>
       </div>
+
+      {/* Phone verdict bar: hidden on wide screens, where results sit beside the form. */}
+      {banner && !resultsOnScreen && (
+        <button
+          type="button"
+          onClick={() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          className={
+            "fixed inset-x-3 z-30 bottom-[calc(4.5rem_+_env(safe-area-inset-bottom))] md:bottom-4 xl:hidden " +
+            "flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-left shadow-2xl backdrop-blur-xl " +
+            banner.className.replace(/bg-[a-z]+-500\/10/, "bg-ocean-950/95")
+          }
+        >
+          <banner.Icon className="h-5 w-5 shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium">{banner.text}</span>
+            <span className="block text-xs opacity-80">
+              {[
+                dangerCount > 0 && `${dangerCount} need${dangerCount === 1 ? "s" : ""} action`,
+                warnCount > 0 && `${warnCount} to watch`,
+                noteCount > 0 && `${noteCount} heads-up`,
+                okCount > 0 && `${okCount} healthy`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-xs font-medium">
+            See results <ChevronDown className="h-4 w-4" />
+          </span>
+        </button>
+      )}
     </main>
   );
 }

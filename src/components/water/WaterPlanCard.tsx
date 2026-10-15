@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { AlertTriangle, Info, ListChecks } from "lucide-react";
 import type { WaterPlan } from "@/lib/waterCheck/engine";
 
@@ -10,13 +13,25 @@ const TONE = {
 /** One explanation and one set of steps for readings that share a cause. */
 export default function WaterPlanCard({ plan }: { plan: WaterPlan }) {
   const t = TONE[plan.level];
+  // On phones the explanation can fill a whole screen, so it starts as three
+  // lines and the steps come into view sooner. Wider screens always show it all.
+  const [openWhy, setOpenWhy] = useState(false);
   return (
     <div className={`rounded-2xl border p-4 sm:p-5 ${t.box}`}>
       <div className="flex items-center gap-2.5">
         <t.Icon className={`h-5 w-5 shrink-0 ${t.icon}`} />
         <p className="text-base font-medium text-white">{plan.title}</p>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-ocean-200">{plan.why}</p>
+      <p className={`mt-2 text-sm leading-relaxed text-ocean-200 sm:line-clamp-none ${openWhy ? "" : "line-clamp-3"}`}>{plan.why}</p>
+      {!openWhy && (
+        <button
+          type="button"
+          onClick={() => setOpenWhy(true)}
+          className="mt-1 text-xs font-medium text-emerald-300 underline underline-offset-2 hover:text-emerald-200 sm:hidden"
+        >
+          Read why
+        </button>
+      )}
       <p className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ocean-300">
         <ListChecks className="h-4 w-4" /> What to do
       </p>
