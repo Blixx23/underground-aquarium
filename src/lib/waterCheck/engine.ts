@@ -517,12 +517,12 @@ export function checkWater(
       const fishIn = species.length > 0;
       findings.push({
         parameter: "Temperature",
-        level: fishIn ? "danger" : "warning",
+        level: "danger",
         value: fmt(t, "°F"),
-        title: fishIn ? "Water is dangerously cold for your fish" : "Water is very cold",
+        title: fishIn ? "Water is dangerously cold for your fish" : "Water is dangerously cold for tropical fish",
         whatsHappening:
           "Below 60°F tropical fish shut down: they stop eating, their immune system stalls and disease takes hold fast. The usual cause is a heater that failed or came unplugged." +
-          (fishIn ? "" : " Coldwater fish like goldfish can handle it; pick your tank to check against your own fish."),
+          (fishIn ? "" : " If you keep only coldwater fish like goldfish, this can be fine; pick your tank to check against your own fish."),
         howToFix:
           "If you keep tropical fish, warm it back up slowly, about 2 degrees an hour: check the heater is plugged in and its light comes on, or replace it, and set it to " +
           `${HEAT}°F. Wrap a towel around the tank to hold heat meanwhile. Don't feed until the fish are active again.`,
@@ -976,13 +976,24 @@ export function checkFishlessCycle(input: WaterReading): { result: WaterResult; 
           "At pH 8.5 and up, more of the ammonia is in its free form, which slows down the bacteria that turn nitrite into nitrate. The cycle still works, just slower in the nitrite stage.",
         howToFix: "Dose to about 1 ppm instead of 2 until nitrite starts falling.",
       });
+    } else if (a > 0 && a < FISHLESS_REDOSE) {
+      f.push({
+        parameter: "Ammonia", level: "note", value: fmt(a, " ppm"),
+        title: "Ammonia is nearly used up",
+        whatsHappening:
+          "The bacteria have eaten almost everything you gave them, which is progress, but they need a steady supply to keep growing." +
+          (!nitriteSeen && !nitrateSeen
+            ? " If a full dose dropped this far with no nitrite or nitrate showing at all, something other than the cycle may be taking it: live plants absorb ammonia, and an old nitrite or nitrate test can read zero. Check the dates on the bottles."
+            : ""),
+        howToFix: `Dose pure ammonia back up to about ${FISHLESS_DOSE} ppm.`,
+      });
     } else if (a > 0) {
       f.push({
         parameter: "Ammonia", level: "ok", value: fmt(a, " ppm"),
         title: "Ammonia is fine during a fishless cycle",
         whatsHappening:
           "This is the food you add on purpose. The first group of bacteria eats ammonia and multiplies, and with no fish in the tank it can't harm anything.",
-        howToFix: a < FISHLESS_REDOSE ? `It's nearly used up. Dose back up to about ${FISHLESS_DOSE} ppm.` : "Nothing to do. Let the bacteria work on it.",
+        howToFix: "Nothing to do. Let the bacteria work on it.",
       });
     } else {
       f.push({
@@ -1243,8 +1254,10 @@ export function checkFishlessCycle(input: WaterReading): { result: WaterResult; 
           "The ammonia in the tank is food for the first group of bacteria. While they multiply, ammonia sits there with little or no nitrite. It's slow at first, often a week or two, and with no fish nothing is at risk." +
           stalledBy,
         steps: [
+          ...((a ?? 0) > FISHLESS_AMMONIA_HIGH
+            ? [`First, do a water change with dechlorinated water to bring ammonia down to about ${FISHLESS_DOSE} ppm. Too much ammonia slows the bacteria down. After that, don't do water changes; the ammonia is supposed to be there.`]
+            : ["Don't do water changes. The ammonia is supposed to be there."]),
           doseStep,
-          "Don't do water changes. The ammonia is supposed to be there.",
           "A bottled beneficial-bacteria product can speed this stage up. It's optional.",
           ...general,
         ],
