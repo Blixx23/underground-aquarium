@@ -164,6 +164,13 @@ export default function WaterCheckPage() {
   // reader until the results themselves are on screen.
   const resultsRef = useRef<HTMLDivElement>(null);
   const [resultsOnScreen, setResultsOnScreen] = useState(false);
+  // Phones: the summary dots come first and the steps and explanations open on
+  // request. Wide screens always show everything (see the xl:block below).
+  const [showDetails, setShowDetails] = useState(false);
+  function openCard(id: string) {
+    setShowDetails(true);
+    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  }
   useEffect(() => {
     const el = resultsRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
@@ -514,6 +521,49 @@ export default function WaterCheckPage() {
                 </div>
               )}
 
+              {/* At a glance: one dot per reading, worst first. Tap a row for its details. */}
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                <p className="px-1 pb-2 text-[11px] uppercase tracking-wide text-ocean-400">At a glance</p>
+                <ul className="divide-y divide-white/5">
+                  {[...detailed, ...healthy].map((f, i) => (
+                    <li key={i}>
+                      <button
+                        type="button"
+                        onClick={() => openCard(`wc-card-${i}`)}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-1 py-2 text-left hover:bg-white/5"
+                      >
+                        <span className={"h-2.5 w-2.5 shrink-0 rounded-full " + dotFor(f.level)} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm text-white">{f.title}</span>
+                          {!f.title.toLowerCase().includes(f.parameter.toLowerCase()) && (
+                            <span className="block truncate text-xs text-ocean-400">{f.parameter}</span>
+                          )}
+                        </span>
+                        <span className="shrink-0 whitespace-nowrap text-xs text-ocean-300">{f.value}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowDetails((v) => !v)}
+                aria-expanded={showDetails}
+                className={
+                  "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium xl:hidden " +
+                  (showDetails
+                    ? "border-white/10 text-ocean-300 hover:text-white"
+                    : dangerCount + warnCount > 0
+                    ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25"
+                    : "border-white/10 bg-white/5 text-ocean-200 hover:text-white")
+                }
+              >
+                {showDetails ? "Hide details" : plans.length > 0 ? "See what to do" : detailed.length > 0 ? "See what to do and why" : "See more"}
+                <ChevronDown className={"h-4 w-4 transition-transform " + (showDetails ? "rotate-180" : "")} />
+              </button>
+
+              <div className={(showDetails ? "" : "hidden ") + "space-y-6 xl:block"}>
               {plans.map((p) => (
                 <WaterPlanCard key={p.title} plan={p} />
               ))}
@@ -527,7 +577,7 @@ export default function WaterCheckPage() {
                   {detailed.map((f, i) => {
                     const st = findingStyle(f.level);
                     return (
-                      <div key={i} className={"rounded-xl border p-4 flex gap-3 " + st.box}>
+                      <div key={i} id={`wc-card-${i}`} className={"scroll-mt-24 rounded-xl border p-4 flex gap-3 " + st.box}>
                         <st.I className={"w-5 h-5 shrink-0 mt-0.5 " + st.icon} />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-3">
@@ -570,7 +620,7 @@ export default function WaterCheckPage() {
                   </p>
                   <div className="space-y-2">
                     {healthy.map((f, i) => (
-                      <div key={i}>
+                      <div key={i} id={`wc-card-${detailed.length + i}`} className="scroll-mt-24">
                         <div className="flex items-center gap-2.5 text-sm">
                           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
                           <span className="text-ocean-200">{f.title}</span>
@@ -587,6 +637,7 @@ export default function WaterCheckPage() {
                   </div>
                 </div>
               )}
+              </div>
             </>
           )}
 
