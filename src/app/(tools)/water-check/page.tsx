@@ -25,7 +25,8 @@ import {
   type WaterLevel,
 } from "@/lib/waterCheck/engine";
 
-import { fToC1 } from "@/lib/units";
+import { fToC, fToC1 } from "@/lib/units";
+import { WATER, CARE } from "@/lib/data/facts";
 // The Celsius equivalent of a typed Fahrenheit temperature (one formula site-wide: lib/units).
 function toC(f: string): string | null {
   const n = parseFloat(f);
@@ -72,8 +73,8 @@ const GROUPS: {
     blurb: "The basics: comfort and acidity.",
     Icon: Thermometer,
     fields: [
-      { key: "temp_f", parameter: "Temperature", label: "Temperature", unit: "°F", placeholder: "78", step: "1", hint: "Safe 66-86°F (19-30°C) · most like 74-80°F (23-27°C)" },
-      { key: "ph", parameter: "pH", label: "pH", unit: "", placeholder: "7.2", step: "0.1", hint: "Safe 6.0-8.4 · ideal varies by fish" },
+      { key: "temp_f", parameter: "Temperature", label: "Temperature", unit: "°F", placeholder: "78", step: "1", hint: `Safe ${WATER.tempLow}-${WATER.tempHigh}°F (${fToC(WATER.tempLow)}-${fToC(WATER.tempHigh)}°C) · most like ${CARE.tropicalTemp[0]}-${CARE.tropicalTemp[1]}°F (${fToC(CARE.tropicalTemp[0])}-${fToC(CARE.tropicalTemp[1])}°C)` },
+      { key: "ph", parameter: "pH", label: "pH", unit: "", placeholder: "7.2", step: "0.1", hint: `Safe ${WATER.phLow.toFixed(1)}-${WATER.phHigh.toFixed(1)} · ideal varies by fish` },
     ],
   },
   {
@@ -83,7 +84,7 @@ const GROUPS: {
     fields: [
       { key: "ammonia_ppm", parameter: "Ammonia", label: "Ammonia", unit: "ppm", placeholder: "0", step: "0.25", hint: "Should be 0" },
       { key: "nitrite_ppm", parameter: "Nitrite", label: "Nitrite", unit: "ppm", placeholder: "0", step: "0.25", hint: "Should be 0" },
-      { key: "nitrate_ppm", parameter: "Nitrate", label: "Nitrate", unit: "ppm", placeholder: "10", step: "5", hint: "Keep under 20" },
+      { key: "nitrate_ppm", parameter: "Nitrate", label: "Nitrate", unit: "ppm", placeholder: "10", step: "5", hint: `Keep under ${WATER.nitrateOk}` },
     ],
   },
   {
@@ -91,8 +92,8 @@ const GROUPS: {
     blurb: "How mineral-rich your water is, and how stable your pH stays.",
     Icon: Gauge,
     fields: [
-      { key: "gh", parameter: "GH", label: "GH", unit: "dGH", placeholder: "8", step: "1", hint: "Soft 4-8, hard 8-12" },
-      { key: "kh", parameter: "KH", label: "KH", unit: "dKH", placeholder: "5", step: "1", hint: "3+ keeps pH steady" },
+      { key: "gh", parameter: "GH", label: "GH", unit: "dGH", placeholder: "8", step: "1", hint: `Very soft under ${WATER.ghSoft}, very hard over ${WATER.ghHard} · ppm works too` },
+      { key: "kh", parameter: "KH", label: "KH", unit: "dKH", placeholder: "5", step: "1", hint: `${WATER.khLow}+ keeps pH steady · ppm works too` },
     ],
   },
 ];
@@ -228,7 +229,7 @@ export default function WaterCheckPage() {
   const normalResult = useMemo(() => checkWater(reading, stock), [reading, stock]);
   const waterResult = fishless ? fishlessCheck.result : normalResult;
   // Readings that share a cause get one explanation and one set of steps.
-  const normalPlans = useMemo(() => waterPlans(reading), [reading]);
+  const normalPlans = useMemo(() => waterPlans(reading, stock), [reading, stock]);
   const plans = fishless ? (fishlessCheck.plan ? [fishlessCheck.plan] : []) : normalPlans;
   const covered = new Set(plans.flatMap((p) => p.covers));
 
@@ -329,6 +330,17 @@ export default function WaterCheckPage() {
           };
   }
 
+  // A number that can't be real (a typo, Celsius, a missing decimal point) gets
+  // "check this" first, unless something real is already an emergency.
+  if (banner && waterResult.status !== "danger" && waterResult.findings.some((f) => f.check)) {
+    banner = {
+      text: "Double-check a reading",
+      sub: "One of your numbers doesn't look like a real test result, so it wasn't checked. See below.",
+      className: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+      Icon: Info,
+    };
+  }
+
   return (
     <main className="min-h-screen pt-24 pb-20 px-6">
       <div className="max-w-6xl mx-auto">
@@ -337,7 +349,7 @@ export default function WaterCheckPage() {
           <h1 className="font-display text-3xl text-white sm:text-4xl">Water Check</h1>
           <p className="mt-1 text-ocean-300">
             Enter your test-kit numbers and get a plain-English read on what&apos;s healthy,
-            what isn&apos;t, and how to fix it. Fill in only what you have.
+            what isn&apos;t, and how to fix it. Fill in only what you have. For freshwater tanks.
           </p>
         </div>
 

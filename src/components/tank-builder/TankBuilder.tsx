@@ -479,7 +479,7 @@ export default function TankBuilder({
   }, [water]);
 
   const waterResult = useMemo(() => checkWater(reading, stock), [reading, stock]);
-  const plans = useMemo(() => waterPlans(reading), [reading]);
+  const plans = useMemo(() => waterPlans(reading, stock), [reading, stock]);
   const covered = new Set(plans.flatMap((p) => p.covers));
 
   function addSpecies(s: Species, qty?: number) {

@@ -32,6 +32,19 @@ export const WATER = {
   khLow: 3,
   ghSoft: 3,
   ghHard: 18,
+  /** °F at or above which the water is an emergency for any fish. */
+  tempDanger: 90,
+  /** °F below which the water is an emergency for tropical fish. */
+  tempColdDanger: 60,
+  /** pH below or above these is an emergency for nearly every aquarium fish. */
+  phDangerLow: 5.0,
+  phDangerHigh: 9.0,
+  /** Top colour on most liquid test kits; a reading here could really be higher. */
+  kitTopAmmonia: 8,
+  kitTopNitrite: 5,
+  kitTopNitrate: 160,
+  /** ppm of hardness in one dGH or dKH (test strips often read in ppm). */
+  ppmPerDegree: 17.86,
 } as const;
 
 export const CARE = {
