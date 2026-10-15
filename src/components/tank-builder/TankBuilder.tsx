@@ -37,6 +37,7 @@ import {
   lToGal,
   scoreLabel,
   suggestTankmates,
+  fitOf,
   type Species,
   type StockItem,
   type Issue,
@@ -434,10 +435,18 @@ export default function TankBuilder({
 
   const popular = useMemo(() => [...species].sort(byPopularity).slice(0, 60), [species]);
 
+  // Once there are fish in the tank, the list under the search shows fish
+  // that fit them instead of the same popular picks for everyone.
+  const fitting = useMemo(() => {
+    if (stock.length === 0) return [];
+    if (gallons > 0) return suggestTankmates(gallons, stock, species, 10).map((x) => x.species);
+    return popular.filter((s) => fitOf(0, stock, s) === "fits").slice(0, 10);
+  }, [gallons, stock, species, popular]);
+
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     const chosen = new Set(stock.map((s) => s.species.slug));
-    if (!q) return popular.filter((s) => !chosen.has(s.slug)).slice(0, 8);
+    if (!q) return fitting.length > 0 ? fitting : popular.filter((s) => !chosen.has(s.slug)).slice(0, 8);
     const scored: { s: Species; r: number }[] = [];
     for (const s of species) {
       if (chosen.has(s.slug)) continue;
@@ -455,7 +464,18 @@ export default function TankBuilder({
     }
     scored.sort((a, b) => a.r - b.r || byPopularity(a.s, b.s));
     return scored.slice(0, 10).map((x) => x.s);
-  }, [query, species, stock, popular]);
+  }, [query, species, stock, popular, fitting]);
+
+  // How each search result would fit the fish already chosen.
+  const fitBySlug = useMemo(() => {
+    const m = new Map<string, "fits" | "watch" | "clash">();
+    if (stock.length === 0 || !query.trim()) return m;
+    for (const sp of matches) {
+      const f = fitOf(gallons, stock, sp);
+      if (f) m.set(sp.slug, f);
+    }
+    return m;
+  }, [matches, gallons, stock, query]);
 
   const result = useMemo(() => buildTank(gallons, stock), [gallons, stock]);
   const suggestions = useMemo(() => suggestTankmates(gallons, stock, species, 6), [gallons, stock, species]);
@@ -1184,7 +1204,9 @@ export default function TankBuilder({
                   className="absolute z-30 mt-2 max-h-[22rem] w-full overflow-y-auto rounded-xl border border-ocean-700/70 bg-[#06182b] shadow-2xl shadow-black/70"
                 >
                   {!query.trim() && matches.length > 0 && (
-                    <p className="px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-ocean-500">Popular picks</p>
+                    <p className="px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-ocean-500">
+                      {fitting.length > 0 ? "Fits your tank" : "Popular picks"}
+                    </p>
                   )}
                   {matches.length === 0 ? (
                     <div className="px-4 py-4">
@@ -1228,6 +1250,18 @@ export default function TankBuilder({
                           {tooSmall ? (
                             <span className="shrink-0 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300">
                               Needs {sp.min_tank_gal}+ gal
+                            </span>
+                          ) : fitBySlug.get(sp.slug) ? (
+                            <span
+                              className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] ${
+                                fitBySlug.get(sp.slug) === "fits"
+                                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                                  : fitBySlug.get(sp.slug) === "watch"
+                                  ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                                  : "border-coral-500/40 bg-coral-500/10 text-coral-300"
+                              }`}
+                            >
+                              {fitBySlug.get(sp.slug) === "fits" ? "Fits" : fitBySlug.get(sp.slug) === "watch" ? "Watch" : "Clashes"}
                             </span>
                           ) : (
                             <Plus className="h-4 w-4 shrink-0 text-ocean-400" />

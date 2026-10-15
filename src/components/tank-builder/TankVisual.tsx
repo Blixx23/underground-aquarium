@@ -209,9 +209,10 @@ export default function TankVisual({
 
   const sprites = useMemo<Sprite[]>(() => {
     const out: Sprite[] = [];
-    // Picture units per inch of fish. The front glass spans the photo; fish
-    // swim a little behind it, so they read slightly smaller.
-    const perInch = (IMG_W * 0.86) / tankLengthIn(gallons);
+    // Picture units per inch of fish. Bigger tanks show fish a little smaller,
+    // but the scale is softened (true scale makes a 20 gallon look absurd) and
+    // capped so even an oscar stays a sensible size in the picture.
+    const perInch = (IMG_W * 0.6) / Math.max(36, tankLengthIn(gallons));
     for (const { species: s, qty } of stock) {
       const invert = isInvert(s);
       const kind: Kind = invert ? (/snail/i.test(`${s.common_name} ${s.group_name}`) ? "snail" : "shrimp") : "fish";
@@ -222,8 +223,9 @@ export default function TankVisual({
       const show = Math.min(qty, kind === "fish" ? 14 : 8);
       const inches = s.max_size_in ?? (kind === "fish" ? 2 : 1);
       // Never so small it vanishes, never wider than a third of the tank.
-      const baseLen = Math.min(IMG_W / 3, Math.max(kind === "fish" ? 34 : 26, inches * perInch));
-      const schooling = (s.min_group_size ?? 1) >= 5 && kind === "fish";
+      const baseLen = Math.min(IMG_W * 0.15, Math.max(kind === "fish" ? 34 : 26, 12 + inches * perInch * 0.9));
+      // Small fish school tightly; big ones each go their own way so they don't stack.
+      const schooling = (s.min_group_size ?? 1) >= 5 && kind === "fish" && baseLen < 110;
       const schoolLap = 16 + rnd(`${s.slug}lap`) * 14 + (bottom ? 12 : 0);
       const schoolDelay = rnd(`${s.slug}dl`) * schoolLap;
       const lane: [number, number] =
@@ -250,7 +252,7 @@ export default function TankVisual({
             : schooling
             ? schoolLap * (0.97 + rnd(`${k}l`) * 0.06)
             : 14 + rnd(`${k}l`) * 18;
-        const delay = schooling ? schoolDelay + i * 0.4 + rnd(`${k}o`) * 0.8 : rnd(`${k}o`) * lap;
+        const delay = schooling ? schoolDelay + i * 0.6 + rnd(`${k}o`) * 1.2 : rnd(`${k}o`) * lap;
         out.push({ key: k, slug: s.slug, kind, body, look, len, y, x0, x1, lap, delay: -delay, depth, flagged: !!flagged?.has(s.slug), onSand });
       }
     }
@@ -476,13 +478,13 @@ function shape(body: FishBody, len: number, look: FishLook): Parts {
           body: `M ${L} ${-bh * 0.05} C ${L * 0.82} ${-bh * 0.75}, ${L * 0.15} ${-bh * 1.02}, ${-L * 0.42} ${-bh * 0.35} L ${-L * 0.48} ${bh * 0.32} C ${L * 0.1} ${bh * 0.98}, ${L * 0.8} ${bh * 0.72}, ${L} ${-bh * 0.05} Z`,
           tail: `M ${-L * 0.44} 0 C ${-L * 0.62} ${-bh * 0.55}, ${-L * 0.82} ${-bh * 0.72}, ${-L * 0.9} ${-bh * 0.66} Q ${-L * 0.8} 0 ${-L * 0.9} ${bh * 0.66} C ${-L * 0.82} ${bh * 0.72}, ${-L * 0.62} ${bh * 0.55}, ${-L * 0.44} 0 Z`,
           fins: [
-            `M ${L * 0.38} ${-bh * 0.78} C ${L * 0.1} ${-bh * 1.9}, ${-L * 0.4} ${-bh * 2.9}, ${-L * 0.72} ${-bh * 3.1} C ${-L * 0.45} ${-bh * 2.3}, ${-L * 0.38} ${-bh * 1.2}, ${-L * 0.42} ${-bh * 0.38} Z`,
-            `M ${L * 0.3} ${bh * 0.8} C ${L * 0.05} ${bh * 1.9}, ${-L * 0.42} ${bh * 2.9}, ${-L * 0.74} ${bh * 3.1} C ${-L * 0.47} ${bh * 2.3}, ${-L * 0.4} ${bh * 1.2}, ${-L * 0.46} ${bh * 0.36} Z`,
+            `M ${L * 0.38} ${-bh * 0.78} C ${L * 0.12} ${-bh * 1.4}, ${-L * 0.3} ${-bh * 1.9}, ${-L * 0.6} ${-bh * 2.0} C ${-L * 0.45} ${-bh * 1.5}, ${-L * 0.38} ${-bh * 0.9}, ${-L * 0.42} ${-bh * 0.38} Z`,
+            `M ${L * 0.3} ${bh * 0.8} C ${L * 0.08} ${bh * 1.4}, ${-L * 0.32} ${bh * 1.9}, ${-L * 0.62} ${bh * 2.0} C ${-L * 0.47} ${bh * 1.5}, ${-L * 0.4} ${bh * 0.9}, ${-L * 0.46} ${bh * 0.36} Z`,
           ],
           pec: `M ${L * 0.4} ${bh * 0.05} Q ${L * 0.2} ${bh * 0.3} ${L * 0.12} ${bh * 0.08} Z`,
           eye: [L * 0.68, -bh * 0.18, len * 0.03],
           bandsInFins: true,
-          whiskers: `M ${L * 0.42} ${bh * 0.6} C ${L * 0.38} ${bh * 1.6}, ${L * 0.25} ${bh * 2.6}, ${L * 0.08} ${bh * 3.4} M ${L * 0.36} ${bh * 0.62} C ${L * 0.3} ${bh * 1.6}, ${L * 0.18} ${bh * 2.5}, ${L * 0.02} ${bh * 3.2}`,
+          whiskers: `M ${L * 0.42} ${bh * 0.6} C ${L * 0.38} ${bh * 1.2}, ${L * 0.28} ${bh * 1.7}, ${L * 0.14} ${bh * 2.1} M ${L * 0.36} ${bh * 0.62} C ${L * 0.3} ${bh * 1.2}, ${L * 0.2} ${bh * 1.6}, ${L * 0.08} ${bh * 2.0}`,
         };
       }
       // Discus and silver dollar: a round, flat disc.
@@ -626,7 +628,7 @@ function Fish({ sp, uid, bodyFill, finFill, rays }: { sp: Sprite; uid: string; b
   const bh = body === "disc" && p.bandsInFins ? len * 0.36 : h;
   const bandsX =
     body === "disc" ? [0.42, 0.06, -0.3] : body === "loach" ? [0.48, 0.05, -0.42] : body === "catfish" || body === "pleco" ? [0.36, -0.04, -0.42] : [0.32, -0.02, -0.36];
-  const bandSpan = p.bandsInFins ? bh * 3.3 : h * 1.3;
+  const bandSpan = p.bandsInFins ? bh * 2.1 : h * 1.3;
   const [ex, ey, er] = p.eye;
   // Real fish eyes are small next to a cartoon's; keep them readable on tiny fish.
   const eyeR = Math.max(2.2, er * 0.72);

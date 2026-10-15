@@ -268,10 +268,31 @@ export function computeEquipment(
 export const COMMON_SIZES = [5, 10, 20, 29, 40, 55, 75, 90, 125, 150, 180, 220, 300];
 
 /** The first common size where this stock sits comfortably below the "near capacity" line. */
-function roomyTankSize(gallons: number, pct: number): number | null {
-  const need = (gallons * pct) / (STOCK_NEAR_PCT - 5);
+function roomyTankSize(gallons: number, pct: number, atLeast = 0): number | null {
+  const need = Math.max((gallons * pct) / (STOCK_NEAR_PCT - 5), atLeast);
   return COMMON_SIZES.find((s) => s > gallons && s >= need) ?? null;
 }
+
+/**
+ * A species' recommended minimum, scaled for how many you keep. A schooling
+ * fish's minimum already assumes a group; a big fish kept on its own doesn't,
+ * so each extra one needs room too (two oscars need far more than one).
+ */
+function effectiveMinGal(s: Species, qty: number): number | null {
+  if (s.min_tank_gal == null) return null;
+  const solo = (s.min_group_size ?? 1) <= 1;
+  if (qty > 1 && solo && (s.max_size_in ?? 0) >= 6 && s.min_tank_gal >= 40) {
+    return Math.ceil((s.min_tank_gal * (1 + 0.5 * (qty - 1))) / 5) * 5;
+  }
+  return s.min_tank_gal;
+}
+
+const isBotiaLoach = (s: Species) =>
+  /clown loach|yoyo loach|yo-yo loach|skunk loach|zebra loach|polka dot loach|dwarf chain loach|botia/i.test(s.common_name);
+const isPuffer = (s: Species) => /puffer/i.test(`${s.group_name} ${s.common_name}`);
+const isCrayOrCrab = (s: Species) => /cray|crab/i.test(`${s.group_name} ${s.common_name}`);
+const isShrimp = (s: Species) => /shrimp/i.test(s.group_name ?? "") || /shrimp/i.test(s.common_name);
+const isSnail = (s: Species) => /snail/i.test(`${s.group_name} ${s.common_name}`);
 
 function list(names: string[]): string {
   if (names.length <= 1) return names.join("");
@@ -289,11 +310,26 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   issues.push(...crossIssues(species));
 
   // Tank size vs. the species' recommended minimum: graduated, not all-or-nothing.
-  for (const { species: s } of stock) {
-    if (s.min_tank_gal == null || g <= 0) continue;
-    if (g >= s.min_tank_gal) continue;
-    const ratio = g / s.min_tank_gal;
+  for (const { species: s, qty } of stock) {
+    const minGal = effectiveMinGal(s, qty);
+    if (minGal == null || g <= 0) continue;
+    if (g >= minGal) continue;
+    const ratio = g / minGal;
     const gal = Math.round(g * 10) / 10;
+    // More than one big fish: say why the number is higher than the usual minimum.
+    if (minGal !== s.min_tank_gal) {
+      issues.push({
+        level: ratio >= TANK_TIGHT_RATIO ? "caution" : "conflict",
+        title: `Not enough room for ${qty} ${s.common_name}${/s$/i.test(s.common_name) ? "" : "s"}`,
+        detail: `One ${s.common_name} needs about ${s.min_tank_gal} gallons, and each extra one needs room of its own, so ${qty} need about ${minGal}. At ${gal} they'll be cramped and likely to fight.`,
+        slugs: [s.slug],
+        fixes: [
+          { label: "Keep just one", type: "qty", slug: s.slug, qty: 1 },
+          { label: `Try ${minGal} gallons`, type: "gallons", gallons: minGal },
+        ],
+      });
+      continue;
+    }
     if (ratio >= TANK_TIP_RATIO) {
       issues.push({
         level: "note",
@@ -460,7 +496,10 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   for (const a of species) {
     // Shrimp and snails don't eat fish; crayfish and crabs do.
     if (isInvert(a) && !/cray|crab/i.test(`${a.group_name} ${a.common_name}`)) continue;
-    const hunter = isPredator(a) || isAggressive(a) || isSemiAggressive(a);
+    // Predators and bullies chase anything half their size. Semi-aggressive fish
+    // only at a third (a swordtail doesn't eat platies), everyone else a quarter.
+    const hunter = isPredator(a) || isAggressive(a);
+    const semi = !hunter && isSemiAggressive(a);
     const aSize = a.max_size_in ?? 0;
     const prey: { s: Species; ratio: number }[] = [];
     for (const b of species) {
@@ -468,7 +507,11 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
       if (a.slug === b.slug || (/snail/i.test(`${b.group_name} ${b.common_name}`) && aSize < 8)) continue;
       const bSize = b.max_size_in ?? 0;
       const ratio = bSize > 0 ? aSize / bSize : 0;
-      const risky = hunter ? ratio >= 2 && aSize >= 2.5 : ratio >= 4 && aSize >= 4;
+      const risky = hunter
+        ? ratio >= 2 && aSize >= 2.5
+        : semi
+        ? ratio >= 3 && aSize >= 3
+        : ratio >= 4 && aSize >= 4;
       if (risky) {
         seen.add(`${a.slug}>${b.slug}`);
         prey.push({ s: b, ratio });
@@ -478,6 +521,13 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
     // One message per big fish, listing everything small enough to be food.
     prey.sort((x, y) => y.ratio - x.ratio);
     const serious = isPredator(a) || isAggressive(a) || prey.some((p) => p.ratio >= 4);
+    // Being eaten is a dealbreaker, so a hunter, or any meat-eating fish five
+    // times bigger, makes it a conflict. Shrimp and snails stay a caution:
+    // plenty of people accept losing a few, and the invert rules below cover them.
+    const eatsMeat = norm(a.diet) !== "herbivore";
+    const fishPrey = prey.filter((p) => !isInvert(p.s));
+    const dealbreaker =
+      fishPrey.length > 0 && (isPredator(a) || isAggressive(a) || (eatsMeat && fishPrey.some((p) => p.ratio >= 5)));
     const names = prey.map((p) => p.s.common_name);
     const sizes = list(prey.map((p) => `${p.s.common_name} (${p.s.max_size_in}")`));
     // Sizes here are already full-grown, so "add them as adults" can't make the
@@ -489,7 +539,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         } right at that edge even fully grown. Young ones are well within it, and the risk grows as the ${a.common_name} does. The safe choice is tankmates that stay more than half its size. If you keep them together, add them fully grown, keep the ${a.common_name} well fed, and count them often.`;
     issues.push({
       // On the safe side: a borderline pair is still worth a caution, not a quiet note.
-      level: "caution",
+      level: dealbreaker ? "conflict" : "caution",
       title:
         prey.length === 1 ? `${a.common_name} may eat ${names[0]}` : `${a.common_name} may eat smaller tankmates`,
       detail,
@@ -509,6 +559,47 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         grabbable.slice(0, 3).map((s) => s.common_name)
       )}. Fast, mid-water fish fare best, and lots of cover helps.`,
       slugs: [...grabbers, ...grabbable].map((s) => s.slug),
+    });
+  }
+
+  // Shrimp and snail eaters. Size alone misses these: a pea puffer is smaller
+  // than the shrimp it hunts, and assassin snails eat other snails.
+  for (const a of species) {
+    const prey: Species[] = [];
+    let level: Issue["level"] = "caution";
+    let why = "";
+    if (isPuffer(a)) {
+      prey.push(...species.filter((b) => b !== a && (isShrimp(b) || isSnail(b))));
+      level = prey.some(isShrimp) ? "conflict" : "caution";
+      why = `Puffers hunt shrimp and snails; it's what their beak-like teeth are for. ${
+        prey.some(isShrimp) ? "Shrimp won't last." : "Snails here are food, which many puffer keepers use on purpose."
+      }`;
+    } else if (isCrayOrCrab(a)) {
+      prey.push(...species.filter((b) => b !== a && (isShrimp(b) || isSnail(b)) && !isCrayOrCrab(b)));
+      why = `${a.common_name} will catch shrimp and pick snails out of their shells, especially at night or when they're molting.`;
+    } else if (/assassin snail/i.test(a.common_name)) {
+      prey.push(...species.filter((b) => b !== a && isSnail(b) && !/assassin/i.test(b.common_name)));
+      why = "Assassin snails hunt other snails. Small ones go first, and even bigger snails like nerites and mysteries get eaten over time.";
+    } else if (isBotiaLoach(a)) {
+      prey.push(...species.filter((b) => b !== a && isSnail(b)));
+      level = "note";
+      why = `${a.common_name} eats snails. Great for pest snails, bad news for snails you bought on purpose.`;
+    }
+    const fresh = prey.filter((b) => !seen.has(`${a.slug}>${b.slug}`));
+    if (fresh.length === 0) continue;
+    for (const b of fresh) seen.add(`${a.slug}>${b.slug}`);
+    issues.push({
+      level,
+      title: fresh.length === 1 ? `${a.common_name} will eat ${fresh[0].common_name}` : `${a.common_name} will eat ${list(fresh.map((b) => b.common_name))}`,
+      detail: why,
+      slugs: [a.slug, ...fresh.map((b) => b.slug)],
+      fixes:
+        level === "note"
+          ? undefined
+          : [
+              { label: `Remove ${a.common_name}`, type: "remove", slug: a.slug },
+              ...fresh.slice(0, 1).map((b) => ({ label: `Remove ${b.common_name}`, type: "remove" as const, slug: b.slug })),
+            ],
     });
   }
 
@@ -588,10 +679,67 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
     });
   }
 
+  // Fish marked solitary and pushy usually fight their own kind.
+  for (const { species: s, qty } of stock) {
+    if (qty < 2 || norm(s.social) !== "solitary" || /betta/i.test(s.common_name)) continue;
+    if (!isAggressive(s) && !isSemiAggressive(s)) continue;
+    issues.push({
+      level: "caution",
+      title: `${s.common_name} is usually kept alone`,
+      detail: `${s.common_name} tends to claim the tank and fight others of its kind. Keep one unless the tank is large, with plenty of cover to break up territories.`,
+      slugs: [s.slug],
+      fixes: [{ label: "Keep just one", type: "qty", slug: s.slug, qty: 1 }],
+    });
+  }
+
+  // Bettas and gouramis are close relatives that claim the same space near the
+  // surface; males especially flare at and fight each other.
+  const bettaFish = species.filter((s) => /betta/i.test(s.common_name));
+  const gouramis = species.filter((s) => /gourami/i.test(s.common_name));
+  if (bettaFish.length > 0 && gouramis.length > 0) {
+    issues.push({
+      level: "caution",
+      title: `${bettaFish[0].common_name} with ${list(gouramis.map((s) => s.common_name))}`,
+      detail:
+        "Bettas and gouramis are close relatives that both claim the space near the surface, and males often flare at and fight each other. Pick one or the other for a calm tank.",
+      slugs: [...bettaFish, ...gouramis].map((s) => s.slug),
+      fixes: [
+        { label: `Remove ${bettaFish[0].common_name}`, type: "remove", slug: bettaFish[0].slug },
+        ...gouramis.slice(0, 1).map((s) => ({ label: `Remove ${s.common_name}`, type: "remove" as const, slug: s.slug })),
+      ],
+    });
+  }
+
+  // Female bettas: with a male, or together as a sorority.
+  const femaleBettas = stock.filter(({ species: s }) => /betta/i.test(s.common_name) && /female|sorority/i.test(s.common_name));
+  const femaleCount = femaleBettas.reduce((n, b) => n + b.qty, 0);
+  const maleCount = stock
+    .filter(({ species: s }) => /betta/i.test(s.common_name) && !/female|sorority/i.test(s.common_name))
+    .reduce((n, b) => n + b.qty, 0);
+  if (femaleCount > 0 && maleCount > 0) {
+    issues.push({
+      level: "caution",
+      title: "Male and female bettas together",
+      detail:
+        "A male betta chases and nips females nonstop, so they only share a tank briefly for breeding, with the female removed right after. Keep them in separate tanks.",
+      slugs: stock.filter(({ species: s }) => /betta/i.test(s.common_name)).map(({ species: s }) => s.slug),
+      fixes: femaleBettas.map((b) => ({ label: `Remove ${b.species.common_name}`, type: "remove" as const, slug: b.species.slug })),
+    });
+  } else if (femaleCount >= 2) {
+    issues.push({
+      level: "caution",
+      title: "Betta sororities often go wrong",
+      detail:
+        "Female bettas can live together, but sororities often turn violent. If you try one, keep 5 or more in at least 20 gallons with dense plants, add them all at once, and have a spare tank ready.",
+      slugs: femaleBettas.map((b) => b.species.slug),
+    });
+  }
+
   // Stocking + equipment
   const stocking = computeStocking(g, stock);
   // The smallest common tank size that brings the build under the "near" line.
-  const roomyGal = g > 0 ? roomyTankSize(g, stocking.pct) : null;
+  const biggestMin = Math.max(0, ...stock.map(({ species: s, qty }) => effectiveMinGal(s, qty) ?? 0));
+  const roomyGal = g > 0 ? roomyTankSize(g, stocking.pct, biggestMin) : null;
   const sizeFix: IssueFix[] | undefined = roomyGal
     ? [{ label: `Try ${roomyGal} gallons`, type: "gallons", gallons: roomyGal }]
     : undefined;
@@ -632,6 +780,9 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   // badly overstocked tank reads as "basically fine" to a beginner.
   let score = 100 - conflicts * 30 - cautions * 10 - notes * 2;
   if (conflicts > 0) score = Math.min(score, 49);
+  // Anything to watch caps it at "Good match"; a crowded tank at "Workable".
+  if (cautions > 0) score = Math.min(score, 85);
+  if (g > 0 && stocking.pct >= 110) score = Math.min(score, 70);
   if (conflicts >= 2) score = Math.min(score, 25);
   if (g > 0 && stocking.pct > 150) score = Math.min(score, 25);
   else if (g > 0 && stocking.pct > STOCK_OVER_PCT) score = Math.min(score, 40);
@@ -695,6 +846,21 @@ export function scoreLabel(score: number, conflicts: number): string {
 }
 
 export type Suggestion = { species: Species; qty: number; why: string };
+
+/**
+ * How a fish would fit the current build if added at its usual group size:
+ * "fits" adds no new problem, "watch" adds something to keep an eye on,
+ * "clash" adds a real conflict. Null when there's nothing to compare against.
+ */
+export function fitOf(gallons: number, stock: StockItem[], sp: Species): "fits" | "watch" | "clash" | null {
+  if (stock.length === 0 || stock.some((s) => s.species.slug === sp.slug)) return null;
+  const count = (r: BuildResult, l: Issue["level"]) => r.issues.filter((i) => i.level === l).length;
+  const base = buildTank(gallons, stock);
+  const next = buildTank(gallons, [...stock, { species: sp, qty: Math.max(1, sp.min_group_size ?? 1) }]);
+  if (count(next, "conflict") > count(base, "conflict")) return "clash";
+  if (count(next, "caution") > count(base, "caution")) return "watch";
+  return "fits";
+}
 
 /**
  * Fish that would slot in without adding a single conflict or caution. Tries
