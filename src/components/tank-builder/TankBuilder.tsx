@@ -805,7 +805,7 @@ export default function TankBuilder({
   // so on a phone the size and fish tools come first.
   const tankPicture = (
     <div className="relative">
-      <TankVisual stock={stock} flagged={flagged} stockingPct={gallons > 0 ? result.stocking.pct : 0} />
+      <TankVisual stock={stock} flagged={flagged} stockingPct={gallons > 0 ? result.stocking.pct : 0} gallons={gallons} />
       <div className="mt-2 flex flex-wrap items-start justify-between gap-2 sm:pointer-events-none sm:absolute sm:inset-x-0 sm:top-0 sm:mt-0 sm:p-4">
         <div className="flex flex-wrap gap-2">
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur sm:bg-black/50">
