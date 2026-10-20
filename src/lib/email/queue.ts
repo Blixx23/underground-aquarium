@@ -5,7 +5,7 @@ import { checkEmail, normaliseEmail } from "@/lib/email/address";
 import { classify, backoffMs } from "@/lib/email/failure";
 import { deliver } from "@/lib/email/provider";
 import { getEmailSettings } from "@/lib/email/settings";
-import { blocks, categoryOf, skippedMessage, suppressedSet, suppressionReasons, suppress } from "@/lib/email/suppress";
+import { blocks, categoryOf, DUPLICATE_SKIP, skippedMessage, suppressedSet, suppressionReasons, suppress } from "@/lib/email/suppress";
 import { letterShell } from "@/lib/email/shell";
 import { outreachProblem, tidyOutreachEmail } from "@/lib/email/outreach";
 import { isBigProvider } from "@/lib/email/mx";
@@ -285,7 +285,22 @@ export async function dispatchToEach(args: {
 type QueueRow = {
   id: string; kind: string; bulk: boolean; to_email: string; subject: string;
   html: string; reply_to: string | null; attempts: number;
+  context?: Record<string, unknown> | null;
 };
+
+/**
+ * Which outreach email a row is, for the "same email to the same inbox
+ * twice" check. Every step of a campaign shares one kind, so the kind
+ * alone would block every follow-up after the first email. Campaign rows
+ * carry their step (or news) and cycle in context; other bulk mail falls
+ * back to the kind.
+ */
+function sameEmailKey(kind: string, email: string, context?: Record<string, unknown> | null): string {
+  const c = context ?? {};
+  const which = c.news !== undefined ? `news:${String(c.news)}` : c.step !== undefined ? `step:${String(c.step)}` : "";
+  const cycle = c.cycle !== undefined ? `|cycle:${String(c.cycle)}` : "";
+  return `${kind}|${which}${cycle}|${email.toLowerCase()}`;
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -312,7 +327,7 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
 
   let q = supabaseAdmin
     .from("email_queue")
-    .select("id, kind, bulk, to_email, subject, html, reply_to, attempts")
+    .select("id, kind, bulk, to_email, subject, html, reply_to, attempts, context")
     .eq("status", "pending")
     .is("locked_at", null)
     .lte("scheduled_at", new Date().toISOString())
@@ -374,13 +389,17 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
   if (bulkRows.length) {
     const { data: already } = await supabaseAdmin
       .from("email_queue")
-      .select("to_email, kind")
+      .select("to_email, kind, context")
       .eq("status", "sent")
       .eq("bulk", true)
       .in("to_email", [...new Set(bulkRows.map((r) => r.to_email))]);
-    const seen = new Set(((already ?? []) as { to_email: string; kind: string }[]).map((r) => `${r.kind}|${r.to_email.toLowerCase()}`));
+    const seen = new Set(
+      ((already ?? []) as { to_email: string; kind: string; context: Record<string, unknown> | null }[]).map((r) =>
+        sameEmailKey(r.kind, r.to_email, r.context)
+      )
+    );
     for (const row of bulkRows) {
-      const key = `${row.kind}|${row.to_email.toLowerCase()}`;
+      const key = sameEmailKey(row.kind, row.to_email, row.context);
       if (!seen.has(key)) {
         seen.add(key);
         continue;
@@ -388,7 +407,7 @@ export async function runWorker({ limit = 60, dry = false } = {}): Promise<{
       const now = new Date().toISOString();
       await supabaseAdmin
         .from("email_queue")
-        .update({ status: "failed", fail_reason: "other", last_error: "Not sent: this address already got this email", locked_at: null, alerted_at: now, cleared_at: now })
+        .update({ status: "failed", fail_reason: "other", last_error: DUPLICATE_SKIP, locked_at: null, alerted_at: now, cleared_at: now })
         .eq("id", row.id);
       row.to_email = "";
       suppressed++;
