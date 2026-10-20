@@ -129,6 +129,9 @@ export async function unsuppress(email: string): Promise<void> {
 /** The words the worker writes on a row it refused to send. */
 export const SKIPPED_PREFIX = "Not sent:";
 
+/** Written on an outreach row skipped because that inbox already got that exact email. */
+export const DUPLICATE_SKIP = `${SKIPPED_PREFIX} this address already got this email`;
+
 export function skippedMessage(reason: string): string {
   return scopeOf(reason) === "all"
     ? `${SKIPPED_PREFIX} this address is on the do-not-email list (${reason}), so nothing can go to it.`

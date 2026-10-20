@@ -4,7 +4,7 @@ import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { readHealth, verdict, type EmailHealth } from "@/lib/email/health";
-import { SKIPPED_PREFIX } from "@/lib/email/suppress";
+import { DUPLICATE_SKIP, SKIPPED_PREFIX } from "@/lib/email/suppress";
 import EmailControls from "./EmailControls";
 import RowActions from "./RowActions";
 import SuppressionList from "./SuppressionList";
@@ -266,7 +266,9 @@ export default async function AdminEmailPage({
                           ? `Waiting until ${new Date(r.scheduled_at).toLocaleString()}`
                           : `Waiting · queued ${when(r.created_at)}`)}
                       {r.status === "failed" &&
-                        (r.last_error?.startsWith(SKIPPED_PREFIX)
+                        (r.last_error === DUPLICATE_SKIP
+                          ? "Not sent · that inbox already got this email"
+                          : r.last_error?.startsWith(SKIPPED_PREFIX)
                           ? "Not sent · on the do-not-email list"
                           : `Gave up after ${r.attempts} ${r.attempts === 1 ? "try" : "tries"} · ${
                               REASON[r.fail_reason ?? "other"] ?? r.fail_reason
