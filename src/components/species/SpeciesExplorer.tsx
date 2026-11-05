@@ -47,6 +47,8 @@ const GROUP_ORDER = [
   "Shrimp",
   "Snails",
   "Crayfish",
+  "Crabs",
+  "Other Invertebrates",
 ];
 
 function suitabilityStyle(s: string | null) {

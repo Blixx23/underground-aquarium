@@ -99,7 +99,7 @@ const MESSY_GROUPS = new Set([
   "Oddballs & Specialty",
 ]);
 const LIGHT_GROUPS = new Set(["Shrimp", "Snails"]);
-const INVERT_GROUPS = new Set(["Shrimp", "Snails", "Crabs", "Crayfish", "Invertebrates"]);
+const INVERT_GROUPS = new Set(["Shrimp", "Snails", "Crabs", "Crayfish", "Invertebrates", "Other Invertebrates"]);
 
 // ---------------------------------------------------------------------------
 // TUNING KNOBS: turn these to make the whole tool warmer or stricter.
@@ -137,7 +137,7 @@ export function lToGal(l: number): number {
 const norm = (s: string | null | undefined) => (s ?? "").trim().toLowerCase();
 
 export function isInvert(s: Species): boolean {
-  return INVERT_GROUPS.has(s.group_name ?? "") || /shrimp|snail|crab|crayfish/i.test(s.group_name ?? "");
+  return INVERT_GROUPS.has(s.group_name ?? "") || /shrimp|snail|crab|crayfish|invert/i.test(s.group_name ?? "");
 }
 
 export function isAggressive(s: Species): boolean {
@@ -293,6 +293,15 @@ const isPuffer = (s: Species) => /puffer/i.test(`${s.group_name} ${s.common_name
 const isCrayOrCrab = (s: Species) => /cray|crab/i.test(`${s.group_name} ${s.common_name}`);
 const isShrimp = (s: Species) => /shrimp/i.test(s.group_name ?? "") || /shrimp/i.test(s.common_name);
 const isSnail = (s: Species) => /snail/i.test(`${s.group_name} ${s.common_name}`);
+// Tiny crabs (Thai micro crabs) are kept with shrimp; only crabs and crayfish an inch or more hunt.
+const catchesPrey = (s: Species) => isCrayOrCrab(s) && (s.max_size_in ?? 1) >= 1;
+// Scuds (amphipods) and water lice (aquatic isopods): colony animals nearly every fish eats.
+const isColonyInvert = (s: Species) =>
+  /^(hyalella|gammarus|asellus|caecidotea|lirceus|crangonyx)\b/i.test(s.scientific_name ?? "") ||
+  /\bscud|amphipod|isopod|water louse/i.test(s.common_name);
+const isTriops = (s: Species) => /triops/i.test(`${s.common_name} ${s.scientific_name}`);
+// Sesarmid crabs (vampire, red claw) live half out of the water and drown without land.
+const needsLand = (s: Species) => /^(geosesarma|perisesarma|pseudosesarma|metasesarma|sesarma)\b/i.test(s.scientific_name ?? "");
 
 function list(names: string[]): string {
   if (names.length <= 1) return names.join("");
@@ -549,7 +558,7 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
   }
 
   // Crayfish and crabs grab sleeping fish from the bottom whatever their size.
-  const grabbers = species.filter((s) => /cray|crab/i.test(`${s.group_name} ${s.common_name}`));
+  const grabbers = species.filter(catchesPrey);
   const grabbable = fish.filter((s) => !grabbers.includes(s) && !seen.has(`${grabbers[0]?.slug}>${s.slug}`));
   if (grabbers.length > 0 && grabbable.length > 0) {
     issues.push({
@@ -574,9 +583,9 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
       why = `Puffers hunt shrimp and snails; it's what their beak-like teeth are for. ${
         prey.some(isShrimp) ? "Shrimp won't last." : "Snails here are food, which many puffer keepers use on purpose."
       }`;
-    } else if (isCrayOrCrab(a)) {
-      prey.push(...species.filter((b) => b !== a && (isShrimp(b) || isSnail(b)) && !isCrayOrCrab(b)));
-      why = `${a.common_name} will catch shrimp and pick snails out of their shells, especially at night or when they're molting.`;
+    } else if (catchesPrey(a)) {
+      prey.push(...species.filter((b) => b !== a && (isShrimp(b) || isSnail(b) || isColonyInvert(b)) && !isCrayOrCrab(b)));
+      why = `${a.common_name} will catch shrimp, scuds and isopods and pick snails out of their shells, especially at night or when they're molting.`;
     } else if (/assassin snail/i.test(a.common_name)) {
       prey.push(...species.filter((b) => b !== a && isSnail(b) && !/assassin/i.test(b.common_name)));
       why = "Assassin snails hunt other snails. Small ones go first, and even bigger snails like nerites and mysteries get eaten over time.";
@@ -615,6 +624,45 @@ export function buildTank(gallons: number, stock: StockItem[]): BuildResult {
         biggerFish.slice(0, 3).map((s) => s.common_name)
       )}, but most baby shrimp will be eaten. Thick moss or plants give the colony a chance to grow.`,
       slugs: shrimp.map((s) => s.slug),
+    });
+  }
+
+  // Scuds and water lice with fish: almost every fish eats them and their babies.
+  const colony = species.filter((s) => isColonyInvert(s) && ![...seen].some((k) => k.endsWith(`>${s.slug}`)));
+  const colonyEaters = fish.filter((s) => norm(s.diet) !== "herbivore");
+  if (colony.length > 0 && colonyEaters.length > 0) {
+    issues.push({
+      level: colonyEaters.some((s) => (s.max_size_in ?? 0) >= 2) ? "caution" : "note",
+      title: colony.length === 1 ? `Fish will eat the ${colony[0].common_name}` : "Fish will eat the scuds and isopods",
+      detail: `${list(colonyEaters.slice(0, 3).map((s) => s.common_name))} will hunt ${list(
+        colony.map((s) => s.common_name)
+      )} and their babies. For a colony that grows, give them a tank of their own; with fish, thick moss, plants and leaf litter let some survive.`,
+      slugs: [...colony, ...colonyEaters.slice(0, 3)].map((s) => s.slug),
+    });
+  }
+
+  // Triops eat anything they can catch, tankmates and each other included.
+  const triops = species.filter(isTriops);
+  const triopsMates = species.filter((s) => !isTriops(s));
+  if (triops.length > 0 && triopsMates.length > 0) {
+    issues.push({
+      level: "conflict",
+      title: `${triops[0].common_name} need a tank of their own`,
+      detail: `${triops[0].common_name} eat anything small enough to catch and get eaten by most fish, so they can't share with ${list(
+        triopsMates.slice(0, 3).map((s) => s.common_name)
+      )}. Keep them in a species-only tank.`,
+      slugs: [...triops, ...triopsMates].map((s) => s.slug),
+      fixes: [{ label: `Remove ${triops[0].common_name}`, type: "remove", slug: triops[0].slug }],
+    });
+  }
+
+  // Semi-land crabs need somewhere dry to climb out.
+  for (const c of species.filter(needsLand)) {
+    issues.push({
+      level: "caution",
+      title: `${c.common_name} needs land`,
+      detail: `${c.common_name} spends much of its time out of the water and will drown or escape without a dry area to climb onto. Set it up as a paludarium with a land side and a tight lid, not a tank filled to the top.`,
+      slugs: [c.slug],
     });
   }
 

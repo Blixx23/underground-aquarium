@@ -215,7 +215,7 @@ export default function TankVisual({
     const perInch = (IMG_W * 0.6) / Math.max(36, tankLengthIn(gallons));
     for (const { species: s, qty } of stock) {
       const invert = isInvert(s);
-      const kind: Kind = invert ? (/snail/i.test(`${s.common_name} ${s.group_name}`) ? "snail" : "shrimp") : "fish";
+      const kind: Kind = invert ? (/snail|clam/i.test(`${s.common_name} ${s.group_name}`) ? "snail" : "shrimp") : "fish";
       const look = fishLook(s);
       const body = bodyOf(look);
       const bottom = body === "catfish" || body === "pleco" || body === "loach" || body === "eel";
