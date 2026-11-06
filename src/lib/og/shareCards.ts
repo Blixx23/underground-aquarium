@@ -1,4 +1,6 @@
 import { supabasePublic } from "@/lib/supabase/public";
+import { categoryLabel } from "@/lib/marketplace/categories";
+import { formatPrice } from "@/lib/marketplace/listings";
 import { getRegion, getRegionCounts, countFor, getStateGroup } from "@/lib/marketplace/regions";
 import { getPlaceStores, groupCities, stateName, STATE_NAMES } from "@/lib/stores/places";
 import { parseCode } from "@/lib/certificates/code";
@@ -195,6 +197,43 @@ async function certificateCard(raw: string): Promise<ShareCard | null> {
   };
 }
 
+/**
+ * A classified ad, for sellers sharing it in Facebook groups, Reddit and
+ * texts: the photo, the price and where, branded, so every share points
+ * buyers back here. Only live ads get a card.
+ */
+async function listingCard(slug: string): Promise<ShareCard | null> {
+  const { data } = await supabasePublic
+    .from("listings")
+    .select("title, price_cents, is_free, is_wanted, category, city, images, state_code, region_slug, status, expires_at")
+    .eq("slug", slug)
+    .eq("status", "active")
+    .maybeSingle();
+  const l = data as {
+    title: string;
+    price_cents: number | null;
+    is_free: boolean;
+    is_wanted: boolean;
+    category: string;
+    city: string | null;
+    images: string[] | null;
+    state_code: string;
+    region_slug: string;
+    expires_at: string | null;
+  } | null;
+  if (!l || (l.expires_at && new Date(l.expires_at).getTime() < Date.now())) return null;
+  const r = await getRegion(l.state_code, l.region_slug);
+  const where = `${r?.name ?? l.city ?? l.state_code}, ${l.state_code}`.toUpperCase();
+  const price = l.is_wanted ? "Wanted" : l.is_free || l.price_cents === 0 ? "Free" : formatPrice(l.price_cents);
+  return {
+    kicker: l.is_wanted ? `WANTED IN ${where}` : l.is_free ? `FREE IN ${where}` : `FOR SALE IN ${where}`,
+    title: l.title,
+    sub: l.is_wanted ? "Got one? Message them free on Underground Aquarium." : "Message the seller free on Underground Aquarium.",
+    chips: [price, categoryLabel(l.category), "Local pickup", "No fees"],
+    photo: l.images?.[0] ?? null,
+  };
+}
+
 async function regionCard(state: string, slug: string): Promise<ShareCard | null> {
   const r = await getRegion(state, slug);
   if (!r) return null;
@@ -314,6 +353,7 @@ export async function shareCardFor(path: string): Promise<ShareCard | null> {
   try {
     if (p[0] === "courses" && p.length === 2) return await courseCard(p[1]);
     if (p[0] === "verify" && p.length === 2) return await certificateCard(p[1]);
+    if (p[0] === "listing" && p.length === 2) return await listingCard(p[1]);
     if (p[0] === "marketplace" && p.length === 3) return await regionCard(p[1], p[2]);
     if (p[0] === "marketplace" && p.length === 2) return await stateMarketCard(p[1]);
     if (p[0] === "aquarium-stores" && p.length === 3) return await storesCityCard(p[1], p[2]);

@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { formatPhone, smsHref, telHref } from "@/lib/phone";
 import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
+import ShareListing from "@/components/marketplace/ShareListing";
+import { shareCardUrl } from "@/lib/seo/share";
 import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
 import { categoryLabel } from "@/lib/marketplace/categories";
@@ -108,23 +110,28 @@ export async function generateMetadata({
       description,
       url: `/listing/${slug}`,
       type: "website",
-      images: [l.images?.[0] ?? "/og-default.png"],
+      // Our card: the ad's photo, price and area, branded, so a shared link sells the ad and the site.
+      images: [{ url: shareCardUrl(`/listing/${slug}`), width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [l.images?.[0] ?? "/og-default.png"],
+      images: [shareCardUrl(`/listing/${slug}`)],
     },
   };
 }
 
 export default async function ListingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ posted?: string }>;
 }) {
   const { slug } = await params;
+  // Set right after posting, so the seller sees the share box first.
+  const justPosted = (await searchParams).posted === "1";
 
   // Session-aware on purpose: RLS lets an owner see their own draft or
   // expired listing here, while everyone else only sees live ones.
@@ -192,6 +199,8 @@ export default async function ListingPage({
   const condition = live ? null : conditionLabel(listing.condition);
   const regionUrl = `/marketplace/${listing.state_code.toLowerCase()}/${listing.region_slug}`;
   const sellerName = seller?.full_name?.trim() || seller?.username || "A hobbyist";
+  const shareLabel = listing.is_wanted ? "Wanted" : listing.is_free ? "Free" : formatPrice(listing.price_cents);
+  const sharePlace = `${listing.city ? `${listing.city}, ` : region?.name ? `${region.name}, ` : ""}${listing.state_code}`;
 
   // Same category nearby first, then anything nearby, then same category in the state.
   const nearby = (nearbyData ?? []) as unknown as Listing[];
@@ -388,6 +397,17 @@ export default async function ListingPage({
                   </div>
 
                   {listing.status === "active" && (
+                    <ShareListing
+                      path={`/listing/${listing.slug}`}
+                      title={listing.title}
+                      priceLabel={shareLabel}
+                      place={sharePlace}
+                      isOwner
+                      justPosted={justPosted}
+                    />
+                  )}
+
+                  {listing.status === "active" && (
                     <MarkSoldButton listingId={listing.id} isWanted={listing.is_wanted} />
                   )}
 
@@ -462,6 +482,14 @@ export default async function ListingPage({
                         This poster didn&apos;t leave a way to contact them.
                       </p>
                     )}
+
+                  <ShareListing
+                    path={`/listing/${listing.slug}`}
+                    title={listing.title}
+                    priceLabel={shareLabel}
+                    place={sharePlace}
+                    isOwner={false}
+                  />
                 </>
               )}
             </div>

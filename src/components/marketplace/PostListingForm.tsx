@@ -408,7 +408,8 @@ export default function PostListingForm({
         // Storage blocked. Harmless.
       }
 
-      router.push(`/listing/${finalSlug}`);
+      // A new ad opens with the share box highlighted; an edit just shows the ad.
+      router.push(existing ? `/listing/${finalSlug}` : `/listing/${finalSlug}?posted=1`);
       router.refresh();
     } catch (err) {
       setError(

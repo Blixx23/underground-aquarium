@@ -100,11 +100,20 @@ Just above the post button, the form says: "By posting you confirm this listing 
 
 ## What happens after I tap Post it, free?
 - Your photos upload, then the ad is saved as **active**.
-- You land on your new listing page, where you see "This is your listing." and buttons for **Mark as sold** (or **Mark as found**) and **Manage this listing**.
+- You land on your new listing page, where you see "This is your listing.", a highlighted **Your ad is live. Now get it seen.** box for sharing it, and buttons for **Mark as sold** (or **Mark as found**) and **Manage this listing**.
 - Your ad appears in your metro area's page, on the nationwide [Every listing](/listings) page, on your public profile's **Listings** tab, and it can show up in [The Feed](/feed) as something you listed.
 - It stays up for 45 days. You can edit, renew, mark sold or delete it from [My listings](/my/listings).
 
 Your ad's web address is made from the title you first gave it plus a short code. Editing the title later doesn't change the address.
+
+## How do I share my ad to get more buyers?
+Open your ad. The share box (**Get more buyers: share your ad**) has:
+- **Share your ad**: opens your phone's share sheet, so you can post it straight to a Facebook group, Reddit, a text or anywhere else. On a computer it copies the link.
+- **Copy link**: just the ad's address.
+- **Copy text**: a ready-to-paste line with the title, price, area and link, for group posts.
+- **Save the share picture**: a picture with your photo, price and area, branded Underground Aquarium, to attach to a post.
+
+Wherever you paste the link, it shows that same picture. Buyers who tap it land on your ad and message you here, free. Anyone viewing an ad can also press **Share this ad** to send it to a friend.
 
 ## Can I post more than one ad?
 Yes. There's no limit on how many ads you can have live. Post each item or lot separately, or bundle several things in one ad and list them in the description. [My listings](/my/listings) shows your most recent 200 ads.
