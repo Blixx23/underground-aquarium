@@ -5,7 +5,10 @@
 :root {
   /* The font files come from next/font in layout.tsx. */
   --font-display: var(--font-cinzel), Georgia, serif;
-  --font-body: var(--font-crimson), Georgia, serif;
+  /* Body and UI text use a clean sans for easy reading on the dark theme.
+     The serif stays for headings, so the site keeps its character. */
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-crimson), Georgia, serif;
   --font-mono: var(--font-jetbrains), monospace;
 }
 * { box-sizing: border-box; padding: 0; margin: 0; }
@@ -19,7 +22,7 @@
  * way without creating a scroll container, so fixed bars stay put.
  */
 html { scroll-behavior: smooth; overflow-x: clip; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 18px; line-height: 1.7; overflow-x: clip; overflow-wrap: break-word; }
+body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: clip; overflow-wrap: break-word; }
 
 /* ===================================================================
    MOBILE FIT — keeps every page inside the screen on phones.
@@ -55,6 +58,9 @@ pre { max-width: 100%; overflow-x: auto; }
 @keyframes fadeUp { 0% { opacity: 0; transform: translateY(24px); } 100% { opacity: 1; transform: translateY(0); } }
 @keyframes bubble { 0% { transform: translateY(0) scale(1); opacity: 0.6; } 50% { transform: translateY(-20px) scale(1.05); opacity: 0.9; } 100% { transform: translateY(-40px) scale(0.8); opacity: 0; } }
 @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(26,130,204,0.3); } 50% { box-shadow: 0 0 40px rgba(26,130,204,0.6); } }
+/* Plain headings keep the serif. Headings with font-display still get Cinzel,
+   because utilities load after base. */
+@layer base { h1, h2, h3, h4 { font-family: var(--font-serif); } }
 @layer utilities { .font-display { font-family: var(--font-display) !important; } .font-body { font-family: var(--font-body); } .font-mono { font-family: var(--font-mono); } }
 
 /* Ambient rising bubbles */
@@ -102,10 +108,8 @@ textarea {
   opacity: 1 !important;
 }
 
-/* Nudge the two dimmest muted-text shades up a notch (secondary text,
-   helper lines, captions). Brighter, still clearly "muted". */
-.text-ocean-600 { color: #6f9cc0 !important; }
-.text-ocean-500 { color: #83aed2 !important; }
+/* Muted text shades now live in tailwind.config.ts (textColor), so hover
+   colors still work. */
 
 /* Store map: OpenStreetMap tiles turned dark to match the site. */
 .ua-dark-tiles { filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6); }
