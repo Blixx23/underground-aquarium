@@ -2,11 +2,32 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Loader2, Fish, Link2, Plus, Sparkles, RefreshCw } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, X, Loader2, Fish, Link2, Plus, Sparkles, RefreshCw, ThumbsUp } from "lucide-react";
 import { SPECIES_OPTIONS, type AiReview } from "@/lib/species/fields";
 
 // Matches the species_submission_thanks bubble rule (step69 SQL).
 const THANKS_BUBBLES = 10;
+
+// Matches the species_submission_reward bubble rule: added or another name.
+const ADD_BUBBLES = 25;
+
+type Option = "create" | "alias" | "dismiss";
+
+/** Which of the three options the AI check points to, or null when it isn't sure. */
+function recommendedOption(ai: AiReview | null): Option | null {
+  if (!ai) return null;
+  switch (ai.verdict) {
+    case "add_new":
+    case "add_variant":
+      return "create";
+    case "another_name":
+      return "alias";
+    case "unsure":
+      return null;
+    default:
+      return "dismiss";
+  }
+}
 
 const DISMISS_REASONS = [
   "That's a saltwater fish. The library is freshwater only.",
@@ -43,8 +64,9 @@ const OPTIONS = SPECIES_OPTIONS;
 // One AI check at a time: each reads the whole library, so ten requests
 // shouldn't fire ten big calls at once.
 let aiChain: Promise<unknown> = Promise.resolve();
-function queueAiCheck(id: string, force: boolean): Promise<AiReview> {
+function queueAiCheck(id: string, force: boolean, onStart?: () => void): Promise<AiReview> {
   const run = aiChain.then(async () => {
+    onStart?.();
     const res = await fetch("/api/admin/species-suggestions/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -166,6 +188,9 @@ function Request({
   const [thanks, setThanks] = useState(true);
   const [ai, setAi] = useState<AiReview | null>(s.ai);
   const [aiBusy, setAiBusy] = useState(!s.ai || needsRecheck(s.ai));
+  // Checks run one at a time, so a card can be waiting its turn rather than checking.
+  const [aiStarted, setAiStarted] = useState(false);
+  const [aiNotes, setAiNotes] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   // Set when the new entry is a color or fin form of a library fish.
   const [parentSlug, setParentSlug] = useState<string | null>(null);
@@ -210,8 +235,9 @@ function Request({
 
   function runAi(force: boolean) {
     setAiBusy(true);
+    setAiStarted(false);
     setAiError(null);
-    queueAiCheck(s.id, force)
+    queueAiCheck(s.id, force, () => setAiStarted(true))
       .then(setAi)
       .catch((e) => setAiError(e instanceof Error ? e.message : "The AI check failed."))
       .finally(() => setAiBusy(false));
@@ -362,23 +388,67 @@ function Request({
     </div>
   );
 
+  const rec = recommendedOption(ai);
+  const firstName = who;
+
+  /** Open one of the three options, starting from what the AI already worked out. */
+  function choose(m: Option) {
+    if (m === "dismiss" && mode !== "dismiss" && !note.trim() && ai?.member_reason) setNote(ai.member_reason);
+    if (m === "alias" && mode !== "alias" && ai?.alias_slug) setAliasSlug(ai.alias_slug);
+    if (m === "create" && mode !== "create" && !prefilled && ai?.species) {
+      setF((cur) => ({ ...cur, ...(ai.species ?? {}) }));
+      if (ai.verdict === "add_variant" && ai.parent_slug) setParentSlug(ai.parent_slug);
+      setPrefilled(true);
+    }
+    if (mode !== m) setScrollToForm((n) => n + 1);
+    setMode(mode === m ? "none" : m);
+  }
+
+  // The three choices, each saying exactly what happens.
+  const OPTIONS_LIST: { m: Option; title: string; does: string; Icon: typeof Plus }[] = [
+    {
+      m: "create",
+      title: "Add it to the library",
+      does: `Opens a care form, filled in by the AI. You check it and press Save. That creates its species page, puts it in the Tank Builder, and gives ${firstName} ${ADD_BUBBLES} bubbles. A breeding guide is drafted for you to approve under Breeding guides.`,
+      Icon: Plus,
+    },
+    {
+      m: "alias",
+      title: "It's another name for a fish we have",
+      does: `You pick the fish. "${s.common_name}" is added as another name for it, so searching that name finds it. ${firstName} gets ${ADD_BUBBLES} bubbles. No new page is made.`,
+      Icon: Link2,
+    },
+    {
+      m: "dismiss",
+      title: "Turn it down",
+      does: `You pick or write a reason, which ${firstName} sees. The request is removed, and they get ${THANKS_BUBBLES} thank-you bubbles unless you untick it (for spam).`,
+      Icon: X,
+    },
+  ];
+
   return (
-    <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5">
+    <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 sm:p-6">
+      {/* What was asked for */}
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-ocean-800/50">
           <Fish className="h-5 w-5 text-ocean-300" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-white">{s.common_name}</h3>
-          {s.scientific_name && <p className="text-sm italic text-ocean-300">{s.scientific_name}</p>}
-          <p className="mt-0.5 text-xs text-ocean-500">
+          <h3 className="text-xl font-semibold text-white">{s.common_name}</h3>
+          {s.scientific_name && <p className="italic text-ocean-200">{s.scientific_name}</p>}
+          <p className="mt-0.5 text-sm text-ocean-300">
             Requested by {who}
             {s.created_at ? ` · ${whenLabel(s.created_at)}` : ""}
           </p>
-          {s.note && <p className="mt-2 whitespace-pre-line break-words text-sm text-ocean-200">{s.note}</p>}
+          {s.note && (
+            <p className="mt-2 whitespace-pre-line break-words rounded-lg bg-ocean-950/50 px-3 py-2 text-sm text-ocean-100">
+              <span className="text-ocean-300">Their note: </span>
+              {s.note}
+            </p>
+          )}
           {s.matches.length > 0 && (
-            <p className="mt-2 text-xs text-ocean-400">
-              Similar in library:{" "}
+            <p className="mt-2 text-sm text-ocean-300">
+              Fish we already have with similar names:{" "}
               {s.matches.map((m, i) => (
                 <span key={m.slug}>
                   {i > 0 && ", "}
@@ -392,139 +462,161 @@ function Request({
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl border border-violet-400/25 bg-violet-500/[0.06] p-4">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-violet-200">
-            <Sparkles className="h-3.5 w-3.5" /> AI check
+      {/* The AI's recommendation */}
+      <div className="mt-5 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.07] p-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300">
+            <ThumbsUp className="h-4 w-4" /> We recommend
           </p>
           {!aiBusy && (
             <button
               type="button"
               onClick={() => runAi(true)}
-              className="inline-flex items-center gap-1 text-xs text-ocean-400 hover:text-white"
+              title="Runs the AI check again from scratch (about a cent)"
+              className="inline-flex items-center gap-1 text-sm text-ocean-300 hover:text-white"
             >
-              <RefreshCw className="h-3 w-3" /> Re-check
+              <RefreshCw className="h-3.5 w-3.5" /> Check again
             </button>
           )}
         </div>
+
         {aiBusy ? (
-          <p className="inline-flex items-center gap-2 text-sm text-ocean-300">
-            <Loader2 className="h-4 w-4 animate-spin" /> Checking it against the whole species library…
-          </p>
-        ) : aiError ? (
-          <p className="text-sm text-coral-300">{aiError}</p>
-        ) : ai ? (
-          <div className="space-y-2 text-sm">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${VERDICT_LABEL[ai.verdict].tone}`}>
-                {VERDICT_LABEL[ai.verdict].text}
-              </span>
-              <span className="text-xs text-ocean-500">{ai.confidence} confidence</span>
-              {(ai.identified_as.common_name || ai.identified_as.scientific_name) && (
-                <span className="text-xs text-ocean-300">
-                  Means: {ai.identified_as.common_name}
-                  {ai.identified_as.scientific_name ? <i> ({ai.identified_as.scientific_name})</i> : null}
-                </span>
-              )}
-            </div>
-            <p className="rounded-lg bg-violet-500/10 px-3 py-2 text-[15px] font-medium text-white">
-              <span className="text-violet-200">Recommendation: </span>
-              {recommendationText(ai, nameOf)}
+          <div className="mt-2 space-y-1">
+            <p className="inline-flex items-center gap-2 text-ocean-100">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {aiStarted ? "The AI is checking it against the whole species library..." : "Waiting its turn. Requests are checked one at a time."}
             </p>
-            {ai.summary && <p className="text-ocean-300">{ai.summary}</p>}
-            {ai.matches.length > 0 && (
-              <ul className="space-y-0.5 text-xs text-ocean-300">
-                {ai.matches.map((m) => (
-                  <li key={m.slug}>
-                    <a href={`/species/${m.slug}`} target="_blank" className="text-emerald-300 hover:underline">
-                      {m.common_name}
-                    </a>{" "}
-                    <span className="text-ocean-500">({m.relation})</span>
-                    {m.why ? ` ${m.why}` : ""}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {ai.member_reason && (
-              <p className="text-xs text-ocean-400">
-                If you turn it down, they see: <span className="text-ocean-200">{ai.member_reason}</span>
-              </p>
-            )}
-            {ai.checked_twice && (
-              <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-100/90">
-                <p className="font-semibold text-emerald-200">Checked twice</p>
-                {ai.corrections?.length ? (
-                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
-                    {ai.corrections.map((c, i) => (
-                      <li key={i}>{c}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-0.5">A second, separate check went over every value and found nothing to change.</p>
-                )}
-                {Object.keys(ai.blank_reasons ?? {}).length > 0 && (
-                  <p className="mt-1 text-amber-200/90">
-                    Left blank on purpose: {Object.keys(ai.blank_reasons ?? {}).map((k) => k.replace(/_/g, " ")).join(", ")}. They&apos;re
-                    outlined in the form.
-                  </p>
-                )}
+            <p className="text-sm text-ocean-300">This usually takes under a minute. You can still pick an option below yourself.</p>
+          </div>
+        ) : aiError ? (
+          <div className="mt-2 space-y-1">
+            <p className="text-coral-300">The AI check didn&apos;t finish: {aiError}</p>
+            <p className="text-sm text-ocean-300">Press Check again, or pick an option below yourself.</p>
+          </div>
+        ) : ai ? (
+          <div className="mt-2 space-y-3">
+            <p className="text-lg font-medium text-white">{recommendationText(ai, nameOf)}</p>
+            <p className="text-sm text-ocean-200">
+              {VERDICT_LABEL[ai.verdict].text} · {ai.confidence} confidence
+              {(ai.identified_as.common_name || ai.identified_as.scientific_name) && (
+                <>
+                  {" "}
+                  · means {ai.identified_as.common_name}
+                  {ai.identified_as.scientific_name ? <i> ({ai.identified_as.scientific_name})</i> : null}
+                </>
+              )}
+            </p>
+            {ai.double_check.length > 0 && (
+              <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+                <p className="font-semibold text-amber-200">Worth checking yourself</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  {ai.double_check.map((d, i) => (
+                    <li key={i}>{d}</li>
+                  ))}
+                </ul>
               </div>
             )}
-            {ai.double_check.length > 0 && (
-              <ul className="list-disc space-y-0.5 pl-4 text-xs text-amber-200/90">
-                {ai.double_check.map((d, i) => (
-                  <li key={i}>{d}</li>
-                ))}
-              </ul>
-            )}
             {ai.verdict !== "unsure" && (
-              <button
-                type="button"
-                onClick={applySuggestion}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-violet-500/80 px-4 py-1.5 text-sm font-semibold text-white hover:bg-violet-500"
-              >
-                <Sparkles className="h-4 w-4" /> {actionLabel(ai, nameOf)}
-              </button>
+              <div className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={applySuggestion}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                >
+                  {actionLabel(ai, nameOf)} <ArrowRight className="h-4 w-4" />
+                </button>
+                <p className="text-sm text-ocean-300">
+                  Nothing is saved yet. This opens the form below with everything filled in. Look it over, then press the green
+                  button at the bottom of the form to finish.
+                </p>
+              </div>
             )}
-            <p className="text-[11px] text-ocean-600">
-              This opens the form below, filled in. Check it, then press the green Save button at the bottom. Cost about {ai.cost_cents.toFixed(1)}¢.
-            </p>
+            {ai.verdict === "unsure" && (
+              <p className="text-sm text-ocean-200">The AI isn&apos;t sure, so pick the option below that fits.</p>
+            )}
+
+            <button type="button" onClick={() => setAiNotes(!aiNotes)} className="text-sm text-ocean-300 underline-offset-4 hover:text-white hover:underline">
+              {aiNotes ? "Hide the AI's notes" : "Show the AI's notes"}
+            </button>
+            {aiNotes && (
+              <div className="space-y-2 rounded-lg bg-ocean-950/50 p-3 text-sm">
+                {ai.summary && <p className="text-ocean-100">{ai.summary}</p>}
+                {ai.matches.length > 0 && (
+                  <ul className="space-y-0.5 text-ocean-200">
+                    {ai.matches.map((m) => (
+                      <li key={m.slug}>
+                        <a href={`/species/${m.slug}`} target="_blank" className="text-emerald-300 hover:underline">
+                          {m.common_name}
+                        </a>{" "}
+                        <span className="text-ocean-400">({m.relation})</span>
+                        {m.why ? ` ${m.why}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {ai.member_reason && (
+                  <p className="text-ocean-300">
+                    If you turn it down, they see: <span className="text-ocean-100">{ai.member_reason}</span>
+                  </p>
+                )}
+                {ai.checked_twice && (
+                  <div className="text-emerald-100/90">
+                    <p className="font-semibold text-emerald-200">Checked twice</p>
+                    {ai.corrections?.length ? (
+                      <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                        {ai.corrections.map((c, i) => (
+                          <li key={i}>{c}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-0.5">A second, separate check went over every value and found nothing to change.</p>
+                    )}
+                    {Object.keys(ai.blank_reasons ?? {}).length > 0 && (
+                      <p className="mt-1 text-amber-200/90">
+                        Left blank on purpose: {Object.keys(ai.blank_reasons ?? {}).map((k) => k.replace(/_/g, " ")).join(", ")}. They&apos;re
+                        outlined in the form.
+                      </p>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-ocean-400">This check cost about {ai.cost_cents.toFixed(1)}¢.</p>
+              </div>
+            )}
           </div>
         ) : null}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {(
-          [
-            ["create", "Add to library", Plus],
-            ["alias", "Another name for…", Link2],
-            ["dismiss", "Turn down", X],
-          ] as const
-        ).map(([m, text, Icon]) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => {
-              // Every button starts from what the AI already worked out, ready to check or edit.
-              if (m === "dismiss" && mode !== "dismiss" && !note.trim() && ai?.member_reason) setNote(ai.member_reason);
-              if (m === "alias" && mode !== "alias" && ai?.alias_slug) setAliasSlug(ai.alias_slug);
-              if (m === "create" && mode !== "create" && !prefilled && ai?.species) {
-                setF((cur) => ({ ...cur, ...(ai.species ?? {}) }));
-                if (ai.verdict === "add_variant" && ai.parent_slug) setParentSlug(ai.parent_slug);
-                setPrefilled(true);
-              }
-              if (mode !== m) setScrollToForm((n) => n + 1);
-              setMode(mode === m ? "none" : m);
-            }}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
-              mode === m
-                ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-200"
-                : "border-ocean-700/60 text-ocean-200 hover:text-white"
-            }`}
-          >
-            <Icon className="h-4 w-4" /> {text}
-          </button>
-        ))}
+      {/* The three options, spelled out */}
+      <div className="mt-5">
+        <p className="mb-2 font-semibold text-white">Your options</p>
+        <div className="space-y-2">
+          {OPTIONS_LIST.map(({ m, title, does, Icon }) => {
+            const on = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => choose(m)}
+                aria-expanded={on}
+                className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                  on ? "border-emerald-400/60 bg-emerald-500/10" : "border-ocean-700/60 hover:border-ocean-500 hover:bg-ocean-900/60"
+                }`}
+              >
+                <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${m === "dismiss" ? "text-coral-300" : "text-emerald-300"}`} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2 font-medium text-white">
+                    {title}
+                    {rec === m && (
+                      <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-200">Recommended</span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block text-sm text-ocean-200">{does}</span>
+                </span>
+                <ChevronDown className={`mt-1 h-4 w-4 shrink-0 text-ocean-300 transition-transform ${on ? "" : "-rotate-90"}`} />
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {mode === "create" && (
@@ -581,6 +673,10 @@ function Request({
             <textarea value={f.body} rows={3} onChange={(e) => set("body", e.target.value)} className={boxClass("body")} />
             {why("body")}
           </div>
+          <p className="text-sm text-ocean-200">
+            Pressing the button below saves it for real: the species page goes live, it shows up in the Tank Builder, and {who} gets{" "}
+            {ADD_BUBBLES} bubbles.{parentSlug ? "" : " A breeding guide is drafted and waits for your OK under Breeding guides."}
+          </p>
           <button
             type="button"
             disabled={busy}
@@ -633,13 +729,23 @@ function Request({
               ))}
             </div>
           )}
+          <p className="text-sm text-ocean-200">
+            {aliasSlug ? (
+              <>
+                Pressing the button below adds &ldquo;{s.common_name}&rdquo; as another name for <strong className="text-white">{nameOf(aliasSlug)}</strong>{" "}
+                and gives {who} {ADD_BUBBLES} bubbles.
+              </>
+            ) : (
+              "Pick the fish first."
+            )}
+          </p>
           <button
             type="button"
             disabled={busy || !aliasSlug}
             onClick={() => send("alias")}
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-ocean-950 hover:bg-emerald-400 disabled:opacity-50"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Add name and reward
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {aliasSlug ? `Add as another name for ${nameOf(aliasSlug)}` : "Add name and reward"}
           </button>
         </div>
       )}
@@ -692,13 +798,16 @@ function Request({
             />
             Thank them with {THANKS_BUBBLES} bubbles (untick for spam)
           </label>
+          <p className="text-sm text-ocean-200">
+            Pressing the button below removes the request and shows {who} your reason{thanks ? `, with ${THANKS_BUBBLES} thank-you bubbles` : ""}.
+          </p>
           <button
             type="button"
             disabled={busy}
             onClick={() => send("dismiss")}
             className="inline-flex items-center gap-2 rounded-lg border border-coral-500/40 px-5 py-2.5 text-sm font-semibold text-coral-300 hover:bg-coral-500/10 disabled:opacity-50"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />} Turn down
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />} Turn it down
           </button>
         </div>
       )}

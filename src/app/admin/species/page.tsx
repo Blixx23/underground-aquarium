@@ -85,16 +85,27 @@ export default async function AdminSpeciesPage() {
     <main className="min-h-screen px-6 pb-20 pt-28 font-sans">
       <div className="mx-auto max-w-3xl">
         <h1 className="mb-1 font-display text-3xl text-white">Species requests</h1>
-        <p className="mb-8 text-ocean-300">
-          Fish the community asked for. <strong className="text-white">Add to library</strong> creates the care page and
-          puts it in the Tank Builder. <strong className="text-white">Another name for</strong> adds their name to a fish
-          we already have. Both give the requester 25 bubbles and count toward their species trophies. Each request is checked by AI against
-          the whole library first and gives a recommendation; its purple button fills in the form for you to check.{" "}
+        <p className="mb-6 text-ocean-200">
+          Fish and other animals members asked us to add. For each one, the AI checks the whole library and recommends what to do.
+          You make the call.{" "}
           <Link href="/species" target="_blank" className="text-emerald-400 hover:text-emerald-300">
             Open the species list
           </Link>
-          .
         </p>
+        <ol className="mb-8 grid gap-3 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-4 text-sm text-ocean-100 sm:grid-cols-3">
+          {[
+            "Read the green We recommend box on a request.",
+            "Press its green button, or open one of the three options yourself. Nothing is saved yet.",
+            "Check the form, then press the button at the bottom of it. That's the only step that saves.",
+          ].map((t, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ocean-800 text-xs font-semibold text-white">
+                {i + 1}
+              </span>
+              <span>{t}</span>
+            </li>
+          ))}
+        </ol>
         <AdminSpeciesList initialSuggestions={queue} groups={groups} library={library} />
       </div>
     </main>
