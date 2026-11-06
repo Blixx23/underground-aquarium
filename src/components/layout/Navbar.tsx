@@ -8,6 +8,7 @@ import {
   Fish,
   ChevronDown,
   LogOut,
+  BellRing,
   ClipboardList,
   Trophy,
   Settings,
@@ -463,7 +464,10 @@ export default function Navbar() {
                       { href: "/feed", label: "The Feed", Icon: Newspaper },
                       { href: "/trophies", label: "Trophies", Icon: Trophy },
                       ...(MY_LISTINGS_ENABLED
-                        ? [{ href: "/my/listings", label: "My listings", Icon: ClipboardList }]
+                        ? [
+                            { href: "/my/listings", label: "My listings", Icon: ClipboardList },
+                            { href: "/my/alerts", label: "My alerts", Icon: BellRing },
+                          ]
                         : []),
                       { href: "/help", label: "Help Center", Icon: LifeBuoy },
                     ].map(({ href, label, Icon }) => (

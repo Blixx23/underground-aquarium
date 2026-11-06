@@ -4,6 +4,7 @@ import { useRestoreScroll, useUrlParam } from "@/lib/hooks/useUrlState";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Fish, Search, X, MapPin, Eye } from "lucide-react";
+import AlertMeButton, { type AlertPlace } from "@/components/marketplace/AlertMeButton";
 import {
   CATEGORIES,
   categoryLabel,
@@ -30,9 +31,12 @@ export default function ListingsBrowser({
   listings,
   regionName,
   initialCategory = "all",
+  alertPlace = null,
 }: {
   listings: Listing[];
   regionName: string;
+  /** Where an "Alert me" from this page searches; the member picks if not set. */
+  alertPlace?: AlertPlace | null;
   /** Pre-select a category, e.g. from ?category= on the nationwide page. */
   initialCategory?: string;
 }) {
@@ -106,6 +110,10 @@ export default function ListingsBrowser({
           Somebody has to be first. Post a tank, some trimmings, or a spare
           heater and get this area started.
         </p>
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <AlertMeButton place={alertPlace} label={`Alert me when someone posts in ${regionName}`} />
+          <p className="text-xs text-ocean-400">We&apos;ll tell you the moment a match is posted nearby.</p>
+        </div>
       </div>
     );
   }
@@ -180,19 +188,31 @@ export default function ListingsBrowser({
         ))}
       </div>
 
-      <p className="text-sm text-ocean-500 mb-5">
-        {filtered.length} {filtered.length === 1 ? "listing" : "listings"}
-        {active !== "all" && ` in ${categoryLabel(active)}`}
-      </p>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-ocean-500">
+          {filtered.length} {filtered.length === 1 ? "listing" : "listings"}
+          {active !== "all" && ` in ${categoryLabel(active)}`}
+        </p>
+        <AlertMeButton
+          place={alertPlace}
+          defaultQuery={query}
+          defaultCategory={active}
+          label="Get alerts for new ads"
+          className="inline-flex items-center gap-2 self-start rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-200 transition-colors hover:bg-emerald-500/20"
+        />
+      </div>
 
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="text-center py-24">
           <Fish className="w-10 h-10 text-ocean-600 mx-auto mb-4" />
-          <p className="text-ocean-300 text-lg mb-1">Nothing matches</p>
+          <p className="text-ocean-300 text-lg mb-1">Nothing matches yet</p>
           <p className="text-ocean-500 text-sm">
-            Try another category or clear your search.
+            Try another category or clear your search, or get told when one is posted.
           </p>
+          <div className="mt-5">
+            <AlertMeButton place={alertPlace} defaultQuery={query} defaultCategory={active} label="Alert me when it's posted" />
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

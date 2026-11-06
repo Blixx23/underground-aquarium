@@ -110,7 +110,11 @@ export default async function RegionPage({
           </Link>
         </div>
 
-        <ListingsBrowser listings={listings} regionName={r.name} />
+        <ListingsBrowser
+          listings={listings}
+          regionName={r.name}
+          alertPlace={r.lat !== null && r.lng !== null ? { label: `${r.name}, ${r.state_code}`, lat: r.lat, lng: r.lng } : null}
+        />
 
         {siblings.length > 0 && (
           <section className="mt-16 pt-8 border-t border-ocean-900/70">

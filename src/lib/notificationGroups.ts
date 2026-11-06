@@ -15,6 +15,7 @@ export type NotificationGroup = {
 
 export const NOTIFICATION_GROUPS: NotificationGroup[] = [
   { key: "messages", label: "Messages", sub: "A member messages you or asks about your listing", types: [], bell: false },
+  { key: "listing_alerts", label: "Classified alerts", sub: "A new ad matches one of your alerts, or a Wanted post matches your ad", types: ["listing_alert", "wanted_match"] },
   { key: "feed_comments", label: "Feed comments", sub: "Someone comments on your post or replies to your comment", types: ["feed_comment", "feed_reply"] },
   { key: "mentions", label: "Mentions", sub: "Someone tags you with @ in a post or comment", types: ["mention"] },
   { key: "forum", label: "Forum replies", sub: "Someone replies to your post or comment", types: ["forum"] },

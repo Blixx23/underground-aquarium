@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
 import MyListingsManager, {
@@ -132,6 +132,14 @@ export default async function MyListingsPage() {
               {draftCount > 0 && ` · ${draftCount} waiting to be published`}
             </p>
           </div>
+          <div className="flex flex-wrap gap-2">
+          <Link
+            href="/my/alerts"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20 font-medium transition-colors"
+          >
+            <Bell className="w-4 h-4" />
+            My alerts
+          </Link>
           <Link
             href="/post"
             className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-ocean-600 hover:bg-ocean-500 text-white font-medium transition-colors"
@@ -139,6 +147,7 @@ export default async function MyListingsPage() {
             <Plus className="w-4 h-4" />
             Post free ad
           </Link>
+          </div>
         </div>
 
         {draftCount > 0 && (

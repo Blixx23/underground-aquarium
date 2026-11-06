@@ -45,6 +45,8 @@ const KINDS: Record<string, KindMeta> = {
   bubbles: { icon: "bubbles", tone: "cyan", category: "trophies", label: "bubbles", mutable: true },
   message: { icon: "message", tone: "violet", category: "marketplace", label: "messages" },
   sale: { icon: "sale", tone: "emerald", category: "marketplace", label: "sales" },
+  listing_alert: { icon: "bell", tone: "emerald", category: "marketplace", label: "classified alerts", mutable: true },
+  wanted_match: { icon: "sale", tone: "sky", category: "marketplace", label: "Wanted matches", mutable: true },
   express: { icon: "sale", tone: "emerald", category: "marketplace", label: "payouts" },
   account_onboarding: { icon: "sale", tone: "emerald", category: "marketplace", label: "seller account" },
   store_post: { icon: "store", tone: "emerald", category: "shops", label: "shop updates", mutable: true },

@@ -13,6 +13,7 @@ import {
   regionHref,
 } from "@/lib/marketplace/regions";
 import { CATEGORIES } from "@/lib/marketplace/categories";
+import AlertMeButton from "@/components/marketplace/AlertMeButton";
 import NearMeButton, {
   type LocatableRegion,
 } from "@/components/marketplace/NearMeButton";
@@ -112,6 +113,10 @@ export default async function MarketplacePage() {
             >
               Browse all <ArrowRight className="h-4 w-4" />
             </Link>
+            <AlertMeButton
+              label="Get alerts"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-200 transition-colors hover:bg-emerald-500/20"
+            />
           </div>
         </div>
 

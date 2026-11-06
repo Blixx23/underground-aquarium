@@ -63,6 +63,10 @@
     {
       "path": "/api/cron/notification-emails",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/listing-alerts",
+      "schedule": "5-59/10 * * * *"
     }
   ]
 }
