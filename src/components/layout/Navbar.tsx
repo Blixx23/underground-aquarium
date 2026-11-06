@@ -72,13 +72,13 @@ const nav: NavItem[] = [
     children: [
       { label: "Events", href: "/events", group: "Community" },
       { label: "Trophies", href: "/trophies", group: "Community" },
+      { label: "All Fish Stores", href: "/stores", group: "Community" },
       { label: "Fish Species", href: "/species", group: "Learn" },
       { label: "Courses", href: "/courses", group: "Learn" },
       { label: "Glossary", href: "/glossary", group: "Learn" },
       { label: "Breeding Guides", href: "/breeding", group: "Learn" },
       { label: "Tank Builder", href: "/tank-builder", group: "Tools" },
       { label: "Water Check", href: "/water-check", group: "Tools" },
-      { label: "All Fish Stores", href: "/stores", group: "Tools" },
       { label: "Help Center", href: "/help", group: "Help" },
     ],
   },
@@ -311,27 +311,49 @@ export default function Navbar() {
                 </button>
                 {dropdown === item.label && (
                   <div className="absolute top-full right-0 pt-2">
-                    <div className="grid w-[26rem] grid-cols-3 gap-4 rounded-xl border border-ocean-700/50 bg-ocean-900/95 p-4 shadow-2xl shadow-ocean-950/80 backdrop-blur-xl">
-                      {[...new Set(item.children.map((c) => c.group ?? ""))].map((g) => (
-                        <div key={g}>
-                          {g && (
-                            <p className="mb-1.5 px-2 font-mono text-[10px] uppercase tracking-widest text-ocean-500">{g}</p>
-                          )}
-                          {item.children!.filter((c) => (c.group ?? "") === g).map((child) => (
+                    <div className="w-[36rem] rounded-xl border border-ocean-700/50 bg-ocean-900/95 p-4 shadow-2xl shadow-ocean-950/80 backdrop-blur-xl">
+                      {/* Three columns of places; Help sits on its own row underneath so it never lands in a stray gap. */}
+                      <div className="grid grid-cols-3 gap-4">
+                        {[...new Set(item.children.map((c) => c.group ?? ""))]
+                          .filter((g) => g !== "Help")
+                          .map((g) => (
+                            <div key={g}>
+                              {g && (
+                                <p className="mb-1.5 px-2 font-mono text-[10px] uppercase tracking-widest text-ocean-500">{g}</p>
+                              )}
+                              {item.children!.filter((c) => (c.group ?? "") === g).map((child) => (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  onClick={() => setDropdown(null)}
+                                  className={cn(
+                                    "block whitespace-nowrap rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-ocean-800/60 hover:text-white",
+                                    onSection(child.href) ? "bg-ocean-800/60 text-white" : "text-ocean-300"
+                                  )}
+                                >
+                                  {child.label}
+                                </Link>
+                              ))}
+                            </div>
+                          ))}
+                      </div>
+                      {item.children.some((c) => c.group === "Help") && (
+                        <div className="mt-3 flex items-center gap-1 border-t border-ocean-800/70 pt-3">
+                          {item.children!.filter((c) => c.group === "Help").map((child) => (
                             <Link
                               key={child.href}
                               href={child.href}
                               onClick={() => setDropdown(null)}
                               className={cn(
-                                "block rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-ocean-800/60 hover:text-white",
+                                "inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-ocean-800/60 hover:text-white",
                                 onSection(child.href) ? "bg-ocean-800/60 text-white" : "text-ocean-300"
                               )}
                             >
-                              {child.label}
+                              <LifeBuoy className="h-4 w-4" /> {child.label}
                             </Link>
                           ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 )}
