@@ -1,5 +1,19 @@
 import type { Config } from "tailwindcss";
 
+const ocean = {
+  950: "#020b18",
+  900: "#041525",
+  800: "#072236",
+  700: "#0a3352",
+  600: "#0e4a76",
+  500: "#1264a0",
+  400: "#1a82cc",
+  300: "#3aa3e8",
+  200: "#7dc4f0",
+  100: "#c2e4fa",
+  50:  "#edf7fe",
+};
+
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,19 +25,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ocean: {
-          950: "#020b18",
-          900: "#041525",
-          800: "#072236",
-          700: "#0a3352",
-          600: "#0e4a76",
-          500: "#1264a0",
-          400: "#1a82cc",
-          300: "#3aa3e8",
-          200: "#7dc4f0",
-          100: "#c2e4fa",
-          50:  "#edf7fe",
-        },
+        ocean,
         brine: {
           900: "#0d1f1a",
           800: "#1a3d32",
@@ -49,9 +51,24 @@ const config: Config = {
           50:  "#faf7f0",
         },
       },
+      // Text only: saturated blue on near-black is hard to read, so the shades
+      // used for secondary text are lifted and softened. They still step down
+      // 300 > 400 > 500 > 600 so muted text looks muted. ocean-400 (secondary
+      // text across the site) goes from 4.0:1 to 8.8:1 contrast on cards.
+      // Backgrounds, borders and buttons keep the original palette above.
+      textColor: {
+        ocean: {
+          ...ocean,
+          300: "#8ec8f0",
+          400: "#a3c3de",
+          500: "#83aed2",
+          600: "#6f9cc0",
+        },
+      },
       fontFamily: {
         display: ["var(--font-display)"],
         body: ["var(--font-body)"],
+        serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },
       backgroundImage: {

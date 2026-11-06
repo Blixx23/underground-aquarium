@@ -83,7 +83,7 @@ export default function SocietySeal({
         fontSize="10.5"
         fontWeight="600"
         letterSpacing="1.9"
-        fontFamily="var(--font-body), Georgia, serif"
+        fontFamily="var(--font-serif), Georgia, serif"
       >
         <textPath href="#seal-arc-top" startOffset="50%" textAnchor="middle">
           UNDERGROUND AQUARIUM
