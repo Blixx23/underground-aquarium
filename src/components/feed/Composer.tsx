@@ -7,6 +7,7 @@ import { prepareImage } from "@/lib/images/prepareImage";
 import Avatar from "@/components/profile/Avatar";
 import SeasonMotif from "@/components/seasonal/SeasonMotif";
 import SeasonGarland from "@/components/seasonal/SeasonGarland";
+import { hasGarland } from "@/lib/seasons";
 import { useSeason } from "@/lib/hooks/useSeason";
 import MentionPicker, { sendMentions } from "@/components/mentions/MentionPicker";
 
@@ -107,7 +108,7 @@ export default function Composer({
   return (
     <section
       aria-label="Create a post"
-      className={`relative rounded-2xl border bg-gradient-to-b from-ocean-800/50 to-ocean-900/60 p-4 shadow-lg shadow-black/30 sm:p-5 ${season ? `mt-12 sm:mt-14 ${season.composer.card}` : "border-ocean-600/40"}`}
+      className={`relative rounded-2xl border bg-gradient-to-b from-ocean-800/50 to-ocean-900/60 p-4 shadow-lg shadow-black/30 sm:p-5 ${season ? `${hasGarland(season.motif) ? "mt-12 sm:mt-14 " : ""}${season.composer.card}` : "border-ocean-600/40"}`}
     >
       {season && (
         <span
@@ -142,7 +143,11 @@ export default function Composer({
         onChange={(e) => setBody(e.target.value)}
         rows={3}
         autoFocus={autoFocus}
-        placeholder={`What's happening in your tanks${season?.composer.promptSuffix ?? ""}, ${name.split(" ")[0]}?`}
+        placeholder={
+          season?.composer.prompt
+            ? season.composer.prompt.replace("{name}", name.split(" ")[0])
+            : `What's happening in your tanks${season?.composer.promptSuffix ?? ""}, ${name.split(" ")[0]}?`
+        }
         className="block w-full resize-none rounded-xl border border-ocean-700/70 bg-ocean-950/70 px-3.5 py-3 text-base leading-relaxed text-white placeholder-ocean-500 outline-none transition-colors focus:border-ocean-400 sm:text-[15px]"
       />
       <MentionPicker inputRef={boxRef} value={body} onChange={setBody} />

@@ -3,7 +3,7 @@ import { ArrowRight, Fish, Flower2, Gift, LocateFixed, MapPin, Package, Plus, Se
 import { POST_AD_PATH } from "@/lib/config";
 import { supabasePublic } from "@/lib/supabase/public";
 import type { LocatableRegion } from "@/components/marketplace/NearMeButton";
-import { currentSeason } from "@/lib/seasons";
+import { currentSeason, hasGarland } from "@/lib/seasons";
 import SeasonMotif from "@/components/seasonal/SeasonMotif";
 import SeasonGarland from "@/components/seasonal/SeasonGarland";
 
@@ -129,7 +129,7 @@ export default async function Hero({
           action="/stores"
           method="get"
           role="search"
-          className={`relative mx-auto max-w-xl ${season ? "mt-14 sm:mt-16" : "mt-9"}`}
+          className={`relative mx-auto max-w-xl ${season && hasGarland(season.motif) ? "mt-14 sm:mt-16" : "mt-9"}`}
         >
           {season && (
             <SeasonGarland

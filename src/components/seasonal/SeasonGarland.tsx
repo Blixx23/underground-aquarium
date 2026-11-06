@@ -2,14 +2,16 @@ import type { Motif } from "@/lib/seasons";
 
 /**
  * A decoration that sits on the top edge of a box: for fall, a pumpkin
- * resting on the frame with a leafy vine trailing along it.
+ * resting on the frame with a leafy vine trailing along it; for
+ * Thanksgiving, a turkey standing on the edge with a vine of autumn leaves.
  *
  * Drawn on a 560 x 100 canvas where the box's top edge is y = 80, so the
  * parent places it with `-translate-y-[80%]` and it lines up exactly at
  * any width. `id` keeps the gradient ids unique when two are on a page.
  *
- * Seasons without a garland yet (winter, spring) render nothing, so a new
- * one only has to be drawn here.
+ * Seasons without a garland (winter, spring) render nothing;
+ * hasGarland in lib/seasons.ts says which ones have one, so boxes only make
+ * room for it when there is one.
  */
 export default function SeasonGarland({
   motif,
@@ -20,6 +22,7 @@ export default function SeasonGarland({
   id: string;
   className?: string;
 }) {
+  if (motif === "leaf") return <Turkey id={id} className={className} />;
   if (motif !== "pumpkin") return null;
 
   const vine = `${id}-vine`;
@@ -113,6 +116,90 @@ export default function SeasonGarland({
       />
       <ellipse cx="482" cy="40" rx="5" ry="9" fill="#fed7aa" opacity="0.35" />
       <path d="M488 27c-1-7 0-13 5-18l5 2c-4 4-5 10-4 16z" fill="#65532b" />
+    </svg>
+  );
+}
+
+/** Shared trailing vine with a few autumn leaves, same layout as the pumpkin garland. */
+function Vine({ id }: { id: string }) {
+  const vine = `${id}-vine`;
+  const leaf = `${id}-leaf`;
+  return (
+    <>
+      <defs>
+        <linearGradient id={vine} x1="0" x2="1">
+          <stop offset="0" stopColor="#92400e" stopOpacity="0" />
+          <stop offset="0.25" stopColor="#92400e" stopOpacity="0.85" />
+          <stop offset="1" stopColor="#78350f" />
+        </linearGradient>
+        <g id={leaf}>
+          <path d="M0 0C-5-3-13-5-16-13-10-13-9-17-7-24-3-20 1-20 7-24 9-17 10-13 16-13 13-5 5-3 0 0Z" />
+          <path d="M0 0L0-19M0-6L-9-12M0-6L9-12" stroke="#000" strokeOpacity="0.25" strokeWidth="1" fill="none" strokeLinecap="round" />
+        </g>
+      </defs>
+      <path
+        d="M482 76C455 80 420 81 380 79S330 84 300 78 250 72 220 79 160 86 130 79 80 72 50 78 20 82 4 80"
+        fill="none"
+        stroke={`url(#${vine})`}
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+      <g fill="none" stroke="#92400e" strokeWidth="1.4" strokeLinecap="round">
+        <path d="M340 80c-2-8 4-14 10-11 5 3 1 9-3 6" />
+        <path d="M190 84c3 7 11 8 13 2 2-5-4-7-6-3" opacity="0.8" />
+      </g>
+      <use href={`#${leaf}`} transform="translate(395 79) rotate(-18) scale(1.25)" fill="#c2410c" />
+      <use href={`#${leaf}`} transform="translate(300 78) rotate(14) scale(1.1)" fill="#d97706" />
+      <use href={`#${leaf}`} transform="translate(230 80) rotate(-10) scale(1.0)" fill="#c2410c" opacity="0.9" />
+      <use href={`#${leaf}`} transform="translate(130 79) rotate(10) scale(0.85)" fill="#d97706" opacity="0.65" />
+    </>
+  );
+}
+
+/** Thanksgiving: a turkey standing on the edge, tail fanned, with a short vine of autumn leaves. */
+function Turkey({ id, className }: { id: string; className: string }) {
+  const body = `${id}-body`;
+  const feathers = [
+    { a: -66, c: "#b45309" },
+    { a: -44, c: "#d97706" },
+    { a: -22, c: "#9a3412" },
+    { a: 0, c: "#ca8a04" },
+    { a: 22, c: "#9a3412" },
+    { a: 44, c: "#d97706" },
+    { a: 66, c: "#b45309" },
+  ];
+  return (
+    <svg viewBox="0 0 560 100" aria-hidden className={`pointer-events-none select-none drop-shadow-[0_6px_10px_rgba(0,0,0,0.45)] ${className}`}>
+      <defs>
+        <radialGradient id={body} cx="0.4" cy="0.35" r="0.8">
+          <stop offset="0" stopColor="#a16207" />
+          <stop offset="0.6" stopColor="#7c2d12" />
+          <stop offset="1" stopColor="#451a03" />
+        </radialGradient>
+      </defs>
+      <Vine id={id} />
+      {/* Tail fan, behind the body */}
+      <g transform="translate(490 62)">
+        {feathers.map((f) => (
+          <g key={f.a} transform={`rotate(${f.a})`}>
+            <ellipse cx="0" cy="-26" rx="9" ry="22" fill={f.c} />
+            <ellipse cx="0" cy="-40" rx="5.5" ry="7" fill="#fde68a" opacity="0.35" />
+          </g>
+        ))}
+      </g>
+      {/* Body */}
+      <ellipse cx="490" cy="62" rx="19" ry="18" fill={`url(#${body})`} />
+      {/* Feet on the edge */}
+      <path d="M483 79l-3 2M483 79l0 2M497 79l3 2M497 79l0 2" stroke="#f59e0b" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M483 76v3M497 76v3" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+      {/* Head */}
+      <path d="M490 50c-6 0-8-8-8-14 0-6 4-9 8-9s8 3 8 9c0 6-2 14-8 14z" fill="#8b5a2b" />
+      <circle cx="486.5" cy="36" r="2.2" fill="#fff" />
+      <circle cx="493.5" cy="36" r="2.2" fill="#fff" />
+      <circle cx="486.8" cy="36.4" r="1.1" fill="#1c1917" />
+      <circle cx="493.2" cy="36.4" r="1.1" fill="#1c1917" />
+      <path d="M487 40l3 3 3-3z" fill="#f59e0b" />
+      <path d="M491.5 42c2 1 2.5 4 1 6-1.5 1.5-3 0-2.5-2z" fill="#dc2626" />
     </svg>
   );
 }

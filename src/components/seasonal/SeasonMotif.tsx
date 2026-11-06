@@ -36,6 +36,16 @@ export default function SeasonMotif({
     );
   }
 
+  if (motif === "leaf") {
+    return (
+      <svg {...common}>
+        {/* a maple leaf */}
+        <path d="M12 21v-4.5M12 16.5l-1-3.5-4.5 1.5 1-2.5L3 9.5l3-1-1.5-4 4 1.5L10 3l2 3 2-3 1.5 3 4-1.5-1.5 4 3 1-4.5 2.5 1 2.5L13 13z" />
+        <path d="M12 16.5V8" />
+      </svg>
+    );
+  }
+
   if (motif === "snowflake") {
     return (
       <svg {...common}>

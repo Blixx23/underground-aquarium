@@ -13,9 +13,9 @@
  * can read in the source, and this file is in its content list.
  */
 
-export type SeasonId = "pumpkin" | "frost" | "blossom";
+export type SeasonId = "pumpkin" | "harvest" | "frost" | "blossom";
 
-export type Motif = "pumpkin" | "snowflake" | "blossom";
+export type Motif = "pumpkin" | "leaf" | "snowflake" | "blossom";
 
 export type Season = {
   id: SeasonId;
@@ -44,6 +44,8 @@ export type Season = {
     motifColor: string;
     /** Word added to the prompt: "What's happening in your tanks this fall, Chris?" */
     promptSuffix: string;
+    /** A whole prompt of its own instead, with {name} for their first name. */
+    prompt?: string;
   };
 };
 
@@ -52,7 +54,7 @@ export const SEASONS: Season[] = [
     id: "pumpkin",
     label: "Fall",
     start: "09-20",
-    end: "11-30",
+    end: "10-31",
     motif: "pumpkin",
     hero: {
       glow: "radial-gradient(closest-side, rgba(251,146,60,0.16), rgba(217,119,6,0.07) 50%, transparent 80%)",
@@ -65,6 +67,26 @@ export const SEASONS: Season[] = [
       topLine: "via-orange-300/60",
       motifColor: "text-orange-300/80",
       promptSuffix: " this fall",
+    },
+  },
+  {
+    id: "harvest",
+    label: "Thanksgiving",
+    start: "11-01",
+    end: "11-30",
+    motif: "leaf",
+    hero: {
+      glow: "radial-gradient(closest-side, rgba(245,158,11,0.15), rgba(185,28,28,0.07) 50%, transparent 80%)",
+      headline: "from-sky-300 via-amber-200 to-red-300",
+      searchFrame: "from-sky-400/40 via-amber-300/30 to-red-400/60",
+      motifColor: "text-amber-300/80",
+    },
+    composer: {
+      card: "border-amber-500/40",
+      topLine: "via-amber-300/60",
+      motifColor: "text-amber-300/80",
+      promptSuffix: " this Thanksgiving",
+      prompt: "What are you thankful for in your tanks, {name}?",
     },
   },
   {
@@ -106,6 +128,11 @@ export const SEASONS: Season[] = [
     },
   },
 ];
+
+/** Seasons with a decoration resting on the box edge; the rest are just colors and an icon. */
+export function hasGarland(motif: Motif): boolean {
+  return motif === "pumpkin" || motif === "leaf";
+}
 
 /** Today's month-day in Pacific time, as "MM-DD". */
 function monthDay(now: Date): string {
