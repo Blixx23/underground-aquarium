@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
+import ForSaleNearYou from "@/components/marketplace/ForSaleNearYou";
 import { notFound, permanentRedirect } from "next/navigation";
 import { matchSpeciesSlug } from "@/lib/species/match";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight, Waves, Heart, Fish } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import RelatedGuides from "@/components/discover/RelatedGuides";
-import ListingsStrip from "@/components/discover/ListingsStrip";
-import { listingsMatching, relatedThreads } from "@/lib/discover";
+import { relatedThreads } from "@/lib/discover";
 import SpeciesPhotos, { type SpeciesPhoto } from "@/components/species/SpeciesPhotos";
 import SubmitSpeciesPhoto from "@/components/species/SubmitSpeciesPhoto";
 import SpeciesVideos, { type SpeciesVideo } from "@/components/species/SpeciesVideos";
@@ -171,12 +171,9 @@ export default async function SpeciesDetailPage({ params }: Params) {
     .order("common_name")
     .limit(10);
 
-  // A reason to keep going: ads for this fish, and guides that mention it.
+  // A reason to keep going: guides that mention it. Ads for it load in ForSaleNearYou, nearest first.
   const nameVariants = [s.common_name as string, (s.common_name as string).replace(/s$/i, "")];
-  const [forSale, guides] = await Promise.all([
-    listingsMatching(nameVariants, 4),
-    relatedThreads({ terms: nameVariants, limit: 4 }),
-  ]);
+  const guides = await relatedThreads({ terms: nameVariants, limit: 4 });
 
   const { data: speciesTanks } = await supabasePublic.rpc(
     "public_tanks_for_species",
@@ -456,6 +453,17 @@ export default async function SpeciesDetailPage({ params }: Params) {
           </section>
         )}
 
+        {/* Live classified ads for this fish: the library sends shoppers to the classifieds, nearest first. */}
+        <ForSaleNearYou
+          slug={s.slug as string}
+          name={s.common_name as string}
+          category={
+            /shrimp|snail|crayfish|crab|invert|clam|mussel|scud|isopod/i.test(String(s.group_name ?? ""))
+              ? "livestock-inverts"
+              : "livestock-freshwater"
+          }
+        />
+
         <SpeciesVideos videos={videos} slug={s.slug as string} name={s.common_name as string} />
 
         {speciesTanks && speciesTanks.length > 0 && (
@@ -577,12 +585,6 @@ export default async function SpeciesDetailPage({ params }: Params) {
             approvedCount={videos.length}
           />
         </section>
-
-        <ListingsStrip
-          listings={forSale}
-          name={s.common_name as string}
-          browseHref="/listings?category=livestock-freshwater"
-        />
 
         <RelatedGuides guides={guides} title={`Guides about ${s.common_name}`} />
 

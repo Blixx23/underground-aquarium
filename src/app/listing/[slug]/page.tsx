@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
+  BookOpen,
   MapPin,
   Eye,
   Clock,
@@ -17,6 +18,7 @@ import {
 import { formatPhone, smsHref, telHref } from "@/lib/phone";
 import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
 import ShareListing from "@/components/marketplace/ShareListing";
+import { speciesForAd } from "@/lib/marketplace/speciesAds";
 import { shareCardUrl } from "@/lib/seo/share";
 import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
@@ -199,6 +201,8 @@ export default async function ListingPage({
   const condition = live ? null : conditionLabel(listing.condition);
   const regionUrl = `/marketplace/${listing.state_code.toLowerCase()}/${listing.region_slug}`;
   const sellerName = seller?.full_name?.trim() || seller?.username || "A hobbyist";
+  // The species this ad is about, for its care-guide link. A failed lookup just hides the link.
+  const careGuide = await speciesForAd(listing).catch(() => null);
   const shareLabel = listing.is_wanted ? "Wanted" : listing.is_free ? "Free" : formatPrice(listing.price_cents);
   const sharePlace = `${listing.city ? `${listing.city}, ` : region?.name ? `${region.name}, ` : ""}${listing.state_code}`;
 
@@ -321,6 +325,14 @@ export default async function ListingPage({
                 <Clock className="w-4 h-4 text-ocean-600" />
                 Posted {timeAgo(listing.created_at)}
               </p>
+              {careGuide && (
+                <p className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-emerald-400" />
+                  <Link href={`/species/${careGuide.slug}`} className="text-emerald-300 hover:text-emerald-200 transition-colors">
+                    {careGuide.common_name} care guide
+                  </Link>
+                </p>
+              )}
               {listing.views > 0 && (
                 <p className="flex items-center gap-2">
                   <Eye className="w-4 h-4 text-ocean-600" />

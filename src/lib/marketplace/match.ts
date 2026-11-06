@@ -68,3 +68,21 @@ export const ALERT_RADII = [25, 50, 100, 150] as const;
 export const MAX_ALERTS_PER_MEMBER = 10;
 /** Wanted posts and ads further apart than this aren't matched. */
 export const WANTED_RADIUS_MILES = 60;
+
+/**
+ * Does an ad mention this species by any of its names? The whole name has to
+ * appear as a phrase ("neon tetra", not just "tetra"), plurals allowed, so
+ * "Neon Tetras x10" counts and "Cardinal Tetra" doesn't. One- and two-letter
+ * names are skipped, since they match too much by accident.
+ */
+export function mentionsSpecies(names: (string | null | undefined)[], text: string): number {
+  const hay = ` ${words(text).join(" ")} `;
+  let best = 0;
+  for (const n of names) {
+    const w = words(n);
+    if (w.length === 0 || (w.length === 1 && w[0].length < 3)) continue;
+    if (hay.includes(` ${w.join(" ")} `)) best = Math.max(best, w.join(" ").length);
+  }
+  // The length of the longest name found: longer means more specific ("blue mystery snail" beats "mystery snail").
+  return best;
+}

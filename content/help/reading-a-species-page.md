@@ -167,9 +167,13 @@ To share your own, see [Breeding videos](/help/breeding-videos).
 This section invites you to add a photo or a breeding video of your own fish. It shows a **Submit a photo** and a **Submit a video** button, or **Sign in to submit** if you're signed out. When all photo or video spots are filled, it says so instead. The details are in [Submitting species photos](/help/submitting-species-photos) and [Breeding videos](/help/breeding-videos).
 
 ## What is the "for sale" section on a species page?
-**[Species] for sale** shows up to 4 active classified ads whose titles mention the species, from anywhere on the site. Tap an ad to open it, or **Browse all** to see all freshwater livestock ads.
+**[Species] for sale** lists live classified ads that mention the species by name (or one of its other names, or a color form of it), from anywhere on the site. Ads that name it in the title come first.
 
-If nothing is listed, you'll see a note with **Sell yours** (post a free ad) and **Find a shop** (the fish store directory). See [Browsing classifieds](/help/browsing-classifieds) and [Posting a classified ad](/help/posting-a-classified-ad).
+If you've browsed a classifieds area before, the nearest ads come first, with roughly how far away each one is. Otherwise press **Nearest to me** to sort by distance; your location stays in your browser. Up to 6 show at first; **Show all** lists the rest.
+
+If nobody has it listed, press **Alert me about [species]** to be told when someone near you posts one (see [Classified alerts](/help/classified-alerts)), or **Selling some? Post a free ad**. The Tank Builder links here too: under your stock list, **Find these fish for sale near you** opens this section for each fish.
+
+Classified ads for a fish also link back to its care guide, under the ad's location.
 
 ## What else is at the bottom of a species page?
 - **Guides about [species]**: forum threads that mention the species.

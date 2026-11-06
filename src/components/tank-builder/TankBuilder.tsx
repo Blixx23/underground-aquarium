@@ -1287,6 +1287,7 @@ export default function TankBuilder({
             </div>
 
             {hasStock ? (
+              <>
               <ul className="mt-4 space-y-2">
                 {stock.map(({ species: sp, qty }, i) => {
                   const hot = flagged.has(sp.slug);
@@ -1364,6 +1365,23 @@ export default function TankBuilder({
                   );
                 })}
               </ul>
+              {/* From planning to buying: each fish's page lists ads near the visitor. */}
+              <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-3 py-2.5">
+                <p className="text-xs font-medium text-emerald-200">Find these fish for sale near you</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {stock.map(({ species: sp }) => (
+                    <Link
+                      key={sp.slug}
+                      href={`/species/${sp.slug}#for-sale`}
+                      target="_blank"
+                      className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-ocean-100 hover:border-emerald-500/40 hover:text-white"
+                    >
+                      {sp.common_name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              </>
             ) : (
               <div className="mt-4 rounded-xl border border-dashed border-white/15 p-6 text-center">
                 <Fish className="mx-auto mb-2 h-7 w-7 text-ocean-600" />
