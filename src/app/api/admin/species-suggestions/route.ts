@@ -77,6 +77,18 @@ export async function POST(req: Request) {
     }
   }
 
+  // A variant needs its parent. Check before anything is saved, so a parent
+  // removed since the AI check can't leave a stray standalone entry behind.
+  if (action === "create" && typeof body.parentSlug === "string" && body.parentSlug) {
+    const { data: parent } = await supabaseAdmin.from("species").select("slug").eq("slug", body.parentSlug).maybeSingle();
+    if (!parent) {
+      return NextResponse.json(
+        { error: "The parent fish isn't in the library anymore, so nothing was saved. Press Check again." },
+        { status: 400 }
+      );
+    }
+  }
+
   // resolve_species_request checks the caller is an admin.
   const { data, error } = await supabase.rpc("resolve_species_request", {
     p_id: id,
@@ -100,7 +112,17 @@ export async function POST(req: Request) {
   if (action === "create" && result.slug && typeof body.parentSlug === "string" && body.parentSlug !== result.slug) {
     const { data: parent } = await supabaseAdmin.from("species").select("slug").eq("slug", body.parentSlug).maybeSingle();
     if (parent) {
-      await supabaseAdmin.from("species").update({ entry_type: "variety", parent_slug: parent.slug }).eq("slug", result.slug);
+      const { error: linkError } = await supabaseAdmin
+        .from("species")
+        .update({ entry_type: "variety", parent_slug: parent.slug })
+        .eq("slug", result.slug);
+      // Saved but not linked: say so plainly rather than reporting success.
+      if (linkError) {
+        return NextResponse.json(
+          { error: `Saved, but it couldn't be linked under ${parent.slug}: ${linkError.message}. Open it from the species list to fix.` },
+          { status: 500 }
+        );
+      }
       revalidatePath(`/species/${parent.slug}`);
     }
   }

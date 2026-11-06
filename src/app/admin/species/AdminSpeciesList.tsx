@@ -8,6 +8,15 @@ import { SPECIES_OPTIONS, type AiReview } from "@/lib/species/fields";
 // Matches the species_submission_thanks bubble rule (step69 SQL).
 const THANKS_BUBBLES = 10;
 
+// The Tank Builder can't use an entry without these, so the form won't save without them.
+const REQUIRED: { key: string; label: string }[] = [
+  { key: "group_name", label: "group" },
+  { key: "temp_min_f", label: "low temperature" },
+  { key: "temp_max_f", label: "high temperature" },
+  { key: "max_size_in", label: "adult size" },
+  { key: "min_tank_gal", label: "minimum tank" },
+];
+
 // Matches the species_submission_reward bubble rule: added or another name.
 const ADD_BUBBLES = 25;
 
@@ -389,6 +398,11 @@ function Request({
   );
 
   const rec = recommendedOption(ai);
+  // Required boxes the AI couldn't fill: shown before Chris opens the form, so a save never surprises him.
+  const missingRequired =
+    ai && (ai.verdict === "add_new" || ai.verdict === "add_variant")
+      ? REQUIRED.filter((r) => !String((ai.species as Record<string, unknown> | null)?.[r.key] ?? "").trim())
+      : [];
   const firstName = who;
 
   /** Open one of the three options, starting from what the AI already worked out. */
@@ -517,6 +531,21 @@ function Request({
               </div>
             )}
             {ai.verdict !== "unsure" && (
+              <p
+                className={`rounded-lg px-3 py-2 text-sm ${
+                  missingRequired.length ? "border border-amber-400/30 bg-amber-400/10 text-amber-100" : "bg-emerald-500/10 text-emerald-100"
+                }`}
+              >
+                {ai.verdict === "another_name" || rec === "dismiss"
+                  ? "Everything is filled in. Nothing for you to type."
+                  : missingRequired.length
+                    ? `The AI couldn't fill ${missingRequired.map((r) => r.label).join(", ")}. Press Check again, or type ${
+                        missingRequired.length === 1 ? "it" : "them"
+                      } in yourself. The form won't save without ${missingRequired.length === 1 ? "it" : "them"}.`
+                    : "Every required box is filled in and checked twice. Nothing for you to type unless you want to change something."}
+              </p>
+            )}
+            {ai.verdict !== "unsure" && (
               <div className="space-y-1.5">
                 <button
                   type="button"
@@ -532,7 +561,10 @@ function Request({
               </div>
             )}
             {ai.verdict === "unsure" && (
-              <p className="text-sm text-ocean-200">The AI isn&apos;t sure, so pick the option below that fits.</p>
+              <p className="text-sm text-ocean-200">
+                The AI isn&apos;t sure, so this one needs your call. Press Check again to retry, or pick the option below that fits. Turn it
+                down and alias need only clicks; adding it means filling the form yourself.
+              </p>
             )}
 
             <button type="button" onClick={() => setAiNotes(!aiNotes)} className="text-sm text-ocean-300 underline-offset-4 hover:text-white hover:underline">
