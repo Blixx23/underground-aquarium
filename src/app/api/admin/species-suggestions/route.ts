@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { awardBubbles } from "@/lib/awardBubbles";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { recordDecision } from "@/lib/species/checkRequest";
 import { thankForSubmission } from "@/lib/species/thankYou";
 
 // Long enough for the breeding guide draft that runs after a new species is added.
@@ -149,6 +150,19 @@ export async function POST(req: Request) {
       giveBubbles: body.thanks !== false,
     });
   }
+
+  // Teach the checker: save what Chris chose next to what it recommended.
+  await recordDecision(id, {
+    action: action as "create" | "alias" | "dismiss",
+    target:
+      action === "alias"
+        ? (body.existingSlug as string | null) ?? null
+        : action === "create" && typeof body.parentSlug === "string" && body.parentSlug
+          ? body.parentSlug
+          : null,
+    reason: note || null,
+    at: new Date().toISOString(),
+  });
 
   // Show the change straight away instead of waiting out the hour-long
   // page cache: the list, the fish's own page (which may have been cached

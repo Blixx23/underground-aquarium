@@ -60,6 +60,26 @@ export type SpeciesField = (typeof SPECIES_FIELDS)[number];
 /** What the AI check decided about a species request. */
 export type AiVerdict = "already_listed" | "another_name" | "too_broad" | "add_variant" | "add_new" | "turn_down" | "unsure";
 
+/** One thing the checker did, so Chris can see what happened behind the scenes. */
+export type CheckStep = {
+  key: string;
+  label: string;
+  /** done: ran fine. skipped: not needed. failed: broke (the next step covers it). stepped_in: a backup that ran because something else failed. */
+  status: "done" | "skipped" | "failed" | "stepped_in";
+  note: string;
+  cents?: number;
+  ms?: number;
+};
+
+/** What Chris chose for a request, saved on its check so the checker can learn from it. */
+export type ChrisDecision = {
+  action: "create" | "alias" | "dismiss";
+  /** For create: the parent it was added under, if a variant. For alias: the fish the name went to. */
+  target: string | null;
+  reason: string | null;
+  at: string;
+};
+
 export type AiReview = {
   verdict: AiVerdict;
   confidence: "high" | "medium" | "low";
@@ -90,4 +110,8 @@ export type AiReview = {
   model: string;
   cost_cents: number;
   checked_at: string;
+  /** Every step the checker ran, in order. Missing on checks from before Nov 2026. */
+  steps?: CheckStep[];
+  /** Set when Chris resolves the request. */
+  chris_decision?: ChrisDecision;
 };

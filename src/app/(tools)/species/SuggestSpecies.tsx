@@ -64,6 +64,8 @@ export default function SuggestSpecies({
       setError(err.message || "Couldn't send that. Please try again.");
       return;
     }
+    // Start the AI check now, in the background, so it's ready when Chris looks.
+    fetch("/api/species/check-request", { method: "POST", keepalive: true }).catch(() => undefined);
     setDone(true);
     onDone?.();
   }

@@ -79,7 +79,7 @@ ${MODERATION_QUEUES}
 
 ## Species guide and content
 - species (common_name, slug, water_type, care_level), species_photos, species_videos,
-  species_suggestions (member species requests; status, ai_review = the AI check's verdict, ai_reviewed_at),
+  species_suggestions (member species requests; status, ai_review = the AI check's verdict with steps = what the checker did and chris_decision = what Chris chose, ai_reviewed_at),
   glossary_terms, public_breeding_guides (members' approved spawn reports),
   breeding_guides (written breeding guide per Society point-list species; slug, award_species_id -> club_award_species,
   species_slug, glossary_slug, seo_title, summary, facts, sections, faq, is_published). Guides for species not on the

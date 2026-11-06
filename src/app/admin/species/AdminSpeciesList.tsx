@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, ChevronDown, X, Loader2, Fish, Link2, Plus, Sparkles, RefreshCw, ThumbsUp } from "lucide-react";
-import { SPECIES_OPTIONS, type AiReview } from "@/lib/species/fields";
+import { SPECIES_OPTIONS, type AiReview, type CheckStep } from "@/lib/species/fields";
 
 // Matches the species_submission_thanks bubble rule (step69 SQL).
 const THANKS_BUBBLES = 10;
@@ -17,7 +17,7 @@ const REQUIRED: { key: string; label: string }[] = [
   { key: "min_tank_gal", label: "minimum tank" },
 ];
 
-// Matches the species_submission_reward bubble rule: added or another name.
+// The species request reward, given only when a fish is added (not for another name).
 const ADD_BUBBLES = 25;
 
 type Option = "create" | "alias" | "dismiss";
@@ -200,6 +200,7 @@ function Request({
   // Checks run one at a time, so a card can be waiting its turn rather than checking.
   const [aiStarted, setAiStarted] = useState(false);
   const [aiNotes, setAiNotes] = useState(false);
+  const [aiSteps, setAiSteps] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   // Set when the new entry is a color or fin form of a library fish.
   const [parentSlug, setParentSlug] = useState<string | null>(null);
@@ -429,7 +430,7 @@ function Request({
     {
       m: "alias",
       title: "It's another name for a fish we have",
-      does: `You pick the fish. "${s.common_name}" is added as another name for it, so searching that name finds it. ${firstName} gets ${ADD_BUBBLES} bubbles. No new page is made.`,
+      does: `You pick the fish. "${s.common_name}" is added as another name for it, so searching that name finds it. ${firstName} is notified. No new page is made, and no bubbles are given automatically (award them on Bubbles if you like).`,
       Icon: Link2,
     },
     {
@@ -567,9 +568,17 @@ function Request({
               </p>
             )}
 
-            <button type="button" onClick={() => setAiNotes(!aiNotes)} className="text-sm text-ocean-300 underline-offset-4 hover:text-white hover:underline">
-              {aiNotes ? "Hide the AI's notes" : "Show the AI's notes"}
-            </button>
+            <div className="flex flex-wrap gap-x-5 gap-y-1">
+              <button type="button" onClick={() => setAiNotes(!aiNotes)} className="text-sm text-ocean-300 underline-offset-4 hover:text-white hover:underline">
+                {aiNotes ? "Hide the AI's notes" : "Show the AI's notes"}
+              </button>
+              {ai.steps && ai.steps.length > 0 && (
+                <button type="button" onClick={() => setAiSteps(!aiSteps)} className="text-sm text-ocean-300 underline-offset-4 hover:text-white hover:underline">
+                  {aiSteps ? "Hide what the checker did" : `What the checker did (${ai.steps.length} steps, ${ai.cost_cents.toFixed(1)}¢)`}
+                </button>
+              )}
+            </div>
+            {aiSteps && ai.steps && <StepLog steps={ai.steps} total={ai.cost_cents} />}
             {aiNotes && (
               <div className="space-y-2 rounded-lg bg-ocean-950/50 p-3 text-sm">
                 {ai.summary && <p className="text-ocean-100">{ai.summary}</p>}
@@ -765,7 +774,7 @@ function Request({
             {aliasSlug ? (
               <>
                 Pressing the button below adds &ldquo;{s.common_name}&rdquo; as another name for <strong className="text-white">{nameOf(aliasSlug)}</strong>{" "}
-                and gives {who} {ADD_BUBBLES} bubbles.
+                and lets {who} know. No bubbles are given for this one.
               </>
             ) : (
               "Pick the fish first."
@@ -845,6 +854,47 @@ function Request({
       )}
 
       {error && <p className="mt-3 text-sm text-coral-300">{error}</p>}
+    </div>
+  );
+}
+
+// How each step ended, in words and colour.
+const STEP_LOOK: Record<CheckStep["status"], { text: string; tone: string; dot: string }> = {
+  done: { text: "Done", tone: "text-emerald-300", dot: "bg-emerald-400" },
+  skipped: { text: "Skipped", tone: "text-ocean-300", dot: "bg-ocean-500" },
+  failed: { text: "Broke", tone: "text-coral-300", dot: "bg-coral-400" },
+  stepped_in: { text: "Stepped in", tone: "text-sky-300", dot: "bg-sky-400" },
+};
+
+/** Every step the checker ran, in order, so Chris can see what happened behind the scenes. */
+function StepLog({ steps, total }: { steps: CheckStep[]; total: number }) {
+  return (
+    <div className="rounded-lg bg-ocean-950/50 p-3">
+      <ol className="space-y-2.5">
+        {steps.map((st, i) => {
+          const look = STEP_LOOK[st.status] ?? STEP_LOOK.done;
+          return (
+            <li key={`${st.key}-${i}`} className="flex gap-3 text-sm">
+              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${look.dot}`} aria-hidden />
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-medium text-white">{st.label}</span>
+                  <span className={`text-xs font-semibold ${look.tone}`}>{look.text}</span>
+                  {typeof st.cents === "number" && (
+                    <span className="text-xs text-ocean-400">{st.cents === 0 ? "free" : `${st.cents.toFixed(1)}¢`}</span>
+                  )}
+                  {typeof st.ms === "number" && <span className="text-xs text-ocean-400">{(st.ms / 1000).toFixed(1)}s</span>}
+                </span>
+                <span className="block text-ocean-200">{st.note}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-3 border-t border-ocean-800/60 pt-2 text-xs text-ocean-300">
+        Total {total.toFixed(1)}¢. <span className="text-sky-300">Stepped in</span> means a backup ran because another step broke or
+        found a problem. <span className="text-coral-300">Broke</span> steps are always covered by the next one.
+      </p>
     </div>
   );
 }
