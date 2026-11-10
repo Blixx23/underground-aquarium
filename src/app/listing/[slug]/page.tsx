@@ -508,6 +508,11 @@ export default async function ListingPage({
               )}
             </div>
 
+            {/* A featured shop near this ad, right under the contact box where everyone looks. */}
+            <div className="mb-6 empty:hidden">
+              <FeaturedShopCard slot={0} variant="forum" lat={region?.lat ?? null} lng={region?.lng ?? null} />
+            </div>
+
             <p className="text-xs text-ocean-600 leading-relaxed">
               Underground Aquarium doesn&apos;t handle payment or shipping for
               classified ads. Meet somewhere public, inspect livestock before you
@@ -579,8 +584,8 @@ export default async function ListingPage({
                     </p>
                   </div>
                 </Link>
-                {i === Math.min(1, related.length - 1) && (
-                  <FeaturedShopCard slot={0} variant="tile" lat={region?.lat ?? null} lng={region?.lng ?? null} />
+                {i === 0 && (
+                  <FeaturedShopCard slot={1} variant="tile" lat={region?.lat ?? null} lng={region?.lng ?? null} />
                 )}
                 </Fragment>
               ))}

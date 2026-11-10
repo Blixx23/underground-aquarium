@@ -6,7 +6,6 @@ import { supabasePublic } from "@/lib/supabase/public";
 import { Fragment } from "react";
 import VoteControl from "@/components/forum/VoteControl";
 import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
-import { featuredSlotAfter } from "@/lib/stores/featuredSlots";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
 import { shareMeta } from "@/lib/seo/share";
 
@@ -200,6 +199,7 @@ export default async function CategoryPage({ params, searchParams }: Params) {
               const opId = opByThread[t.id as string];
               return (
                 <Fragment key={t.id as string}>
+                {i % 7 === 0 && <FeaturedShopCard slot={i / 7} variant="forum" />}
                 <article
                   className="flex gap-3 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-4 hover:border-ocean-700 transition-colors"
                 >
@@ -233,9 +233,6 @@ export default async function CategoryPage({ params, searchParams }: Params) {
                     </Link>
                   </div>
                 </article>
-                {featuredSlotAfter(i, threads.length, 7) != null && (
-                  <FeaturedShopCard slot={featuredSlotAfter(i, threads.length, 7)!} variant="forum" />
-                )}
                 </Fragment>
               );
             })}
