@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, MapPin, Store } from "lucide-react";
+import { Award, MapPin, Store } from "lucide-react";
 import ShopLogo from "@/components/stores/ShopLogo";
 import Stars from "@/components/stores/Stars";
 import { createClient } from "@/lib/supabase/client";
@@ -103,12 +103,54 @@ export default function FeaturedShopCard({
   const { town, mi } = place(shop);
   const picture = shop.cover_url || shop.logo_url;
 
-  const FeaturedPill = ({ className = "" }: { className?: string }) => (
+  // An earned badge, like an achievement: a medal with ribbon tails and a
+  // banner reading "Verified Shop". Shops get it by claiming their page.
+  const Medal = ({ size = 28 }: { size?: number }) => (
+    <span className="relative inline-flex shrink-0 flex-col items-center" style={{ width: size }} aria-hidden>
+      <span
+        className="relative z-10 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-300 via-emerald-500 to-emerald-700 shadow-[0_0_12px_rgba(16,185,129,0.65)] ring-2 ring-emerald-200/70"
+        style={{ width: size, height: size }}
+      >
+        <span className="absolute inset-[3px] rounded-full border border-white/40" />
+        <Award className="text-white drop-shadow" style={{ width: size * 0.55, height: size * 0.55 }} strokeWidth={2.25} />
+      </span>
+      <span className="-mt-1 flex gap-[2px]">
+        <span className="block bg-emerald-600" style={{ width: size * 0.22, height: size * 0.38, clipPath: "polygon(0 0,100% 0,100% 100%,50% 75%,0 100%)" }} />
+        <span className="block bg-emerald-700" style={{ width: size * 0.22, height: size * 0.38, clipPath: "polygon(0 0,100% 0,100% 100%,50% 75%,0 100%)" }} />
+      </span>
+    </span>
+  );
+
+  const Ribbon = ({ small = false }: { small?: boolean }) => (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-300 ${className}`}
+      className={`inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 font-bold uppercase tracking-[0.12em] text-ocean-950 shadow-[0_2px_10px_rgba(16,185,129,0.45)] ${
+        small ? "px-3 py-0.5 text-[9px]" : "px-3.5 py-1 text-[10px]"
+      }`}
+      style={{ clipPath: "polygon(0 0,100% 0,94% 50%,100% 100%,0 100%,6% 50%)" }}
     >
-      <BadgeCheck className="h-3.5 w-3.5" />
-      Verified shop
+      Verified Shop
+    </span>
+  );
+
+  // The achievement as it sits on a picture: medal plus banner.
+  const FeaturedPill = ({ className = "", small = false }: { className?: string; small?: boolean }) => (
+    <span className={`inline-flex items-center gap-1 ${className}`}>
+      <Medal size={small ? 24 : 30} />
+      <span className="-ml-2.5 mb-2">
+        <Ribbon small={small} />
+      </span>
+    </span>
+  );
+
+  // The shop's logo with a glowing ring and the medal pinned to it.
+  const LogoWithMedal = ({ size }: { size: number }) => (
+    <span className="relative inline-flex shrink-0">
+      <span className="rounded-full p-[2px] bg-gradient-to-br from-emerald-300 to-emerald-700 shadow-[0_0_14px_rgba(16,185,129,0.5)]">
+        <ShopLogo name={shop.name} url={shop.logo_url} size={size} />
+      </span>
+      <span className="absolute -bottom-2 -right-2">
+        <Medal size={Math.round(size * 0.45)} />
+      </span>
     </span>
   );
 
@@ -129,10 +171,10 @@ export default function FeaturedShopCard({
     return (
       <article
         ref={ref as React.Ref<HTMLElement>}
-        className="flex gap-3 rounded-2xl border border-emerald-500/25 bg-ocean-900/40 p-4 transition-colors hover:border-emerald-500/50"
+        className="flex gap-3 rounded-2xl border border-emerald-500/35 bg-gradient-to-r from-emerald-500/[0.07] to-ocean-900/40 p-4 shadow-[0_0_24px_-10px_rgba(16,185,129,0.6)] transition-colors hover:border-emerald-400/60"
       >
-        <Link href={href} onClick={() => countClick(shop.id)} className="shrink-0">
-          <ShopLogo name={shop.name} url={shop.logo_url} size={40} />
+        <Link href={href} onClick={() => countClick(shop.id)} className="shrink-0 pb-2 pr-2">
+          <LogoWithMedal size={44} />
         </Link>
         <div className="min-w-0 flex-1">
           <Link href={href} onClick={() => countClick(shop.id)}>
@@ -141,10 +183,10 @@ export default function FeaturedShopCard({
             </h3>
           </Link>
           <p className="mt-1 text-xs text-ocean-500">
-            <span className="inline-flex items-center gap-1 font-semibold text-emerald-300">
-              <BadgeCheck className="h-3.5 w-3.5" /> Verified shop
+            <span className="mr-1.5 inline-block align-middle">
+              <Ribbon small />
             </span>
-            {` · Local fish store${town ? ` in ${town}` : ""} · ${mi}`}
+            {`Local fish store${town ? ` in ${town}` : ""} · ${mi}`}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <Stars rating={shop.rating_avg} count={shop.rating_count} size={12} />
@@ -167,11 +209,11 @@ export default function FeaturedShopCard({
         ref={ref as React.Ref<HTMLAnchorElement>}
         href={href}
         onClick={() => countClick(shop.id)}
-        className="group block overflow-hidden rounded-2xl border border-emerald-500/30 bg-ocean-900/50 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/60"
+        className="group block overflow-hidden rounded-2xl border border-emerald-500/40 bg-ocean-900/50 shadow-[0_0_24px_-10px_rgba(16,185,129,0.6)] transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/60"
       >
         <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-900/60 to-ocean-950">
           <Photo size={72} />
-          <FeaturedPill className="absolute left-2 top-2 px-2 py-0.5 text-[10px]" />
+          <FeaturedPill small className="absolute left-2 top-2" />
         </div>
         <div className="p-3.5">
           <p className="flex items-center gap-1 text-sm text-white">
@@ -194,7 +236,7 @@ export default function FeaturedShopCard({
       ref={ref as React.Ref<HTMLAnchorElement>}
       href={href}
       onClick={() => countClick(shop.id)}
-      className="group relative block overflow-hidden rounded-2xl border border-emerald-500/30 bg-ocean-900/60 transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-400/60"
+      className="group relative block overflow-hidden rounded-2xl border border-emerald-500/40 bg-ocean-900/60 shadow-[0_0_24px_-10px_rgba(16,185,129,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-400/60"
     >
       <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-900/60 to-ocean-950">
         <Photo size={88} />
