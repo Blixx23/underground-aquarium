@@ -49,6 +49,39 @@ function countClick(shopId: string) {
   createClient().rpc("record_store_event", { p_store: shopId, p_kind: "featured_click" });
 }
 
+// A slowly turning rainbow, used for the shop's border and its logo ring.
+const RAINBOW =
+  "bg-[conic-gradient(from_0deg,#ff2d55,#ff9500,#ffd60a,#30d158,#0ac8ff,#5e5ce6,#bf5af2,#ff2d55)]";
+const SPIN = "animate-[spin_6s_linear_infinite] motion-reduce:animate-none";
+
+/**
+ * A 2px rainbow border that slowly circles the card. The gradient is a big
+ * square spinning behind the card; the card's own background covers all but
+ * the edge.
+ */
+function RgbFrame({
+  frameRef,
+  className = "",
+  children,
+}: {
+  frameRef: React.Ref<HTMLDivElement>;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      ref={frameRef}
+      className={`relative overflow-hidden rounded-2xl p-[2px] shadow-[0_0_22px_-8px_rgba(94,92,230,0.55)] ${className}`}
+    >
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute left-1/2 top-1/2 -ml-[150%] -mt-[150%] aspect-square w-[300%] ${RAINBOW} ${SPIN}`}
+      />
+      <div className="relative h-full rounded-[14px] bg-ocean-950">{children}</div>
+    </div>
+  );
+}
+
 function place(s: ClaimedShop) {
   const town = [s.city, s.state].filter(Boolean).join(", ");
   const mi = s.miles < 1 ? "under 1 mi" : `${Math.round(s.miles).toLocaleString("en-US")} mi`;
@@ -73,7 +106,7 @@ export default function FeaturedShopCard({
   lng?: number | null;
 }) {
   const [shop, setShop] = useState<ClaimedShop | null>(null);
-  const ref = useRef<HTMLAnchorElement | HTMLElement | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -148,8 +181,11 @@ export default function FeaturedShopCard({
   // The shop's logo with a glowing ring and the medal pinned to it.
   const LogoWithMedal = ({ size }: { size: number }) => (
     <span className="relative inline-flex shrink-0">
-      <span className="rounded-full p-[2px] bg-gradient-to-br from-emerald-300 to-emerald-700 shadow-[0_0_14px_rgba(16,185,129,0.5)]">
-        <ShopLogo name={shop.name} url={shop.logo_url} size={size} />
+      <span className="relative overflow-hidden rounded-full p-[2.5px] shadow-[0_0_14px_rgba(94,92,230,0.5)]">
+        <span aria-hidden className={`absolute inset-0 rounded-full ${RAINBOW} ${SPIN}`} />
+        <span className="relative block rounded-full bg-ocean-950">
+          <ShopLogo name={shop.name} url={shop.logo_url} size={size} />
+        </span>
       </span>
       <span className="absolute -bottom-2 -right-2">
         <Medal size={Math.round(size * 0.45)} />
@@ -173,11 +209,11 @@ export default function FeaturedShopCard({
   if (variant === "strip") {
     // One slim line for busy tool pages: helpful, not in the way.
     return (
+<RgbFrame frameRef={ref} className="">
       <Link
-        ref={ref as React.Ref<HTMLAnchorElement>}
         href={href}
         onClick={() => countClick(shop.id)}
-        className="group flex items-center gap-3 rounded-2xl border border-emerald-500/35 bg-gradient-to-r from-emerald-500/[0.08] to-ocean-900/40 px-3.5 py-2.5 shadow-[0_0_20px_-10px_rgba(16,185,129,0.6)] transition-colors hover:border-emerald-400/60"
+        className="group flex items-center gap-3 rounded-[14px] bg-ocean-900/40 px-3.5 py-2.5"
       >
         <span className="pb-1.5 pr-1.5">
           <LogoWithMedal size={30} />
@@ -191,6 +227,7 @@ export default function FeaturedShopCard({
           <Ribbon small />
         </span>
       </Link>
+      </RgbFrame>
     );
   }
 
@@ -198,10 +235,8 @@ export default function FeaturedShopCard({
     // Looks like a feed post from the shop: header, a line of text, the
     // shop's banner if it has one, and a footer row like Like/Comment/Share.
     return (
-      <article
-        ref={ref as React.Ref<HTMLElement>}
-        className="relative overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.07] to-ocean-900/40 font-sans shadow-[0_0_24px_-10px_rgba(16,185,129,0.6)]"
-      >
+<RgbFrame frameRef={ref} className="">
+      <article className="relative overflow-hidden rounded-[14px] bg-ocean-900/40 font-sans">
         <div className="p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <Link href={href} onClick={() => countClick(shop.id)} className="shrink-0 pb-2 pr-2">
@@ -248,15 +283,14 @@ export default function FeaturedShopCard({
           </Link>
         </div>
       </article>
+      </RgbFrame>
     );
   }
 
   if (variant === "forum") {
     return (
-      <article
-        ref={ref as React.Ref<HTMLElement>}
-        className="flex gap-3 rounded-2xl border border-emerald-500/35 bg-gradient-to-r from-emerald-500/[0.07] to-ocean-900/40 p-4 shadow-[0_0_24px_-10px_rgba(16,185,129,0.6)] transition-colors hover:border-emerald-400/60"
-      >
+<RgbFrame frameRef={ref} className="">
+      <article className="flex gap-3 rounded-[14px] bg-ocean-900/40 p-4">
         <Link href={href} onClick={() => countClick(shop.id)} className="shrink-0 pb-2 pr-2">
           <LogoWithMedal size={44} />
         </Link>
@@ -284,16 +318,17 @@ export default function FeaturedShopCard({
           </div>
         </div>
       </article>
+      </RgbFrame>
     );
   }
 
   if (variant === "tile") {
     return (
+<RgbFrame frameRef={ref} className="transition-transform duration-300 hover:-translate-y-1">
       <Link
-        ref={ref as React.Ref<HTMLAnchorElement>}
         href={href}
         onClick={() => countClick(shop.id)}
-        className="group block overflow-hidden rounded-2xl border border-emerald-500/40 bg-ocean-900/50 shadow-[0_0_24px_-10px_rgba(16,185,129,0.6)] transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/60"
+        className="group block h-full overflow-hidden rounded-[14px] bg-ocean-900/50"
       >
         <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-900/60 to-ocean-950">
           <Photo size={72} />
@@ -311,16 +346,17 @@ export default function FeaturedShopCard({
           <p className="text-[11px] text-ocean-600">{mi}</p>
         </div>
       </Link>
+      </RgbFrame>
     );
   }
 
   // "card": matches the classifieds grid.
   return (
+<RgbFrame frameRef={ref} className="transition-transform duration-300 hover:-translate-y-0.5">
     <Link
-      ref={ref as React.Ref<HTMLAnchorElement>}
       href={href}
       onClick={() => countClick(shop.id)}
-      className="group relative block overflow-hidden rounded-2xl border border-emerald-500/40 bg-ocean-900/60 shadow-[0_0_24px_-10px_rgba(16,185,129,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-400/60"
+      className="group relative block h-full overflow-hidden rounded-[14px] bg-ocean-900/60"
     >
       <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-900/60 to-ocean-950">
         <Photo size={88} />
@@ -347,5 +383,6 @@ export default function FeaturedShopCard({
         </div>
       </div>
     </Link>
+      </RgbFrame>
   );
 }
