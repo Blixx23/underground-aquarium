@@ -1,3 +1,4 @@
+import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -191,6 +192,9 @@ export default async function TankSizePage({ params }: Props) {
 
       <section className="mt-12">
         <TankBuilder species={species} initialGallons={g} embedded />
+        <div className="mx-auto mt-6 max-w-3xl font-sans empty:hidden">
+          <FeaturedShopCard slot={0} variant="strip" lead="Ready to stock it? Verified shop near you:" />
+        </div>
       </section>
 
       {fits.length > 0 && (

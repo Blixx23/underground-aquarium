@@ -60,11 +60,14 @@ export default function FeaturedShopCard({
   variant,
   lat,
   lng,
+  lead = "Need supplies?",
 }: {
   /** Which featured shop this spot shows: 0 is the nearest, 1 the next, and so on. */
   slot: number;
   /** "tile" = homepage Just posted, "card" = classifieds grid, "forum" = thread row, "feed" = community feed post. */
-  variant: "tile" | "card" | "forum" | "feed";
+  variant: "tile" | "card" | "forum" | "feed" | "strip";
+  /** For "strip": the short question before the shop, fitted to the page. */
+  lead?: string;
   /** A place to measure from (an ad's region). Leave out for the visitor's rough location. */
   lat?: number | null;
   lng?: number | null;
@@ -166,6 +169,30 @@ export default function FeaturedShopCard({
     ) : (
       <ShopLogo name={shop.name} url={null} size={size} />
     );
+
+  if (variant === "strip") {
+    // One slim line for busy tool pages: helpful, not in the way.
+    return (
+      <Link
+        ref={ref as React.Ref<HTMLAnchorElement>}
+        href={href}
+        onClick={() => countClick(shop.id)}
+        className="group flex items-center gap-3 rounded-2xl border border-emerald-500/35 bg-gradient-to-r from-emerald-500/[0.08] to-ocean-900/40 px-3.5 py-2.5 shadow-[0_0_20px_-10px_rgba(16,185,129,0.6)] transition-colors hover:border-emerald-400/60"
+      >
+        <span className="pb-1.5 pr-1.5">
+          <LogoWithMedal size={30} />
+        </span>
+        <span className="min-w-0 flex-1 text-sm">
+          <span className="text-ocean-300">{lead} </span>
+          <span className="font-semibold text-white group-hover:underline">{shop.name}</span>
+          <span className="text-ocean-400">{` · ${town ? `${town} · ` : ""}${mi}`}</span>
+        </span>
+        <span className="hidden shrink-0 sm:inline-flex">
+          <Ribbon small />
+        </span>
+      </Link>
+    );
+  }
 
   if (variant === "feed") {
     // Looks like a feed post from the shop: header, a line of text, the

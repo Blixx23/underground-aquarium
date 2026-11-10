@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import TankBuilder from "@/components/tank-builder/TankBuilder";
+import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
 import { loadBuilderSpecies } from "@/lib/tankBuilder/species";
 import { computeEquipment } from "@/lib/tankBuilder/engine";
 import { TANK_SIZES, filledWeightLb } from "@/lib/tankBuilder/sizes";
@@ -91,6 +92,11 @@ export default async function TankBuilderPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(crumbs) }} />
 
       <TankBuilder species={species} />
+
+      {/* A verified shop near the visitor, for when the build is ready to stock. */}
+      <div className="mx-auto mt-8 max-w-3xl font-sans empty:hidden">
+        <FeaturedShopCard slot={0} variant="strip" lead="Ready to stock it? Verified shop near you:" />
+      </div>
 
       <div className="mt-16 space-y-14 font-sans">
         <section>
