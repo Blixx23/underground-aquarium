@@ -41,6 +41,7 @@ import {
 import ListingGallery from "@/components/marketplace/ListingGallery";
 import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
+import LocalShopsAd from "@/components/stores/LocalShopsAd";
 import { MESSAGING_ENABLED, MY_LISTINGS_ENABLED } from "@/lib/config";
 
 type ListingRow = {
@@ -163,7 +164,7 @@ export default async function ListingPage({
       .maybeSingle(),
     supabasePublic
       .from("market_regions")
-      .select("name, state_name")
+      .select("name, state_name, lat, lng")
       .eq("state_code", listing.state_code)
       .eq("slug", listing.region_slug)
       .maybeSingle(),
@@ -193,7 +194,7 @@ export default async function ListingPage({
   const sellerIsSociety = Array.isArray(sealData) && sealData.length > 0;
 
   const seller = sellerData as { username: string | null; full_name: string | null } | null;
-  const region = regionData as { name: string; state_name: string } | null;
+  const region = regionData as { name: string; state_name: string; lat: number | null; lng: number | null } | null;
 
   const images = listing.images ?? [];
   // Older ads could say "New" for live fish; don't show that on livestock or plants.
@@ -537,6 +538,9 @@ export default async function ListingPage({
             </p>
           </section>
         )}
+
+        {/* Nearby claimed shops: free advertising that gives shops a reason to claim. */}
+        <LocalShopsAd lat={region?.lat ?? null} lng={region?.lng ?? null} className="mt-12" />
 
         {related.length > 0 && (
           <section className="mt-14 pt-8 border-t border-ocean-900/70">

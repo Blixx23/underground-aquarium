@@ -11,6 +11,7 @@ import EditablePost from "@/components/forum/EditablePost";
 import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
 import RelatedGuides from "@/components/discover/RelatedGuides";
+import LocalShopsAd from "@/components/stores/LocalShopsAd";
 import { keywords, relatedThreads } from "@/lib/discover";
 import ScrollToComment from "@/components/forum/ScrollToComment";
 import { plainText, threadIndexable } from "@/lib/forum/indexable";
@@ -474,6 +475,9 @@ export default async function ThreadPage({ params }: Params) {
             roots.map((c) => renderComment(c))
           )}
         </div>
+
+        {/* Claimed shops near the reader (rough location), shown after the comments. */}
+        <LocalShopsAd className="mt-10" />
 
         <RelatedGuides guides={related} title="Keep reading" />
       </div>
