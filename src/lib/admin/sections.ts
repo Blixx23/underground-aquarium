@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Mail, Megaphone, Store, Wrench, Flag, Fish, BookOpen,
   GraduationCap, Droplets, MessageSquare, Users, Camera, Clapperboard, BarChart3, LifeBuoy,
-  CalendarDays, MapPin, Warehouse, Bot, Egg,
+  CalendarDays, MapPin, Warehouse, Bot, Egg, Award,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SOCIETY_CLUB_PATH, SOCIETY_NAME } from "@/lib/config";
@@ -124,6 +124,10 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   {
     href: "/admin/wholesale", label: "Wholesale", sub: "Wholesale-only businesses", group: "shops", Icon: Warehouse,
     about: "Wholesale-only businesses, kept off the public directory.",
+  },
+  {
+    href: "/admin/shop-highlights", label: "Shop highlights", sub: "Top shops by times seen", group: "shops", Icon: Award,
+    about: "Every claimed shop ranked by how often it was seen in the Verified Shop highlights and on its own page.",
   },
 
   // Community
