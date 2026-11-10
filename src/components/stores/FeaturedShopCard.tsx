@@ -236,7 +236,7 @@ export default function FeaturedShopCard({
     // shop's banner if it has one, and a footer row like Like/Comment/Share.
     return (
 <RgbFrame frameRef={ref} className="">
-      <article className="relative overflow-hidden rounded-[14px] bg-ocean-900/40 font-sans">
+      <article className="relative overflow-hidden rounded-[14px] bg-ocean-800/60 font-sans">
         <div className="p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <Link href={href} onClick={() => countClick(shop.id)} className="shrink-0 pb-2 pr-2">

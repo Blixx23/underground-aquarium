@@ -313,7 +313,7 @@ export default function FeedCard({
   const showCounts = likes > 0 || (commentable ? comments > 0 : threadReplies > 0);
 
   return (
-    <article className="relative rounded-2xl border border-ocean-800/60 bg-ocean-900/40 font-sans">
+    <article className="relative rounded-2xl border border-ocean-600/50 bg-ocean-800/60 font-sans shadow-[0_6px_20px_-6px_rgba(0,0,0,0.7)] ring-1 ring-inset ring-white/[0.04]">
       <div className="p-4 sm:p-5">
         {header}
 
