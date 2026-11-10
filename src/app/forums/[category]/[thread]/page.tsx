@@ -453,6 +453,9 @@ export default async function ThreadPage({ params }: Params) {
           </div>
         </article>
 
+        {/* Featured claimed shops near the reader (rough location). */}
+        <LocalShopsAd placement="forum" className="mb-8" />
+
         {/* Comments */}
         <h2 className="text-white font-medium mb-4">
           {t.reply_count} {t.reply_count === 1 ? "comment" : "comments"}
@@ -475,9 +478,6 @@ export default async function ThreadPage({ params }: Params) {
             roots.map((c) => renderComment(c))
           )}
         </div>
-
-        {/* Claimed shops near the reader (rough location), shown after the comments. */}
-        <LocalShopsAd className="mt-10" />
 
         <RelatedGuides guides={related} title="Keep reading" />
       </div>

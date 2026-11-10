@@ -517,6 +517,14 @@ export default async function ListingPage({
               .
             </p>
 
+            {/* Featured claimed shops near this ad. Free for now; a spot that can be sold later. */}
+            <LocalShopsAd
+              lat={region?.lat ?? null}
+              lng={region?.lng ?? null}
+              placement="listing"
+              className="mt-6"
+            />
+
             {!isOwner && (
               <ReportButton
                 targetType="listing"
@@ -538,9 +546,6 @@ export default async function ListingPage({
             </p>
           </section>
         )}
-
-        {/* Nearby claimed shops: free advertising that gives shops a reason to claim. */}
-        <LocalShopsAd lat={region?.lat ?? null} lng={region?.lng ?? null} className="mt-12" />
 
         {related.length > 0 && (
           <section className="mt-14 pt-8 border-t border-ocean-900/70">
