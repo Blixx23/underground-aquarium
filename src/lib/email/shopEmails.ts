@@ -158,7 +158,7 @@ export function weeklyTip(f: WeeklyFacts): { text: string; href: string } {
 
 /**
  * People who saw the shop this week: page views plus times it was shown in
- * the Featured fish stores box on classified ads and forum threads.
+ * the verified-shop highlights on classified ads and forum threads.
  */
 export function weeklySeen(f: WeeklyFacts) {
   const views = f.week.view ?? 0;
@@ -176,7 +176,7 @@ export function weeklySummary(f: WeeklyFacts) {
   const { views, featured, seen } = weeklySeen(f);
   const parts = [
     `${views.toLocaleString("en-US")} page view${views === 1 ? "" : "s"}`,
-    ...(featured > 0 ? [`${featured.toLocaleString("en-US")} saw you featured on classifieds and forums`] : []),
+    ...(featured > 0 ? [`${featured.toLocaleString("en-US")} saw your shop highlighted on classifieds and forums`] : []),
     `${f.week.directions ?? 0} direction taps`,
     `${f.week.phone ?? 0} calls`,
     `${f.week.website ?? 0} website visits`,
@@ -215,8 +215,8 @@ export function weeklyEmail(f: WeeklyFacts) {
         rankLine +
         emailStats([
           row("Page views", "view"),
-          row("Seen featured on classifieds and forums", "featured"),
-          row("Taps from the featured spot", "featured_click"),
+          row("Highlighted on classifieds and forums", "featured"),
+          row("Taps from those highlights", "featured_click"),
           row("Direction taps", "directions"),
           row("Calls", "phone"),
           row("Website visits", "website"),

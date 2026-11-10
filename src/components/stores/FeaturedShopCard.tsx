@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, MapPin, Sparkles, Store } from "lucide-react";
+import { BadgeCheck, MapPin, Store } from "lucide-react";
 import ShopLogo from "@/components/stores/ShopLogo";
 import Stars from "@/components/stores/Stars";
 import { createClient } from "@/lib/supabase/client";
 import type { ClaimedShop } from "@/lib/stores/claimedNearby";
 
 /*
- * Featured shops, mixed in among classified ads and forum threads so they
- * look like they belong there. Free for now; built as a spot that can be sold
- * later. Each shop counts a "seen" once per browser per day when its card is
+ * Verified (claimed) shops, mixed in among classified ads and forum threads.
+ * Shown as something the shop earned by claiming its page, not as an ad.
+ * Built so the spot can be sold later. Each shop counts a "seen" once per browser per day when its card is
  * at least half on screen; the owner gets the total in the Monday report.
  */
 
@@ -107,8 +107,8 @@ export default function FeaturedShopCard({
     <span
       className={`inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-300 ${className}`}
     >
-      <Sparkles className="h-3 w-3" />
-      Featured shop
+      <BadgeCheck className="h-3.5 w-3.5" />
+      Verified shop
     </span>
   );
 
@@ -138,11 +138,12 @@ export default function FeaturedShopCard({
           <Link href={href} onClick={() => countClick(shop.id)}>
             <h3 className="flex items-center gap-1.5 font-medium leading-snug text-white hover:text-ocean-100">
               <span className="truncate">{shop.name}</span>
-              <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-400" aria-label="Claimed by the owner" />
             </h3>
           </Link>
           <p className="mt-1 text-xs text-ocean-500">
-            <span className="font-semibold uppercase tracking-wide text-emerald-300">Featured shop</span>
+            <span className="inline-flex items-center gap-1 font-semibold text-emerald-300">
+              <BadgeCheck className="h-3.5 w-3.5" /> Verified shop
+            </span>
             {` · Local fish store${town ? ` in ${town}` : ""} · ${mi}`}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -175,7 +176,6 @@ export default function FeaturedShopCard({
         <div className="p-3.5">
           <p className="flex items-center gap-1 text-sm text-white">
             <span className="truncate">{shop.name}</span>
-            <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
           </p>
           <p className="mt-0.5 text-sm text-emerald-300">Local fish store</p>
           <p className="mt-1.5 flex items-center gap-1 text-[11px] text-ocean-500">
@@ -204,11 +204,10 @@ export default function FeaturedShopCard({
         <div className="mb-2 flex items-start justify-between gap-3">
           <h2 className="flex items-center gap-1.5 font-display text-lg leading-snug text-white">
             {shop.name}
-            <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-400" aria-label="Claimed by the owner" />
           </h2>
         </div>
         <p className="mb-4 text-sm text-ocean-400">
-          Local fish store. Stop in for livestock, plants and gear.
+          Owner-verified local fish store. Stop in for livestock, plants and gear.
         </p>
         <div className="flex items-center justify-between gap-3 text-xs text-ocean-500">
           <span className="inline-flex min-w-0 items-center gap-1.5">
