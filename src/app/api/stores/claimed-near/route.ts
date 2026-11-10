@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const shops = await getClaimedShopsNear(lat, lng);
+    const limit = Math.min(6, Math.max(1, Number(req.nextUrl.searchParams.get("limit")) || 3));
+    const shops = await getClaimedShopsNear(lat, lng, { limit });
     return NextResponse.json(
       { shops },
       // Location-based, so don't let a shared cache hand one city's shops to another.

@@ -41,7 +41,8 @@ import {
 import ListingGallery from "@/components/marketplace/ListingGallery";
 import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
-import LocalShopsAd from "@/components/stores/LocalShopsAd";
+import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
+import { Fragment } from "react";
 import { MESSAGING_ENABLED, MY_LISTINGS_ENABLED } from "@/lib/config";
 
 type ListingRow = {
@@ -517,13 +518,6 @@ export default async function ListingPage({
               .
             </p>
 
-            {/* Featured claimed shops near this ad. Free for now; a spot that can be sold later. */}
-            <LocalShopsAd
-              lat={region?.lat ?? null}
-              lng={region?.lng ?? null}
-              placement="listing"
-              className="mt-6"
-            />
 
             {!isOwner && (
               <ReportButton
@@ -558,9 +552,9 @@ export default async function ListingPage({
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {related.map((r) => (
+              {related.map((r, i) => (
+                <Fragment key={r.id}>
                 <Link
-                  key={r.id}
                   href={listingHref(r.slug)}
                   className="group block overflow-hidden rounded-xl border border-ocean-800/60 bg-ocean-900/50 hover:border-ocean-600/70 transition-colors"
                 >
@@ -585,6 +579,10 @@ export default async function ListingPage({
                     </p>
                   </div>
                 </Link>
+                {i === Math.min(1, related.length - 1) && (
+                  <FeaturedShopCard slot={0} variant="tile" lat={region?.lat ?? null} lng={region?.lng ?? null} />
+                )}
+                </Fragment>
               ))}
             </div>
           </section>

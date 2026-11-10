@@ -8,6 +8,7 @@ export type ClaimedShop = {
   city: string | null;
   state: string | null;
   logo_url: string | null;
+  cover_url: string | null;
   miles: number;
   rating_avg: number | null;
   rating_count: number;
@@ -35,10 +36,11 @@ export async function getClaimedShopsNear(
     lat: number | null;
     lng: number | null;
     logo_url?: string | null;
+    cover_url?: string | null;
   };
 
   // Claimed shops are a small set, so read them all and sort by distance.
-  // logo_url is a newer column; ask again without it if this database lacks it.
+  // logo_url and cover_url are newer columns; ask again without it if this database lacks it.
   const base = "id, slug, name, city, state, lat, lng";
   const run = (cols: string) =>
     supabasePublic
@@ -48,7 +50,7 @@ export async function getClaimedShopsNear(
       .not("claimed_by", "is", null)
       .not("lat", "is", null)
       .limit(2000);
-  let res = await run(`${base}, logo_url`);
+  let res = await run(`${base}, logo_url, cover_url`);
   if (res.error) res = await run(base);
 
   const near = ((res.data ?? []) as unknown as Row[])
@@ -75,6 +77,7 @@ export async function getClaimedShopsNear(
       city: s.city,
       state: s.state,
       logo_url: s.logo_url ?? null,
+      cover_url: s.cover_url ?? null,
       miles: d,
       rating_avg: r ? Number(r.rating_avg) : null,
       rating_count: r?.rating_count ?? 0,

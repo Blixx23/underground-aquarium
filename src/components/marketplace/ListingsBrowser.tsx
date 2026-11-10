@@ -1,7 +1,9 @@
 "use client";
 
 import { useRestoreScroll, useUrlParam } from "@/lib/hooks/useUrlState";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
+import { featuredSlotAfter } from "@/lib/stores/featuredSlots";
 import Link from "next/link";
 import { Fish, Search, X, MapPin, Eye } from "lucide-react";
 import AlertMeButton, { type AlertPlace } from "@/components/marketplace/AlertMeButton";
@@ -32,7 +34,10 @@ export default function ListingsBrowser({
   regionName,
   initialCategory = "all",
   alertPlace = null,
+  near = null,
 }: {
+  /** Where to measure featured shops from (the region). Leave out for the visitor's location. */
+  near?: { lat: number | null; lng: number | null } | null;
   listings: Listing[];
   regionName: string;
   /** Where an "Alert me" from this page searches; the member picks if not set. */
@@ -216,12 +221,12 @@ export default function ListingsBrowser({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((listing) => {
+          {filtered.map((listing, i) => {
             const image = listing.images?.[0];
             const condition = conditionLabel(listing.condition);
             return (
+              <Fragment key={listing.id}>
               <Link
-                key={listing.id}
                 href={listingHref(listing.slug)}
                 className="group relative block rounded-2xl overflow-hidden bg-ocean-900/60 border border-ocean-800/60 hover:border-ocean-600/70 hover:-translate-y-0.5 transition-all duration-300"
               >
@@ -295,6 +300,15 @@ export default function ListingsBrowser({
                   </div>
                 </div>
               </Link>
+              {featuredSlotAfter(i, filtered.length) != null && (
+                <FeaturedShopCard
+                  slot={featuredSlotAfter(i, filtered.length)!}
+                  variant="card"
+                  lat={near?.lat ?? null}
+                  lng={near?.lng ?? null}
+                />
+              )}
+              </Fragment>
             );
           })}
         </div>
