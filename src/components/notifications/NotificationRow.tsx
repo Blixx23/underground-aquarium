@@ -88,6 +88,7 @@ function ShopDetail({ type, d, compact }: { type: string; d: ShopData; compact: 
           {(
             [
               ["view", "views"],
+              ["featured", "saw you highlighted"],
               ["directions", "directions"],
               ["phone", "calls"],
               ["website", "site visits"],

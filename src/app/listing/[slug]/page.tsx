@@ -41,6 +41,8 @@ import {
 import ListingGallery from "@/components/marketplace/ListingGallery";
 import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
+import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
+import { Fragment } from "react";
 import { MESSAGING_ENABLED, MY_LISTINGS_ENABLED } from "@/lib/config";
 
 type ListingRow = {
@@ -163,7 +165,7 @@ export default async function ListingPage({
       .maybeSingle(),
     supabasePublic
       .from("market_regions")
-      .select("name, state_name")
+      .select("name, state_name, lat, lng")
       .eq("state_code", listing.state_code)
       .eq("slug", listing.region_slug)
       .maybeSingle(),
@@ -193,7 +195,7 @@ export default async function ListingPage({
   const sellerIsSociety = Array.isArray(sealData) && sealData.length > 0;
 
   const seller = sellerData as { username: string | null; full_name: string | null } | null;
-  const region = regionData as { name: string; state_name: string } | null;
+  const region = regionData as { name: string; state_name: string; lat: number | null; lng: number | null } | null;
 
   const images = listing.images ?? [];
   // Older ads could say "New" for live fish; don't show that on livestock or plants.
@@ -506,6 +508,11 @@ export default async function ListingPage({
               )}
             </div>
 
+            {/* A featured shop near this ad, right under the contact box where everyone looks. */}
+            <div className="mb-6 empty:hidden">
+              <FeaturedShopCard slot={0} variant="forum" lat={region?.lat ?? null} lng={region?.lng ?? null} />
+            </div>
+
             <p className="text-xs text-ocean-600 leading-relaxed">
               Underground Aquarium doesn&apos;t handle payment or shipping for
               classified ads. Meet somewhere public, inspect livestock before you
@@ -515,6 +522,7 @@ export default async function ListingPage({
               </Link>
               .
             </p>
+
 
             {!isOwner && (
               <ReportButton
@@ -549,9 +557,9 @@ export default async function ListingPage({
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {related.map((r) => (
+              {related.map((r, i) => (
+                <Fragment key={r.id}>
                 <Link
-                  key={r.id}
                   href={listingHref(r.slug)}
                   className="group block overflow-hidden rounded-xl border border-ocean-800/60 bg-ocean-900/50 hover:border-ocean-600/70 transition-colors"
                 >
@@ -576,6 +584,10 @@ export default async function ListingPage({
                     </p>
                   </div>
                 </Link>
+                {i === 0 && (
+                  <FeaturedShopCard slot={1} variant="tile" lat={region?.lat ?? null} lng={region?.lng ?? null} />
+                )}
+                </Fragment>
               ))}
             </div>
           </section>

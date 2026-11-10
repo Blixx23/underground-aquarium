@@ -156,25 +156,44 @@ export function weeklyTip(f: WeeklyFacts): { text: string; href: string } {
   return { text: "Share your shop's page on Instagram or Facebook. Every visit counts toward your numbers.", href: base };
 }
 
+/**
+ * People who saw the shop this week: page views plus times it was shown in
+ * the verified-shop highlights on classified ads and forum threads.
+ */
+export function weeklySeen(f: WeeklyFacts) {
+  const views = f.week.view ?? 0;
+  const featured = f.week.featured ?? 0;
+  return {
+    views,
+    featured,
+    clicks: f.week.featured_click ?? 0,
+    seen: views + featured,
+    prevSeen: (f.prev.view ?? 0) + (f.prev.featured ?? 0),
+  };
+}
+
 export function weeklySummary(f: WeeklyFacts) {
-  const v = f.week.view ?? 0;
+  const { views, featured, seen } = weeklySeen(f);
   const parts = [
+    `${views.toLocaleString("en-US")} page view${views === 1 ? "" : "s"}`,
+    ...(featured > 0 ? [`${featured.toLocaleString("en-US")} saw your shop highlighted on classifieds and forums`] : []),
     `${f.week.directions ?? 0} direction taps`,
     `${f.week.phone ?? 0} calls`,
     `${f.week.website ?? 0} website visits`,
   ];
   const rank =
-    f.city_rank && f.city_shops && f.city_shops > 1 && v > 0 && f.city
+    f.city_rank && f.city_shops && f.city_shops > 1 && views > 0 && f.city
       ? ` #${f.city_rank} of ${f.city_shops} shops in ${f.city}.`
       : "";
   return {
-    title: `${f.name}: ${v.toLocaleString("en-US")} view${v === 1 ? "" : "s"} this week`,
+    title: `${f.name} was seen by ${seen.toLocaleString("en-US")} ${seen === 1 ? "person" : "people"} this week`,
     body: `${parts.join(", ")}.${rank}`,
   };
 }
 
 export function weeklyEmail(f: WeeklyFacts) {
   const v = f.week.view ?? 0;
+  const seen = weeklySeen(f);
   const tip = weeklyTip(f);
   const rankLine =
     f.city_rank && f.city_shops && f.city_shops > 1 && v > 0 && f.city
@@ -186,15 +205,18 @@ export function weeklyEmail(f: WeeklyFacts) {
     return [label, `${now.toLocaleString("en-US")}${t ? ` &nbsp;<span style="font-weight:normal;font-size:12px;">${t}</span>` : ""}`] as [string, string];
   };
   return {
-    subject: `${f.name}: ${v.toLocaleString("en-US")} views this week`,
+    subject: `${f.name} was seen by ${seen.seen.toLocaleString("en-US")} ${seen.seen === 1 ? "person" : "people"} this week`,
     html: emailLayout({
       preheader: `${f.week.directions ?? 0} direction taps, ${f.week.phone ?? 0} calls and ${f.week.website ?? 0} website visits.`,
       title: "Your week on Underground Aquarium",
       bodyHtml:
         shopHeader(f) +
-        hero(v.toLocaleString("en-US"), "Page views this week", trend(v, f.prev.view ?? 0)) +
+        hero(seen.seen.toLocaleString("en-US"), "People who saw your shop this week", trend(seen.seen, seen.prevSeen)) +
         rankLine +
         emailStats([
+          row("Page views", "view"),
+          row("Highlighted on classifieds and forums", "featured"),
+          row("Taps from those highlights", "featured_click"),
           row("Direction taps", "directions"),
           row("Calls", "phone"),
           row("Website visits", "website"),

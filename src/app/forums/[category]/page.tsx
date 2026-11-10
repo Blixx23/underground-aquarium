@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageSquare, Pin, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import { Fragment } from "react";
 import VoteControl from "@/components/forum/VoteControl";
+import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
 import { shareMeta } from "@/lib/seo/share";
 
@@ -192,12 +194,13 @@ export default async function CategoryPage({ params, searchParams }: Params) {
           </div>
         ) : (
           <div className="space-y-3">
-            {threads.map((t) => {
+            {threads.map((t, i) => {
               const url = `/forums/${category}/${t.slug}`;
               const opId = opByThread[t.id as string];
               return (
+                <Fragment key={t.id as string}>
+                {i % 7 === 0 && <FeaturedShopCard slot={i / 7} variant="forum" />}
                 <article
-                  key={t.id as string}
                   className="flex gap-3 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-4 hover:border-ocean-700 transition-colors"
                 >
                   {opId ? (
@@ -230,6 +233,7 @@ export default async function CategoryPage({ params, searchParams }: Params) {
                     </Link>
                   </div>
                 </article>
+                </Fragment>
               );
             })}
           </div>

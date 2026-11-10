@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Fragment } from "react";
+import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
+import { featuredSlotAfter } from "@/lib/stores/featuredSlots";
 import { Fish, MapPin, ArrowRight, Plus } from "lucide-react";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import {
@@ -63,12 +66,12 @@ export default function JustPosted({
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {listings.map((l) => {
+            {listings.map((l, i) => {
               const image = l.images?.[0];
               const region = regionNames.get(`${l.state_code}/${l.region_slug}`);
               return (
+                <Fragment key={l.id}>
                 <Link
-                  key={l.id}
                   href={listingHref(l.slug)}
                   className="group block overflow-hidden rounded-2xl border border-ocean-800/60 bg-ocean-900/50 transition-all duration-300 hover:-translate-y-1 hover:border-ocean-500/70"
                 >
@@ -115,6 +118,10 @@ export default function JustPosted({
                     </p>
                   </div>
                 </Link>
+                {featuredSlotAfter(i, listings.length, 5) != null && (
+                  <FeaturedShopCard slot={featuredSlotAfter(i, listings.length, 5)!} variant="tile" />
+                )}
+                </Fragment>
               );
             })}
           </div>

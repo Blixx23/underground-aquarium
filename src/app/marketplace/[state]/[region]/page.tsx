@@ -113,6 +113,7 @@ export default async function RegionPage({
         <ListingsBrowser
           listings={listings}
           regionName={r.name}
+          near={{ lat: r.lat, lng: r.lng }}
           alertPlace={r.lat !== null && r.lng !== null ? { label: `${r.name}, ${r.state_code}`, lat: r.lat, lng: r.lng } : null}
         />
 
