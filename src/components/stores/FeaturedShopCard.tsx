@@ -141,9 +141,9 @@ export default function FeaturedShopCard({
               <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-400" aria-label="Claimed by the owner" />
             </h3>
           </Link>
-          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-ocean-500">
+          <p className="mt-1 text-xs text-ocean-500">
             <span className="font-semibold uppercase tracking-wide text-emerald-300">Featured shop</span>
-            · Local fish store{town ? ` in ${town}` : ""} · {mi}
+            {` · Local fish store${town ? ` in ${town}` : ""} · ${mi}`}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <Stars rating={shop.rating_avg} count={shop.rating_count} size={12} />
