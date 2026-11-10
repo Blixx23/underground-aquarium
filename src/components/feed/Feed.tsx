@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUp, Loader2, Waves } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import FeedCard from "@/components/feed/FeedCard";
 import Composer from "@/components/feed/Composer";
+import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
 import { fetchFeed, FEED_PAGE, type FeedItem, type FeedScope } from "@/lib/feed";
 
 export type Viewer = {
@@ -180,9 +181,9 @@ export default function Feed({
           <p className="text-sm text-ocean-400">{emptyText}</p>
         </div>
       ) : (
-        items.map((item) => (
+        items.map((item, i) => (
+          <Fragment key={`${item.kind}:${item.id}`}>
           <FeedCard
-            key={`${item.kind}:${item.id}`}
             item={item}
             viewerId={viewer?.id ?? null}
             viewerIsAdmin={viewer?.isAdmin ?? false}
@@ -198,6 +199,9 @@ export default function Feed({
               );
             }}
           />
+          {/* A verified shop near the reader: 2nd in the feed, then every 8 posts. */}
+          {i % 8 === 0 && <FeaturedShopCard slot={i / 8} variant="feed" />}
+          </Fragment>
         ))
       )}
 

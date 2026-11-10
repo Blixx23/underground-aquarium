@@ -63,8 +63,8 @@ export default function FeaturedShopCard({
 }: {
   /** Which featured shop this spot shows: 0 is the nearest, 1 the next, and so on. */
   slot: number;
-  /** "tile" = homepage Just posted, "card" = classifieds grid, "forum" = thread row. */
-  variant: "tile" | "card" | "forum";
+  /** "tile" = homepage Just posted, "card" = classifieds grid, "forum" = thread row, "feed" = community feed post. */
+  variant: "tile" | "card" | "forum" | "feed";
   /** A place to measure from (an ad's region). Leave out for the visitor's rough location. */
   lat?: number | null;
   lng?: number | null;
@@ -166,6 +166,63 @@ export default function FeaturedShopCard({
     ) : (
       <ShopLogo name={shop.name} url={null} size={size} />
     );
+
+  if (variant === "feed") {
+    // Looks like a feed post from the shop: header, a line of text, the
+    // shop's banner if it has one, and a footer row like Like/Comment/Share.
+    return (
+      <article
+        ref={ref as React.Ref<HTMLElement>}
+        className="relative overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.07] to-ocean-900/40 font-sans shadow-[0_0_24px_-10px_rgba(16,185,129,0.6)]"
+      >
+        <div className="p-4 sm:p-5">
+          <div className="flex items-center gap-3">
+            <Link href={href} onClick={() => countClick(shop.id)} className="shrink-0 pb-2 pr-2">
+              <LogoWithMedal size={42} />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <Link
+                href={href}
+                onClick={() => countClick(shop.id)}
+                className="block truncate font-semibold text-white hover:underline"
+              >
+                {shop.name}
+              </Link>
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-ocean-400">
+                <Ribbon small />
+                <span>{town ? `${town} · ` : ""}{mi}</span>
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-[15px] leading-relaxed text-ocean-100">
+            {shop.name} is a verified local fish store on Underground Aquarium. Stop in for livestock,
+            plants and gear, and leave them a review after your visit.
+          </p>
+        </div>
+        {shop.cover_url && (
+          <Link href={href} onClick={() => countClick(shop.id)} className="group block overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={shop.cover_url}
+              alt={`${shop.name} banner`}
+              loading="lazy"
+              className="max-h-80 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            />
+          </Link>
+        )}
+        <div className="mx-3 flex items-center justify-between gap-3 border-t border-ocean-800/50 px-1 py-2.5 sm:mx-4">
+          <Stars rating={shop.rating_avg} count={shop.rating_count} size={13} />
+          <Link
+            href={href}
+            onClick={() => countClick(shop.id)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-300 transition-colors hover:bg-white/5"
+          >
+            <Store className="h-4 w-4" /> Visit the shop
+          </Link>
+        </div>
+      </article>
+    );
+  }
 
   if (variant === "forum") {
     return (
