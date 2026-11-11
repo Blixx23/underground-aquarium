@@ -22,6 +22,12 @@ export type ClaimedShop = {
  * far, a cutoff would leave most pages empty. The distance is shown, so it
  * stays honest.
  */
+/** The site's own shop page. It's ours, not a local store, so it never gets the featured spot. */
+function isHouseShop(name: string, slug: string) {
+  const n = name.toLowerCase().replace(/[^a-z]/g, "");
+  return n === "undergroundaquarium" || slug.toLowerCase().startsWith("underground-aquarium");
+}
+
 export async function getClaimedShopsNear(
   lat: number,
   lng: number,
@@ -54,7 +60,7 @@ export async function getClaimedShopsNear(
   if (res.error) res = await run(base);
 
   const near = ((res.data ?? []) as unknown as Row[])
-    .filter((s) => s.lat != null && s.lng != null)
+    .filter((s) => s.lat != null && s.lng != null && !isHouseShop(s.name, s.slug))
     .map((s) => ({ s, d: milesBetween(lat, lng, s.lat!, s.lng!) }))
     .sort((a, b) => a.d - b.d)
     .slice(0, limit);
