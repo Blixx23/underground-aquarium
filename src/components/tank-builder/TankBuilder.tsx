@@ -419,6 +419,32 @@ export default function TankBuilder({
 
   const dirty =
     currentTankId != null && savedSnapshot !== snapshotOf(gallonsInput, unit, items, tankName, isPublic, images);
+  // A signed-in member with fish in a build that was never saved also needs the nudge.
+  const unsavedNew = !!user && currentTankId == null && items.length > 0;
+  const needsSave = !!user && (dirty || unsavedNew);
+
+  // Warn before leaving with edits to a saved tank (new builds are kept as a draft).
+  useEffect(() => {
+    if (!dirty) return;
+    function onLeave(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, [dirty]);
+
+  // Hide the floating save bar while the save card itself is on screen.
+  const saveCard = useRef<HTMLElement>(null);
+  const [saveCardVisible, setSaveCardVisible] = useState(false);
+  useEffect(() => {
+    const el = saveCard.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setSaveCardVisible(entry.isIntersecting), { threshold: 0.3 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [user, panel]);
+  const showSaveBar = needsSave && !saveCardVisible;
 
   // Close the search list on an outside tap.
   useEffect(() => {
@@ -672,7 +698,8 @@ export default function TankBuilder({
       }
       setTankName(name);
       setSavedSnapshot(snapshotOf(gallonsInput, unit, items, name, isPublic, images));
-      setSaveMsg({ ok: true, text: "Saved." });
+      setSaveMsg({ ok: true, text: "All changes saved." });
+      flash(currentTankId ? "Tank updated" : "Tank saved");
       ping("first_tank");
       if (stock.length > 0) ping("first_species");
       if (isPublic) ping("tank_shared");
@@ -1438,11 +1465,35 @@ export default function TankBuilder({
 
           {/* Save */}
           {user ? (
-            <section className={`${card} p-4 sm:p-5`}>
+            <section
+              ref={saveCard}
+              id="save-tank"
+              className={`${card} scroll-mt-24 p-4 transition-colors sm:p-5 ${
+                needsSave ? "!border-amber-400/60 ring-1 ring-amber-400/30" : ""
+              }`}
+            >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold text-white">3. {currentTankId ? "Your saved tank" : "Save your build"}</h2>
-                {dirty && <span className="text-xs font-medium text-amber-300">Unsaved changes</span>}
+                {needsSave ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-300">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+                    {dirty ? "Unsaved changes" : "Not saved yet"}
+                  </span>
+                ) : (
+                  currentTankId && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Saved
+                    </span>
+                  )
+                )}
               </div>
+              {needsSave && (
+                <p className="mb-3 text-sm text-amber-200">
+                  {dirty
+                    ? "Your changes aren't saved yet. Tap Save changes to keep them."
+                    : "This build isn't saved to your account yet. Name it and tap Save tank."}
+                </p>
+              )}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
                 <input
                   type="text"
@@ -1455,11 +1506,15 @@ export default function TankBuilder({
                 <button
                   type="button"
                   onClick={() => saveTank()}
-                  disabled={busy}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400 disabled:opacity-50"
+                  disabled={busy || (currentTankId != null && !dirty)}
+                  className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
+                    currentTankId && !dirty
+                      ? "border border-white/10 bg-white/5 text-ocean-200 hover:bg-white/10"
+                      : "bg-emerald-500 text-ocean-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
+                  }`}
                 >
                   <Save className="h-4 w-4" />
-                  {currentTankId ? "Update tank" : "Save tank"}
+                  {busy ? "Saving…" : currentTankId ? (dirty ? "Save changes" : "Saved") : "Save tank"}
                 </button>
               </div>
 
@@ -1521,7 +1576,7 @@ export default function TankBuilder({
                 </p>
               </div>
 
-              {saveMsg && <p className={`mt-3 text-sm ${saveMsg.ok ? "text-emerald-400" : "text-red-300"}`}>{saveMsg.text}</p>}
+              {saveMsg && !(saveMsg.ok && needsSave) && <p className={`mt-3 text-sm ${saveMsg.ok ? "text-emerald-400" : "text-red-300"}`}>{saveMsg.text}</p>}
               {showUpgrade && (
                 <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
                   <p className="text-sm font-medium text-amber-300">You&apos;ve saved {FREE_TANK_LIMIT} tanks</p>
@@ -1994,8 +2049,34 @@ export default function TankBuilder({
         </div>
       )}
 
+      {/* Floating save bar: shows whenever there's something to save and the save card is off screen. */}
+      {showSaveBar && (
+        <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 md:bottom-6">
+          <div className="flex w-full max-w-xl items-center gap-3 rounded-2xl border border-amber-400/50 bg-ocean-950/95 px-4 py-3 shadow-2xl shadow-black/60 backdrop-blur-xl">
+            <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-amber-400" />
+            <p className="min-w-0 flex-1 text-sm font-medium text-amber-100">
+              {dirty ? "You have unsaved changes" : "This build isn't saved yet"}
+            </p>
+            <button
+              type="button"
+              onClick={() => saveTank()}
+              disabled={busy}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-ocean-950 hover:bg-emerald-400 disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+              {busy ? "Saving…" : dirty ? "Save changes" : "Save tank"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {toast && (
-        <div className="fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 md:bottom-8" role="status">
+        <div
+          className={`fixed inset-x-0 z-50 flex justify-center px-4 ${
+            showSaveBar ? "bottom-[calc(9.5rem+env(safe-area-inset-bottom))] md:bottom-24" : "bottom-24 md:bottom-8"
+          }`}
+          role="status"
+        >
           <span className="rounded-full bg-ocean-700 px-4 py-2 text-sm font-medium text-white shadow-xl shadow-black/50">
             {toast}
           </span>
