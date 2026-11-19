@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Mail, Megaphone, Store, Wrench, Flag, Fish, BookOpen,
   GraduationCap, Droplets, MessageSquare, Users, Camera, Clapperboard, BarChart3, LifeBuoy,
-  CalendarDays, MapPin, Warehouse, Bot, Egg, Award,
+  CalendarDays, MapPin, Warehouse, Bot, Egg, Award, Bell,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SOCIETY_CLUB_PATH, SOCIETY_NAME } from "@/lib/config";
@@ -150,6 +150,10 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     href: "/admin/feedback", label: "Feedback", sub: "What members sent in", group: "community", Icon: MessageSquare,
     about: "What members have written in about.",
     queues: [{ label: "Member feedback", table: "feedback", whereIn: ["status", ["new", "in_progress"]] }],
+  },
+  {
+    href: "/admin/notify", label: "Notify members", sub: "Send everyone a notification", group: "community", Icon: Bell,
+    about: "Send one Site news notification to every member's bell, and by email to those who get Site news emails.",
   },
   {
     href: "/admin/bubbles", label: "Bubbles", sub: "Award or deduct", group: "community", Icon: Droplets,
