@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import Feed from "@/components/feed/Feed";
 import HotForums from "@/components/forum/HotForums";
 import { fetchFeed, type FeedScope } from "@/lib/feed";
@@ -62,7 +63,10 @@ export default async function FeedPage({
           composeFocus={compose === "1"}
           between={
             <>
-              <HotForums />
+              {/* The forum strip loads on its own, so the posts never wait for it. */}
+              <Suspense fallback={<div className="h-[13.5rem] sm:h-[14.5rem]" aria-hidden="true" />}>
+                <HotForums />
+              </Suspense>
               <div className="flex items-center justify-between gap-3 pt-5 pb-1 sm:pt-7">
                 <h1 className="font-display text-2xl text-white sm:text-3xl">
                   Feed

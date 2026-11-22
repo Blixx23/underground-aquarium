@@ -63,9 +63,14 @@ export default async function HotForums() {
   const threads = ((rows ?? []) as Row[])
     .filter((t) => catById.has(t.category_id))
     .sort((a, b) => heat(b, now) - heat(a, now))
-    .slice(0, 12);
+    .slice(0, 8);
 
   if (threads.length === 0) return null;
+
+  // Only call it "Hot" when people are actually talking. While most threads
+  // are still waiting for a first reply, it's honest to call them new.
+  const busy = threads.filter((t) => (t.reply_count ?? 0) > 0).length;
+  const heading = busy >= 3 ? "Hot in the forums" : "New in the forums";
 
   const authorIds = [...new Set(threads.map((t) => t.author_id).filter((x): x is string => Boolean(x)))];
   const people = new Map<string, { name: string; avatar: string | null }>();
@@ -92,10 +97,10 @@ export default async function HotForums() {
   const card = "relative h-44 w-[7.25rem] shrink-0 snap-start overflow-hidden rounded-2xl border sm:h-48 sm:w-32";
 
   return (
-    <section aria-label="Hot in the forums" className="pt-1">
+    <section aria-label={heading} className="pt-1">
       <div className="mb-2 flex items-center justify-between px-1">
         <p className="flex items-center gap-1.5 text-sm font-semibold text-white">
-          <Flame className="h-4 w-4 text-coral-400" /> Hot in the forums
+          <Flame className="h-4 w-4 text-coral-400" /> {heading}
         </p>
         <Link href="/forums" className="text-xs text-ocean-400 hover:text-white">
           See all
@@ -180,7 +185,9 @@ export default async function HotForums() {
           >
             <MessageSquareDashed className="h-7 w-7 text-amber-300" />
             <span className="text-sm font-semibold leading-tight text-amber-100">Answer a question</span>
-            <span className="text-xs leading-tight text-amber-100/70">Help another keeper out</span>
+            <span className="text-xs leading-tight text-amber-100/70">
+              {unanswered} waiting for {unanswered === 1 ? "an answer" : "answers"}
+            </span>
           </Link>
         )}
       </div>

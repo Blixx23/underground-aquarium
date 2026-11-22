@@ -42,7 +42,6 @@ const SOCIETY_LEGACY_AWARDS: Record<string, string> = {
 // pages still check for themselves; this only fixes where login returns to.
 const SIGNED_IN_PATHS = [
   "/profile",
-  "/trophies",
   "/notifications",
   "/messages",
   "/my/",

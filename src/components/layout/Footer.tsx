@@ -8,8 +8,6 @@ const links = {
     { label: "Browse by area", href: "/marketplace" },
     { label: "Post a free ad", href: POST_AD_PATH },
     { label: "Where to sell fish", href: "/where-to-sell-aquarium-fish" },
-    { label: "My listings", href: "/my/listings" },
-    { label: "Messages", href: "/messages" },
   ],
   Resources: [
     { label: "Fish Species", href: "/species" },
@@ -17,7 +15,7 @@ const links = {
     { label: "Glossary", href: "/glossary" },
     { label: "Breeding guides", href: "/breeding" },
     { label: "Water Check", href: "/water-check" },
-    { label: "Find a fish store", href: "/aquarium-stores" },
+    { label: "Fish stores by state", href: "/aquarium-stores" },
   ],
   Community: [
     { label: "Feed", href: "/feed" },

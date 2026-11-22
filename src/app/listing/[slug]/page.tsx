@@ -11,11 +11,11 @@ import {
   Phone,
   MessageCircle,
   Pencil,
-  MessageSquareText,
   ChevronRight,
   Fish,
 } from "lucide-react";
-import { formatPhone, smsHref, telHref } from "@/lib/phone";
+import { formatPhone } from "@/lib/phone";
+import ListingContact from "@/components/marketplace/ListingContact";
 import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
 import ShareListing from "@/components/marketplace/ShareListing";
 import { speciesForAd } from "@/lib/marketplace/speciesAds";
@@ -202,6 +202,11 @@ export default async function ListingPage({
   const live = String(listing.category ?? "").startsWith("livestock-") || listing.category === "plants";
   const condition = live ? null : conditionLabel(listing.condition);
   const regionUrl = `/marketplace/${listing.state_code.toLowerCase()}/${listing.region_slug}`;
+  // "green bay · Green Bay" reads as a typo, so skip the city when it matches the area.
+  const areaName = region?.name ?? listing.region_slug;
+  const cityText = listing.city?.trim() ?? "";
+  const locationLine =
+    cityText && cityText.toLowerCase() !== areaName.toLowerCase() ? `${cityText} · ${areaName}` : areaName;
   const sellerName = seller?.full_name?.trim() || seller?.username || "A hobbyist";
   // The species this ad is about, for its care-guide link. A failed lookup just hides the link.
   const careGuide = await speciesForAd(listing).catch(() => null);
@@ -310,7 +315,7 @@ export default async function ListingPage({
             </h1>
 
             {!listing.is_wanted && (
-              <p className="font-display text-3xl text-ocean-200 mb-6">
+              <p className={`mb-6 font-semibold text-ocean-100 ${listing.price_cents ? "text-3xl" : "text-xl"}`}>
                 {formatPrice(listing.price_cents)}
               </p>
             )}
@@ -319,8 +324,7 @@ export default async function ListingPage({
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-ocean-600" />
                 <Link href={regionUrl} className="hover:text-white transition-colors">
-                  {listing.city ? `${listing.city} · ` : ""}
-                  {region?.name ?? listing.region_slug}
+                  {locationLine}
                 </Link>
               </p>
               <p className="flex items-center gap-2">
@@ -452,44 +456,25 @@ export default async function ListingPage({
                     </Link>
                   )}
 
-                  {emailShown || listing.contact_phone ? (
-                    <div className="mt-4 space-y-2 text-sm">
-                      {emailShown && (
-                        <a
-                          href={`mailto:${listing.contact_email}?subject=${encodeURIComponent(listing.title)}`}
-                          className="flex items-center gap-2 text-ocean-300 hover:text-white transition-colors break-all"
+                  {(emailShown || listing.contact_phone) &&
+                    (user ? (
+                      <ListingContact
+                        email={emailShown ? listing.contact_email : null}
+                        phone={listing.contact_phone}
+                        title={listing.title}
+                      />
+                    ) : (
+                      // Signed-out visitors (and bots) never get the email or phone in the page.
+                      <p className="mt-4 text-sm text-ocean-400">
+                        <Link
+                          href={`/login?next=${encodeURIComponent(`/listing/${listing.slug}`)}`}
+                          className="font-medium text-emerald-300 hover:text-emerald-200"
                         >
-                          <Mail className="w-4 h-4 shrink-0 text-ocean-600" />
-                          {listing.contact_email}
-                        </a>
-                      )}
-                      {listing.contact_phone && (
-                        <div className="rounded-xl border border-ocean-800/60 bg-ocean-950/50 p-3">
-                          <p className="mb-2.5 flex items-center gap-2 text-ocean-200">
-                            <Phone className="w-4 h-4 shrink-0 text-ocean-500" />
-                            <span className="font-medium tracking-wide">{formatPhone(listing.contact_phone)}</span>
-                          </p>
-                          <div className="grid grid-cols-2 gap-2">
-                            <a
-                              href={telHref(listing.contact_phone)}
-                              className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500/15 px-3 py-2.5 font-medium text-emerald-200 ring-1 ring-emerald-400/30 transition-colors hover:bg-emerald-500/25"
-                            >
-                              <Phone className="w-4 h-4" /> Call
-                            </a>
-                            <a
-                              href={smsHref(
-                                listing.contact_phone,
-                                `Hi, is your "${listing.title}" on Underground Aquarium still available?`
-                              )}
-                              className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-500/15 px-3 py-2.5 font-medium text-sky-200 ring-1 ring-sky-400/30 transition-colors hover:bg-sky-500/25"
-                            >
-                              <MessageSquareText className="w-4 h-4" /> Text
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
+                          Sign in
+                        </Link>{" "}
+                        to see this seller&apos;s {emailShown && listing.contact_phone ? "email and phone" : emailShown ? "email" : "phone number"}.
+                      </p>
+                    ))}
 
                   {!canBeContacted && (
                       <p className="mt-4 text-sm text-ocean-500">

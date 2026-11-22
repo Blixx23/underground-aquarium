@@ -82,10 +82,15 @@ function RgbFrame({
   );
 }
 
+const LOCAL_MILES = 100;
+
 function place(s: ClaimedShop) {
   const town = [s.city, s.state].filter(Boolean).join(", ");
   const mi = s.miles < 1 ? "under 1 mi" : `${Math.round(s.miles).toLocaleString("en-US")} mi`;
-  return { town, mi };
+  // Shops show at any distance on purpose (there are only a few verified ones yet),
+  // but we only call one "local" or "near you" when it's within a reasonable drive.
+  const local = s.miles <= LOCAL_MILES;
+  return { town, mi, local };
 }
 
 export default function FeaturedShopCard({
@@ -136,7 +141,8 @@ export default function FeaturedShopCard({
 
   if (!shop) return null;
   const href = `/stores/${shop.slug}`;
-  const { town, mi } = place(shop);
+  const { town, mi, local } = place(shop);
+  const kind = local ? "Local fish store" : "Verified fish store";
   const picture = shop.cover_url || shop.logo_url;
 
   // An earned badge, like an achievement: a medal with ribbon tails and a
@@ -219,7 +225,7 @@ export default function FeaturedShopCard({
           <LogoWithMedal size={30} />
         </span>
         <span className="min-w-0 flex-1 text-sm">
-          <span className="text-ocean-300">{lead} </span>
+          <span className="text-ocean-300">{local ? lead : lead.replace(/ near you:?$/, ":")} </span>
           <span className="font-semibold text-white group-hover:underline">{shop.name}</span>
           <span className="text-ocean-400">{` · ${town ? `${town} · ` : ""}${mi}`}</span>
         </span>
@@ -304,7 +310,7 @@ export default function FeaturedShopCard({
             <span className="mr-1.5 inline-block align-middle">
               <Ribbon small />
             </span>
-            {`Local fish store${town ? ` in ${town}` : ""} · ${mi}`}
+            {`${kind}${town ? ` in ${town}` : ""} · ${mi}`}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <Stars rating={shop.rating_avg} count={shop.rating_count} size={12} />
@@ -338,7 +344,7 @@ export default function FeaturedShopCard({
           <p className="flex items-center gap-1 text-sm text-white">
             <span className="truncate">{shop.name}</span>
           </p>
-          <p className="mt-0.5 text-sm text-emerald-300">Local fish store</p>
+          <p className="mt-0.5 text-sm text-emerald-300">{kind}</p>
           <p className="mt-1.5 flex items-center gap-1 text-[11px] text-ocean-500">
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{town || "Visit the shop"}</span>

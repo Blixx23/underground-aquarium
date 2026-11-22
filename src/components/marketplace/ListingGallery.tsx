@@ -37,8 +37,10 @@ export default function ListingGallery({
 
   if (images.length === 0) {
     return (
-      <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-ocean-800 to-ocean-950 border border-ocean-800/60 flex items-center justify-center">
-        <Fish className="w-16 h-16 text-ocean-700" />
+      // No photo: a slim strip on phones so the ad itself stays on screen; the full card on wide screens.
+      <div className="flex h-24 items-center justify-center gap-2 rounded-2xl border border-ocean-800/60 bg-gradient-to-br from-ocean-800 to-ocean-950 lg:aspect-[4/3] lg:h-auto">
+        <Fish className="h-8 w-8 text-ocean-700 lg:h-16 lg:w-16" />
+        <span className="text-sm text-ocean-500 lg:hidden">No photo</span>
       </div>
     );
   }

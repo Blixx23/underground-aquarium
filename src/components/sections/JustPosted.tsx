@@ -41,7 +41,7 @@ export default function JustPosted({
             href="/marketplace"
             className="group inline-flex items-center gap-2 text-sm text-ocean-300 hover:text-white transition-colors"
           >
-            Browse everything
+            Browse by area
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
