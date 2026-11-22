@@ -583,9 +583,6 @@ export default async function ListingPage({
                     </p>
                   </div>
                 </Link>
-                {i === 0 && (
-                  <FeaturedShopCard slot={1} variant="tile" lat={region?.lat ?? null} lng={region?.lng ?? null} />
-                )}
                 </Fragment>
               ))}
             </div>

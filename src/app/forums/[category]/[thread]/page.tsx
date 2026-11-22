@@ -11,7 +11,6 @@ import EditablePost from "@/components/forum/EditablePost";
 import ReportButton from "@/components/ReportButton";
 import SocietySeal from "@/components/society/SocietySeal";
 import RelatedGuides from "@/components/discover/RelatedGuides";
-import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
 import { keywords, relatedThreads } from "@/lib/discover";
 import ScrollToComment from "@/components/forum/ScrollToComment";
 import { plainText, threadIndexable } from "@/lib/forum/indexable";
@@ -452,11 +451,6 @@ export default async function ThreadPage({ params }: Params) {
             )}
           </div>
         </article>
-
-        {/* A featured shop near the reader, styled like a thread. */}
-        <div className="mb-8 empty:hidden">
-          <FeaturedShopCard slot={0} variant="forum" />
-        </div>
 
         {/* Comments */}
         <h2 className="text-white font-medium mb-4">

@@ -5,7 +5,6 @@ import { ArrowUp, Loader2, Waves } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import FeedCard from "@/components/feed/FeedCard";
 import Composer from "@/components/feed/Composer";
-import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
 import { fetchFeed, FEED_PAGE, type FeedItem, type FeedScope } from "@/lib/feed";
 
 export type Viewer = {
@@ -199,8 +198,6 @@ export default function Feed({
               );
             }}
           />
-          {/* A verified shop near the reader: 2nd in the feed, then every 8 posts. */}
-          {i % 8 === 0 && <FeaturedShopCard slot={i / 8} variant="feed" />}
           </Fragment>
         ))
       )}
