@@ -11,6 +11,7 @@ import {
   type Listing,
 } from "@/lib/marketplace/listings";
 import { POST_AD_PATH } from "@/lib/config";
+import NoPhoto from "@/components/marketplace/NoPhoto";
 
 export default function JustPosted({
   listings,
@@ -85,7 +86,7 @@ export default function JustPosted({
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
-                      <Fish className="w-10 h-10 text-ocean-700" />
+                      <NoPhoto category={l.is_wanted ? "wanted" : l.category} />
                     )}
                     {l.is_wanted ? (
                       <span className="absolute left-2 top-2 rounded-full border border-sky-500/30 bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-300">

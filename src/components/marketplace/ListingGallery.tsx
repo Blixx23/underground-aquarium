@@ -3,16 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import NoPhoto from "@/components/marketplace/NoPhoto";
 
 export default function ListingGallery({
   listingId,
   images,
   title,
+  category,
   countView,
 }: {
   listingId: string;
   images: string[];
   title: string;
+  /** Picks the look of the no-photo panel. */
+  category: string;
   /** False when the viewer owns the listing — don't inflate their own count. */
   countView: boolean;
 }) {
@@ -37,10 +41,9 @@ export default function ListingGallery({
 
   if (images.length === 0) {
     return (
-      // No photo: a slim strip on phones so the ad itself stays on screen; the full card on wide screens.
-      <div className="flex h-24 items-center justify-center gap-2 rounded-2xl border border-ocean-800/60 bg-gradient-to-br from-ocean-800 to-ocean-950 lg:aspect-[4/3] lg:h-auto">
-        <Fish className="h-8 w-8 text-ocean-700 lg:h-16 lg:w-16" />
-        <span className="text-sm text-ocean-500 lg:hidden">No photo</span>
+      // No photo: a short panel on phones so the ad itself stays on screen; the full card on wide screens.
+      <div className="h-40 overflow-hidden rounded-2xl border border-ocean-800/60 lg:aspect-[4/3] lg:h-auto">
+        <NoPhoto category={category} />
       </div>
     );
   }

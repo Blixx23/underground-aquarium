@@ -20,6 +20,7 @@ import {
   listingHref,
   type Listing,
 } from "@/lib/marketplace/listings";
+import NoPhoto from "@/components/marketplace/NoPhoto";
 
 type SortKey = "newest" | "price_asc" | "price_desc";
 
@@ -240,7 +241,7 @@ export default function ListingsBrowser({
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <Fish className="w-12 h-12 text-ocean-700" />
+                    <NoPhoto category={listing.is_wanted ? "wanted" : listing.category} showLabel={false} />
                   )}
                   <span className="absolute left-3 top-3 text-[11px] font-medium uppercase tracking-wide text-ocean-100 bg-ocean-950/70 backdrop-blur-sm border border-white/10 rounded-full px-2.5 py-1">
                     {categoryLabel(listing.category)}

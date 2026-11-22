@@ -18,6 +18,7 @@ import NearMeButton, {
   type LocatableRegion,
 } from "@/components/marketplace/NearMeButton";
 import { shareMeta } from "@/lib/seo/share";
+import NoPhoto from "@/components/marketplace/NoPhoto";
 
 export const revalidate = 300;
 
@@ -36,7 +37,7 @@ export default async function MarketplacePage() {
     getAllRegions(),
     supabasePublic
       .from("listings")
-      .select("slug, title, images, price_cents, is_free, is_wanted, city, state_code")
+      .select("slug, title, category, images, price_cents, is_free, is_wanted, city, state_code")
       .eq("status", "active")
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
@@ -45,6 +46,7 @@ export default async function MarketplacePage() {
   const newest = (newestData ?? []) as {
     slug: string;
     title: string;
+    category: string | null;
     images: string[] | null;
     price_cents: number | null;
     is_free: boolean | null;
@@ -185,7 +187,7 @@ export default async function MarketplacePage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={l.images[0]} alt="" loading="lazy" className="h-full w-full object-cover" />
                     ) : (
-                      <Fish className="h-8 w-8 text-ocean-700" />
+                      <NoPhoto category={l.is_wanted ? "wanted" : l.category} />
                     )}
                   </div>
                   <div className="p-2.5">

@@ -6,6 +6,7 @@ import { Crosshair, Fish, Loader2, MapPin, Plus, Tag } from "lucide-react";
 import { formatPrice, listingHref } from "@/lib/marketplace/listings";
 import { milesBetween } from "@/lib/marketplace/match";
 import AlertMeButton, { type AlertPlace } from "@/components/marketplace/AlertMeButton";
+import NoPhoto from "@/components/marketplace/NoPhoto";
 
 type Ad = {
   slug: string;
@@ -140,7 +141,7 @@ export default function ForSaleNearYou({ slug, name, category }: { slug: string;
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={a.image} alt="" loading="lazy" className="h-full w-full object-cover" />
                     ) : (
-                      <Fish className="h-6 w-6 text-ocean-600" />
+                      <NoPhoto category={category} size="thumb" />
                     )}
                   </span>
                   <span className="min-w-0 flex-1">

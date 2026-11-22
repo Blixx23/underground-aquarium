@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice, timeAgo } from "@/lib/marketplace/listings";
 import { LISTING_LIFETIME_DAYS } from "@/lib/config";
+import NoPhoto from "@/components/marketplace/NoPhoto";
 
 export type ManagedListing = {
   id: string;
@@ -175,7 +176,7 @@ export default function MyListingsManager({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Fish className="w-7 h-7 text-ocean-700" />
+                    <NoPhoto category={l.category} size="thumb" />
                   )}
                 </Link>
 

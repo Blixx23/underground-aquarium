@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Fish, Plus, ArrowRight } from "lucide-react";
 import { formatPrice, listingHref, type Listing } from "@/lib/marketplace/listings";
 import { POST_AD_PATH } from "@/lib/config";
+import NoPhoto from "@/components/marketplace/NoPhoto";
 
 /** Live ads for what the reader is looking at, or an invite to list one. */
 export default function ListingsStrip({
@@ -42,9 +43,7 @@ export default function ListingsStrip({
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <span className="flex h-full items-center justify-center">
-                    <Fish className="h-7 w-7 text-ocean-700" />
-                  </span>
+                  <NoPhoto category={l.is_wanted ? "wanted" : l.category} />
                 )}
               </div>
               <div className="p-2.5">

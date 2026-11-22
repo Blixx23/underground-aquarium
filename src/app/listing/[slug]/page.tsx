@@ -301,6 +301,7 @@ export default async function ListingPage({
               listingId={listing.id}
               images={images}
               title={listing.title}
+              category={listing.is_wanted ? "wanted" : listing.category}
               countView={!isOwner && listing.status === "active"}
             />
           </div>
