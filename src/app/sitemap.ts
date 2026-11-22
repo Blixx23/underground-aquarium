@@ -197,6 +197,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/rules", 0.5, "monthly"],
     ["/verify", 0.4, "monthly"],
     ["/help", 0.5, "monthly"],
+    ["/guides", 0.6, "weekly"],
     // Help Center articles, one per content/help/*.md file.
     ...getHelpArticles("member").map((a): [string, number, Freq] => [`/help/${a.slug}`, 0.4, "monthly"]),
     ["/privacy", 0.2, "yearly"],

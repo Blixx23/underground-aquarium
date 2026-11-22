@@ -22,6 +22,7 @@ import {
 } from "@/lib/marketplace/listings";
 import NoPhoto from "@/components/marketplace/NoPhoto";
 import { cityState } from "@/lib/marketplace/place";
+import { thumb } from "@/lib/images/thumb";
 
 type SortKey = "newest" | "price_asc" | "price_desc";
 
@@ -236,7 +237,7 @@ export default function ListingsBrowser({
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={image}
+                      src={thumb(image, 640)}
                       alt={listing.title}
                       loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

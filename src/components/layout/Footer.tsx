@@ -13,6 +13,7 @@ const links = {
     { label: "Fish Species", href: "/species" },
     { label: "Tank Builder", href: "/tank-builder" },
     { label: "Glossary", href: "/glossary" },
+    { label: "Fishkeeping guides", href: "/guides" },
     { label: "Breeding guides", href: "/breeding" },
     { label: "Water Check", href: "/water-check" },
     { label: "Fish stores by state", href: "/aquarium-stores" },

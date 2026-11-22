@@ -444,6 +444,15 @@ export default async function ThreadPage({ params }: Params) {
                 ))}
               </div>
             )}
+            {op && isFounder(byId[op.author_id as string]?.username) && (
+              <p className="mt-4 text-sm text-ocean-400">
+                Part of the{" "}
+                <Link href="/guides" className="text-emerald-300 hover:text-emerald-200">
+                  Fishkeeping guides
+                </Link>
+                . Questions about your own tank? Ask below.
+              </p>
+            )}
             {op && (
               <div className="mt-3">
                 <ReportButton

@@ -222,7 +222,7 @@ export default async function CategoryPage({ params, searchParams }: Params) {
                     <p className="text-xs text-ocean-500 mt-1 flex items-center gap-1.5">
                       {t.is_pinned && <Pin className="w-3 h-3 text-amber-300" />}
                       Posted by {authorLabel(t.author_id as string | null)}
-                      {isFounder(nameById[t.author_id as string]?.username) && <FounderTag />} ·{" "}
+                      {isFounder(nameById[t.author_id as string]?.username) && <FounderTag label="Guide" />} ·{" "}
                       {timeAgo(t.created_at as string)}
                     </p>
                     <Link

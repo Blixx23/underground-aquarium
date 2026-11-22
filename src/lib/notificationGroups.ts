@@ -23,6 +23,8 @@ export const NOTIFICATION_GROUPS: NotificationGroup[] = [
   { key: "trophy", label: "Trophies and new tiers", sub: "You earn a new trophy or reach a new bubbles tier", types: ["trophy"] },
   { key: "bubbles", label: "Bubbles", sub: "You earn bubbles for something you did", types: ["bubbles"] },
   { key: "library", label: "Your contributions", sub: "Species, photos, videos and shops you suggested are approved", types: ["species_request", "species_photo", "species_video", "store_suggestion"] },
+  { key: "ad_checkin", label: "Your ads: still available?", sub: "Once a month, if one of your ads hasn't been bumped in 30 days", types: ["ad_checkin"] },
+  { key: "weekly_local", label: "Weekly near you", sub: "Monday morning: new ads and shop posts within 40 miles of you", types: ["weekly_local"] },
   { key: "store_post", label: "Shop updates", sub: "A shop you follow posts something", types: ["store_post"] },
   { key: "reviews", label: "Review replies", sub: "A shop replies to a review you wrote", types: ["review", "review_response"] },
   { key: "shop_review", label: "Your shop: new reviews", sub: "Someone reviews a shop you run", types: ["shop_review"] },

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Camera } from "lucide-react";
 import ZoomPhoto from "@/components/photos/ZoomPhoto";
+import { thumb } from "@/lib/images/thumb";
 
 export type SpeciesPhoto = {
   id: string;
@@ -73,7 +74,7 @@ export default function SpeciesPhotos({ photos, name }: { photos: SpeciesPhoto[]
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ph.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img src={thumb(ph.url, 256)} alt="" loading="lazy" className="h-full w-full object-cover" />
             </button>
           ))}
         </div>

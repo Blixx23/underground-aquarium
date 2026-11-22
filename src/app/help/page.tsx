@@ -25,6 +25,7 @@ const POPULAR: { label: string; href: string }[] = [
   { label: "Join the Society", href: "/help/joining-the-society" },
   { label: "Reset password", href: "/help/signing-in-and-passwords#i-forgot-my-password-how-do-i-reset-it" },
   { label: "Tank Builder warnings", href: "/help/tank-builder-compatibility-warnings" },
+  { label: "Fishkeeping guides", href: "/guides" },
 ];
 
 export default function HelpPage() {

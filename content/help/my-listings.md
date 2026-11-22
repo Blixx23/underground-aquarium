@@ -87,6 +87,12 @@ To publish a draft:
 
 It goes live for 45 days. If you don't want a draft, tap **Delete**. You can't create new drafts yourself: new ads go live as soon as you post them.
 
+## Why did I get a "Still available?" note?
+If one of your ads hasn't been renewed or bumped in 30 days, you get one note (and the usual notification email) asking if it's still for sale. Tap **Renew** to move it back to the top, or **Mark sold** if it's gone. You won't be asked again for 30 days. Turn these off under **Your ads: still available?** in your notification settings.
+
+## What is the "This week near you" note?
+On Monday mornings, members with an area (a saved alert, an ad of their own, or a shop they follow) get one note listing new ads and shop posts within 40 miles. It only comes when there's something new. Turn it off under **Weekly near you** in your notification settings.
+
 ## Common problems
 
 **An ad I posted isn't in the list.**

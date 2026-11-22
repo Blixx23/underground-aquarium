@@ -39,7 +39,7 @@ For every choice, write what the page should say. Your note needs at least 2 cha
 ## What happens after I suggest a fix?
 Nothing on the page changes right away. Your report goes to our team to check, and we update the page by hand.
 
-You won't get a notification when the page is updated. Check back on the shop's page.
+When we confirm your fix was right, you earn **15 bubbles** and get a notification saying so. Fixes we can't confirm are dismissed without bubbles.
 
 ## Can I see or edit a fix I already sent?
 No. Once sent, a fix can't be viewed, edited or withdrawn from the site. If you made a mistake, send another one with the right details, or email support@undergroundaquarium.com.

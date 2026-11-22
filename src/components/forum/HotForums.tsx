@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Flame, MessageSquare, MessageSquareDashed, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { isFounder } from "@/lib/founder";
+import { thumb } from "@/lib/images/thumb";
 
 type Row = {
   id: string;
@@ -141,7 +142,7 @@ export default async function HotForums() {
               {photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={photo}
+                  src={thumb(photo, 256)}
                   alt=""
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

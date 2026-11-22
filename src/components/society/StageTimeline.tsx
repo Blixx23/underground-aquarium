@@ -23,6 +23,7 @@ import {
 } from "@/lib/society/spawnLogs";
 import { SOC_BTN_PRIMARY } from "@/lib/society/theme";
 import ZoomPhoto from "@/components/photos/ZoomPhoto";
+import { thumb } from "@/lib/images/thumb";
 
 const MAX_PHOTOS = 4;
 
@@ -237,7 +238,7 @@ export default function StageTimeline({
                             <ZoomPhoto key={src} images={done.photos} start={i}>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={src}
+                                src={thumb(src, 256)}
                                 alt=""
                                 loading="lazy"
                                 className="h-20 w-20 rounded-lg border border-ocean-800/60 object-cover"

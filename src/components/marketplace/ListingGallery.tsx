@@ -5,6 +5,7 @@ import { Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import NoPhoto from "@/components/marketplace/NoPhoto";
 import ZoomPhoto from "@/components/photos/ZoomPhoto";
+import { thumb } from "@/lib/images/thumb";
 
 export default function ListingGallery({
   listingId,
@@ -82,7 +83,7 @@ export default function ListingGallery({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={src}
+                src={thumb(src, 256)}
                 alt=""
                 loading="lazy"
                 className="w-full h-full object-cover"

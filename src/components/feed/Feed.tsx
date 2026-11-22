@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, Loader2, Waves } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import FeedCard from "@/components/feed/FeedCard";
@@ -46,6 +46,10 @@ export default function Feed({
 }) {
   const [supabase] = useState(() => createClient());
   const [items, setItems] = useState(initialItems);
+  // On the shared feeds, one busy poster (a shop running a sale, say) shouldn't
+  // fill the screen: nobody shows twice in a row if someone else's post is
+  // close behind. Nothing is dropped; a profile's own feed stays as is.
+  const shown = useMemo(() => (scope === "user" ? items : spreadAuthors(items)), [items, scope]);
   const [more, setMore] = useState(initialItems.length >= FEED_PAGE);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -180,7 +184,7 @@ export default function Feed({
           <p className="text-sm text-ocean-400">{emptyText}</p>
         </div>
       ) : (
-        items.map((item, i) => (
+        shown.map((item, i) => (
           <Fragment key={`${item.kind}:${item.id}`}>
           <FeedCard
             item={item}
@@ -225,4 +229,20 @@ export default function Feed({
       )}
     </div>
   );
+}
+
+/** Moves a post down a place or two when the same member posted the one above it. */
+function spreadAuthors(list: FeedItem[]): FeedItem[] {
+  const rest = [...list];
+  const out: FeedItem[] = [];
+  while (rest.length) {
+    const prev = out[out.length - 1];
+    let pick = 0;
+    if (prev && rest[0].user_id === prev.user_id) {
+      const j = rest.slice(0, 4).findIndex((x) => x.user_id !== prev.user_id);
+      if (j > 0) pick = j;
+    }
+    out.push(rest.splice(pick, 1)[0]);
+  }
+  return out;
 }

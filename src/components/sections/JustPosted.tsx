@@ -13,6 +13,7 @@ import {
 import { POST_AD_PATH } from "@/lib/config";
 import NoPhoto from "@/components/marketplace/NoPhoto";
 import { cityState } from "@/lib/marketplace/place";
+import { thumb } from "@/lib/images/thumb";
 
 export default function JustPosted({
   listings,
@@ -81,7 +82,7 @@ export default function JustPosted({
                     {image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={image}
+                        src={thumb(image, 640)}
                         alt={l.title}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

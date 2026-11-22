@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Globe, Lock, Images, Waves } from "lucide-react";
 import { blurb } from "@/lib/tanks/showcase";
 import ZoomPhoto from "@/components/photos/ZoomPhoto";
+import { thumb } from "@/lib/images/thumb";
 
 export type TankTileData = {
   id: string;
@@ -46,7 +47,7 @@ export default function TankTile({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={cover}
+              src={thumb(cover, 640)}
               alt={tank.name ?? "Tank"}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"

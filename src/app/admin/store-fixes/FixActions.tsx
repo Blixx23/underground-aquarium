@@ -2,19 +2,28 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export default function FixActions({ id }: { id: string }) {
-  const [supabase] = useState(() => createClient());
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
+  const [error, setError] = useState<string | null>(null);
+
+  // Goes through the server so a correct fix can pay the member who sent it.
   async function set(status: "done" | "dismissed") {
     setBusy(true);
-    await supabase
-      .from("store_edit_suggestions")
-      .update({ status, resolved_at: new Date().toISOString() })
-      .eq("id", id);
+    setError(null);
+    const res = await fetch("/api/admin/store-fixes", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    if (!res.ok) {
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(j.error ?? "Couldn't save that.");
+      setBusy(false);
+      return;
+    }
     router.refresh();
   }
 
@@ -36,6 +45,7 @@ export default function FixActions({ id }: { id: string }) {
       >
         Dismiss
       </button>
+      {error && <p className="self-center text-xs text-coral-300">{error}</p>}
     </div>
   );
 }

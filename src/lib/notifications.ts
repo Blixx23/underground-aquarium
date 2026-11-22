@@ -50,6 +50,8 @@ const KINDS: Record<string, KindMeta> = {
   express: { icon: "sale", tone: "emerald", category: "marketplace", label: "payouts" },
   account_onboarding: { icon: "sale", tone: "emerald", category: "marketplace", label: "seller account" },
   store_post: { icon: "store", tone: "emerald", category: "shops", label: "shop updates", mutable: true },
+  ad_checkin: { icon: "sale", tone: "sky", category: "marketplace", label: "still-available check-ins", mutable: true },
+  weekly_local: { icon: "bell", tone: "emerald", category: "marketplace", label: "weekly near-you notes", mutable: true },
   review: { icon: "review", tone: "amber", category: "shops", label: "shop reviews", mutable: true },
   review_response: { icon: "review", tone: "amber", category: "shops", label: "review replies", mutable: true },
   event: { icon: "event", tone: "coral", category: "other", label: "events" },

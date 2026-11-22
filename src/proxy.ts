@@ -1,19 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/session";
 import {
-  PAID_MARKETPLACE_ENABLED,
   POST_AD_PATH,
   SOCIETY_PATH,
   SOCIETY_SLUG,
 } from "@/lib/config";
 
-// Pages that only make sense when the paid marketplace is running.
-// While it's off, anyone landing here gets sent to the free posting flow.
-// Deliberately NOT listed: /orders, /sell/sales, /sell/payouts,
-// /sell/finances, /sell/shipping and /sell/listings — those are the
-// wind-down path for orders that were already paid for, and they stay
-// reachable until every open order has cleared.
-const PAID_ONLY_PATHS = ["/sell", "/sell/setup"];
+// The old paid marketplace is gone for good (every paid order has cleared and
+// its pages were removed). Old links and bookmarks land somewhere useful:
+// anything under /sell goes to posting a free ad, old order and checkout
+// links go to the member's own ads.
+const OLD_SELL_PATH = /^\/sell(\/.*)?$/;
+const OLD_ORDER_PATH = /^\/(orders|checkout)(\/.*)?$/;
 
 // /marketplace/:something used to be an old paid product page. That slot now
 // belongs to state codes (/marketplace/ca), so anything in it that isn't a
@@ -75,15 +73,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (
-    !PAID_MARKETPLACE_ENABLED &&
-    PAID_ONLY_PATHS.includes(pathname) &&
-    !PAID_ONLY_PATHS.includes(POST_AD_PATH)
-  ) {
+  if (OLD_SELL_PATH.test(pathname) || OLD_ORDER_PATH.test(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = POST_AD_PATH;
+    url.pathname = OLD_SELL_PATH.test(pathname) ? POST_AD_PATH : "/my/listings";
     url.search = "";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 308);
   }
 
   // The three below are for good, so they're permanent (308): Google moves

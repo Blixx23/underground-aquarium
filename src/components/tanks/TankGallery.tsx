@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X, Expand } from "lucide-react";
+import { thumb } from "@/lib/images/thumb";
 
 /**
  * The tank's photos, made to be looked at: a big cover image, a strip of
@@ -114,7 +115,7 @@ export default function TankGallery({ images, name }: { images: string[]; name: 
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img src={thumb(src, 256)} alt="" loading="lazy" className="h-full w-full object-cover" />
             </button>
           ))}
         </div>

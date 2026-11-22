@@ -21,6 +21,7 @@ export const LIMITS = {
   imageConvert: { max: 30, windowSec: 60 },
   accountExport: { max: 3, windowSec: 3600 },
   invite: { max: 20, windowSec: 3600 },
+  clientError: { max: 5, windowSec: 600 },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;

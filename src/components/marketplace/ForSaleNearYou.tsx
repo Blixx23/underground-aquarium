@@ -8,6 +8,7 @@ import { milesBetween } from "@/lib/marketplace/match";
 import AlertMeButton, { type AlertPlace } from "@/components/marketplace/AlertMeButton";
 import NoPhoto from "@/components/marketplace/NoPhoto";
 import { cityState } from "@/lib/marketplace/place";
+import { thumb } from "@/lib/images/thumb";
 
 type Ad = {
   slug: string;
@@ -140,7 +141,7 @@ export default function ForSaleNearYou({ slug, name, category }: { slug: string;
                   <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ocean-900">
                     {a.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      <img src={thumb(a.image, 256)} alt="" loading="lazy" className="h-full w-full object-cover" />
                     ) : (
                       <NoPhoto category={category} size="thumb" />
                     )}

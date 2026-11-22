@@ -35,6 +35,7 @@ import TankTile from "@/components/tanks/TankTile";
 import ZoomPhoto from "@/components/photos/ZoomPhoto";
 import ProfileHighlights from "@/components/profile/ProfileHighlights";
 import BreederCerts, { getBreederCerts } from "@/components/profile/BreederCerts";
+import { thumb } from "@/lib/images/thumb";
 
 export const dynamic = "force-dynamic";
 
@@ -609,7 +610,7 @@ async function Sidebar({
                   className="aspect-square w-full overflow-hidden rounded-lg bg-ocean-950"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={t.images[0]} alt={t.name ?? "Tank"} title={t.name ?? "Tank"} loading="lazy" className="h-full w-full object-cover" />
+                  <img src={thumb(t.images[0], 256)} alt={t.name ?? "Tank"} title={t.name ?? "Tank"} loading="lazy" className="h-full w-full object-cover" />
                 </ZoomPhoto>
               ) : (
                 <Link

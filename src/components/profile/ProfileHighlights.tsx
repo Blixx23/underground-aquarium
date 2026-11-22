@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Waves } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import ZoomPhoto from "@/components/photos/ZoomPhoto";
+import { thumb } from "@/lib/images/thumb";
 
 type TankPeek = { id: string; name: string | null; images: string[] | null };
 
@@ -59,7 +60,7 @@ export default async function ProfileHighlights({
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={t.images[0]}
+                        src={thumb(t.images[0], 384)}
                         alt={t.name ?? "Tank"}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

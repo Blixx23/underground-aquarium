@@ -31,6 +31,7 @@ import { canCommentInFeed, feedItemPath, timeAgo, type FeedComment, type FeedIte
 import MentionPicker, { sendMentions } from "@/components/mentions/MentionPicker";
 import MentionText from "@/components/mentions/MentionText";
 import { tidyCity } from "@/lib/marketplace/place";
+import { thumb } from "@/lib/images/thumb";
 
 const ACTIVITY: Record<
   Exclude<FeedItem["kind"], "post">,
@@ -551,14 +552,15 @@ function WholePhoto({ src, alt, className = "" }: { src: string; alt: string; cl
     <span className={`relative block w-full overflow-hidden bg-ocean-950 ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
+        src={thumb(src, 128)}
         alt=""
         aria-hidden
         loading="lazy"
         className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
       />
+      {/* The feed shows a phone-sized copy; tapping opens the full photo. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} loading="lazy" className="relative h-full w-full object-contain" />
+      <img src={thumb(src, 828)} alt={alt} loading="lazy" className="relative h-full w-full object-contain" />
     </span>
   );
 }
@@ -603,7 +605,7 @@ function ActivityBody({ item }: { item: FeedItem }) {
       <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ocean-950">
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt={item.title ?? ""} loading="lazy" className="h-full w-full object-cover" />
+          <img src={thumb(cover, 128)} alt={item.title ?? ""} loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <Icon className={`h-6 w-6 ${a.tone}`} />
         )}

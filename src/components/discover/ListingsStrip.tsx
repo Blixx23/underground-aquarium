@@ -4,6 +4,7 @@ import { formatPrice, listingHref, type Listing } from "@/lib/marketplace/listin
 import { POST_AD_PATH } from "@/lib/config";
 import NoPhoto from "@/components/marketplace/NoPhoto";
 import { cityState } from "@/lib/marketplace/place";
+import { thumb } from "@/lib/images/thumb";
 
 /** Live ads for what the reader is looking at, or an invite to list one. */
 export default function ListingsStrip({
@@ -38,7 +39,7 @@ export default function ListingsStrip({
                 {l.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={l.images[0]}
+                    src={thumb(l.images[0], 384)}
                     alt=""
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

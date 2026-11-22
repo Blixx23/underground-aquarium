@@ -28,6 +28,10 @@ function same(a: string, b: string): boolean {
 const MERGED: Record<string, string> = {
   "x-ray-tetra": "pristella-tetra",
   multifasciatus: "multifasciatus-shell-dweller",
+  // Word matching sent these to the Brevis shell dweller, a different fish.
+  "multi-shell-dweller": "multifasciatus-shell-dweller",
+  multis: "multifasciatus-shell-dweller",
+  "multi-shell-dweller-cichlid": "multifasciatus-shell-dweller",
 };
 
 export async function matchSpeciesSlug(oldSlug: string): Promise<string | null> {
