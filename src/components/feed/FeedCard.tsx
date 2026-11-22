@@ -361,11 +361,12 @@ export default function FeedCard({
         )}
       </div>
 
-      {isPost && item.images.length > 0 && (
-        <div className="relative">
+      {/* Posts and shared tanks show their photos big; tap one for full screen. */}
+      {(isPost || item.kind === "tank") && item.images.length > 0 && (
+        <div className={`relative ${isPost ? "" : "mt-3"}`}>
           <Photos
             images={item.images}
-            alt={photoAlt(item)}
+            alt={isPost ? photoAlt(item) : `${item.title ?? "Tank"} by ${item.author_name}`}
             onOpen={setViewer}
             onDoubleTap={doubleTapLike}
           />
@@ -572,7 +573,8 @@ function photoAlt(item: FeedItem): string {
 function ActivityBody({ item }: { item: FeedItem }) {
   const a = ACTIVITY[item.kind as Exclude<FeedItem["kind"], "post">];
   const Icon = a.icon;
-  const cover = item.images[0];
+  // A shared tank's photos show big above this row, so no small copy here.
+  const cover = item.kind === "tank" ? undefined : item.images[0];
   const m = item.meta as Record<string, string | number | boolean | null>;
 
   let sub = "";
