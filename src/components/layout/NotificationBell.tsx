@@ -118,12 +118,21 @@ export default function NotificationBell({
   useEffect(() => {
     let active = true;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    // The bell shows twice (desktop bar and phone menu) and start() can run
+    // twice at page load, so each copy gets its own channel name and only one
+    // start runs at a time. A shared name made the second one throw.
+    const instance = Math.random().toString(36).slice(2, 8);
+    let starting = false;
 
     async function start() {
-      const uid = await load();
+      if (starting) return;
+      starting = true;
+      const uid = await load().finally(() => {
+        starting = false;
+      });
       if (!active || !uid || channel) return;
       channel = supabase
-        .channel(`notifications:${uid}`)
+        .channel(`notifications:${uid}:${instance}`)
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
