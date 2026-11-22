@@ -123,7 +123,7 @@ Scroll to **Suspended accounts** at the bottom of /admin/reports ("Members who a
 What happens:
 
 - The Supabase Auth ban is lifted and the suspended date, reason and admin are cleared from the profile.
-- Only the ads the suspension took down, and that are still removed, come back. Ads whose expiry date hasn't passed go live again; ads past their expiry date come back as expired, so the member can repost them from **My listings**. Ads they had already ended themselves stay as they were.
+- Only the ads the suspension took down, and that are still removed, come back. They go live again (ads don't expire for now, so none come back expired). Ads they had already ended themselves stay as they were.
 - Only the tanks that were public at suspension time go public again. Tanks they kept private stay private.
 - The member gets "Account restored": "Your account suspension has been lifted. You can sign in again.", linking to /profile.
 - A green line confirms it, for example "@name is unsuspended. Restored 2 live ads and 1 public tank."

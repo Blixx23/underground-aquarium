@@ -209,7 +209,8 @@ export default async function Hero({
               <Plus className="h-4 w-4" /> Sell something
             </Link>
             <Link href="/listings" className="group inline-flex items-center gap-1.5 font-medium text-ocean-200 hover:text-white">
-              Browse all{liveListings > 0 ? ` ${liveListings.toLocaleString()}` : ""}
+              {/* The count shows once it says "busy", not "small". */}
+              Browse all{liveListings >= 100 ? ` ${liveListings.toLocaleString()}` : ""}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>

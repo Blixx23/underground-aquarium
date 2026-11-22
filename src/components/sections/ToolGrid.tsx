@@ -105,10 +105,10 @@ export default function ToolGrid() {
       <div className="relative max-w-7xl mx-auto px-6">
         <div className="mb-8 sm:mb-12">
           <p className="text-xs font-mono tracking-[0.25em] text-ocean-500 uppercase mb-4">
-            Everything here is free
+            Free to join. Free to post.
           </p>
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl text-white">
-            Pick your <span className="text-ocean-300">weapon</span>
+            Jump <span className="text-ocean-300">in</span>
           </h2>
         </div>
 

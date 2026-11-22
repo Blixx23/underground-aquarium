@@ -69,7 +69,7 @@ Each ad in a list appears as a card with:
 - **The category** in the top left corner, like "Freshwater Fish" or "Tanks & Stands".
 - **A Wanted or Free tag** in the top right corner, when the ad is a wanted ad or a free giveaway.
 - **The title.**
-- **The price**: a dollar amount, "Free", or "Contact for price" when the seller left the price blank. Wanted ads don't show a price.
+- **The price**: a dollar amount, "Free", or "Make an offer" when the seller left the price blank. Wanted ads don't show a price.
 - **The first couple of lines of the description.**
 - **The town**, when the seller added one, and the **condition** for gear (New, Like new, Good, Fair or For parts), when they chose one.
 - **Views**, with an eye icon, once the ad has been viewed at least once.
@@ -80,7 +80,7 @@ Tap anywhere on the card to open the full listing.
 ## How are listings sorted?
 On area pages and the nationwide list, the default sort is **Newest first**. "Newest" means the most recently posted or renewed. When a seller renews an ad, it moves back to the top, and the time on the card resets to when it was renewed.
 
-You can switch to **Price: low to high** or **Price: high to low** with the sort menu. See [Searching and filtering listings](/help/searching-and-filtering-listings) for how free, wanted and "Contact for price" ads sort.
+You can switch to **Price: low to high** or **Price: high to low** with the sort menu. See [Searching and filtering listings](/help/searching-and-filtering-listings) for how free, wanted and "Make an offer" ads sort.
 
 The **Just posted** row on the Classifieds home page is different: it always shows the 8 ads posted most recently, and renewing doesn't move an ad into it.
 
@@ -136,5 +136,5 @@ Areas are metro areas, not every town. Pick the closest one. Your area may be na
 **The Near me button isn't there.**
 It only appears when the site can match locations to areas. Use **Pick your state** instead. See [Finding listings near you](/help/finding-listings-near-you).
 
-**I see a price of "Contact for price".**
+**I see a price of "Make an offer".**
 The seller left the price blank. Message them to ask. See [Contacting a seller](/help/contacting-a-seller).

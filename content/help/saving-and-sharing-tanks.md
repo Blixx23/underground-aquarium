@@ -1,13 +1,13 @@
 ---
 title: Saving and sharing tanks
 category: Tools & learning
-summary: Save up to 4 tanks in the Tank Builder, switch between them, add photos, make a tank public, share a build link, and delete tanks.
+summary: Save up to 20 tanks in the Tank Builder, switch between them, add photos, make a tank public, share a build link, and delete tanks.
 order: 130
-keywords: save tank, my tanks, saved builds, tank limit, 4 tanks, share link, send build, public tank, private tank, tank photos, delete tank, remove tank, update tank, unsaved changes, draft, profile tanks
+keywords: save tank, my tanks, saved builds, tank limit, 20 tanks, share link, send build, public tank, private tank, tank photos, delete tank, remove tank, update tank, unsaved changes, draft, profile tanks
 pages: /tank-builder, /tank-builder/[size], /tanks/[id], /profile
 ---
 
-In the [Tank Builder](/tank-builder) you can keep a build three ways: as an unsaved draft on your device, as a saved tank in your account (up to 4), or as a share link anyone can open. Saved tanks can also be made public so they show on your profile and in the feed.
+In the [Tank Builder](/tank-builder) you can keep a build three ways: as an unsaved draft on your device, as a saved tank in your account (up to 20), or as a share link anyone can open. Saved tanks can also be made public so they show on your profile and in the feed.
 
 ## What happens to my build if I don't save it?
 Without saving (or without an account), your build is kept in the browser on the device you're using. Your size, units, fish and tank name come back when you refresh or return to the [Tank Builder](/tank-builder).
@@ -34,9 +34,9 @@ If you leave the name blank, the tank is named after its size (for example "29-g
 Tanks are always stored in gallons, rounded to one decimal place, even if you built it in litres. Saving your first tank, your first tank with fish in it, and your first public tank each earn you bubbles once. See [Bubbles](/help/bubbles).
 
 ## How many tanks can I save?
-You can save **4 tanks**. Public and private tanks both count.
+You can save **20 tanks**. Public and private tanks both count.
 
-If you already have 4 and tap **Save tank** on a new build, nothing is saved and you'll see: "You've saved 4 tanks. That's the limit for now. Update or delete one of your tanks above to make room for a new build."
+If you already have 20 and tap **Save tank** on a new build, nothing is saved and you'll see: "You've saved 20 tanks. That's the limit for now. Update or delete one of your tanks above to make room for a new build."
 
 To make room, either load an existing tank and change it into the new build (then tap **Update tank**), or delete a tank you no longer need.
 
@@ -126,7 +126,7 @@ To share a tank that people can like and comment on, make it public instead (see
 2. Under **Your tanks**, tap the small **X** in the top right corner of the tank's card.
 3. Confirm the message "Delete "[name]"? Its water test history goes with it."
 
-The tank, its photos list and all its logged water readings are removed. This can't be undone. If you were editing that tank, the builder keeps showing the fish so you can save it again as a new tank if you change your mind (if you have room under the 4 tank limit).
+The tank, its photos list and all its logged water readings are removed. This can't be undone. If you were editing that tank, the builder keeps showing the fish so you can save it again as a new tank if you change your mind (if you have room under the 20 tank limit).
 
 Deleting only happens in the Tank Builder; there's no delete button on the tank's public page. If you want to keep your water readings first, use **Download my data** on your [Account & data](/account) page. If deleting fails you'll see "Couldn't delete that tank."
 
@@ -134,8 +134,8 @@ Deleting only happens in the Tank Builder; there's no delete button on the tank'
 When you request account deletion, all your tanks are made private right away, so they disappear from your profile and the feed. We remember which ones were public, and if you reactivate within the 30 days, those tanks are made public again automatically. See [Deleting your account](/help/deleting-your-account).
 
 ## Common problems
-**I can't save: nothing happens or I see the 4 tank message.**
-You've reached the 4 tank limit. Delete a tank or update an existing one instead.
+**I can't save: nothing happens or I see the 20 tank message.**
+You've reached the 20 tank limit. Delete a tank or update an existing one instead.
 
 **My changes to a saved tank disappeared.**
 Changes aren't saved until you tap **Update tank**. If you switched tanks or tapped **New** and confirmed, the changes were discarded.

@@ -22,7 +22,7 @@ The form checks these before posting, in this order:
 - **"Give your listing a title."** The **Title** box is empty. Add a short title (up to 120 characters).
 - **"Pick a category."** Choose one from the **Category** menu.
 - **"Choose the area you're posting in."** You need both **1 · State** and **2 · Closest metro area**. The area menu stays greyed out until you pick a state.
-- **"Enter a valid price, or leave it blank for 'contact for price'."** The **Price (USD)** box has something that isn't a number, or a negative number. Type just the number, like 25 or 12.50, or leave it empty.
+- **"Enter a valid price, or leave it blank for 'make an offer'."** The **Price (USD)** box has something that isn't a number, or a negative number. Type just the number, like 25 or 12.50, or leave it empty.
 
 Everything else (town, condition, photos, description, phone, email) is optional. See [Posting a classified ad](/help/posting-a-classified-ad).
 
@@ -116,7 +116,7 @@ More in [Messages troubleshooting](/help/messages-troubleshooting).
 - If you added a phone number, open your listing to check it. On your own listing, it's shown under "You also chose to show:".
 - If someone says they messaged you and you can't see it, check your inbox's **Read** section too. See [Messages troubleshooting](/help/messages-troubleshooting).
 
-## My listing shows "Contact for price" but I meant to set a price
+## My listing shows "Make an offer" but I meant to set a price
 You left **Price (USD)** empty when posting. Tap **Edit** in [My listings](/my/listings), enter the price and tap **Save changes**. Changes go live straight away.
 
 If your ad shows "Free" but you meant to sell it, you picked **Free** at the top of the form. Edit it, choose **For sale** and add a price.

@@ -91,20 +91,11 @@ export default function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-ocean-800/40 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-ocean-600 font-mono">
-            © {new Date().getFullYear()} UndergroundAquarium.com — Built for the
+          {/* The deploy you're looking at rides along as data-build (view source or
+              inspect to see it). Kept off the page itself: it's developer text. */}
+          <p className="text-xs text-ocean-600 font-mono" data-build={BUILD_LABEL}>
+            © {new Date().getFullYear()} UndergroundAquarium.com. Built for the
             hobby, by the hobby.
-            {/*
-              Which deploy you're looking at. Set from the commit Vercel built,
-              so it's never stale. Dimmer than the copyright on purpose — it's
-              there when you go looking and invisible when you aren't.
-            */}
-            <span
-              className="ml-2 text-ocean-700"
-              title="Build this page was served from"
-            >
-              build {BUILD_LABEL}
-            </span>
           </p>
           <div className="flex gap-6 text-xs text-ocean-600">
             <Link

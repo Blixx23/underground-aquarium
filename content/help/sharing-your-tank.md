@@ -18,7 +18,7 @@ Every tank you save in the [Tank Builder](/tank-builder) gets its own page. Make
 
 Your tank now shows on the **Tanks** tab of your public profile, in the [Feed](/feed) as "shared a tank", and on its own page. The first time you share a tank publicly you earn bubbles (see [Bubbles](/help/bubbles)).
 
-For saving, the 4-tank limit and share links, see [Saving and sharing tanks](/help/saving-and-sharing-tanks).
+For saving, the 20-tank limit and share links, see [Saving and sharing tanks](/help/saving-and-sharing-tanks).
 
 ## What's on a tank's page?
 - **Community tank** label, the tank name, and a line of facts: size in gallons, number of species, number of fish and how long it's been running (for example "Running 1 year, 4 months").
@@ -93,4 +93,4 @@ In the [Tank Builder](/tank-builder), tap the **X** on the tank under **Your tan
 
 **My iPhone photo won't upload.** iPhone HEIC photos are converted automatically, in any browser. If one still fails, you'll see a message that it's an iPhone HEIC photo this browser can't read. On your iPhone, **Settings › Camera › Formats › Most Compatible** saves new photos as JPEG, or share the photo to yourself first so it comes through as a JPEG.
 
-**I can't save another tank.** You can keep up to 4 saved tanks. Delete or reuse one. See [Saving and sharing tanks](/help/saving-and-sharing-tanks).
+**I can't save another tank.** You can keep up to 20 saved tanks. Delete or reuse one. See [Saving and sharing tanks](/help/saving-and-sharing-tanks).

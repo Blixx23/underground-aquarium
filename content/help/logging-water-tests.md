@@ -43,7 +43,7 @@ Yes, in one step. If you haven't saved or loaded a tank, the box is titled **Tra
 1. Enter your results (and an optional note).
 2. Tap **Save tank & log reading**.
 
-In the Tank Builder, yes. The builder saves your current build as a new tank (using the name in the save box, or a name based on its size, or "My Tank") and then logs the reading to it. This counts toward your 4 saved tank limit. If you already have 4 tanks, nothing is saved or logged, and the message "You've saved 4 tanks" appears in the save section under **3. Save your build** (scroll up to see it on a phone). Load an existing tank first, or delete one. See [Saving and sharing tanks](/help/saving-and-sharing-tanks).
+In the Tank Builder, yes. The builder saves your current build as a new tank (using the name in the save box, or a name based on its size, or "My Tank") and then logs the reading to it. This counts toward your 20 saved tank limit. If you already have 20 tanks, nothing is saved or logged, and the message "You've saved 20 tanks" appears in the save section under **3. Save your build** (scroll up to see it on a phone). Load an existing tank first, or delete one. See [Saving and sharing tanks](/help/saving-and-sharing-tanks).
 
 ## What can I record in a reading?
 Each reading can include any of these, all optional, but at least one value is required:
@@ -125,7 +125,7 @@ You need to be signed in and have at least one saved tank. Save one in the [Tank
 Enter at least one value. It's also briefly disabled while a save is in progress.
 
 **I tapped Save tank & log reading and nothing happened.**
-You're probably at the 4 tank limit. Scroll up to the save section to see the message. Load one of **Your tanks** and log to it instead, or delete a tank to make room.
+You're probably at the 20 tank limit. Scroll up to the save section to see the message. Load one of **Your tanks** and log to it instead, or delete a tank to make room.
 
 **I logged the same reading twice.**
 Your values stay in the boxes after logging (in both places), so tapping again logs a duplicate. Delete the extra with the trash icon.

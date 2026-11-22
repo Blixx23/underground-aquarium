@@ -72,7 +72,7 @@ Use the sort menu next to the search box:
 - **Price: low to high**: free ads ($0) first, then cheapest to most expensive.
 - **Price: high to low**: most expensive first.
 
-In both price sorts, ads that say "Contact for price" and wanted ads (which have no price) go to the end of the list, since there's no number to sort them by.
+In both price sorts, ads that say "Make an offer" and wanted ads (which have no price) go to the end of the list, since there's no number to sort them by.
 
 ## Do search, category and sort work together?
 Yes. You can type a search, pick a category and choose a sort all at once. For example, on your area page you can pick **Aquatic Plants**, type "moss" and sort by **Price: low to high**.

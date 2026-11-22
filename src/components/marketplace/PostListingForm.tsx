@@ -18,6 +18,7 @@ import { CONDITIONS } from "@/lib/marketplace/listings";
 import type { MarketRegion } from "@/lib/marketplace/regions";
 import { LISTING_LIFETIME_DAYS } from "@/lib/config";
 import { prepareImage } from "@/lib/images/prepareImage";
+import { tidyCity } from "@/lib/marketplace/place";
 
 const MAX_PHOTOS = 8;
 
@@ -144,6 +145,8 @@ export default function PostListingForm({
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A price that looks like a slip gets one "are you sure?"; the seller's second tap posts it.
+  const [priceChecked, setPriceChecked] = useState<string | null>(null);
 
   const photoCount = keptImages.length + photos.length;
 
@@ -281,15 +284,32 @@ export default function PostListingForm({
     } else if (kind === "sale") {
       const trimmed = price.trim();
       if (trimmed === "") {
-        // Left blank on purpose = "contact for price".
+        // Left blank on purpose = "make an offer".
         priceCents = null;
       } else {
         const parsed = parseFloat(trimmed);
         if (isNaN(parsed) || parsed < 0) {
-          setError("Enter a valid price, or leave it blank for 'contact for price'.");
+          setError("Enter a valid price, or leave it blank for 'make an offer'.");
           return;
         }
         priceCents = Math.round(parsed * 100);
+      }
+    }
+
+    // Catch the two common slips once: a $1 placeholder price, and a title
+    // that names a different price than the price box.
+    if (kind === "sale" && priceCents !== null && priceCents > 0) {
+      const key = `${priceCents}|${title}`;
+      const inTitle = [...title.matchAll(/\$\s?(\d+(?:\.\d{1,2})?)/g)].map((m) => Math.round(parseFloat(m[1]) * 100));
+      const titleMismatch = inTitle.length > 0 && !inTitle.includes(priceCents);
+      if (priceChecked !== key && (priceCents <= 100 || titleMismatch)) {
+        setPriceChecked(key);
+        setError(
+          titleMismatch
+            ? `Your title says $${(inTitle[0] / 100).toFixed(inTitle[0] % 100 ? 2 : 0)} but the price box says $${(priceCents / 100).toFixed(priceCents % 100 ? 2 : 0)}. Fix one, or tap post again to keep it as is.`
+            : `Is $${(priceCents / 100).toFixed(2)} the real price? Leave the price empty to show "Make an offer" instead, or tap post again to keep it.`
+        );
+        return;
       }
     }
 
@@ -344,7 +364,7 @@ export default function PostListingForm({
         price_cents: priceCents,
         is_wanted: kind === "wanted",
         condition: kind === "wanted" || isLive ? null : condition || null,
-        city: city.trim() || null,
+        city: tidyCity(city) || null,
         images: allImages.length ? allImages : null,
         // Every poster has an account, so every listing can be messaged.
         allow_messages: true,
@@ -688,8 +708,7 @@ export default function PostListingForm({
                 />
               </div>
               <p className="text-xs text-ocean-500 mt-2">
-                Leave it empty and your ad shows &ldquo;Contact for
-                price&rdquo;.
+                Leave it empty and your ad shows &ldquo;Make an offer&rdquo;.
               </p>
             </div>
           )}

@@ -23,13 +23,13 @@ export const LISTING_COLUMNS =
 
 /**
  * How a price reads on a card.
- *   null  -> "Contact for price"
+ *   null  -> "Make an offer"
  *   0     -> "Free"
  *   2500  -> "$25"
  *   2599  -> "$25.99"
  */
 export function formatPrice(cents: number | null | undefined): string {
-  if (cents === null || cents === undefined) return "Contact for price";
+  if (cents === null || cents === undefined) return "Make an offer";
   if (cents === 0) return "Free";
   const dollars = cents / 100;
   return dollars % 1 === 0

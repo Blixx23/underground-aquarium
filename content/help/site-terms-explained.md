@@ -53,10 +53,10 @@ A category for ads where you're looking for something instead of selling it. ISO
 A category for things you're giving away. The **Free Stuff** pill also shows every ad posted as **Free**, whatever its category, and the **Wanted / ISO** pill shows every wanted ad. See [Searching and filtering listings](/help/searching-and-filtering-listings).
 
 ### Bumped and renewing
-Ads last 45 days. **Renew 45 days** on [My listings](/my/listings) gives an ad a fresh 45 days and moves it back to the top as if it were just posted. "Bumped" shows when an ad was last posted or renewed. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
+Ads stay up until the seller marks them sold or deletes them. **Bump to top** on [My listings](/my/listings) moves an ad back to the top as if it were just posted. "Bumped" shows when an ad was last posted or bumped. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
 
 ### Expired, sold, draft and removed
-Listing statuses you may see on My listings: **active** (live), **draft** (not published yet), **sold** (marked sold or found), **expired** (its 45 days ran out) and **removed** (taken down). See [My listings](/help/my-listings).
+Listing statuses you may see on My listings: **active** (live), **draft** (not published yet), **sold** (marked sold or found), **expired** (expired before ads stopped expiring, or the account was deleted) and **removed** (taken down). See [My listings](/help/my-listings).
 
 ## Forum words
 
@@ -210,7 +210,7 @@ They're members of the Underground Aquarium Society in good standing.
 Your Dashboard ([/profile](/profile)) is private and holds your settings and shortcuts. Your public profile (/u/yourname) is what other people see.
 
 **Why does my ad say "Bumped 3 days ago" when I posted it weeks ago?**
-You renewed it, which counts as a fresh posting and moves it back to the top.
+You bumped it, which counts as a fresh posting and moves it back to the top.
 
 **Do the new Terms apply to me yet?**
 If you joined on or after October 4, 2026, yes. If you joined before then, they take effect on November 4, 2026.

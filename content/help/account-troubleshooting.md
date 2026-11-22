@@ -102,7 +102,7 @@ Profiles of deleted and suspended accounts aren't shown. Also, the profile addre
 ## I think my account was suspended
 If you try to log in and land on "This account is suspended", a moderator has suspended your account. A suspended account can't sign in, with email and password or with Google, and any session already open ends within about an hour. While it's suspended, your public profile, classified ads and tanks are hidden. You'll also have an **Account suspended** notification from when it happened.
 
-Email support@undergroundaquarium.com from the email address on the account if you think it was a mistake. If the suspension is lifted, you can sign in again, you get an **Account restored** notification, and the ads and tanks the suspension hid come back (ads whose 45 days ran out in the meantime come back as expired).
+Email support@undergroundaquarium.com from the email address on the account if you think it was a mistake. If the suspension is lifted, you can sign in again, you get an **Account restored** notification, and the ads and tanks the suspension hid come back.
 
 ## I think someone else got into my account
 1. Change your password right away on [Password](/account/update-password) (or use **Forgot your password?** if you can't sign in).

@@ -30,6 +30,7 @@ import { categoryLabel } from "@/lib/marketplace/categories";
 import { canCommentInFeed, feedItemPath, timeAgo, type FeedComment, type FeedItem } from "@/lib/feed";
 import MentionPicker, { sendMentions } from "@/components/mentions/MentionPicker";
 import MentionText from "@/components/mentions/MentionText";
+import { tidyCity } from "@/lib/marketplace/place";
 
 const ACTIVITY: Record<
   Exclude<FeedItem["kind"], "post">,
@@ -584,7 +585,7 @@ function ActivityBody({ item }: { item: FeedItem }) {
       .join(" · ");
   } else if (item.kind === "listing") {
     const price = m.is_wanted ? "Wanted" : m.is_free ? "Free" : formatPrice(m.price_cents as number | null);
-    sub = [price, m.category ? categoryLabel(String(m.category)) : null, m.city].filter(Boolean).join(" · ");
+    sub = [price, m.category ? categoryLabel(String(m.category)) : null, m.city ? tidyCity(String(m.city)) : null].filter(Boolean).join(" · ");
   } else if (item.kind === "spawn") {
     sub = [m.points ? `${m.points} points` : null, m.first ? "First in the Society" : null]
       .filter(Boolean)

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import NoPhoto from "@/components/marketplace/NoPhoto";
+import ZoomPhoto from "@/components/photos/ZoomPhoto";
 
 export default function ListingGallery({
   listingId,
@@ -50,14 +51,20 @@ export default function ListingGallery({
 
   return (
     <div>
-      <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-ocean-950 border border-ocean-800/60">
+      <ZoomPhoto
+        key={index}
+        images={images}
+        start={index}
+        label="View photos full screen"
+        className="aspect-[4/3] w-full rounded-2xl overflow-hidden bg-ocean-950 border border-ocean-800/60"
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={images[index]}
-          alt={`${title} — photo ${index + 1} of ${images.length}`}
+          alt={`${title}, photo ${index + 1} of ${images.length}`}
           className="w-full h-full object-contain"
         />
-      </div>
+      </ZoomPhoto>
 
       {images.length > 1 && (
         <div className="flex gap-2 mt-3 overflow-x-auto pb-1">

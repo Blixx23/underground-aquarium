@@ -5,6 +5,8 @@ import { ArrowLeft, MessageSquare, Pin, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { Fragment } from "react";
 import VoteControl from "@/components/forum/VoteControl";
+import FounderTag from "@/components/FounderTag";
+import { isFounder } from "@/lib/founder";
 import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
 import ForumSearchBar from "@/components/forum/ForumSearchBar";
 import { shareMeta } from "@/lib/seo/share";
@@ -219,7 +221,8 @@ export default async function CategoryPage({ params, searchParams }: Params) {
                     </Link>
                     <p className="text-xs text-ocean-500 mt-1 flex items-center gap-1.5">
                       {t.is_pinned && <Pin className="w-3 h-3 text-amber-300" />}
-                      Posted by {authorLabel(t.author_id as string | null)} ·{" "}
+                      Posted by {authorLabel(t.author_id as string | null)}
+                      {isFounder(nameById[t.author_id as string]?.username) && <FounderTag />} ·{" "}
                       {timeAgo(t.created_at as string)}
                     </p>
                     <Link

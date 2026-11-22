@@ -22,6 +22,7 @@ import {
   type SpawnStageRule,
 } from "@/lib/society/spawnLogs";
 import { SOC_BTN_PRIMARY } from "@/lib/society/theme";
+import ZoomPhoto from "@/components/photos/ZoomPhoto";
 
 const MAX_PHOTOS = 4;
 
@@ -232,15 +233,16 @@ export default function StageTimeline({
                       )}
                       {done.photos.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {done.photos.map((src) => (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              key={src}
-                              src={src}
-                              alt=""
-                              loading="lazy"
-                              className="h-20 w-20 rounded-lg border border-ocean-800/60 object-cover"
-                            />
+                          {done.photos.map((src, i) => (
+                            <ZoomPhoto key={src} images={done.photos} start={i}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={src}
+                                alt=""
+                                loading="lazy"
+                                className="h-20 w-20 rounded-lg border border-ocean-800/60 object-cover"
+                              />
+                            </ZoomPhoto>
                           ))}
                         </div>
                       )}

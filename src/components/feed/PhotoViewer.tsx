@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 /**
@@ -11,10 +12,13 @@ export default function PhotoViewer({
   images,
   start = 0,
   onClose,
+  link,
 }: {
   images: string[];
   start?: number;
   onClose: () => void;
+  /** Optional way on from the photo, e.g. to the tank it belongs to. */
+  link?: { href: string; label: string };
 }) {
   const [i, setI] = useState(start);
   const touchX = useRef<number | null>(null);
@@ -54,6 +58,15 @@ export default function PhotoViewer({
         onClick={(e) => e.stopPropagation()}
         className="max-h-[100dvh] max-w-full select-none object-contain"
       />
+      {link && (
+        <Link
+          href={link.href}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] max-w-[70vw] truncate rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
+        >
+          {link.label} →
+        </Link>
+      )}
       <button
         type="button"
         onClick={onClose}

@@ -42,7 +42,7 @@ Some tips:
 ## What's the difference between For sale, Free and Wanted?
 You choose the ad type with the three buttons under **What are you posting?** on the form.
 
-- **For sale**: you're selling. Your ad shows your price, or "Contact for price" if you leave the price empty.
+- **For sale**: you're selling. Your ad shows your price, or "Make an offer" if you leave the price empty.
 - **Free**: you're giving something away or rehoming it. There's no price box. The ad shows **Free** where the price goes and gets a green **Free** tag.
 - **Wanted**: you're looking for something. There's no price and no condition. The ad gets a blue **Wanted** tag, and cards show "Wanted" where a price would be. When you find it, the button says **Mark as found** instead of Mark as sold.
 
@@ -62,7 +62,7 @@ Also: a For sale ad with a price of 0 shows as Free with the Free tag, the same 
 Same idea. They're independent.
 
 - The **Wanted** ad type is what adds the blue Wanted tag, hides the price and condition, and changes the button to **Mark as found**.
-- The **Wanted / ISO** category is just a category. If you pick it but leave the ad type on **For sale**, your ad won't get the Wanted tag and will show a price or "Contact for price", which confuses people.
+- The **Wanted / ISO** category is just a category. If you pick it but leave the ad type on **For sale**, your ad won't get the Wanted tag and will show a price or "Make an offer", which confuses people.
 
 For a wanted ad, always choose the **Wanted** ad type. Then pick either the category of the thing you want (for example **Tanks & Stands** for "Looking for a 40 gallon breeder") or **Wanted / ISO**. A Wanted ad shows under its own category pill and under the **Wanted / ISO** pill either way, so picking the item's category lets people browsing that category see it too.
 
@@ -104,7 +104,7 @@ That's another reason to use the right ad type and, if it helps, a clear word li
 Buyers can sort by **Newest first**, **Price: low to high** or **Price: high to low**.
 
 - Free ads count as $0, so they come first in low to high and last among priced ads in high to low.
-- Ads with no price ("Contact for price") and Wanted ads have no number, so they sort to the end in both price orders.
+- Ads with no price ("Make an offer") and Wanted ads have no number, so they sort to the end in both price orders.
 
 ## Can I change the category or ad type after posting?
 Yes. Open [My listings](/my/listings), tap **Edit**, change **What are you posting?** or **Category**, and tap **Save changes**. Changes go live straight away and don't change your expiry date. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
@@ -120,8 +120,8 @@ The ad type is still **For sale**. Edit it and choose **Wanted**.
 **I can't find a Condition box.**
 It's hidden for live fish, inverts, coral and plants, and for Wanted ads.
 
-**My ad says "Contact for price" but I wanted Free.**
-Leaving the price empty on a For sale ad means "Contact for price". Switch the ad type to **Free**, or enter 0.
+**My ad says "Make an offer" but I wanted Free.**
+Leaving the price empty on a For sale ad means "Make an offer". Switch the ad type to **Free**, or enter 0.
 
 **My old ad says "New" on a fish.**
 Older ads could carry a condition on livestock. The listing page no longer shows condition for fish, inverts, coral or plants. Editing and saving the ad clears it everywhere.

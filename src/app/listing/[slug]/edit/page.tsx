@@ -99,8 +99,7 @@ export default async function EditListingPage({
 
         <h1 className="font-display text-4xl text-white mb-3">Edit listing</h1>
         <p className="text-ocean-400 mb-10">
-          Changes go live straight away. Editing doesn&apos;t reset the expiry
-          date — use Renew for that.
+          Changes go live straight away.
         </p>
 
         <PostListingForm regions={regions} existing={existing} />

@@ -10,7 +10,14 @@ import { nextFromLocation } from "@/lib/safeNext";
  * for a brand-new account, sends them to /welcome to pick a username and
  * accept the terms before going on to wherever they were headed.
  */
-export default function GoogleButton({ label = "Continue with Google" }: { label?: string }) {
+export default function GoogleButton({
+  label = "Continue with Google",
+  next: nextPath,
+}: {
+  label?: string;
+  /** Where to land after signing in. Defaults to the page's ?next=, then the feed. */
+  next?: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +25,7 @@ export default function GoogleButton({ label = "Continue with Google" }: { label
     setError(null);
     setLoading(true);
     const supabase = createClient();
-    const next = nextFromLocation("/feed");
+    const next = nextPath ?? nextFromLocation("/feed");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

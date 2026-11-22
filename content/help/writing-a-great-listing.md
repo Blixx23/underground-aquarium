@@ -34,7 +34,7 @@ For Wanted ads, the site shows your title as "Wanted: (your title) in (your town
 
 ## Setting a price
 - Enter a number in **Price (USD)**. It shows as "$25" or "$25.99".
-- Leave it empty to show "Contact for price". Those ads sort to the **end** when buyers sort by price, and many buyers skip them. A real price usually gets more replies.
+- Leave it empty to show "Make an offer". Those ads sort to the **end** when buyers sort by price, and many buyers skip them. A real price usually gets more replies.
 - Enter 0, or choose the **Free** ad type, and your ad shows as **Free** with a green tag. Free ads come first when buyers sort by **Price: low to high**.
 
 There's no "or best offer" setting. If you're flexible, write "OBO" in the description. If you're not, write "Price is firm". For bundles, list individual prices in the description if you'd sell pieces separately.
@@ -100,7 +100,7 @@ These are against the [listing rules](/rules) and can get your ad removed:
 Search only looks at your title, description and town. Add the words buyers would type, including common names.
 
 **My ad gets views but no messages.**
-Check that it has a clear cover photo, a real price instead of "Contact for price", and a description that answers the obvious questions (size, quantity, pickup area).
+Check that it has a clear cover photo, a real price instead of "Make an offer", and a description that answers the obvious questions (size, quantity, pickup area).
 
 **My ad has dropped down the list.**
 Newer ads push it down. Tap **Renew 45 days** in [My listings](/my/listings) to move it back up.

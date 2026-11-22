@@ -108,7 +108,7 @@ While an account is suspended:
 
 The member gets an **Account suspended** notification: "Your account has been suspended by a moderator. If you think this is a mistake, email support@undergroundaquarium.com."
 
-If our team lifts the suspension, the member can sign in again and gets an **Account restored** notification ("Your account suspension has been lifted. You can sign in again."). The ads and tanks the suspension hid come back: ads that are still within their 45 days go live again, ads whose time ran out come back as expired (repost them from My listings), and tanks that were public are public again. Ads and tanks the member had already taken down or kept private stay that way.
+If our team lifts the suspension, the member can sign in again and gets an **Account restored** notification ("Your account suspension has been lifted. You can sign in again."). The ads and tanks the suspension hid come back: ads go live again, and tanks that were public are public again. Ads and tanks the member had already taken down or kept private stay that way.
 
 If you think your own account was suspended by mistake, email support@undergroundaquarium.com from the email address on the account.
 

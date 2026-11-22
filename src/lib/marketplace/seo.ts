@@ -1,5 +1,6 @@
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice, type Listing } from "@/lib/marketplace/listings";
+import { LISTINGS_EXPIRE } from "@/lib/config";
 
 /**
  * Search-facing words for classifieds. People search "blue dream shrimp for
@@ -72,7 +73,8 @@ export function listingProductJsonLd(l: SeoListing, regionName?: string | null) 
             priceCurrency: "USD",
             availability: "https://schema.org/InStock",
             ...(itemCondition(l.condition) ? { itemCondition: itemCondition(l.condition) } : {}),
-            ...(l.expires_at ? { priceValidUntil: l.expires_at.slice(0, 10) } : {}),
+            // No real end date while ads don't expire, so leave it out rather than say 2099.
+            ...(LISTINGS_EXPIRE && l.expires_at ? { priceValidUntil: l.expires_at.slice(0, 10) } : {}),
             availableAtOrFrom: {
               "@type": "Place",
               address: {

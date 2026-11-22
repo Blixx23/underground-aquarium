@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Camera } from "lucide-react";
+import ZoomPhoto from "@/components/photos/ZoomPhoto";
 
 export type SpeciesPhoto = {
   id: string;
@@ -28,11 +29,12 @@ export default function SpeciesPhotos({ photos, name }: { photos: SpeciesPhoto[]
 
   return (
     <figure className="mb-8">
-      <a
-        href={p.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block overflow-hidden rounded-2xl border border-white/10 bg-ocean-950/60"
+      <ZoomPhoto
+        key={active}
+        images={photos.map((ph) => ph.url)}
+        start={Math.min(active, photos.length - 1)}
+        label={`View ${name} photos full screen`}
+        className="w-full overflow-hidden rounded-2xl border border-white/10 bg-ocean-950/60"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -42,7 +44,7 @@ export default function SpeciesPhotos({ photos, name }: { photos: SpeciesPhoto[]
           height={p.height}
           className="max-h-[520px] w-full object-contain"
         />
-      </a>
+      </ZoomPhoto>
       <figcaption className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ocean-400">
         <Camera className="h-4 w-4 text-ocean-500" />
         <span>

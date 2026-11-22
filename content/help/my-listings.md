@@ -34,7 +34,7 @@ Your ads are listed newest first (by the date you first posted them). Each row s
 - A **status** badge: active, sold, expired, draft or removed.
 - The **category**.
 - The **title**. Tap it to open the ad.
-- The **price** (or "Free" or "Contact for price") and the **area**, with your town if you gave one. Wanted ads skip the price.
+- The **price** (or "Free" or "Make an offer") and the **area**, with your town if you gave one. Wanted ads skip the price.
 - **Views**, like "34 views".
 - **Unread**, like "2 unread", if buyers have messages you haven't read. Tap it to go to [Messages](/messages).
 - **Bumped**, like "Bumped 3 days ago": when the ad was posted or last renewed or reposted.

@@ -41,7 +41,7 @@ The page compares five options:
 ## How do I list my fish on Underground Aquarium?
 From the guide, tap **List your fish free** (at the top or bottom of the page) or **List your fish** in the Underground Aquarium box. That opens the free posting form. You'll need a free account.
 
-Posting takes about a minute: choose **For sale**, **Free** or **Wanted**, add a title, pick a category like Freshwater Fish or Shrimp, Snails & Inverts, choose your state and closest metro area, set a price, add photos and a description. Ads stay up for 45 days and you can renew them. See [Posting a classified ad](/help/posting-a-classified-ad).
+Posting takes about a minute: choose **For sale**, **Free** or **Wanted**, add a title, pick a category like Freshwater Fish or Shrimp, Snails & Inverts, choose your state and closest metro area, set a price, add photos and a description. Ads stay up until you mark them sold or delete them. See [Posting a classified ad](/help/posting-a-classified-ad).
 
 To see what's already for sale, tap **See fish for sale** (opens freshwater fish nationwide) or **Browse near you** (opens [Classifieds](/marketplace)).
 

@@ -55,6 +55,22 @@ export default async function StoreFixesPage() {
       : Promise.resolve({ data: [] }),
   ]);
   type S = { id: string; slug: string; name: string; city: string | null; state: string | null; hours: string | null; phone: string | null; website: string | null; address: string | null };
+  // How complete the directory is. Shops missing all of these stay out of
+  // Google, so these numbers are the size of the fill-in job.
+  const missing = (col: string) =>
+    supabaseAdmin.from("fish_stores").select("id", { count: "exact", head: true }).or(`${col}.is.null,${col}.eq.`);
+  const [total, noAddress, noPhone, noHours] = await Promise.all([
+    supabaseAdmin.from("fish_stores").select("id", { count: "exact", head: true }),
+    missing("address"),
+    missing("phone"),
+    missing("hours"),
+  ]);
+  const gaps = [
+    { label: "No street address", n: noAddress.count ?? 0 },
+    { label: "No phone", n: noPhone.count ?? 0 },
+    { label: "No hours", n: noHours.count ?? 0 },
+  ];
+
   const storeById = new Map(((stores ?? []) as S[]).map((s) => [s.id, s]));
   const userById = new Map(((people ?? []) as { id: string; username: string | null }[]).map((p) => [p.id, p.username]));
 
@@ -71,6 +87,18 @@ export default async function StoreFixesPage() {
         <p className="mb-6 text-sm text-ocean-400">
           Shoppers flagging wrong details. Open the shop, edit it, then mark it done.
         </p>
+
+        <div className="mb-6 grid grid-cols-3 gap-2">
+          {gaps.map((g) => (
+            <div key={g.label} className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-3">
+              <p className="text-xl font-semibold tabular-nums text-white">{g.n.toLocaleString()}</p>
+              <p className="text-xs text-ocean-400">
+                {g.label}
+                {total.count ? ` · ${Math.round((g.n / total.count) * 100)}% of ${total.count.toLocaleString()}` : ""}
+              </p>
+            </div>
+          ))}
+        </div>
 
         {rows.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-ocean-800/60 p-10 text-center text-ocean-400">

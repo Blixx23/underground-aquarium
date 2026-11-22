@@ -32,6 +32,7 @@ import { fetchFeed } from "@/lib/feed";
 import { getViewer } from "@/lib/feedViewer";
 import { SOCIETY_PATH } from "@/lib/config";
 import TankTile from "@/components/tanks/TankTile";
+import ZoomPhoto from "@/components/photos/ZoomPhoto";
 import ProfileHighlights from "@/components/profile/ProfileHighlights";
 import BreederCerts, { getBreederCerts } from "@/components/profile/BreederCerts";
 
@@ -598,23 +599,29 @@ async function Sidebar({
           <p className="text-sm text-ocean-500">No tanks shared yet.</p>
         ) : (
           <div className="grid grid-cols-3 gap-1.5">
-            {tanks.map((t) => (
-              <Link
-                key={t.id}
-                href={`/tanks/${t.id}`}
-                title={t.name ?? "Tank"}
-                className="block aspect-square overflow-hidden rounded-lg bg-ocean-950"
-              >
-                {t.images?.[0] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.images[0]} alt="" loading="lazy" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="flex h-full items-center justify-center">
-                    <Waves className="h-5 w-5 text-ocean-700" />
-                  </span>
-                )}
-              </Link>
-            ))}
+            {tanks.map((t) =>
+              t.images?.[0] ? (
+                <ZoomPhoto
+                  key={t.id}
+                  images={t.images}
+                  label={`View ${t.name ?? "tank"} photos full screen`}
+                  link={{ href: `/tanks/${t.id}`, label: t.name || "Open tank" }}
+                  className="aspect-square w-full overflow-hidden rounded-lg bg-ocean-950"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={t.images[0]} alt={t.name ?? "Tank"} title={t.name ?? "Tank"} loading="lazy" className="h-full w-full object-cover" />
+                </ZoomPhoto>
+              ) : (
+                <Link
+                  key={t.id}
+                  href={`/tanks/${t.id}`}
+                  title={t.name ?? "Tank"}
+                  className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-ocean-950"
+                >
+                  <Waves className="h-5 w-5 text-ocean-700" />
+                </Link>
+              )
+            )}
           </div>
         )}
       </div>

@@ -182,21 +182,30 @@ export default function BottomNav() {
               <Plus className="h-6 w-6" strokeWidth={2.4} />
             </button>
           </div>
-          <Link
-            href={user ? "/messages" : "/login"}
-            className={tab(is("/messages"))}
-            aria-label={unread.count > 0 ? `Messages, ${unread.count} unread` : "Messages"}
-          >
-            <span className="relative">
-              <MessageCircle className="h-6 w-6" strokeWidth={is("/messages") ? 2.4 : 1.8} />
-              {unread.count > 0 && (
-                <span className="absolute -right-2 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-coral-500 px-1 text-[11px] font-medium leading-none text-white ring-2 ring-ocean-950">
-                  {unread.count > 9 ? "9+" : unread.count}
-                </span>
-              )}
-            </span>
-            Messages
-          </Link>
+          {/* Signed out, Messages would only lead to sign in; fish stores are
+              what most visitors come for, so they get the spot instead. */}
+          {user ? (
+            <Link
+              href="/messages"
+              className={tab(is("/messages"))}
+              aria-label={unread.count > 0 ? `Messages, ${unread.count} unread` : "Messages"}
+            >
+              <span className="relative">
+                <MessageCircle className="h-6 w-6" strokeWidth={is("/messages") ? 2.4 : 1.8} />
+                {unread.count > 0 && (
+                  <span className="absolute -right-2 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-coral-500 px-1 text-[11px] font-medium leading-none text-white ring-2 ring-ocean-950">
+                    {unread.count > 9 ? "9+" : unread.count}
+                  </span>
+                )}
+              </span>
+              Messages
+            </Link>
+          ) : (
+            <Link href="/stores?near=1" className={tab(is("/aquarium-stores", "/stores"))}>
+              <Store className="h-6 w-6" strokeWidth={is("/aquarium-stores", "/stores") ? 2.4 : 1.8} />
+              Shops
+            </Link>
+          )}
           <Link href={user ? "/profile" : "/login"} className={tab(is("/profile", "/trophies", "/account"))}>
             {me ? (
               <span

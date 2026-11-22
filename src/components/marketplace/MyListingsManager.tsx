@@ -17,7 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import { formatPrice, timeAgo } from "@/lib/marketplace/listings";
-import { LISTING_LIFETIME_DAYS } from "@/lib/config";
+import { LISTING_LIFETIME_DAYS, LISTINGS_EXPIRE, listingExpiresAt } from "@/lib/config";
 import NoPhoto from "@/components/marketplace/NoPhoto";
 
 export type ManagedListing = {
@@ -84,9 +84,7 @@ export default function MyListingsManager({
   }
 
   function publish(l: ManagedListing) {
-    const expires = new Date(
-      Date.now() + LISTING_LIFETIME_DAYS * 86400000
-    ).toISOString();
+    const expires = listingExpiresAt();
     return run(l.id, async () => {
       const { error: err } = await supabase
         .from("listings")
@@ -222,7 +220,7 @@ export default function MyListingsManager({
                       </Link>
                     )}
                     <span>Bumped {timeAgo(l.bumped_at, now)}</span>
-                    {l.status === "active" && (
+                    {LISTINGS_EXPIRE && l.status === "active" && (
                       <span className={expiringSoon ? "text-amber-400" : ""}>
                         {left <= 0
                           ? "expires today"
@@ -266,7 +264,7 @@ export default function MyListingsManager({
                       ) : (
                         <RefreshCw className="w-3.5 h-3.5" />
                       )}
-                      Renew {LISTING_LIFETIME_DAYS} days
+                      {LISTINGS_EXPIRE ? `Renew ${LISTING_LIFETIME_DAYS} days` : "Bump to top"}
                     </button>
                     <button
                       type="button"

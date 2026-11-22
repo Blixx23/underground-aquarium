@@ -17,6 +17,7 @@ import {
   type City,
 } from "@/lib/stores/places";
 import { shareMeta } from "@/lib/seo/share";
+import { milesLabel } from "@/lib/stores/miles";
 
 export const revalidate = 3600;
 
@@ -146,7 +147,7 @@ export default async function CityPage({ params }: { params: Promise<{ state: st
         {(() => {
           const pts: MapPoint[] = [
             ...c.stores.map((s) => ({ s, sub: [s.city, s.state].filter(Boolean).join(", "), main: true })),
-            ...nearbyShops.map(({ s, d: dist }) => ({ s, sub: `${s.city ?? ""} · ${dist.toFixed(1)} mi`, main: false })),
+            ...nearbyShops.map(({ s, d: dist }) => ({ s, sub: `${s.city ?? ""} · ${milesLabel(dist)}`, main: false })),
           ]
             .filter(({ s }) => s.lat != null && s.lng != null)
             .map(({ s, sub, main }) => ({ slug: s.slug, name: s.name, lat: s.lat as number, lng: s.lng as number, sub, main }));
@@ -207,7 +208,7 @@ export default async function CityPage({ params }: { params: Promise<{ state: st
                           >
                             {s.name}
                           </Link>
-                          {dist != null ? ` (${Math.round(dist)} mi${s.city ? `, ${s.city}` : ""})` : ""}
+                          {dist != null ? ` (${milesLabel(dist)}${s.city ? `, ${s.city}` : ""})` : ""}
                         </span>
                       ))}
                       .
@@ -271,7 +272,7 @@ export default async function CityPage({ params }: { params: Promise<{ state: st
                   <MapPin className="h-3 w-3 text-ocean-500" />
                   {nc.name}
                   {nc.state !== c.state ? `, ${nc.state}` : ""}
-                  <span className="text-xs text-ocean-500">{Math.round(dist)} mi</span>
+                  <span className="text-xs text-ocean-500">{milesLabel(dist)}</span>
                 </Link>
               ))}
             </div>

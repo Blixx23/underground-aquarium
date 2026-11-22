@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, Waves } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import ZoomPhoto from "@/components/photos/ZoomPhoto";
 
 type TankPeek = { id: string; name: string | null; images: string[] | null };
 
@@ -44,30 +45,36 @@ export default async function ProfileHighlights({
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none]">
             {tanks.map((t) => (
-              <Link
+              <div
                 key={t.id}
-                href={`/tanks/${t.id}`}
                 className="group w-36 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]"
               >
                 <div className="aspect-square overflow-hidden bg-ocean-950">
                   {t.images?.[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={t.images[0]}
-                      alt={t.name ?? "Tank"}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
+                    <ZoomPhoto
+                      images={t.images}
+                      label={`View ${t.name ?? "tank"} photos full screen`}
+                      link={{ href: `/tanks/${t.id}`, label: t.name || "Open tank" }}
+                      className="h-full w-full"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={t.images[0]}
+                        alt={t.name ?? "Tank"}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </ZoomPhoto>
                   ) : (
-                    <span className="flex h-full items-center justify-center">
+                    <Link href={`/tanks/${t.id}`} className="flex h-full items-center justify-center">
                       <Waves className="h-6 w-6 text-ocean-700" />
-                    </span>
+                    </Link>
                   )}
                 </div>
-                <p className="truncate px-2.5 py-2 text-xs font-medium text-white">
+                <Link href={`/tanks/${t.id}`} className="block truncate px-2.5 py-2 text-xs font-medium text-white hover:text-emerald-300">
                   {t.name || "Untitled tank"}
-                </p>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         </section>

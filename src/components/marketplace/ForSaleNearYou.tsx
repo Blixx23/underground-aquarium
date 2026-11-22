@@ -7,6 +7,7 @@ import { formatPrice, listingHref } from "@/lib/marketplace/listings";
 import { milesBetween } from "@/lib/marketplace/match";
 import AlertMeButton, { type AlertPlace } from "@/components/marketplace/AlertMeButton";
 import NoPhoto from "@/components/marketplace/NoPhoto";
+import { cityState } from "@/lib/marketplace/place";
 
 type Ad = {
   slug: string;
@@ -151,7 +152,7 @@ export default function ForSaleNearYou({ slug, name, category }: { slug: string;
                     </span>
                     <span className="flex items-center gap-1 truncate text-xs text-ocean-300">
                       <MapPin className="h-3 w-3 shrink-0" />
-                      {a.city ?? a.area ?? a.state_code}, {a.state_code}
+                      {a.city ? cityState(a.city, a.state_code) : `${a.area ?? a.state_code}, ${a.state_code}`}
                       {a.miles != null ? ` · about ${a.miles} mi` : ""}
                     </span>
                   </span>

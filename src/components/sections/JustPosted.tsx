@@ -12,6 +12,7 @@ import {
 } from "@/lib/marketplace/listings";
 import { POST_AD_PATH } from "@/lib/config";
 import NoPhoto from "@/components/marketplace/NoPhoto";
+import { cityState } from "@/lib/marketplace/place";
 
 export default function JustPosted({
   listings,
@@ -32,10 +33,10 @@ export default function JustPosted({
         <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
           <div>
             <p className="text-xs font-mono tracking-[0.25em] text-ocean-500 uppercase mb-4">
-              Live right now
+              Free local classifieds
             </p>
             <h2 className="font-display text-4xl md:text-5xl text-white">
-              Just posted
+              Latest ads
             </h2>
           </div>
           <Link
@@ -111,7 +112,7 @@ export default function JustPosted({
                     <p className="mt-1.5 flex items-center gap-1 text-[11px] text-ocean-500">
                       <MapPin className="w-3 h-3 shrink-0" />
                       <span className="truncate">
-                        {l.city || region || categoryLabel(l.category)}
+                        {l.city ? cityState(l.city, l.state_code) : region || categoryLabel(l.category)}
                       </span>
                     </p>
                     <p className="text-[11px] text-ocean-600">

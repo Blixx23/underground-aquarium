@@ -64,7 +64,7 @@ export default function SocietyBanner({
             {/* ---- Pitch ---- */}
             <div className="min-w-0 flex-1 text-center lg:text-left">
               <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.3em] text-amber-400/80">
-                Members only · Est. 2026
+                Members only
               </p>
 
               <h2 className="font-display text-[clamp(1.7rem,4.2vw,3.1rem)] leading-[1.12] text-white">

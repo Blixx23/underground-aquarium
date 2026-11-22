@@ -36,7 +36,7 @@ The form is one page, top to bottom:
 | **1 · State** | Yes | Starts on "Choose your state…" |
 | **2 · Closest metro area** | Yes | Locked until you pick a state |
 | **3 · Your town, optional** | No | Up to 60 characters |
-| **Price (USD)** | No | For sale ads only. Leave empty for "Contact for price" |
+| **Price (USD)** | No | For sale ads only. Leave empty for "Make an offer" |
 | **Condition (optional)** | No | Hidden for live fish, inverts, coral and plants, and for Wanted ads |
 | **Photos (0/8)** | No | Up to 8 photos. The first is the cover |
 | **Description** | No | No set length limit. Line breaks are kept |
@@ -58,9 +58,9 @@ More detail in [Listing categories and ad types](/help/listing-categories-and-ad
 The **Price (USD)** box only appears for **For sale** ads.
 
 - Type a number like 25 or 25.99. It shows on your ad as "$25" or "$25.99".
-- Leave it empty and your ad shows "Contact for price".
+- Leave it empty and your ad shows "Make an offer".
 - Enter 0 and your ad shows as **Free**, with the Free tag, exactly like a Free ad.
-- A negative number shows the error "Enter a valid price, or leave it blank for 'contact for price'."
+- A negative number shows the error "Enter a valid price, or leave it blank for 'make an offer'."
 
 Prices are in US dollars. There's no separate "or best offer" option, so say "OBO" or "firm" in the description if it matters.
 
@@ -132,7 +132,7 @@ You haven't chosen from the **Category** list. It starts on "Select a category�
 **"Choose the area you're posting in."**
 You need both a **State** and a **Closest metro area**. Picking only a state isn't enough.
 
-**"Enter a valid price, or leave it blank for 'contact for price'."**
+**"Enter a valid price, or leave it blank for 'make an offer'."**
 The price is negative or isn't a number. Fix it or clear the box.
 
 **"You need to be signed in to post."**

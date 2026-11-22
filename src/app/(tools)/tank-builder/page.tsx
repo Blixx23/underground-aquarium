@@ -48,7 +48,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Is the Tank Builder free?",
-    a: "Yes. It works without an account and remembers your build on your device. Sign in to save up to four tanks, add photos, show them on your profile, and log water tests over time.",
+    a: "Yes. It works without an account and remembers your build on your device. Sign in to save up to 20 tanks, add photos, show them on your profile, and log water tests over time.",
   },
 ];
 

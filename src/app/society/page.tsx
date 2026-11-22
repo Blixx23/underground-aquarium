@@ -46,12 +46,12 @@ const PERKS = [
   {
     Icon: Trophy,
     title: "Breeder Award Program",
-    body: "Spawn it, raise it, submit it. Judged entries, real points, and titles that mean something because somebody checked.",
+    body: "Open a spawn log before the fish breed, then photograph five stages as they happen, from pairing to 60-day fry. Other members review it blind. Approved logs earn points, titles and a certificate.",
   },
   {
     Icon: Sprout,
     title: "The Species Registry",
-    body: "The first member to log an approved spawn of a species holds that record permanently. Right now every one of them is unclaimed.",
+    body: "The first member to log an approved spawn of a species holds that record permanently. Every record is still open, so the first spawn you log could be one.",
   },
   {
     Icon: Users,
@@ -145,7 +145,7 @@ export default async function SocietyPage({
       key: "lifetime",
       label: "Lifetime",
       price: money(lifetimeDues),
-      note: "once · never renews",
+      note: "once · same benefits, never renews",
       featured: true,
     },
   ].filter(Boolean) as {

@@ -43,7 +43,7 @@ Yes.
 1. Open [My listings](/my/listings).
 2. Tap **Repost** on the sold ad.
 
-It goes live again right away with a fresh 45 days and moves to the top of Newest first. The link, photos, views and conversations are unchanged. The same **Repost** button works if the sale falls through days later.
+It goes live again right away and moves to the top of Newest first. The link, photos, views and conversations are unchanged. The same **Repost** button works if the sale falls through days later.
 
 ## How do I delete a listing?
 1. Open [My listings](/my/listings).

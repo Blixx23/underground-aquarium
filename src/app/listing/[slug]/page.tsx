@@ -45,6 +45,9 @@ import SocietySeal from "@/components/society/SocietySeal";
 import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
 import { Fragment } from "react";
 import { MESSAGING_ENABLED, MY_LISTINGS_ENABLED } from "@/lib/config";
+import { tidyCity, cityState } from "@/lib/marketplace/place";
+import GoogleButton from "@/components/auth/GoogleButton";
+import { POST_AD_PATH } from "@/lib/config";
 
 type ListingRow = {
   id: string;
@@ -217,14 +220,14 @@ export default async function ListingPage({
   const regionUrl = `/marketplace/${listing.state_code.toLowerCase()}/${listing.region_slug}`;
   // "green bay · Green Bay" reads as a typo, so skip the city when it matches the area.
   const areaName = region?.name ?? listing.region_slug;
-  const cityText = listing.city?.trim() ?? "";
+  const cityText = tidyCity(listing.city);
   const locationLine =
     cityText && cityText.toLowerCase() !== areaName.toLowerCase() ? `${cityText} · ${areaName}` : areaName;
   const sellerName = seller?.full_name?.trim() || seller?.username || "A hobbyist";
   // The species this ad is about, for its care-guide link. A failed lookup just hides the link.
   const careGuide = await speciesForAd(listing).catch(() => null);
   const shareLabel = listing.is_wanted ? "Wanted" : listing.is_free ? "Free" : formatPrice(listing.price_cents);
-  const sharePlace = `${listing.city ? `${listing.city}, ` : region?.name ? `${region.name}, ` : ""}${listing.state_code}`;
+  const sharePlace = `${cityText ? `${cityText}, ` : region?.name ? `${region.name}, ` : ""}${listing.state_code}`;
 
   // Same category nearby first, then anything nearby, then same category in the state.
   const nearby = (nearbyData ?? []) as unknown as Listing[];
@@ -479,7 +482,7 @@ export default async function ListingPage({
                       />
                     ) : (
                       // Signed-out visitors (and bots) never get the email or phone in the page.
-                      <p className="mt-4 text-sm text-ocean-400">
+                      <div className="mt-4 text-sm text-ocean-400">
                         <Link
                           href={`/login?next=${encodeURIComponent(`/listing/${listing.slug}`)}`}
                           className="font-medium text-emerald-300 hover:text-emerald-200"
@@ -487,7 +490,11 @@ export default async function ListingPage({
                           Sign in
                         </Link>{" "}
                         to see this seller&apos;s {emailShown && listing.contact_phone ? "email and phone" : emailShown ? "email" : "phone number"}.
-                      </p>
+                        {/* One tap instead of a trip to the sign-in page. */}
+                        <div className="mt-3 max-w-xs">
+                          <GoogleButton next={`/listing/${listing.slug}`} />
+                        </div>
+                      </div>
                     ))}
 
                   {!canBeContacted && (
@@ -511,6 +518,16 @@ export default async function ListingPage({
             <div className="mb-6 empty:hidden">
               <FeaturedShopCard slot={0} variant="forum" lat={region?.lat ?? null} lng={region?.lng ?? null} />
             </div>
+
+            {user && !isOwner && (
+              <p className="mb-4 text-sm text-ocean-300">
+                Got extra fry, trimmings or gear?{" "}
+                <Link href={POST_AD_PATH} className="font-medium text-emerald-300 hover:text-emerald-200">
+                  Post a free ad
+                </Link>{" "}
+                in a minute.
+              </p>
+            )}
 
             <p className="text-xs text-ocean-600 leading-relaxed">
               Underground Aquarium doesn&apos;t handle payment or shipping for
@@ -579,7 +596,7 @@ export default async function ListingPage({
                     <p className="text-sm text-white leading-snug line-clamp-2">{r.title}</p>
                     <p className="mt-1 text-xs text-ocean-400">
                       {r.is_wanted ? "Wanted" : formatPrice(r.price_cents)}
-                      {r.city ? ` · ${r.city}` : ""}
+                      {r.city ? ` · ${cityState(r.city, r.state_code)}` : ""}
                     </p>
                   </div>
                 </Link>

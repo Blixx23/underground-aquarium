@@ -36,6 +36,7 @@ import ShopPhotoGrid, { type GridPhoto } from "@/components/stores/ShopPhotoGrid
 import { formatPhone } from "@/lib/phone";
 import { storeIsStub } from "@/lib/stores/thin";
 import StoreMap from "@/components/stores/StoreMap";
+import { milesLabel } from "@/lib/stores/miles";
 
 /** "Joe's Fish" -> "Joe's Fish's", but "Seven Seas" -> "Seven Seas'". */
 function possessive(name: string) {
@@ -101,9 +102,6 @@ function specialtyPhrase(tags: string[] | null): string | null {
   return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
 }
 
-function milesLabel(d: number): string {
-  return d < 10 ? `${d.toFixed(1)} mi` : `${Math.round(d)} mi`;
-}
 
 /** The day a photo was added, in shop time, so one day's uploads group together. */
 const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" });
@@ -636,7 +634,7 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
                 name: n.name,
                 lat: n.lat as number,
                 lng: n.lng as number,
-                sub: `${[n.city, n.state].filter(Boolean).join(", ")} · ${d.toFixed(1)} mi`,
+                sub: `${[n.city, n.state].filter(Boolean).join(", ")} · ${milesLabel(d)}`,
               })),
           ]}
           height={260}
@@ -893,6 +891,28 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
               </aside>
 
               <div className="min-w-0">
+                {/* An unclaimed shop has no posts, so an empty timeline would fill the
+                    page. Lead with what visitors can use instead: reviews, and the box
+                    to leave one. The claim offer stays, one line, on top. */}
+                {!claimed && timeline.length === 0 ? (
+                  <div className="space-y-4">
+                    <p className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-4 py-3 text-sm text-ocean-300">
+                      {store.name} hasn&apos;t claimed this page yet. If it&apos;s your shop,{" "}
+                      <Link href={`/stores/${store.slug}#claim`} className="font-medium text-emerald-300 hover:text-emerald-200">
+                        claim it free
+                      </Link>{" "}
+                      and post your restocks, sales and photos here.
+                    </p>
+                    <StoreReviews
+                      storeId={store.id}
+                      initialReviews={initialReviews}
+                      currentUserId={user?.id ?? null}
+                      currentUserName={currentUserName}
+                      isOwner={isOwner}
+                      claimHref={null}
+                    />
+                  </div>
+                ) : (
                 <ShopTimeline
                   storeId={store.id}
                   storeName={store.name}
@@ -906,6 +926,7 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
                       : `${store.name} hasn't claimed this page yet. If it's your shop, claim it free and post your restocks, sales and photos here.`
                   }
                 />
+                )}
               </div>
             </div>
 

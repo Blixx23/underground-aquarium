@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Flame, MessageSquare, MessageSquareDashed, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
+import { isFounder } from "@/lib/founder";
 
 type Row = {
   id: string;
@@ -60,20 +61,15 @@ export default async function HotForums() {
 
   const catById = new Map((cats ?? []).map((c) => [c.id as string, c]));
   const now = Date.now();
-  const threads = ((rows ?? []) as Row[])
+  const ranked = ((rows ?? []) as Row[])
     .filter((t) => catById.has(t.category_id))
-    .sort((a, b) => heat(b, now) - heat(a, now))
-    .slice(0, 8);
+    .sort((a, b) => heat(b, now) - heat(a, now));
 
-  if (threads.length === 0) return null;
+  if (ranked.length === 0) return null;
 
-  // Only call it "Hot" when people are actually talking. While most threads
-  // are still waiting for a first reply, it's honest to call them new.
-  const busy = threads.filter((t) => (t.reply_count ?? 0) > 0).length;
-  const heading = busy >= 3 ? "Hot in the forums" : "New in the forums";
 
-  const authorIds = [...new Set(threads.map((t) => t.author_id).filter((x): x is string => Boolean(x)))];
-  const people = new Map<string, { name: string; avatar: string | null }>();
+  const authorIds = [...new Set(ranked.map((t) => t.author_id).filter((x): x is string => Boolean(x)))];
+  const people = new Map<string, { name: string; avatar: string | null; founder: boolean }>();
   const society = new Set<string>();
   if (authorIds.length) {
     const [{ data: profs }, { data: members }] = await Promise.all([
@@ -90,9 +86,20 @@ export default async function HotForums() {
       people.set(p.id as string, {
         name: (p.username as string) || (p.full_name as string) || "member",
         avatar: (p.avatar_url as string | null) ?? null,
+        founder: isFounder(p.username as string | null),
       });
     }
   }
+
+  // Members' threads first, so the strip looks like the community talking;
+  // the founder's guide threads fill in only when there aren't 8 of theirs.
+  const byFounder = (t: Row) => Boolean(t.author_id && people.get(t.author_id)?.founder);
+  const threads = [...ranked.filter((t) => !byFounder(t)), ...ranked.filter(byFounder)].slice(0, 8);
+
+  // Only call it "Hot" when people are actually talking. While most threads
+  // are still waiting for a first reply, it's honest to call them new.
+  const busy = threads.filter((t) => (t.reply_count ?? 0) > 0).length;
+  const heading = busy >= 3 ? "Hot in the forums" : "New in the forums";
 
   const card = "relative h-44 w-[7.25rem] shrink-0 snap-start overflow-hidden rounded-2xl border sm:h-48 sm:w-32";
 

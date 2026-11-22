@@ -79,6 +79,18 @@ export const POST_AD_PATH = "/post";
 // Mirrors the 45-day default in the listings table.
 export const LISTING_LIFETIME_DAYS = 45;
 
+// Nov 2026: ads don't expire for now; they stay up until the seller marks
+// them sold or deletes them. Expiry is pushed out to NO_EXPIRY_DATE instead of
+// removed, so every "still live?" check across the site keeps working.
+// Turning this back on also needs the listings.expires_at default reset in SQL.
+export const LISTINGS_EXPIRE = false;
+export const NO_EXPIRY_DATE = "2099-12-31T00:00:00.000Z";
+
+/** The expiry date to save when an ad is published, reposted or bumped. */
+export function listingExpiresAt(): string {
+  return LISTINGS_EXPIRE ? new Date(Date.now() + LISTING_LIFETIME_DAYS * 86400000).toISOString() : NO_EXPIRY_DATE;
+}
+
 // ============================================================
 // LEGACY PAID SETTINGS
 //

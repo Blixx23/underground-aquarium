@@ -3,6 +3,7 @@ import { Fish, Plus, ArrowRight } from "lucide-react";
 import { formatPrice, listingHref, type Listing } from "@/lib/marketplace/listings";
 import { POST_AD_PATH } from "@/lib/config";
 import NoPhoto from "@/components/marketplace/NoPhoto";
+import { cityState } from "@/lib/marketplace/place";
 
 /** Live ads for what the reader is looking at, or an invite to list one. */
 export default function ListingsStrip({
@@ -49,7 +50,7 @@ export default function ListingsStrip({
               <div className="p-2.5">
                 <p className="line-clamp-1 text-sm font-medium text-white">{l.title}</p>
                 <p className="text-xs text-emerald-300">{l.is_free ? "Free" : formatPrice(l.price_cents)}</p>
-                {l.city && <p className="line-clamp-1 text-[11px] text-ocean-500">{l.city}</p>}
+                {l.city && <p className="line-clamp-1 text-[11px] text-ocean-500">{cityState(l.city, l.state_code)}</p>}
               </div>
             </Link>
           ))}

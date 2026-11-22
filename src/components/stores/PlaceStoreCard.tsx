@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MapPin, Phone, ChevronRight } from "lucide-react";
 import Stars from "@/components/stores/Stars";
 import type { PlaceStore } from "@/lib/stores/places";
+import { milesLabel } from "@/lib/stores/miles";
 
 /** One shop on a city or state page: name, stars, address, phone. */
 export default function PlaceStoreCard({ s, distance }: { s: PlaceStore; distance?: number }) {
@@ -35,7 +36,7 @@ export default function PlaceStoreCard({ s, distance }: { s: PlaceStore; distanc
         )}
       </span>
       <span className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-        {distance != null && <span className="text-xs text-ocean-400">{distance.toFixed(1)} mi</span>}
+        {distance != null && <span className="text-xs text-ocean-400">{milesLabel(distance)}</span>}
         <ChevronRight className="h-4 w-4 text-ocean-500 transition-transform group-hover:translate-x-0.5" />
       </span>
     </Link>

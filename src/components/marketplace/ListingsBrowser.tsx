@@ -21,6 +21,7 @@ import {
   type Listing,
 } from "@/lib/marketplace/listings";
 import NoPhoto from "@/components/marketplace/NoPhoto";
+import { cityState } from "@/lib/marketplace/place";
 
 type SortKey = "newest" | "price_asc" | "price_desc";
 
@@ -88,7 +89,7 @@ export default function ListingsBrowser({
       return true;
     });
 
-    // "Contact for price" sorts last either way, since it isn't a number.
+    // "Make an offer" sorts last either way, since it isn't a number.
     const priceOf = (l: Listing) =>
       l.price_cents === null ? Number.POSITIVE_INFINITY : l.price_cents;
 
@@ -279,7 +280,7 @@ export default function ListingsBrowser({
                       {listing.city && (
                         <>
                           <MapPin className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">{listing.city}</span>
+                          <span className="truncate">{cityState(listing.city, listing.state_code)}</span>
                         </>
                       )}
                       {condition && (

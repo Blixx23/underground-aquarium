@@ -53,7 +53,8 @@ import { RangeChart, ScoreDial } from "@/components/tank-builder/Insights";
 import WaterTestPanel, { EMPTY_WATER, type WaterInputs } from "@/components/water/WaterTestPanel";
 import { tempF } from "@/lib/units";
 
-const FREE_TANK_LIMIT = 4;
+// Every saved tank is a page worth showing off; most keepers run more than four.
+const FREE_TANK_LIMIT = 20;
 const MAX_PHOTOS = MAX_TANK_PHOTOS;
 const DRAFT_KEY = "ua.tankBuilder.draft.v1";
 const COMPACT_KEY = "ua.tankBuilder.compact.v1";
@@ -738,6 +739,7 @@ export default function TankBuilder({
             type="button"
             onClick={toggleCompact}
             aria-pressed={compact}
+            title={compact ? "Show all the details again" : "Hide the extra details for a shorter page"}
             className="hidden items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-medium text-ocean-200 transition-colors hover:bg-white/10 hover:text-white xl:inline-flex"
           >
             {compact ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
@@ -748,6 +750,7 @@ export default function TankBuilder({
             onClick={shareBuild}
             disabled={!hasStock && !gallons}
             aria-label="Share build"
+            title="Copy a link to this build to send to someone"
             className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-40 sm:px-3.5"
           >
             <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share build</span>
@@ -756,6 +759,7 @@ export default function TankBuilder({
             type="button"
             onClick={newBuild}
             aria-label="New build"
+            title="Clear this and start a new build"
             className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-ocean-200 transition-colors hover:bg-white/10 hover:text-white sm:px-3.5"
           >
             <RotateCcw className="h-4 w-4" /> <span className="hidden sm:inline">New</span>
@@ -1408,15 +1412,25 @@ export default function TankBuilder({
             </section>
           ) : (
             <section className={`${card} flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5`}>
+              {/* Once there's a real build, say so: this is the moment people want to keep it. */}
               <p className="text-sm text-ocean-200">
-                Your build is kept on this device. Sign in to save it, add photos, share it on your profile and track water
-                tests.
+                {fishCount >= 3 ? (
+                  <>
+                    <span className="font-semibold text-white">Nice build. Keep it?</span> Save it free, add photos, show it on
+                    your profile and track water tests. Right now it only lives on this device.
+                  </>
+                ) : (
+                  <>
+                    Your build is kept on this device. Sign in to save it, add photos, share it on your profile and track
+                    water tests.
+                  </>
+                )}
               </p>
               <Link
                 href="/login?next=/tank-builder"
                 className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-ocean-950 hover:bg-emerald-400"
               >
-                Sign in to save
+                {fishCount >= 3 ? "Save this tank, free" : "Sign in to save"}
               </Link>
             </section>
           )}

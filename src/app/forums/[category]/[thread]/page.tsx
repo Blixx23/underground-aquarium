@@ -15,6 +15,9 @@ import { keywords, relatedThreads } from "@/lib/discover";
 import ScrollToComment from "@/components/forum/ScrollToComment";
 import { plainText, threadIndexable } from "@/lib/forum/indexable";
 import { ldJson } from "@/lib/jsonLd";
+import ZoomPhoto from "@/components/photos/ZoomPhoto";
+import FounderTag from "@/components/FounderTag";
+import { isFounder } from "@/lib/founder";
 
 export const revalidate = 60;
 
@@ -212,6 +215,7 @@ export default async function ThreadPage({ params }: Params) {
     return (
       <>
         {name}
+        {isFounder(n?.username) && <FounderTag />}
         {isSoc && (
           <span title="Underground Aquarium Society member" className="ml-1 inline-flex translate-y-[2px]">
             <SocietySeal size={13} className="h-[13px] w-[13px]" />
@@ -428,14 +432,15 @@ export default async function ThreadPage({ params }: Params) {
                 }`}
               >
                 {threadImages.map((url, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={url}
-                    src={url}
-                    alt={threadImages.length > 1 ? `${t.title} (photo ${i + 1})` : (t.title as string)}
-                    loading={i === 0 ? undefined : "lazy"}
-                    className="w-full rounded-xl border border-ocean-800/60 object-cover max-h-[28rem]"
-                  />
+                  <ZoomPhoto key={url} images={threadImages} start={i} className="w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={threadImages.length > 1 ? `${t.title} (photo ${i + 1})` : (t.title as string)}
+                      loading={i === 0 ? undefined : "lazy"}
+                      className="w-full rounded-xl border border-ocean-800/60 object-cover max-h-[28rem]"
+                    />
+                  </ZoomPhoto>
                 ))}
               </div>
             )}

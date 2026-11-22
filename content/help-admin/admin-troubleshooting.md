@@ -72,7 +72,7 @@ These live under /api/cron and are run by Vercel Cron. Each one refuses to run u
 | campaign-planner | Once a day: enrolls new shops in campaigns, drops those who claimed or opted out, and queues the day's campaign mail. |
 | shop-alerts | Every 10 minutes: builds claimed shops' weekly reports on Monday mornings (8am Pacific) and emails shop alerts. |
 | dues-reminders | Emails club members when their membership expires in 10 days, in 3 days, expires today, and when it has lapsed. Society reminders link to the renewal box. |
-| expire-listings | Flips classified ads past their expiry date from active to expired. |
+| expire-listings | Flips classified ads past their expiry date from active to expired. Ads don't expire for now (every live ad's expiry is set to 2099, see `LISTINGS_EXPIRE` in `src/lib/config.ts`), so it finds nothing. |
 | bubble-milestones | Once a day: grants the yearly anniversary bubble awards. |
 | purge-accounts | Daily: permanently removes accounts whose 30 day deletion window has passed. |
 
