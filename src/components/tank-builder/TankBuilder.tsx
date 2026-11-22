@@ -12,7 +12,6 @@ import {
   Info,
   Fish,
   Save,
-  Trash2,
   Globe,
   ImagePlus,
   Droplets,
@@ -48,70 +47,17 @@ import { buildPath, parseBuild } from "@/lib/tankBuilder/share";
 import { nearestSize } from "@/lib/tankBuilder/sizes";
 import { MAX_TANK_PHOTOS } from "@/lib/tanks/showcase";
 import { TANK_PHOTO_MAX_MB, uploadTankPhoto } from "@/components/tanks/tankPhotoUpload";
-import { checkWater, waterPlans, type WaterReading, type WaterLevel } from "@/lib/waterCheck/engine";
-import WaterPlanCard from "@/components/water/WaterPlanCard";
 import TankVisual, { speciesColor } from "@/components/tank-builder/TankVisual";
 import SuggestSpecies from "@/app/(tools)/species/SuggestSpecies";
-import { RangeChart, ScoreDial, WaterTrends } from "@/components/tank-builder/Insights";
+import { RangeChart, ScoreDial } from "@/components/tank-builder/Insights";
+import WaterTestPanel, { EMPTY_WATER, type WaterInputs } from "@/components/water/WaterTestPanel";
+import { tempF } from "@/lib/units";
 
-import { fToC1, readingF, tempF } from "@/lib/units";
 const FREE_TANK_LIMIT = 4;
 const MAX_PHOTOS = MAX_TANK_PHOTOS;
 const DRAFT_KEY = "ua.tankBuilder.draft.v1";
 const COMPACT_KEY = "ua.tankBuilder.compact.v1";
 const QUICK_SIZES = [5, 10, 20, 29, 40, 55, 75, 125];
-
-// Water reading form: which fields we show and how they're labelled.
-type WaterFieldKey = "temp_f" | "ph" | "ammonia_ppm" | "nitrite_ppm" | "nitrate_ppm" | "gh" | "kh";
-
-const EMPTY_WATER: Record<WaterFieldKey, string> = {
-  temp_f: "",
-  ph: "",
-  ammonia_ppm: "",
-  nitrite_ppm: "",
-  nitrate_ppm: "",
-  gh: "",
-  kh: "",
-};
-
-const WATER_FIELDS: { key: WaterFieldKey; label: string; unit: string; placeholder: string; step: string }[] = [
-  { key: "temp_f", label: "Temperature", unit: "°F", placeholder: "e.g. 78", step: "1" },
-  { key: "ph", label: "pH", unit: "", placeholder: "e.g. 7.2", step: "0.1" },
-  { key: "ammonia_ppm", label: "Ammonia", unit: "ppm", placeholder: "e.g. 0", step: "0.25" },
-  { key: "nitrite_ppm", label: "Nitrite", unit: "ppm", placeholder: "e.g. 0", step: "0.25" },
-  { key: "nitrate_ppm", label: "Nitrate", unit: "ppm", placeholder: "e.g. 10", step: "5" },
-  { key: "gh", label: "GH", unit: "dGH", placeholder: "e.g. 8", step: "1" },
-  { key: "kh", label: "KH", unit: "dKH", placeholder: "e.g. 5", step: "1" },
-];
-
-// Format a saved reading's timestamp, e.g. "Jun 16, 2026 · 3:40 PM".
-function fmtReadingDate(iso: string): string {
-  const d = new Date(iso);
-  const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return `${date} · ${time}`;
-}
-
-// One-line summary of whatever values a saved reading contains.
-function readingSummary(r: {
-  temp_f: number | null;
-  ph: number | null;
-  ammonia_ppm: number | null;
-  nitrite_ppm: number | null;
-  nitrate_ppm: number | null;
-  gh: number | null;
-  kh: number | null;
-}): string {
-  const parts: string[] = [];
-  if (r.temp_f != null) parts.push(`Temp ${readingF(r.temp_f)}`);
-  if (r.ph != null) parts.push(`pH ${r.ph}`);
-  if (r.ammonia_ppm != null) parts.push(`Ammonia ${r.ammonia_ppm} ppm`);
-  if (r.nitrite_ppm != null) parts.push(`Nitrite ${r.nitrite_ppm} ppm`);
-  if (r.nitrate_ppm != null) parts.push(`Nitrate ${r.nitrate_ppm} ppm`);
-  if (r.gh != null) parts.push(`GH ${r.gh} dGH`);
-  if (r.kh != null) parts.push(`KH ${r.kh} dKH`);
-  return parts.length ? parts.join(" · ") : "No values recorded";
-}
 
 type SavedTank = {
   id: string;
@@ -121,19 +67,6 @@ type SavedTank = {
   updated_at: string;
   is_public: boolean;
   images: string[];
-};
-
-type WaterLog = {
-  id: string;
-  measured_at: string;
-  temp_f: number | null;
-  ph: number | null;
-  ammonia_ppm: number | null;
-  nitrite_ppm: number | null;
-  nitrate_ppm: number | null;
-  gh: number | null;
-  kh: number | null;
-  note: string | null;
 };
 
 const TANK_COLUMNS = "id,name,gallons,items,updated_at,is_public,images";
@@ -186,11 +119,9 @@ export default function TankBuilder({
 
   // Which analysis is showing: fish compatibility or a water test.
   const [view, setView] = useState<"compatibility" | "water">("compatibility");
-  const [water, setWater] = useState<Record<WaterFieldKey, string>>(EMPTY_WATER);
-  const [note, setNote] = useState("");
-  const [readings, setReadings] = useState<WaterLog[]>([]);
-  const [readingMsg, setReadingMsg] = useState<string | null>(null);
-  const [readingBusy, setReadingBusy] = useState(false);
+  // The water test's typed numbers live here so they survive switching tabs.
+  const [water, setWater] = useState<WaterInputs>(EMPTY_WATER);
+  const [fishless, setFishless] = useState(false);
 
   // Phones show one panel at a time (build or results) behind a sticky tab
   // bar, so the tools and the score are each one tap away instead of a long
@@ -201,7 +132,6 @@ export default function TankBuilder({
   const [openIssue, setOpenIssue] = useState<number | null>(null);
   const [showAllIssues, setShowAllIssues] = useState(false);
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
-  const [showAllReadings, setShowAllReadings] = useState(false);
   const panelTop = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -289,19 +219,6 @@ export default function TankBuilder({
     [supabase]
   );
 
-  const refreshReadings = useCallback(
-    async (tankId: string) => {
-      const { data, error } = await supabase
-        .from("water_logs")
-        .select("id,measured_at,temp_f,ph,ammonia_ppm,nitrite_ppm,nitrate_ppm,gh,kh,note")
-        .eq("tank_id", tankId)
-        .order("measured_at", { ascending: false })
-        .limit(20);
-      setReadings(error ? [] : ((data as WaterLog[]) ?? []));
-    },
-    [supabase]
-  );
-
   // Who's signed in. getUser() alone can come back empty when another part of
   // the page (the navbar) is refreshing the session at the same moment, which
   // showed signed-in people a "Sign in" prompt. So fall back to the stored
@@ -332,12 +249,6 @@ export default function TankBuilder({
       sub.subscription.unsubscribe();
     };
   }, [supabase, refreshTanks]);
-
-  useEffect(() => {
-    if (currentTankId) refreshReadings(currentTankId);
-    else setReadings([]);
-    setReadingMsg(null);
-  }, [currentTankId, refreshReadings]);
 
   const snapshotOf = useCallback(
     (g: string, u: string, items: { slug: string; qty: number }[], name: string, pub: boolean, imgs: string[]) =>
@@ -506,28 +417,6 @@ export default function TankBuilder({
   const result = useMemo(() => buildTank(gallons, stock), [gallons, stock]);
   const suggestions = useMemo(() => suggestTankmates(gallons, stock, species, 6), [gallons, stock, species]);
 
-  const reading: WaterReading = useMemo(() => {
-    const num = (s: string): number | null => {
-      const t = s.trim();
-      if (t === "") return null;
-      const n = parseFloat(t);
-      return Number.isNaN(n) ? null : n;
-    };
-    return {
-      temp_f: num(water.temp_f),
-      ph: num(water.ph),
-      ammonia_ppm: num(water.ammonia_ppm),
-      nitrite_ppm: num(water.nitrite_ppm),
-      nitrate_ppm: num(water.nitrate_ppm),
-      gh: num(water.gh),
-      kh: num(water.kh),
-    };
-  }, [water]);
-
-  const waterResult = useMemo(() => checkWater(reading, stock), [reading, stock]);
-  const plans = useMemo(() => waterPlans(reading, stock), [reading, stock]);
-  const covered = new Set(plans.flatMap((p) => p.covers));
-
   function addSpecies(s: Species, qty?: number) {
     setStock((prev) =>
       prev.some((p) => p.species.slug === s.slug)
@@ -544,9 +433,6 @@ export default function TankBuilder({
   }
   function remove(slug: string) {
     setStock((prev) => prev.filter((it) => it.species.slug !== slug));
-  }
-  function setWaterField(key: WaterFieldKey, value: string) {
-    setWater((prev) => ({ ...prev, [key]: value }));
   }
   // The one-tap buttons on a problem ("Make it 6", "Remove Oscar", "Try 55 gallons").
   function applyFix(fix: IssueFix) {
@@ -729,56 +615,6 @@ export default function TankBuilder({
     setBusy(false);
   }
 
-  async function saveReading(tankId?: string) {
-    const tid = tankId ?? currentTankId;
-    if (!user || !tid || readingBusy) return;
-    if (waterResult.status === "empty") {
-      setReadingMsg("Enter at least one value first.");
-      return;
-    }
-    setReadingBusy(true);
-    setReadingMsg(null);
-    const { error } = await supabase.from("water_logs").insert({
-      tank_id: tid,
-      user_id: user.id,
-      measured_at: new Date().toISOString(),
-      temp_f: reading.temp_f,
-      ph: reading.ph,
-      ammonia_ppm: reading.ammonia_ppm,
-      nitrite_ppm: reading.nitrite_ppm,
-      nitrate_ppm: reading.nitrate_ppm,
-      gh: reading.gh,
-      kh: reading.kh,
-      note: note.trim() || null,
-    });
-    if (error) setReadingMsg("Couldn't log the reading. Please try again.");
-    else {
-      setReadingMsg("Reading logged.");
-      ping("first_water_test");
-      ping("water_log_streak_week");
-      setNote("");
-      await refreshReadings(tid);
-    }
-    setReadingBusy(false);
-  }
-
-  // Save the build and log the current reading to it in one step, so logging a
-  // water test never dead-ends when no tank has been saved yet.
-  async function saveTankAndLog() {
-    const id = await saveTank();
-    if (id) await saveReading(id);
-  }
-
-  async function deleteReading(id: string) {
-    if (readingBusy) return;
-    if (!window.confirm("Delete this reading?")) return;
-    setReadingBusy(true);
-    const { error } = await supabase.from("water_logs").delete().eq("id", id);
-    if (error) setReadingMsg("Couldn't delete that reading.");
-    else if (currentTankId) await refreshReadings(currentTankId);
-    setReadingBusy(false);
-  }
-
   function newBuild() {
     if (dirty && !window.confirm("You have unsaved changes. Start a new build anyway?")) return;
     setCurrentTankId(null);
@@ -793,7 +629,7 @@ export default function TankBuilder({
     setPhotoMsg(null);
     setShowUpgrade(false);
     setWater(EMPTY_WATER);
-    setNote("");
+    setFishless(false);
     writeDraft(null);
   }
 
@@ -827,22 +663,6 @@ export default function TankBuilder({
     if (level === "conflict") return { box: "border-red-500/30 bg-red-500/[0.07]", icon: "text-red-400", I: AlertTriangle, tag: "Conflict" };
     if (level === "caution") return { box: "border-amber-500/30 bg-amber-500/[0.07]", icon: "text-amber-400", I: AlertTriangle, tag: "Check" };
     return { box: "border-white/10 bg-white/[0.04]", icon: "text-sky-300", I: Info, tag: "Tip" };
-  }
-
-  function findingStyle(level: WaterLevel) {
-    if (level === "danger") return { box: "border-red-500/30 bg-red-500/5", icon: "text-red-400", I: AlertTriangle };
-    if (level === "warning") return { box: "border-amber-500/30 bg-amber-500/5", icon: "text-amber-400", I: AlertTriangle };
-    if (level === "ok") return { box: "border-emerald-500/30 bg-emerald-500/5", icon: "text-emerald-400", I: CheckCircle2 };
-    return { box: "border-white/10 bg-white/5", icon: "text-ocean-400", I: Info };
-  }
-
-  let waterBanner: { text: string; className: string; Icon: typeof CheckCircle2 } | null = null;
-  if (waterResult.status === "danger") {
-    waterBanner = { text: "Something needs attention now", className: "bg-red-500/10 border-red-500/30 text-red-300", Icon: AlertTriangle };
-  } else if (waterResult.status === "warning") {
-    waterBanner = { text: "A few things to keep an eye on", className: "bg-amber-500/10 border-amber-500/30 text-amber-300", Icon: Info };
-  } else if (waterResult.status === "ok") {
-    waterBanner = { text: "Your water looks healthy", className: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300", Icon: CheckCircle2 };
   }
 
   const card = "rounded-2xl border border-white/10 bg-white/[0.03]";
@@ -1834,184 +1654,22 @@ export default function TankBuilder({
               </div>
             )
           ) : (
-            <div className="space-y-5">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <h3 className="mb-1 text-sm font-semibold text-white">Enter your test results</h3>
-                <p className="mb-4 text-xs leading-relaxed text-ocean-400">
-                  Fill in whatever your kit tests. You don&apos;t need every box, and the read-out updates as you type.
-                </p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {WATER_FIELDS.map((f) => (
-                    <div key={f.key}>
-                      <label htmlFor={`tb-w-${f.key}`} className="mb-1 flex text-[11px] uppercase tracking-wide text-ocean-400">
-                        {f.label}
-                        {f.key === "temp_f" && water.temp_f.trim() !== "" && Number.isFinite(parseFloat(water.temp_f)) && (
-                          <span className="ml-auto normal-case tracking-normal text-ocean-300">
-                            = {fToC1(parseFloat(water.temp_f))}°C
-                          </span>
-                        )}
-                      </label>
-                      <div className="relative">
-                        <input
-                          id={`tb-w-${f.key}`}
-                          type="number"
-                          inputMode="decimal"
-                          step={f.step}
-                          value={water[f.key]}
-                          onChange={(e) => setWaterField(f.key, e.target.value)}
-                          placeholder={f.placeholder}
-                          className={
-                            "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white placeholder:text-ocean-500 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none sm:text-sm " +
-                            (f.unit ? "pr-12" : "")
-                          }
-                        />
-                        {f.unit && (
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ocean-500">
-                            {f.unit}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {!hasStock && (
-                  <p className="mt-4 text-xs leading-relaxed text-ocean-500">
-                    Add fish and the pH and temperature checks will also tell you how well your water suits them.
-                  </p>
-                )}
-              </div>
-
-              {waterBanner && (
-                <div className={"flex items-center gap-2 rounded-xl border px-4 py-3 " + waterBanner.className}>
-                  <waterBanner.Icon className="h-5 w-5 shrink-0" />
-                  <span className="font-medium">{waterBanner.text}</span>
-                </div>
-              )}
-
-              {waterResult.status === "empty" ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-                  <Droplets className="mx-auto mb-3 h-8 w-8 text-ocean-600" />
-                  <p className="mb-1 font-medium text-white">Enter a reading to begin</p>
-                  <p className="text-sm text-ocean-400">
-                    Fill in at least one value and you&apos;ll get a plain-English read on what&apos;s happening and how to
-                    fix it.
-                  </p>
-                </div>
-              ) : waterResult.findings.length > 0 ? (
-                <div className="space-y-2">
-                  {plans.map((p) => (
-                    <WaterPlanCard key={p.title} plan={p} />
-                  ))}
-                  {waterResult.findings.map((f, i) => {
-                    const st = findingStyle(f.level);
-                    return (
-                      <div key={i} className={"flex gap-3 rounded-xl border p-4 " + st.box}>
-                        <st.I className={"mt-0.5 h-5 w-5 shrink-0 " + st.icon} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-sm font-medium text-white">{f.title}</p>
-                            <span className="shrink-0 whitespace-nowrap text-xs text-ocean-400">{f.value}</span>
-                          </div>
-                          <p className="mt-1 text-sm leading-relaxed text-ocean-200">{f.whatsHappening}</p>
-                          {covered.has(f.parameter) && f.level !== "ok" ? (
-                            <p className="mt-2 text-xs leading-relaxed text-ocean-400">Covered in the plan above.</p>
-                          ) : (
-                            <p className="mt-2 text-xs leading-relaxed text-ocean-400">
-                              <span className="font-medium text-ocean-200">How to fix: </span>
-                              {f.howToFix}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
-                  <p className="text-sm text-ocean-100">Nothing to flag from what you&apos;ve entered.</p>
-                </div>
-              )}
-
-              {!user ? (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-ocean-300">
-                  <Link href="/login?next=/tank-builder" className="font-medium text-emerald-400 hover:text-emerald-300">
-                    Sign in
-                  </Link>{" "}
-                  to log readings and track your water over time.
-                </div>
-              ) : (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <h3 className="mb-1 text-sm font-semibold text-white">
-                    {currentTankId ? "Log this reading" : "Track this over time"}
-                  </h3>
-                  <p className="mb-3 text-xs text-ocean-400">
-                    {currentTankId
-                      ? `Adds a dated entry to “${tankName.trim() || "My Tank"}” so you can watch changes over time.`
-                      : "Readings attach to a saved tank. This saves your build and logs the reading in one step."}
-                  </p>
-                  <input
-                    type="text"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    maxLength={200}
-                    placeholder="Optional note (e.g. after a 30% water change)"
-                    className="mb-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white placeholder:text-ocean-500 focus:border-emerald-500/50 focus:outline-none sm:text-sm"
-                  />
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => (currentTankId ? saveReading() : saveTankAndLog())}
-                      disabled={busy || readingBusy || waterResult.status === "empty"}
-                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400 disabled:opacity-50"
-                    >
-                      <Save className="h-4 w-4" />
-                      {currentTankId ? "Log reading" : "Save tank & log reading"}
-                    </button>
-                    {readingMsg && <span className="text-xs text-ocean-300">{readingMsg}</span>}
-                  </div>
-                </div>
-              )}
-
-              {user && currentTankId && readings.length > 1 && <WaterTrends readings={readings} />}
-
-              {user && currentTankId && readings.length > 0 && (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-white">Recent readings</h3>
-                    {readings.length > (compact ? 3 : 5) && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllReadings((v) => !v)}
-                        className="text-xs font-medium text-emerald-300 hover:text-emerald-200"
-                      >
-                        {showAllReadings ? "Show fewer" : `Show all ${readings.length}`}
-                      </button>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    {(showAllReadings ? readings : readings.slice(0, compact ? 3 : 5)).map((r) => (
-                      <div key={r.id} className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs text-ocean-400">{fmtReadingDate(r.measured_at)}</p>
-                          <p className="mt-0.5 break-words text-sm text-white">{readingSummary(r)}</p>
-                          {r.note && <p className="mt-1 break-words text-xs italic text-ocean-400">{r.note}</p>}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => deleteReading(r.id)}
-                          aria-label="Delete reading"
-                          disabled={readingBusy}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ocean-400 transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <WaterTestPanel
+              water={water}
+              onWaterChange={setWater}
+              fishless={fishless}
+              onFishlessChange={setFishless}
+              stock={stock}
+              layout="stack"
+              userId={user?.id ?? null}
+              tankId={currentTankId}
+              tankName={tankName}
+              ensureTank={saveTank}
+              ensureBusy={busy}
+              signInNext="/tank-builder"
+              noStockHint="Add fish and the pH and temperature checks will also tell you how well your water suits them."
+              idPrefix="tb"
+            />
           )}
         </div>
       </div>
