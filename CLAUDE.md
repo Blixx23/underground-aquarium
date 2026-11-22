@@ -32,5 +32,8 @@ This is undergroundaquarium.com, a live aquarium hobby community with real membe
 - Don't touch payments, Stripe, dues, sign-in, or database structure (SQL). If a fix needs any of these, stop and
   explain in a comment instead.
 - Don't change data belonging to real members.
+- Members' personal info (emails, phone numbers) never goes in a table the public can read. Seller contact details
+  live in `listing_contacts` (private: owner and server only); the listing page reads them with `supabaseAdmin` and
+  only shows them to signed-in members.
 - Run `npx tsc --noEmit` before finishing; the change must type-check.
 - Pull request descriptions: what was wrong, what changed, how to check it on the preview. Plain words.

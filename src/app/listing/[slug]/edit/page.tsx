@@ -48,7 +48,7 @@ export default async function EditListingPage({
   const { data } = await supabase
     .from("listings")
     .select(
-      "id, user_id, slug, title, category, description, price_cents, is_wanted, condition, city, images, region_id, state_code, allow_messages, show_email, contact_phone"
+      "id, user_id, slug, title, category, description, price_cents, is_wanted, condition, city, images, region_id, state_code, allow_messages, show_email"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -62,7 +62,11 @@ export default async function EditListingPage({
     return redirect(`/listing/${slug}`);
   }
 
-  const regions = await getAllRegions();
+  // The phone lives in the private contact table; owners can read their own.
+  const [regions, { data: contact }] = await Promise.all([
+    getAllRegions(),
+    supabase.from("listing_contacts").select("contact_phone").eq("listing_id", row.id).maybeSingle(),
+  ]);
 
   const existing: ExistingListing = {
     id: row.id,
@@ -79,7 +83,7 @@ export default async function EditListingPage({
     state_code: row.state_code,
     allow_messages: row.allow_messages,
     show_email: row.show_email,
-    contact_phone: row.contact_phone,
+    contact_phone: (contact?.contact_phone as string | null | undefined) ?? null,
   };
 
   return (

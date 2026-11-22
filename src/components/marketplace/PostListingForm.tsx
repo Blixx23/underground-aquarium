@@ -349,11 +349,22 @@ export default function PostListingForm({
         // Every poster has an account, so every listing can be messaged.
         allow_messages: true,
         show_email: showEmail,
-        // Only stored when they deliberately opt in, so the listing page
-        // never has to reach into the auth tables to display it.
+      };
+
+      // Email and phone go in a separate private table (listing_contacts)
+      // that the public can't read. The email is only stored when they opt in.
+      const contact = {
         contact_email: showEmail ? currentUser.email ?? null : null,
         contact_phone: contactPhone.trim() || null,
       };
+      async function saveContact(listingId: string) {
+        const { error: contactError } = await supabase
+          .from("listing_contacts")
+          .upsert({ listing_id: listingId, ...contact, updated_at: new Date().toISOString() }, { onConflict: "listing_id" });
+        if (contactError) {
+          throw new Error(`Saving your contact details failed: ${describeError(contactError, "unknown database error")}`);
+        }
+      }
 
       let finalSlug: string;
 
@@ -367,6 +378,7 @@ export default function PostListingForm({
             `Saving failed: ${describeError(updateError, "unknown database error")}`
           );
         }
+        await saveContact(existing.id);
         finalSlug = existing.slug;
       } else {
         const listingSlug = `${slugify(title).slice(0, 60)}-${Math.random()
@@ -382,13 +394,14 @@ export default function PostListingForm({
             slug: listingSlug,
             status: "active",
           })
-          .select("slug")
+          .select("id, slug")
           .single();
         if (insertError) {
           throw new Error(
             `Posting failed: ${describeError(insertError, "unknown database error")}`
           );
         }
+        if (contact.contact_email || contact.contact_phone) await saveContact(created.id as string);
         finalSlug = created.slug as string;
 
         // Onboarding grant — server verifies ownership; idempotent.

@@ -22,6 +22,7 @@ import { speciesForAd } from "@/lib/marketplace/speciesAds";
 import { shareCardUrl } from "@/lib/seo/share";
 import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { categoryLabel } from "@/lib/marketplace/categories";
 import {
   formatPrice,
@@ -71,7 +72,7 @@ type ListingRow = {
   contact_phone: string | null;
 };
 
-const DETAIL_COLUMNS = `${LISTING_COLUMNS}, user_id, status, expires_at, allow_messages, show_email, contact_email, contact_phone`;
+const DETAIL_COLUMNS = `${LISTING_COLUMNS}, user_id, status, expires_at, allow_messages, show_email`;
 
 export async function generateMetadata({
   params,
@@ -151,7 +152,19 @@ export default async function ListingPage({
     .maybeSingle();
 
   if (!data) notFound();
-  const listing = data as unknown as ListingRow;
+  // Contact info lives in its own private table that the public can't read.
+  // The server key reads it here, and the page below decides who sees it
+  // (the owner, or signed-in members after a tap; never signed-out visitors).
+  const { data: contact } = await supabaseAdmin
+    .from("listing_contacts")
+    .select("contact_email, contact_phone")
+    .eq("listing_id", (data as { id: string }).id)
+    .maybeSingle();
+  const listing = {
+    ...(data as object),
+    contact_email: contact?.contact_email ?? null,
+    contact_phone: contact?.contact_phone ?? null,
+  } as unknown as ListingRow;
 
   const isOwner = !!user && user.id === listing.user_id;
   if (listing.status !== "active" && !isOwner) notFound();
