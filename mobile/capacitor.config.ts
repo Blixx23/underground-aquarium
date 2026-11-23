@@ -18,7 +18,8 @@ const config: CapacitorConfig = {
   webDir: "www",
   backgroundColor: "#020b18",
   server: {
-    url: "https://www.undergroundaquarium.com",
+    // The app opens on /start: signed in goes to the feed, signed out sees the welcome screen.
+    url: "https://www.undergroundaquarium.com/start",
     errorPath: "offline.html",
     allowNavigation: ["www.undergroundaquarium.com", "undergroundaquarium.com"],
   },
