@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
   if (!me?.is_admin) return NextResponse.json({ error: "Admins only." }, { status: 403 });
-  if (!(await adminUnlocked(user.id))) return NextResponse.json({ error: LOCKED_MESSAGE }, { status: 403 });
+  if (!(await adminUnlocked(user.id))) return NextResponse.json({ error: LOCKED_MESSAGE, locked: true }, { status: 403 });
 
   let post = null as PostRow | null;
   if (postId) {

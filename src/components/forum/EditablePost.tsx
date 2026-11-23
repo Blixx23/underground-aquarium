@@ -4,6 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useForumViewer } from "@/lib/forum/useForumViewer";
+import { moderate as moderateRequest } from "@/lib/admin/moderateClient";
 import {
   MAX_OPENER,
   MAX_REPLY,
@@ -158,13 +159,8 @@ export default function EditablePost({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/moderate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, post_id: postId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Couldn't do that.");
+      const data = await moderateRequest({ action, post_id: postId });
+      if (data.error) throw new Error(data.error);
       if (action === "archive_thread") {
         router.push(data.redirect ?? `/forums/${categorySlug}`);
         router.refresh();

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForumViewer } from "@/lib/forum/useForumViewer";
+import { moderate as moderateRequest } from "@/lib/admin/moderateClient";
 
 /**
  * Admin-only Archive thread / Suspend author, shown on a thread whose opening
@@ -26,13 +27,8 @@ export default function ThreadAdminBar({ threadId, categorySlug }: { threadId: s
     setBusy(true);
     setNote(null);
     try {
-      const res = await fetch("/api/admin/moderate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, thread_id: threadId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Couldn't do that.");
+      const data = await moderateRequest({ action, thread_id: threadId });
+      if (data.error) throw new Error(data.error);
       if (action === "archive_thread") {
         router.push(data.redirect ?? `/forums/${categorySlug}`);
         router.refresh();
