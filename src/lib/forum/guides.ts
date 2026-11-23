@@ -1,6 +1,11 @@
 import { supabasePublic } from "@/lib/supabase/public";
 import { FOUNDER_USERNAMES } from "@/lib/founder";
 
+/** Forum sections that hold chat and photo threads, never how-tos. */
+const NOT_GUIDE_CATEGORY = /off.?topic|journal|photo/i;
+/** Prompts posted to get people talking. */
+const NOT_GUIDE_TITLE = /^(introduce yourself|share your|post your|show us|aquarium memes)/i;
+
 export type Guide = {
   title: string;
   slug: string;
@@ -35,6 +40,9 @@ export async function getGuides(): Promise<Guide[]> {
   const catById = new Map((cats ?? []).map((c) => [c.id as string, c]));
   return (threads ?? [])
     .filter((t) => catById.has(t.category_id as string))
+    // Conversation starters ("Aquarium memes", "Introduce yourself") aren't guides.
+    .filter((t) => !NOT_GUIDE_CATEGORY.test(catById.get(t.category_id as string)!.name as string))
+    .filter((t) => !NOT_GUIDE_TITLE.test(t.title as string))
     .map((t) => {
       const c = catById.get(t.category_id as string)!;
       return {
