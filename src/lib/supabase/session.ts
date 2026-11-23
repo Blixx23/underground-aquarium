@@ -67,7 +67,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
        const ok = await validUnlockToken(request.cookies.get(ADMIN_COOKIE)?.value, user.id)
        if (!ok) {
          const locked = path.startsWith('/api/')
-           ? NextResponse.json({ error: 'The admin area is locked. Enter the admin password.' }, { status: 401 })
+           ? NextResponse.json({ error: 'The admin area is locked. Enter the admin password.', locked: true }, { status: 401 })
            : NextResponse.redirect(new URL(`/admin-unlock?next=${encodeURIComponent(path + request.nextUrl.search)}`, request.url))
          supabaseResponse.cookies.getAll().forEach((c) => locked.cookies.set(c))
          return locked

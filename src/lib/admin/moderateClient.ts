@@ -19,7 +19,7 @@ export async function moderate(payload: Record<string, unknown>): Promise<{ ok?:
   };
 
   let { res, data } = await call();
-  if (res.status === 403 && data.locked) {
+  if ((res.status === 401 || res.status === 403) && data.locked) {
     const password = window.prompt("Admin password (asked once on this device):");
     if (!password) return { error: "Cancelled." };
     const unlock = await fetch("/api/admin-unlock", {
