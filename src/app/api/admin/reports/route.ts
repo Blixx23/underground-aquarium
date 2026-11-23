@@ -245,6 +245,11 @@ export async function POST(req: Request) {
             .from("forum_posts")
             .update({ hidden_at: now })
             .eq("id", targetId);
+          // Hiding a thread's opening post would leave an empty thread up
+          // ("Posted by a member" and nothing else), so hide the thread too.
+          if (post.is_op && threadId) {
+            await supabaseAdmin.from("forum_threads").update({ hidden_at: now }).eq("id", threadId);
+          }
           actionTaken = true;
           reportedUserId = (post.author_id as string | null) ?? null;
 

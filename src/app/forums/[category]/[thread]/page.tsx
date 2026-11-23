@@ -16,6 +16,7 @@ import ScrollToComment from "@/components/forum/ScrollToComment";
 import { plainText, threadIndexable } from "@/lib/forum/indexable";
 import { ldJson } from "@/lib/jsonLd";
 import ZoomPhoto from "@/components/photos/ZoomPhoto";
+import ThreadAdminBar from "@/components/forum/ThreadAdminBar";
 import FounderTag from "@/components/FounderTag";
 import { isFounder } from "@/lib/founder";
 
@@ -423,7 +424,7 @@ export default async function ThreadPage({ params }: Params) {
                 <Markdown>{op.body ?? ""}</Markdown>
               </EditablePost>
             ) : (
-              <Markdown>{""}</Markdown>
+              <ThreadAdminBar threadId={t.id as string} categorySlug={category} />
             )}
             {threadImages.length > 0 && (
               <div

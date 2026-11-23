@@ -9,13 +9,16 @@ import { suspendMember } from "@/app/api/admin/members/_lib/suspension";
  * Quick moderation from a forum thread, without going through a report:
  *  - archive_post:   hide one reply (same as "Hide post" in /admin/reports)
  *  - archive_thread: hide the whole thread (same as "Hide thread")
+ * Send post_id, or thread_id alone for archive_thread / suspend on a thread
+ * whose opening post is already hidden (the author is the thread's author).
  *  - suspend:        suspend the post's author (same as suspending from a
  *                    profile report: sign-in blocked, ads down, tanks private;
  *                    undo from Suspended accounts on /admin/reports)
  * Archiving sets hidden_at, so nothing is deleted. Admins only, and only after
  * unlocking the admin area on this device, like editing someone else's post.
  */
-type Body = { action?: string; post_id?: string; reason?: string };
+type PostRow = { id: string; thread_id: string; author_id: string | null; is_op: boolean };
+type Body = { action?: string; post_id?: string; thread_id?: string; reason?: string };
 
 async function notify(userId: string | null, title: string, body: string, link: string | null) {
   if (!userId) return;
@@ -35,8 +38,12 @@ export async function POST(req: Request) {
   }
   const action = body.action ?? "";
   const postId = typeof body.post_id === "string" ? body.post_id : "";
-  if (!["archive_post", "archive_thread", "suspend"].includes(action) || !postId) {
+  const threadIdIn = typeof body.thread_id === "string" ? body.thread_id : "";
+  if (!["archive_post", "archive_thread", "suspend"].includes(action) || (!postId && !threadIdIn)) {
     return NextResponse.json({ error: "Missing action or post." }, { status: 400 });
+  }
+  if (!postId && action === "archive_post") {
+    return NextResponse.json({ error: "Missing post." }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -48,17 +55,22 @@ export async function POST(req: Request) {
   if (!me?.is_admin) return NextResponse.json({ error: "Admins only." }, { status: 403 });
   if (!(await adminUnlocked(user.id))) return NextResponse.json({ error: LOCKED_MESSAGE }, { status: 403 });
 
-  const { data: post } = await supabaseAdmin
-    .from("forum_posts")
-    .select("id, thread_id, author_id, is_op")
-    .eq("id", postId)
-    .maybeSingle();
-  if (!post) return NextResponse.json({ error: "That post no longer exists." }, { status: 404 });
+  let post = null as PostRow | null;
+  if (postId) {
+    const { data } = await supabaseAdmin
+      .from("forum_posts")
+      .select("id, thread_id, author_id, is_op")
+      .eq("id", postId)
+      .maybeSingle();
+    if (!data) return NextResponse.json({ error: "That post no longer exists." }, { status: 404 });
+    post = data as PostRow;
+  }
   const { data: thread } = await supabaseAdmin
     .from("forum_threads")
     .select("id, slug, category_id, author_id")
-    .eq("id", post.thread_id)
+    .eq("id", post ? post.thread_id : threadIdIn)
     .maybeSingle();
+  if (!post && !thread) return NextResponse.json({ error: "That thread no longer exists." }, { status: 404 });
   const { data: cat } = thread
     ? await supabaseAdmin.from("forum_categories").select("slug").eq("id", thread.category_id).maybeSingle()
     : { data: null };
@@ -72,7 +84,7 @@ export async function POST(req: Request) {
   };
   const now = new Date().toISOString();
 
-  if (action === "archive_post") {
+  if (action === "archive_post" && post) {
     if (post.is_op) {
       return NextResponse.json({ error: "That's the opening post. Archive the thread instead." }, { status: 400 });
     }
@@ -101,7 +113,7 @@ export async function POST(req: Request) {
   }
 
   // suspend
-  const memberId = post.author_id as string | null;
+  const memberId = (post ? post.author_id : thread?.author_id) ?? null;
   if (!memberId) return NextResponse.json({ error: "That post has no author to suspend." }, { status: 400 });
   const reason = typeof body.reason === "string" && body.reason.trim() ? body.reason.trim().slice(0, 300) : "Suspended from a forum post";
   const err = await suspendMember(memberId, user.id, reason);
