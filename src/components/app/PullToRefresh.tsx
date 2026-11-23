@@ -46,7 +46,10 @@ export default function PullToRefresh() {
 
   useEffect(() => {
     if (!inApp) return;
-    const header = () => document.querySelector("header")?.getBoundingClientRect().bottom ?? 80;
+    // The top bar is pinned at the top, so its bottom edge is just its height.
+    // (Its reported position moves with the page while it stretches, which put
+    // the arrow down on top of the content; the height doesn't.)
+    const header = () => document.getElementById("site-header")?.offsetHeight ?? 80;
 
     // Follow the finger: a pull only counts when it starts with the page at the
     // very top, and it's measured from the touch itself (half the finger's
