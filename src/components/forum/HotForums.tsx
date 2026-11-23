@@ -69,11 +69,19 @@ export default async function HotForums() {
   );
 }
 
-/** A card from somewhere other than the forums (a review, species of the day...). */
+/**
+ * A card from somewhere other than the forums (a review, species of the day...).
+ * Every card has the same three fixed zones so nothing overlaps on a narrow
+ * phone card and every label lines up across the row:
+ *   top    - a photo behind everything, or one centered icon (the reviewer's
+ *            avatar, or the card's emoji)
+ *   bottom - label, title (two lines), detail line, and the call to action,
+ *            each in its own row at a fixed height
+ */
 function ExtraCard({ c, card }: { c: StripCard; card: string }) {
   return (
-    <Link href={c.href} className={`${card} group border-white/10 bg-gradient-to-b ${c.bg} to-ocean-950`}>
-      {c.image ? (
+    <Link href={c.href} className={`${card} group flex flex-col border-white/10 bg-gradient-to-b ${c.bg} to-ocean-950`}>
+      {c.image && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={thumb(c.image, 256)}
@@ -81,30 +89,40 @@ function ExtraCard({ c, card }: { c: StripCard; card: string }) {
           loading="lazy"
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-      ) : (
-        <span className="absolute inset-x-0 top-9 text-center text-4xl opacity-80" aria-hidden="true">
-          {c.emoji}
-        </span>
       )}
-      <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
-      {c.avatar && (
-        <span
-          className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-ocean-800 text-xs font-semibold uppercase text-white ring-2 ring-amber-300/70"
-          title={c.avatar.name}
-        >
-          {c.avatar.src ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={c.avatar.src} alt="" className="h-full w-full object-cover" />
+      <span className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/10" />
+
+      {/* Top zone: one icon, centered, never under the text. */}
+      <span className="relative flex h-[4.25rem] shrink-0 items-center justify-center sm:h-20">
+        {!c.image &&
+          (c.avatar ? (
+            <span
+              className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-ocean-800 text-sm font-semibold uppercase text-white ring-2 ring-amber-300/70"
+              title={c.avatar.name}
+            >
+              {c.avatar.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={c.avatar.src} alt="" className="h-full w-full object-cover" />
+              ) : (
+                c.avatar.name.slice(0, 1)
+              )}
+            </span>
           ) : (
-            c.avatar.name.slice(0, 1)
-          )}
+            <span className="text-3xl leading-none opacity-85 sm:text-4xl" aria-hidden="true">
+              {c.emoji}
+            </span>
+          ))}
+      </span>
+
+      {/* Bottom zone: fixed rows, so labels line up from card to card. */}
+      <span className="relative mt-auto flex flex-col px-2 pb-2">
+        <span className="block truncate text-[10px] font-medium uppercase tracking-wide text-white/65">{c.label}</span>
+        <span className="mt-0.5 line-clamp-2 h-[2.1rem] text-[13px] font-semibold leading-[1.05rem] text-white">{c.title}</span>
+        <span className="mt-0.5 block h-4 truncate text-[11px] leading-4 text-white/60">
+          {c.stars ? <span className="text-amber-300">{c.stars} </span> : null}
+          {c.sub ?? ""}
         </span>
-      )}
-      <span className="absolute inset-x-0 bottom-0 p-2">
-        <span className="mb-1 block truncate text-[10px] font-medium uppercase tracking-wider text-white/60">{c.label}</span>
-        <span className="line-clamp-3 text-[13px] font-semibold leading-snug text-white">{c.title}</span>
-        {c.sub && <span className="mt-0.5 block truncate text-[11px] text-white/60">{c.sub}</span>}
-        <span className="mt-1 block truncate text-[11px] font-medium text-cyan-200/90">{c.cta}</span>
+        <span className="mt-0.5 block truncate text-[11px] font-medium leading-4 text-cyan-200/90">{c.cta}</span>
       </span>
     </Link>
   );

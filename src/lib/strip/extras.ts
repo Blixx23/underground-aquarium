@@ -13,6 +13,8 @@ export type StripCard = {
   label: string; // small caps line, e.g. "Shop review"
   title: string;
   sub?: string;
+  /** Shown in gold at the start of the detail line (reviews). */
+  stars?: string;
   cta: string; // the line at the bottom, e.g. "Review a shop you use"
   href: string;
   image?: string | null;
@@ -91,10 +93,11 @@ async function reviewCards(seed: number): Promise<StripCard[]> {
       const body = (r.body ?? "").replace(/\s+/g, " ").trim();
       return {
         key: `review-${r.id}`,
-        label: `Shop review · ${stars(r.rating)}`,
-        title: `“${body.length > 70 ? `${body.slice(0, 67).trimEnd()}…` : body}”`,
+        label: "Shop review",
+        stars: stars(r.rating),
+        title: `“${body.length > 60 ? `${body.slice(0, 57).trimEnd()}…` : body}”`,
         sub: [s.name, s.city].filter(Boolean).join(", "),
-        cta: "Review a shop you use",
+        cta: "Review a shop",
         href: `/stores/${s.slug}?tab=reviews`,
         emoji: "⭐",
         bg: "from-amber-500/40 via-amber-900/60",
@@ -112,7 +115,7 @@ async function speciesOfTheDay(day: number): Promise<StripCard | null> {
   const photo = ((photos ?? []) as { url: string }[])[0]?.url ?? null;
   return {
     key: `species-${s.slug}`,
-    label: "Species of the day",
+    label: "Daily species",
     title: s.common_name,
     sub: s.scientific_name ?? undefined,
     cta: "See its care",
@@ -164,7 +167,7 @@ async function wordOfTheDay(day: number): Promise<StripCard | null> {
   const t = all[(day * 7) % all.length];
   return {
     key: `term-${t.slug}`,
-    label: "Word of the day",
+    label: "Daily word",
     title: t.term,
     cta: "What it means",
     href: `/glossary/${t.slug}`,
@@ -185,9 +188,9 @@ async function newestSpecies(): Promise<StripCard | null> {
   const s = data as { slug: string; common_name: string };
   return {
     key: `new-species-${s.slug}`,
-    label: "New in the library",
+    label: "New species",
     title: s.common_name,
-    cta: "Request a species",
+    cta: "See it",
     href: `/species/${s.slug}`,
     emoji: "🆕",
     bg: "from-emerald-500/40 via-emerald-900/60",
@@ -202,9 +205,10 @@ async function guideOfTheDay(day: number): Promise<StripCard | null> {
   const g = all[(day * 3) % all.length];
   return {
     key: `guide-${g.slug}`,
-    label: `Guide · ${g.categoryName}`,
+    label: "Guide",
+    sub: g.categoryName,
     title: g.title,
-    cta: "Read the guide",
+    cta: "Read it",
     href: `/forums/${g.categorySlug}/${g.slug}`,
     emoji: "📘",
     bg: "from-sky-500/40 via-sky-900/60",
