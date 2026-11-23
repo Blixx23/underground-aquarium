@@ -1,5 +1,6 @@
 "use client";
 
+import { locate as locateWithLimit } from "@/lib/geo/locate";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Crosshair, Loader2 } from "lucide-react";
@@ -70,7 +71,7 @@ export default function NearMeButton({
     }
 
     setBusy(true);
-    navigator.geolocation.getCurrentPosition(
+    locateWithLimit(
       (pos) => {
         const { latitude, longitude } = pos.coords;
 
@@ -97,7 +98,7 @@ export default function NearMeButton({
       (err) => {
         setBusy(false);
         setError(
-          err.code === err.PERMISSION_DENIED
+          err?.code === 1
             ? "Location is blocked for this site. Pick your state below instead."
             : "Couldn't get your location. Pick your state below instead."
         );

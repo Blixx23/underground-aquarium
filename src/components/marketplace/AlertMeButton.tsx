@@ -1,5 +1,6 @@
 "use client";
 
+import { locate } from "@/lib/geo/locate";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, Check, Crosshair, Loader2, X } from "lucide-react";
@@ -132,7 +133,7 @@ function AlertForm({
     }
     setLocating(true);
     setError(null);
-    navigator.geolocation.getCurrentPosition(
+    locate(
       (pos) => {
         // Only the nearest metro area is saved, never the exact spot.
         const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };

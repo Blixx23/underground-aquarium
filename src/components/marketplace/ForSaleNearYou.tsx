@@ -1,5 +1,6 @@
 "use client";
 
+import { locate } from "@/lib/geo/locate";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Crosshair, Fish, Loader2, MapPin, Plus, Tag } from "lucide-react";
@@ -57,7 +58,7 @@ export default function ForSaleNearYou({ slug, name, category }: { slug: string;
   function useMyLocation() {
     if (!navigator.geolocation) return;
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
+    locate(
       (p) => {
         setCenter({ label: "you", lat: p.coords.latitude, lng: p.coords.longitude });
         setLocating(false);

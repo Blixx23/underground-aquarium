@@ -1,5 +1,6 @@
 "use client";
 
+import { locate } from "@/lib/geo/locate";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -78,7 +79,7 @@ export default function EventsList({ events }: { events: EventCard[] }) {
     }
     setLocating(true);
     setGeoError(null);
-    navigator.geolocation.getCurrentPosition(
+    locate(
       (pos) => {
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setLocating(false);

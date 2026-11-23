@@ -1,5 +1,6 @@
 "use client";
 
+import { locate } from "@/lib/geo/locate";
 import { useRestoreScroll, useUrlParam } from "@/lib/hooks/useUrlState";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -126,7 +127,7 @@ export default function StoreDirectory({
     }
     setLocating(true);
     setLocError(null);
-    navigator.geolocation.getCurrentPosition(
+    locate(
       (pos) => {
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setStateCode(null);
