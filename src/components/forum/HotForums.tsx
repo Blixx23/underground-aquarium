@@ -1,173 +1,29 @@
 import Link from "next/link";
-import { Flame, MessageSquare, MessageSquareDashed, PenLine } from "lucide-react";
+import { Flame, MessageSquareDashed, PenLine } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
-import { isFounder } from "@/lib/founder";
 import { thumb } from "@/lib/images/thumb";
 import { getStripExtras, type StripCard } from "@/lib/strip/extras";
 
-type Row = {
-  id: string;
-  slug: string;
-  title: string;
-  images: string[] | null;
-  reply_count: number | null;
-  score: number | null;
-  author_id: string | null;
-  category_id: string;
-  last_activity_at: string | null;
-  created_at: string;
-};
-
-/** Each section gets its own color and emoji so a card reads at a glance without a photo. */
-const LOOK: Record<string, { emoji: string; bg: string }> = {
-  "getting-started": { emoji: "👋", bg: "from-sky-500/40 via-sky-900/60" },
-  freshwater: { emoji: "🐟", bg: "from-cyan-500/40 via-cyan-900/60" },
-  "saltwater-reef": { emoji: "🪸", bg: "from-rose-500/40 via-rose-900/60" },
-  "plants-aquascaping": { emoji: "🌿", bg: "from-emerald-500/40 via-emerald-900/60" },
-  "fish-health": { emoji: "🚑", bg: "from-orange-500/40 via-orange-900/60" },
-  "equipment-diy": { emoji: "🛠️", bg: "from-slate-400/40 via-slate-800/60" },
-  breeding: { emoji: "🥚", bg: "from-amber-500/40 via-amber-900/60" },
-  "journals-photos": { emoji: "📷", bg: "from-violet-500/40 via-violet-900/60" },
-  "off-topic": { emoji: "💬", bg: "from-fuchsia-500/40 via-fuchsia-900/60" },
-};
-const DEFAULT_LOOK = { emoji: "💬", bg: "from-ocean-500/40 via-ocean-900/60" };
-
 /**
- * Hot: replies and votes, fading with time since the last activity, so a
- * thread that's busy today beats one that was busy last month.
- */
-function heat(t: Row, now: number) {
-  const hours = Math.max(0, (now - new Date(t.last_activity_at ?? t.created_at).getTime()) / 3_600_000);
-  const action = (t.reply_count ?? 0) * 2 + Math.max(0, t.score ?? 0) + 1;
-  return action / Math.pow(hours + 2, 1.3);
-}
-
-/**
- * "New around the site": a sideways-scrolling strip of story-style cards.
- * Forum threads take turns with things the feed never shows (shop reviews,
- * species and word of the day, the next event, a guide, new species), so the
- * row always has something new without repeating feed posts. It sits
- * above the feed, the way stories sit above the Facebook feed.
+ * "New around the site": a sideways-scrolling strip of story-style cards
+ * above the feed, the way stories sit above the Facebook feed. It carries only
+ * what the feed doesn't (shop reviews, species and word of the day, the next
+ * event, a guide, new species), so nothing shows twice. New forum threads are
+ * already feed items; the strip keeps the way in ("Ask the forums") and the
+ * nudge ("Answer a question").
  */
 export default async function HotForums() {
-  const [{ data: cats }, { data: rows }, { count: unanswered }] = await Promise.all([
-    supabasePublic.from("forum_categories").select("id, slug, name").eq("is_public", true),
-    supabasePublic
-      .from("forum_threads")
-      .select("id, slug, title, images, reply_count, score, author_id, category_id, last_activity_at, created_at")
-      .order("last_activity_at", { ascending: false })
-      .limit(80),
+  const [{ count: unanswered }, extras] = await Promise.all([
     supabasePublic
       .from("forum_threads")
       .select("id", { count: "exact", head: true })
       .eq("reply_count", 0)
       .eq("is_seeded", false),
+    getStripExtras(),
   ]);
 
-  const catById = new Map((cats ?? []).map((c) => [c.id as string, c]));
-  const now = Date.now();
-  const ranked = ((rows ?? []) as Row[])
-    .filter((t) => catById.has(t.category_id))
-    .sort((a, b) => heat(b, now) - heat(a, now));
-
-  if (ranked.length === 0) return null;
-
-  const authorIds = [...new Set(ranked.map((t) => t.author_id).filter((x): x is string => Boolean(x)))];
-  const people = new Map<string, { name: string; avatar: string | null; founder: boolean }>();
-  const society = new Set<string>();
-  if (authorIds.length) {
-    const [{ data: profs }, { data: members }] = await Promise.all([
-      supabasePublic
-        .from("profiles")
-        .select("id, username, full_name, avatar_url")
-        .in("id", authorIds),
-      supabasePublic.rpc("society_members_among", { p_users: authorIds }),
-    ]);
-    for (const m of (members ?? []) as (string | { user_id: string })[]) {
-      society.add(typeof m === "string" ? m : m.user_id);
-    }
-    for (const p of profs ?? []) {
-      people.set(p.id as string, {
-        name: (p.username as string) || (p.full_name as string) || "member",
-        avatar: (p.avatar_url as string | null) ?? null,
-        founder: isFounder(p.username as string | null),
-      });
-    }
-  }
-
-  // Members' threads first, so the strip looks like the community talking;
-  // the founder's guide threads fill in only when there aren't 8 of theirs.
-  const byFounder = (t: Row) => Boolean(t.author_id && people.get(t.author_id)?.founder);
-  // Four forum threads at most, so the rest of the row can show what the feed doesn't.
-  const threads = [...ranked.filter((t) => !byFounder(t)), ...ranked.filter(byFounder)].slice(0, 4);
-  const extras = await getStripExtras();
-
-  // Only call it "Hot" when people are actually talking. While most threads
-  // are still waiting for a first reply, it's honest to call them new.
-  const busy = threads.filter((t) => (t.reply_count ?? 0) > 0).length;
-  const heading = busy >= 3 ? "Hot around the site" : "New around the site";
-
+  const heading = "New around the site";
   const card = "relative h-44 w-[7.25rem] shrink-0 snap-start overflow-hidden rounded-2xl border sm:h-48 sm:w-32";
-
-  const ThreadCard = ({ t }: { t: Row }) => {
-    const cat = catById.get(t.category_id)!;
-    const look = LOOK[cat.slug as string] ?? DEFAULT_LOOK;
-    const photo = Array.isArray(t.images) ? t.images[0] : undefined;
-    const who = t.author_id ? people.get(t.author_id) : undefined;
-    const gold = t.author_id ? society.has(t.author_id) : false;
-    return (
-      <Link
-        key={t.id}
-        href={`/forums/${cat.slug}/${t.slug}`}
-        className={`${card} group border-white/10 bg-gradient-to-b ${look.bg} to-ocean-950`}
-      >
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumb(photo, 256)}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <span className="absolute inset-x-0 top-9 text-center text-4xl opacity-80" aria-hidden="true">
-            {look.emoji}
-          </span>
-        )}
-        <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
-
-        {/* Author, ringed like a story. Society members get the gold ring, same as everywhere else. */}
-        <span
-          className={`absolute left-2 top-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-ocean-800 text-xs font-semibold uppercase text-white ring-2 ${
-            gold ? "ring-amber-400 shadow-[0_0_12px_rgba(217,160,60,0.35)]" : "ring-ocean-400"
-          }`}
-          title={gold && who ? `${who.name} · Society member` : who?.name}
-        >
-          {who?.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={who.avatar} alt="" className="h-full w-full object-cover" />
-          ) : (
-            (who?.name ?? "?").slice(0, 1)
-          )}
-        </span>
-
-        <span className="absolute inset-x-0 bottom-0 p-2">
-          <span className="mb-1 block truncate text-[10px] font-medium uppercase tracking-wider text-white/60">
-            {cat.name}
-          </span>
-          <span className="line-clamp-3 text-[13px] font-semibold leading-snug text-white">{t.title}</span>
-          {(t.reply_count ?? 0) > 0 ? (
-            <span className="mt-1 flex items-center gap-1 text-[11px] text-white/70">
-              <MessageSquare className="h-3 w-3" /> {t.reply_count}
-            </span>
-          ) : (
-            <span className="mt-1 block text-[11px] font-medium text-cyan-200/90">Add your take</span>
-          )}
-        </span>
-      </Link>
-    );
-
-  };
 
   return (
     <section aria-label={heading} className="pt-1">
@@ -192,11 +48,9 @@ export default async function HotForums() {
           <span className="px-2 text-sm font-semibold leading-tight text-white">Ask the forums</span>
         </Link>
 
-        {/* Threads and the other cards take turns: thread, card, thread, card... */}
-        {Array.from({ length: Math.max(threads.length, extras.length) }).flatMap((_, i) => [
-          threads[i] ? <ThreadCard key={threads[i].id} t={threads[i]} /> : null,
-          extras[i] ? <ExtraCard key={extras[i].key} c={extras[i]} card={card} /> : null,
-        ])}
+        {extras.map((c) => (
+          <ExtraCard key={c.key} c={c} card={card} />
+        ))}
 
         {(unanswered ?? 0) > 0 && (
           <Link

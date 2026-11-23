@@ -195,7 +195,9 @@ async function newestSpecies(): Promise<StripCard | null> {
 }
 
 async function guideOfTheDay(day: number): Promise<StripCard | null> {
-  const all = await getGuides();
+  // Only guides older than two weeks: newer threads can still be near the top of the feed.
+  const cutoff = Date.now() - 14 * 86_400_000;
+  const all = (await getGuides()).filter((g) => new Date(g.createdAt).getTime() < cutoff);
   if (all.length === 0) return null;
   const g = all[(day * 3) % all.length];
   return {
