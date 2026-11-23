@@ -47,7 +47,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 /// like an iPhone app instead of a browser:
 ///  - swipe from the left edge to go back (and from the right to go forward)
 ///  - pull down to refresh, with a light tap of feedback
-/// Main.storyboard points at this class instead of the plain Capacitor one.
+/// SceneDelegate.swift creates this screen instead of the plain Capacitor one.
 class MainViewController: CAPBridgeViewController {
     private let refresher = UIRefreshControl()
 
