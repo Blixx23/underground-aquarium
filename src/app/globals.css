@@ -117,3 +117,10 @@ textarea {
 /* A site-wide max-width:100% squashes Leaflet's pin layer to 0px wide
    (its pane has no width). Let the map size its own layers. */
 .leaflet-container canvas, .leaflet-container svg, .leaflet-container img { max-width: none !important; max-height: none !important; }
+
+/* Hidden inside the iPhone app (the html tag gets .in-app from layout.tsx).
+   Used for dues and payment, which Apple doesn't allow outside its own
+   payment system in an app. */
+.in-app .web-only {
+  display: none !important;
+}

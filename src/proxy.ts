@@ -24,6 +24,14 @@ const LEGACY_PRODUCT_PATH = /^\/marketplace\/([^/]+)\/?$/;
 // /clubs URL — the index, discover, new, start — lands on its front door.
 const LEGACY_CLUBS_PATH = /^\/clubs(\/.*)?$/;
 
+// Inside the iPhone app (its user agent says "UAApp") the club page, which
+// is where people join and pay dues, shows a plain "not in the app" page
+// instead. Apple doesn't allow paying for memberships outside its own
+// payment system from inside an app. The member area, awards and everything
+// else work in the app as normal; officers' /c/:slug/admin is untouched.
+const CLUB_PAY_PATH = /^\/c\/[^/]+\/?$/;
+const IN_APP_MEMBERSHIP_PATH = "/app-membership";
+
 // The Society's club-era award pages. Submissions now go through spawn logs
 // and rulings through the judge's desk; the old forms would only lead to an
 // error from the database. Deliberately NOT redirected: the club page itself
@@ -54,6 +62,13 @@ function hasSession(request: NextRequest): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (CLUB_PAY_PATH.test(pathname) && /UAApp/.test(request.headers.get("user-agent") ?? "")) {
+    const url = request.nextUrl.clone();
+    url.pathname = IN_APP_MEMBERSHIP_PATH;
+    url.search = "";
+    return NextResponse.rewrite(url);
+  }
 
   // Signed in, the front door is the feed.
   if (pathname === "/" && hasSession(request)) {

@@ -32,6 +32,10 @@ const config: CapacitorConfig = {
     limitsNavigationsToAppBoundDomains: false,
   },
   plugins: {
+    // Show notifications even while the app is open.
+    PushNotifications: {
+      presentationOptions: ["alert", "sound"],
+    },
     SplashScreen: {
       launchShowDuration: 1200,
       launchAutoHide: true,

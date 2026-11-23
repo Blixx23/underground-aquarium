@@ -115,7 +115,7 @@ export default async function SocietyHome() {
           (ctx.society?.dues_amount_cents ?? 0) > 0 && (
             <Link
               href={SOCIETY_RENEW_PATH}
-              className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-1.5 font-medium text-ocean-950 transition-colors hover:bg-amber-400"
+              className="web-only inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-1.5 font-medium text-ocean-950 transition-colors hover:bg-amber-400"
             >
               Renew now <ArrowRight className="h-3.5 w-3.5" />
             </Link>

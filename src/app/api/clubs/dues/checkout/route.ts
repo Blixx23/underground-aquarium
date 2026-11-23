@@ -10,6 +10,11 @@ import {
 } from "@/lib/society/renewal";
 
 export async function POST(request: Request) {
+  // Never start a payment from inside the iPhone app (Apple's rules). The app
+  // never shows a pay button; this is the backstop.
+  if (/UAApp/.test(request.headers.get("user-agent") ?? "")) {
+    return NextResponse.json({ error: "Dues aren't paid in the app." }, { status: 403 });
+  }
   try {
     const supabase = await createClient();
     const {

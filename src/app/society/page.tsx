@@ -187,12 +187,14 @@ export default async function SocietyPage({
             open, with award programs somebody actually judges.
           </p>
 
-          <div className="mx-auto flex max-w-md flex-col items-center gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+          <div
+            className={`mx-auto flex max-w-md flex-col items-center gap-3 sm:max-w-none sm:flex-row sm:justify-center ${isMember ? "" : "web-only"}`}
+          >
             <Link href={ctaHref} className={`group w-full sm:w-auto ${SOC_BTN_PRIMARY}`}>
               {ctaLabel}
               <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link href="#dues" className={`w-full sm:w-auto ${SOC_BTN_GHOST}`}>
+            <Link href="#dues" className={`web-only w-full sm:w-auto ${SOC_BTN_GHOST}`}>
               What it costs
             </Link>
           </div>
@@ -243,7 +245,7 @@ export default async function SocietyPage({
       {/* ---------------- Dues ---------------- */}
       <section
         id="dues"
-        className="relative scroll-mt-24 overflow-hidden py-16 sm:py-24"
+        className="web-only relative scroll-mt-24 overflow-hidden py-16 sm:py-24"
       >
         <div
           className="pointer-events-none absolute left-1/2 top-1/2 h-[460px] w-[900px] max-w-full -translate-x-1/2 -translate-y-1/2"

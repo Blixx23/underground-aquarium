@@ -11,6 +11,7 @@ import SiteAnalytics from "@/components/SiteAnalytics";
 import NavProgress from "@/components/NavProgress";
 import PullToRefresh from "@/components/app/PullToRefresh";
 import AppSession from "@/components/app/AppSession";
+import AppPush from "@/components/app/AppPush";
 
 // Fonts are self-hosted from src/app/fonts and served from our own domain, so the
 // page never waits on Google Fonts, and a build can't fail because Google Fonts
@@ -118,6 +119,14 @@ export default function RootLayout({
       className={`${display.variable} ${body.variable} ${mono.variable}`}
     >
       <body>
+        {/* Inside the iPhone app, tag the page before it paints so anything
+            marked web-only (dues and payment) never flashes on screen. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if(/UAApp/.test(navigator.userAgent))document.documentElement.classList.add('in-app')",
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
@@ -129,6 +138,7 @@ export default function RootLayout({
         <Navbar />
         <PullToRefresh />
         <AppSession />
+        <AppPush />
         {/* Full screen (the iPhone app, or saved to the home screen) the page starts
             under the phone's clock. The fixed header grows by that much, so the
             page moves down by the same amount. Zero in a normal browser. */}
