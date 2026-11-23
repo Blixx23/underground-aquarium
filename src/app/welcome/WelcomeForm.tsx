@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function WelcomeForm({
@@ -13,7 +12,6 @@ export default function WelcomeForm({
   firstName: string | null;
   next: string;
 }) {
-  const router = useRouter();
   const [username, setUsername] = useState(suggested);
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,8 +45,10 @@ export default function WelcomeForm({
       return;
     }
 
-    router.refresh();
-    router.push(next);
+    // A full page load: the in-app router can keep pages it rendered before
+    // the username was saved (this one included), which left the button
+    // stuck on "Saving..." in the iPhone app until a reload.
+    window.location.assign(next);
   }
 
   return (

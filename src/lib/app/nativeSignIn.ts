@@ -21,7 +21,7 @@ const APP_CALLBACK = `${APP_SCHEME}://auth-callback`;
 
 type AppAuthPlugin = {
   webSignIn(opts: { url: string; callbackScheme: string }): Promise<{ url: string }>;
-  appleSignIn(opts: { nonce: string }): Promise<{ identityToken: string }>;
+  appleSignIn(opts: { nonce: string }): Promise<{ identityToken: string; givenName?: string; familyName?: string }>;
 };
 
 type CapWindow = {
@@ -110,9 +110,9 @@ export async function appAppleSignIn(next: string): Promise<void> {
   if (!plugin) throw new Error("Update the app to sign in with Apple.");
   // Apple gets the hashed nonce, Supabase the raw one, so a stolen token can't be replayed.
   const nonce = randomNonce();
-  const { identityToken } = await plugin.appleSignIn({ nonce: await sha256Hex(nonce) });
+  const { identityToken, givenName, familyName } = await plugin.appleSignIn({ nonce: await sha256Hex(nonce) });
   const supabase = createClient();
-  const { error } = await supabase.auth.signInWithIdToken({
+  const { data: signedIn, error } = await supabase.auth.signInWithIdToken({
     provider: "apple",
     token: identityToken,
     nonce,
@@ -123,6 +123,14 @@ export async function appAppleSignIn(next: string): Promise<void> {
       return;
     }
     throw new Error(error.message);
+  }
+  // Apple shares the person's name only the very first time, and not in the
+  // token, so save it now for a new account that has none yet.
+  const fullName = [givenName, familyName].filter(Boolean).join(" ").trim();
+  const uid = signedIn?.user?.id;
+  if (fullName && uid) {
+    await supabase.auth.updateUser({ data: { full_name: fullName } }).catch(() => {});
+    await supabase.from("profiles").update({ full_name: fullName }).eq("id", uid).is("full_name", null);
   }
   // Already signed in; the callback runs the same checks as every other
   // sign-in (new account picks a username, suspended, pending deletion).

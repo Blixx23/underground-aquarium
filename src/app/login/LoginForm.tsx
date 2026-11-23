@@ -47,15 +47,15 @@ export default function LoginForm({ notice = null }: { notice?: string | null })
         .eq('id', uid)
         .maybeSingle()
       if (profile?.deleted_at) {
-        router.refresh()
-        router.push('/account/deletion-pending')
+        window.location.assign('/account/deletion-pending')
         return
       }
     }
 
-    // Back to wherever sent them here (Trophies, the member area...).
-    router.refresh()
-    router.push(nextFromLocation('/feed'))
+    // Back to wherever sent them here (Trophies, the member area...). A full
+    // page load, so nothing rendered while signed out is reused; otherwise
+    // the page could sit looking stuck until a reload (seen in the app).
+    window.location.assign(nextFromLocation('/feed'))
   }
 
   return (

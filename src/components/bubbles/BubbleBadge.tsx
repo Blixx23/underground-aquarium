@@ -31,14 +31,14 @@ export default function BubbleBadge({
     : `${balance.toLocaleString()} bubbles · ${tier.name} (rank ${rank}/${TIER_COUNT}) · top tier`;
 
   return (
-    <span className="inline-flex items-center gap-1.5" title={title}>
+    <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5" title={title}>
       <BubbleIcon className={`${icon} ${tier.color}`} />
       <span className={`font-semibold tabular-nums ${tier.color} ${text}`}>
         {balance.toLocaleString()}
         {size === "md" && <span className="ml-1 font-normal text-ocean-400">bubbles</span>}
       </span>
       {showTier && (
-        <span className="text-ocean-500 text-sm">
+        <span className="whitespace-nowrap text-ocean-500 text-sm">
           · {tier.name}{" "}
           <span className="text-ocean-600">
             {size === "md" ? `(level ${rank} of ${TIER_COUNT})` : `(${rank}/${TIER_COUNT})`}

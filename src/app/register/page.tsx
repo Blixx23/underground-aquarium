@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { nextFromLocation } from "@/lib/safeNext";
 import { useCarrySearch } from "@/lib/hooks/useCarrySearch";
@@ -13,7 +12,6 @@ import AppleButton from "@/components/auth/AppleButton";
 
 export default function RegisterPage() {
   const carry = useCarrySearch();
-  const router = useRouter();
   const supabase = createClient();
 
   const [username, setUsername] = useState("");
@@ -72,8 +70,8 @@ export default function RegisterPage() {
       return;
     }
 
-    router.refresh();
-    router.push(nextFromLocation("/feed"));
+    // Full page load, same reason as logging in: no stale signed-out pages.
+    window.location.assign(nextFromLocation("/feed"));
   }
 
   return (

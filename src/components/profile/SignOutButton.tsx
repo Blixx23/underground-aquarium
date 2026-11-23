@@ -14,7 +14,8 @@ export default function SignOutButton() {
         setBusy(true);
         await createClient().auth.signOut();
         // Full page load so nothing rendered while signed in is reused.
-        window.location.replace("/");
+        // In the iPhone app, back to the welcome screen rather than the homepage.
+        window.location.replace(/UAApp/.test(navigator.userAgent) ? "/start" : "/");
       }}
       className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 py-3 text-sm text-ocean-300 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50"
     >

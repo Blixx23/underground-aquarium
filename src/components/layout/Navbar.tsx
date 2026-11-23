@@ -244,7 +244,8 @@ export default function Navbar() {
     // rendered while you were signed in (including "/" redirecting to your
     // feed), and would show them again. replace() also keeps the Back button
     // from returning to a signed-in page.
-    window.location.replace("/");
+    // In the iPhone app, back to the welcome screen rather than the homepage.
+    window.location.replace(/UAApp/.test(navigator.userAgent) ? "/start" : "/");
   }
 
   return (

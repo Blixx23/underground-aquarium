@@ -37,9 +37,31 @@ export default async function WelcomePage({
 
   const firstName = (profile.full_name ?? "").trim().split(/\s+/)[0] || null;
 
+  // "Hide My Email" with Apple gives a random address (g9ymvvjpyg@privaterelay…),
+  // and the starting username came from it. Suggest one from their name
+  // instead, with two digits added if someone already has it.
+  let suggested = profile.username ?? "";
+  if (/@privaterelay\.appleid\.com$/i.test(user.email ?? "")) {
+    const fromName = (profile.full_name ?? "")
+      .normalize("NFKD")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 20);
+    if (fromName.length >= 3) {
+      const { data: taken } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("username", fromName)
+        .neq("id", user.id)
+        .maybeSingle();
+      suggested = taken ? `${fromName}${Math.floor(10 + Math.random() * 90)}` : fromName;
+    }
+  }
+
   return (
     <WelcomeForm
-      suggested={profile.username ?? ""}
+      suggested={suggested}
       firstName={firstName}
       next={goTo}
     />
