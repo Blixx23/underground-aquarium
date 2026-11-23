@@ -513,8 +513,16 @@ function Photos({
   if (shown.length === 1) {
     return (
       <button type="button" onClick={() => tap(0)} className="block w-full bg-ocean-950" aria-label="Open photo">
+        {/* One photo shows at its own shape (no frame, no blurred filler), so
+            its edges are the edges of the card. Very tall photos stop at
+            600px, centred with plain dark sides. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <WholePhoto src={shown[0]} alt={alt} className="aspect-[4/5] max-h-[560px] sm:aspect-[4/3]" />
+        <img
+          src={thumb(shown[0], 828)}
+          alt={alt}
+          loading="lazy"
+          className="block h-auto max-h-[600px] w-full object-contain"
+        />
       </button>
     );
   }
@@ -529,8 +537,10 @@ function Photos({
           aria-label={`Open photo ${i + 1}`}
           className={`relative block min-h-0 overflow-hidden ${shown.length === 3 && i === 0 ? "row-span-2" : ""}`}
         >
+          {/* Grid tiles are cropped to fill the square, like every photo grid;
+              tapping opens the whole photo. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <WholePhoto src={src} alt={`${alt} (${i + 1})`} className="h-full" />
+          <img src={thumb(src, 640)} alt={`${alt} (${i + 1})`} loading="lazy" className="h-full w-full object-cover" />
           {extra > 0 && i === shown.length - 1 && (
             <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-2xl font-semibold text-white">
               +{extra}
@@ -539,29 +549,6 @@ function Photos({
         </button>
       ))}
     </div>
-  );
-}
-
-/**
- * A photo shown whole, never trimmed: it sits centered in its box over a
- * soft blurred copy of itself, so tall and wide photos both stay
- * recognizable and every tile keeps its size.
- */
-function WholePhoto({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
-  return (
-    <span className={`relative block w-full overflow-hidden bg-ocean-950 ${className}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={thumb(src, 128)}
-        alt=""
-        aria-hidden
-        loading="lazy"
-        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
-      />
-      {/* The feed shows a phone-sized copy; tapping opens the full photo. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={thumb(src, 828)} alt={alt} loading="lazy" className="relative h-full w-full object-contain" />
-    </span>
   );
 }
 
