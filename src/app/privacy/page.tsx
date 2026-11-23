@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">
           Privacy Policy
         </h1>
-        <p className="text-ocean-400 text-sm mb-10">Last updated: September 27, 2026</p>
+        <p className="text-ocean-400 text-sm mb-10">Last updated: November 23, 2026</p>
 
         <div className="space-y-8 text-ocean-200 leading-relaxed">
           <section className="space-y-3">
@@ -64,6 +64,24 @@ export default function PrivacyPage() {
               or sign in to your account. We never see your Google password.
               If you sign up with an email and password instead, Google is not
               involved.
+            </p>
+            <p>
+              <span className="text-white">Signing in with Apple.</span> If
+              you choose &ldquo;Continue with Apple,&rdquo; Apple shares your
+              name (the first time only) and an email address with us. If you
+              choose Apple&apos;s &ldquo;Hide My Email,&rdquo; we receive a
+              private relay address that forwards to you, and we never see
+              your real one. We never see your Apple password.
+            </p>
+            <p>
+              <span className="text-white">The iPhone app.</span> The app shows
+              this same site, so everything in this policy applies to it. If
+              you turn on notifications, your phone gives us a push token, a
+              random code Apple uses to deliver notifications to that phone. We
+              store it with your account only to send you the notifications you
+              see in your bell, and we delete it when you sign out or turn
+              notifications off. You can turn notifications off at any time in
+              your iPhone&apos;s Settings.
             </p>
             <p>
               <span className="text-white">Listing information.</span> When you
@@ -142,8 +160,9 @@ export default function PrivacyPage() {
               the Service: Supabase (database, accounts, and storage), Resend
               (email delivery), Vercel (hosting and anonymous page statistics),
               OpenStreetMap&apos;s Nominatim (geocoding), Google (only when you
-              choose to sign in with Google), and Stripe (Society dues
-              payments).
+              choose to sign in with Google), Apple (only when you choose to
+              sign in with Apple, and to deliver notifications in the iPhone
+              app), and Stripe (Society dues payments).
             </p>
             <p>
               <span className="text-white">Other users.</span> Some information is
