@@ -129,6 +129,10 @@ export default function RootLayout({
         <Navbar />
         <PullToRefresh />
         <AppSession />
+        {/* Full screen (the iPhone app, or saved to the home screen) the page starts
+            under the phone's clock. The fixed header grows by that much, so the
+            page moves down by the same amount. Zero in a normal browser. */}
+        <div aria-hidden className="h-[env(safe-area-inset-top)]" />
         <div id="content">{children}</div>
         <Footer />
         <BottomNav />

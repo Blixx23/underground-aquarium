@@ -7,7 +7,8 @@ import { sendWelcomeOnce } from "@/lib/email/welcome";
 
 /**
  * Where sign-in links land: the sign-up confirmation email (a one-time code
- * or a token hash) and "Continue with Google" (a code). Signs the person in,
+ * or a token hash), "Continue with Google" / Apple (a code), and the iPhone
+ * app's native Apple sign-in (already signed in, no code). Signs the person in,
  * then sends them on. A brand-new Google account has no chosen username yet,
  * so it goes to /welcome first to pick one and accept the terms.
  */
@@ -38,6 +39,13 @@ export async function GET(request: NextRequest) {
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     ok = !error;
+  } else {
+    // Sign in with Apple in the iPhone app signs in on the page itself, then
+    // comes here so it gets the same checks below as every other sign-in.
+    const {
+      data: { user: already },
+    } = await supabase.auth.getUser();
+    ok = Boolean(already);
   }
 
   if (!ok) {

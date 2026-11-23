@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { nextFromLocation } from "@/lib/safeNext";
+import { appAppleSignIn, isCanceled, isInApp } from "@/lib/app/nativeSignIn";
 
 /**
  * Sign in with Apple. Works for both logging in and signing up, exactly like
@@ -33,6 +34,16 @@ export default function AppleButton({
     setLoading(true);
     const supabase = createClient();
     const next = nextPath ?? nextFromLocation("/feed");
+    // Inside the iPhone app: the native Apple sheet (Face ID).
+    if (isInApp()) {
+      try {
+        await appAppleSignIn(next);
+      } catch (e) {
+        if (!isCanceled(e)) setError(e instanceof Error ? e.message : "Couldn't sign in with Apple.");
+        setLoading(false);
+      }
+      return;
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "apple",
       options: {

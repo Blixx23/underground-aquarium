@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import AuthenticationServices
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -53,6 +54,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
+        // The app's own sign-in plugin (below): Google in the secure sheet,
+        // Apple with the native Face ID sheet.
+        bridge?.registerPluginInstance(AppAuthPlugin())
         setUpGestures()
     }
 
@@ -68,5 +72,109 @@ class MainViewController: CAPBridgeViewController {
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.bounces = true
         webView.scrollView.alwaysBounceVertical = true
+    }
+}
+
+/// Sign-in for the app ("AppAuth" in the site's lib/app/nativeSignIn.ts).
+///  - webSignIn: opens a sign-in page (Google) in Apple's secure sign-in
+///    sheet. Google blocks sign-in inside web views but allows this sheet.
+///    It closes by itself when the page sends the person back to
+///    com.undergroundaquarium.app://auth-callback and returns that address.
+///  - appleSignIn: the native Sign in with Apple sheet. Returns Apple's
+///    identity token, which the site hands to Supabase.
+/// Closing either sheet rejects with code "CANCELED" so the site stays quiet.
+@objc(AppAuthPlugin)
+public class AppAuthPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticationPresentationContextProviding,
+    ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    public let identifier = "AppAuthPlugin"
+    public let jsName = "AppAuth"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "webSignIn", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "appleSignIn", returnType: CAPPluginReturnPromise),
+    ]
+
+    private var webSession: ASWebAuthenticationSession?
+    private var appleCall: CAPPluginCall?
+
+    private func anchor() -> ASPresentationAnchor {
+        if let window = bridge?.viewController?.view.window { return window }
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        return scene?.windows.first(where: { $0.isKeyWindow }) ?? UIWindow()
+    }
+
+    @objc func webSignIn(_ call: CAPPluginCall) {
+        guard let raw = call.getString("url"), let url = URL(string: raw),
+              let scheme = call.getString("callbackScheme") else {
+            call.reject("Missing sign-in address")
+            return
+        }
+        DispatchQueue.main.async {
+            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: scheme) { [weak self] callbackURL, error in
+                self?.webSession = nil
+                if let callbackURL = callbackURL {
+                    call.resolve(["url": callbackURL.absoluteString])
+                } else if let err = error as? ASWebAuthenticationSessionError, err.code == .canceledLogin {
+                    call.reject("Sign-in closed", "CANCELED")
+                } else {
+                    call.reject(error?.localizedDescription ?? "Sign-in didn't finish")
+                }
+            }
+            session.presentationContextProvider = self
+            // Keep Safari's sign-ins so people already signed in to Google just tap their account.
+            session.prefersEphemeralWebBrowserSession = false
+            self.webSession = session
+            if !session.start() {
+                self.webSession = nil
+                call.reject("Couldn't open sign-in")
+            }
+        }
+    }
+
+    public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        return anchor()
+    }
+
+    @objc func appleSignIn(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            let request = ASAuthorizationAppleIDProvider().createRequest()
+            request.requestedScopes = [.fullName, .email]
+            request.nonce = call.getString("nonce")
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            self.appleCall = call
+            controller.performRequests()
+        }
+    }
+
+    public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        return anchor()
+    }
+
+    public func authorizationController(controller: ASAuthorizationController,
+                                        didCompleteWithAuthorization authorization: ASAuthorization) {
+        guard let call = appleCall else { return }
+        appleCall = nil
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let tokenData = credential.identityToken,
+              let token = String(data: tokenData, encoding: .utf8) else {
+            call.reject("Apple didn't return a sign-in token")
+            return
+        }
+        var result: [String: Any] = ["identityToken": token]
+        if let given = credential.fullName?.givenName { result["givenName"] = given }
+        if let family = credential.fullName?.familyName { result["familyName"] = family }
+        call.resolve(result)
+    }
+
+    public func authorizationController(controller: ASAuthorizationController,
+                                        didCompleteWithError error: Error) {
+        guard let call = appleCall else { return }
+        appleCall = nil
+        if let err = error as? ASAuthorizationError, err.code == .canceled {
+            call.reject("Sign-in closed", "CANCELED")
+        } else {
+            call.reject(error.localizedDescription)
+        }
     }
 }

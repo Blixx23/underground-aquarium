@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { nextFromLocation } from "@/lib/safeNext";
+import { appWebSignIn, isCanceled, isInApp } from "@/lib/app/nativeSignIn";
 
 /**
  * "Continue with Google". Works for both logging in and signing up:
@@ -26,6 +27,17 @@ export default function GoogleButton({
     setLoading(true);
     const supabase = createClient();
     const next = nextPath ?? nextFromLocation("/feed");
+    // Inside the iPhone app Google won't sign in from the web view, so it
+    // opens the secure sign-in sheet instead.
+    if (isInApp()) {
+      try {
+        await appWebSignIn("google", next);
+      } catch (e) {
+        if (!isCanceled(e)) setError(e instanceof Error ? e.message : "Couldn't sign in with Google.");
+        setLoading(false);
+      }
+      return;
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
