@@ -251,7 +251,7 @@ export default function GuideBrowser({ guides, children }: { guides: GuideCard[]
   return (
     <div>
       {/* Search first, and on phones it stays pinned under the header while you scroll. */}
-      <div className="sticky top-16 z-20 -mx-6 mb-3 border-b border-ocean-800/60 bg-ocean-950/95 px-6 py-2 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+      <div className="sticky top-[calc(4rem+env(safe-area-inset-top))] z-20 -mx-6 mb-3 border-b border-ocean-800/60 bg-ocean-950/95 px-6 py-2 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative w-full sm:order-2 sm:ml-auto sm:w-80">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-500" />

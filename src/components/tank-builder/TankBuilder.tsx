@@ -770,7 +770,7 @@ export default function TankBuilder({
       {/* Phone and tablet tab bar: stays under the site menu while scrolling. The ! margins
           beat the tools frame's margin reset so the bar runs edge to edge. */}
       <div ref={panelTop} className="scroll-mt-[65px] xl:hidden" />
-      <div className="sticky top-[65px] z-20 !-mx-4 mb-4 border-b border-white/10 bg-ocean-950/95 px-4 py-2 backdrop-blur-xl sm:!-mx-6 sm:px-6 xl:hidden">
+      <div className="sticky top-[calc(65px+env(safe-area-inset-top))] z-20 !-mx-4 mb-4 border-b border-white/10 bg-ocean-950/95 px-4 py-2 backdrop-blur-xl sm:!-mx-6 sm:px-6 xl:hidden">
         <div className="flex items-center gap-2">
           <div className="grid flex-1 grid-cols-3 gap-1 rounded-xl border border-white/10 bg-white/5 p-1" role="tablist" aria-label="Tank Builder">
             <button

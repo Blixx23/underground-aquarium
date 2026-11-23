@@ -415,7 +415,7 @@ export default function StoreDirectory({
   return (
     <div>
       {/* Search and location stay in reach while the list scrolls. */}
-      <div className="sticky top-16 z-20 -mx-6 mb-6 border-b border-white/10 bg-ocean-950/90 px-6 pb-4 pt-4 backdrop-blur-md">
+      <div className="sticky top-[calc(4rem+env(safe-area-inset-top))] z-20 -mx-6 mb-6 border-b border-white/10 bg-ocean-950/90 px-6 pb-4 pt-4 backdrop-blur-md">
         <div className="flex flex-col gap-2.5 sm:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ocean-400" />

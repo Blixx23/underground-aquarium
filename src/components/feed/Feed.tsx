@@ -154,7 +154,7 @@ export default function Feed({
   return (
     <div ref={top} className="space-y-5 scroll-mt-20 sm:space-y-6">
       {fresh > 0 && (
-        <div className="pointer-events-none sticky top-20 z-30 flex justify-center">
+        <div className="pointer-events-none sticky top-[calc(5rem+env(safe-area-inset-top))] z-30 flex justify-center">
           <button
             type="button"
             onClick={showNew}

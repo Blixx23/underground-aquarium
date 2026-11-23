@@ -21,6 +21,10 @@
  * scrolls away with the page. `clip` cuts off sideways overflow the same
  * way without creating a scroll container, so fixed bars stay put.
  */
+/* Full screen (the iPhone app, or saved to the home screen) the page starts
+   under the phone's clock and battery. Push everything down by that much;
+   in a normal browser this is zero. The fixed header adds the same room. */
+body { padding-top: env(safe-area-inset-top); }
 html { scroll-behavior: smooth; overflow-x: clip; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { background: #020b18; color: #c2e4fa; font-family: var(--font-body); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: clip; overflow-wrap: break-word; }
 

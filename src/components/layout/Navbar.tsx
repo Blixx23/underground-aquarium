@@ -260,6 +260,9 @@ export default function Navbar() {
         open && "!bg-ocean-950"
       )}
     >
+      {/* Room for the phone's clock and battery when the site runs full screen
+          (the iPhone app, or saved to the home screen). Zero in a normal browser. */}
+      <div aria-hidden className="h-[env(safe-area-inset-top)]" />
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link href={user ? "/feed" : "/"} className="flex items-center gap-3 group">
@@ -561,7 +564,7 @@ export default function Navbar() {
 
       {/* Mobile menu: just the site's sections. Your own stuff lives on the Me tab. */}
       {open && (
-        <div className="md:hidden bg-ocean-950 border-t border-ocean-800/50 px-4 pt-3 pb-[calc(3rem_+_env(safe-area-inset-bottom))] h-[calc(100dvh_-_4rem)] overflow-y-auto overscroll-contain">
+        <div className="md:hidden bg-ocean-950 border-t border-ocean-800/50 px-4 pt-3 pb-[calc(3rem_+_env(safe-area-inset-bottom))] h-[calc(100dvh_-_4rem_-_env(safe-area-inset-top))] overflow-y-auto overscroll-contain">
           {/* The Society's home on phones, now it's off the bottom bar. */}
           <Link
             href={SOCIETY_PATH}

@@ -406,7 +406,7 @@ export default function MasteryExam({
     return (
       <div className="select-none print:hidden" onCopy={(e) => e.preventDefault()} onContextMenu={(e) => e.preventDefault()}>
         {/* Top bar */}
-        <div className="sticky top-20 z-20 -mx-2 mb-6 rounded-2xl border border-ocean-800/70 bg-ocean-950/90 px-4 py-3 backdrop-blur">
+        <div className="sticky top-[calc(5rem+env(safe-area-inset-top))] z-20 -mx-2 mb-6 rounded-2xl border border-ocean-800/70 bg-ocean-950/90 px-4 py-3 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-4 text-sm">
               <span className="text-white">
