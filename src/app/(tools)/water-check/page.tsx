@@ -129,9 +129,9 @@ export default function WaterCheckPage() {
             Enter your test-kit numbers and get a plain-English read on what&apos;s healthy, what isn&apos;t, and how to fix it.
             Fill in only what you have. For freshwater tanks.
           </p>
-          {/* A verified shop near the visitor, for test kits and water treatments. */}
+          {/* A local shop near the visitor (rotates), for test kits and water treatments. */}
           <div className="mt-4 max-w-2xl empty:hidden">
-            <FeaturedShopCard slot={0} variant="strip" lead="Need a test kit or water treatment? Verified shop near you:" />
+            <FeaturedShopCard slot={0} variant="strip" lead="Need a test kit or water treatment? Try" />
           </div>
         </div>
 

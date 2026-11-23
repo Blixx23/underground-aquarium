@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getClaimedShopsNear } from "@/lib/stores/claimedNearby";
+import { getShopsNear } from "@/lib/stores/claimedNearby";
 
 /**
- * Claimed shops near a point, for the "Local fish stores" box on classified
- * ads and forum threads. Uses ?lat=&lng= when given (an ad's region),
+ * Fish stores near a point (claimed or not), for the local shop card on
+ * classified ads, forum lists and the tools. Uses ?lat=&lng= when given (an ad's region),
  * otherwise the visitor's rough location from Vercel's connection headers.
  */
 export async function GET(req: NextRequest) {
@@ -31,8 +31,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const limit = Math.min(6, Math.max(1, Number(req.nextUrl.searchParams.get("limit")) || 3));
-    const shops = await getClaimedShopsNear(lat, lng, { limit });
+    const limit = Math.min(12, Math.max(1, Number(req.nextUrl.searchParams.get("limit")) || 3));
+    const nearest = await getShopsNear(lat, lng, { limit });
+    // Rotate among shops that are actually local (within 40 miles). Where
+    // there are fewer than 3 that close, fall back to the nearest 3, so the
+    // card still says something true ("Nearest fish store · 85 mi").
+    const local = nearest.filter((s) => s.miles <= 40);
+    const shops = local.length >= 3 ? local : nearest.slice(0, 3);
     return NextResponse.json(
       { shops },
       // Location-based, so don't let a shared cache hand one city's shops to another.

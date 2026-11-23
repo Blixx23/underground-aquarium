@@ -193,7 +193,7 @@ export default async function TankSizePage({ params }: Props) {
       <section className="mt-12">
         <TankBuilder species={species} initialGallons={g} embedded />
         <div className="mx-auto mt-6 max-w-3xl font-sans empty:hidden">
-          <FeaturedShopCard slot={0} variant="strip" lead="Ready to stock it? Verified shop near you:" />
+          <FeaturedShopCard slot={0} variant="strip" lead="Ready to stock it? Try" />
         </div>
       </section>
 

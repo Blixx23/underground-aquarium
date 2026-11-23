@@ -15,12 +15,10 @@ export type ClaimedShop = {
 };
 
 /**
- * The nearest claimed shops to a point, for the "Featured shops" box on
- * classified ads and forum threads. Free advertising for now, so shops that
- * claim their page see themselves pop up. Nearest always wins (no paid
- * bump), and there's no distance cutoff: with only a few claimed shops so
- * far, a cutoff would leave most pages empty. The distance is shown, so it
- * stays honest.
+ * The nearest fish stores to a point, claimed or not, for the shop card on
+ * classified ads, forum lists and the tools. Nearest always wins. The visitor
+ * never has to share their location: the API route uses the rough location
+ * Vercel reads from their connection, or the ad's own area.
  */
 /** The site's own shop page. It's ours, not a local store, so it never gets the featured spot. */
 function isHouseShop(name: string, slug: string) {
@@ -28,7 +26,7 @@ function isHouseShop(name: string, slug: string) {
   return n === "undergroundaquarium" || slug.toLowerCase().startsWith("underground-aquarium");
 }
 
-export async function getClaimedShopsNear(
+export async function getShopsNear(
   lat: number,
   lng: number,
   { limit = 3 } = {}
@@ -45,21 +43,29 @@ export async function getClaimedShopsNear(
     cover_url?: string | null;
   };
 
-  // Claimed shops are a small set, so read them all and sort by distance.
-  // logo_url and cover_url are newer columns; ask again without it if this database lacks it.
+  // Look in a box around the point first and widen it until there are enough
+  // shops, so we never read the whole directory to find the closest few.
+  // logo_url and cover_url are newer columns; ask again without them if missing.
   const base = "id, slug, name, city, state, lat, lng";
-  const run = (cols: string) =>
+  const run = (cols: string, deg: number) =>
     supabasePublic
       .from("fish_stores")
       .select(cols)
       .eq("status", "published")
-      .not("claimed_by", "is", null)
-      .not("lat", "is", null)
-      .limit(2000);
-  let res = await run(`${base}, logo_url, cover_url`);
-  if (res.error) res = await run(base);
+      .gte("lat", lat - deg)
+      .lte("lat", lat + deg)
+      .gte("lng", lng - deg * 1.3)
+      .lte("lng", lng + deg * 1.3)
+      .limit(400);
+  let rows: Row[] = [];
+  for (const deg of [0.75, 2, 5, 12]) {
+    let res = await run(`${base}, logo_url, cover_url`, deg);
+    if (res.error) res = await run(base, deg);
+    rows = (res.data ?? []) as unknown as Row[];
+    if (rows.length >= limit) break;
+  }
 
-  const near = ((res.data ?? []) as unknown as Row[])
+  const near = rows
     .filter((s) => s.lat != null && s.lng != null && !isHouseShop(s.name, s.slug))
     .map((s) => ({ s, d: milesBetween(lat, lng, s.lat!, s.lng!) }))
     .sort((a, b) => a.d - b.d)
@@ -90,3 +96,6 @@ export async function getClaimedShopsNear(
     };
   });
 }
+
+/** Old name, kept so nothing else breaks. */
+export const getClaimedShopsNear = getShopsNear;

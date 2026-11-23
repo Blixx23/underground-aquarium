@@ -127,7 +127,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   },
   {
     href: "/admin/shop-highlights", label: "Shop highlights", sub: "Top shops by times seen", group: "shops", Icon: Award,
-    about: "Every claimed shop ranked by how often it was seen in the Verified Shop highlights and on its own page.",
+    about: "Shops ranked by how often they were seen in the local shop cards and on their own page.",
   },
 
   // Community

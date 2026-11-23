@@ -93,9 +93,9 @@ export default async function TankBuilderPage() {
 
       <TankBuilder species={species} />
 
-      {/* A verified shop near the visitor, for when the build is ready to stock. */}
+      {/* A local shop near the visitor (rotates), for when the build is ready to stock. */}
       <div className="mx-auto mt-8 max-w-3xl font-sans empty:hidden">
-        <FeaturedShopCard slot={0} variant="strip" lead="Ready to stock it? Verified shop near you:" />
+        <FeaturedShopCard slot={0} variant="strip" lead="Ready to stock it? Try" />
       </div>
 
       <div className="mt-16 space-y-14 font-sans">

@@ -2,35 +2,55 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Award, MapPin, Store } from "lucide-react";
+import { MapPin, Store } from "lucide-react";
 import ShopLogo from "@/components/stores/ShopLogo";
 import Stars from "@/components/stores/Stars";
 import { createClient } from "@/lib/supabase/client";
-import type { ClaimedShop } from "@/lib/stores/claimedNearby";
+import type { ClaimedShop as NearbyShop } from "@/lib/stores/claimedNearby";
+import { milesLabel } from "@/lib/stores/miles";
+import { thumb } from "@/lib/images/thumb";
 
 /*
- * Verified (claimed) shops, mixed in among classified ads and forum threads.
- * Shown as something the shop earned by claiming its page, not as an ad.
- * Built so the spot can be sold later. Each shop counts a "seen" once per browser per day when its card is
- * at least half on screen; the owner gets the total in the Monday report.
+ * A local fish store mixed in among classified ads, forum threads and the
+ * tools: plain, useful local information, never an ad. Which area it's for:
+ * the page's own area when it has one (browsing Sacramento shows Sacramento
+ * shops), otherwise the visitor's rough location from their connection, so
+ * nobody is asked for their location.
+ *
+ * It keeps the slowly turning rainbow border so it stands out, but there is
+ * no "verified" badge: any nearby shop can be the one shown.
+ *
+ * Rotation: the server sends the closest shops in the area; the browser
+ * shuffles them once per page view, so each visit shows different local
+ * shops instead of the same one every time. Views are still counted per
+ * shop (once per browser per day) for the owner's Monday report.
  */
 
-const MAX = 6;
-const cache = new Map<string, Promise<ClaimedShop[]>>();
+const POOL = 12;
+const cache = new Map<string, Promise<NearbyShop[]>>();
 
-/** One fetch per page and place, shared by every card on the page. */
-function loadShops(lat?: number | null, lng?: number | null): Promise<ClaimedShop[]> {
+/** One fetch per page and place, shuffled once, shared by every card on the page. */
+function loadShops(lat?: number | null, lng?: number | null): Promise<NearbyShop[]> {
   const where = lat != null && lng != null ? `lat=${lat}&lng=${lng}&` : "";
   const key = where || "visitor";
   let p = cache.get(key);
   if (!p) {
-    p = fetch(`/api/stores/claimed-near?${where}limit=${MAX}`)
+    p = fetch(`/api/stores/claimed-near?${where}limit=${POOL}`)
       .then((r) => (r.ok ? r.json() : { shops: [] }))
-      .then((d: { shops?: ClaimedShop[] }) => d.shops ?? [])
+      .then((d: { shops?: NearbyShop[] }) => shuffle(d.shops ?? []))
       .catch(() => []);
     cache.set(key, p);
   }
   return p;
+}
+
+function shuffle<T>(list: T[]): T[] {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }
 
 function countSeen(shopId: string) {
@@ -49,7 +69,7 @@ function countClick(shopId: string) {
   createClient().rpc("record_store_event", { p_store: shopId, p_kind: "featured_click" });
 }
 
-// A slowly turning rainbow, used for the shop's border and its logo ring.
+// A slowly turning rainbow border: the shop card's highlight.
 const RAINBOW =
   "bg-[conic-gradient(from_0deg,#ff2d55,#ff9500,#ffd60a,#30d158,#0ac8ff,#5e5ce6,#bf5af2,#ff2d55)]";
 const SPIN = "animate-[spin_6s_linear_infinite] motion-reduce:animate-none";
@@ -82,15 +102,13 @@ function RgbFrame({
   );
 }
 
-const LOCAL_MILES = 100;
+/** Within this, a shop is "local"; past it we say "nearest" so it stays honest. */
+const LOCAL_MILES = 40;
 
-function place(s: ClaimedShop) {
+function place(s: NearbyShop) {
   const town = [s.city, s.state].filter(Boolean).join(", ");
-  const mi = s.miles < 1 ? "under 1 mi" : `${Math.round(s.miles).toLocaleString("en-US")} mi`;
-  // Shops show at any distance on purpose (there are only a few verified ones yet),
-  // but we only call one "local" or "near you" when it's within a reasonable drive.
   const local = s.miles <= LOCAL_MILES;
-  return { town, mi, local };
+  return { town, mi: milesLabel(s.miles), local, kind: local ? "Local fish store" : "Nearest fish store" };
 }
 
 export default function FeaturedShopCard({
@@ -100,17 +118,17 @@ export default function FeaturedShopCard({
   lng,
   lead = "Need supplies?",
 }: {
-  /** Which featured shop this spot shows: 0 is the nearest, 1 the next, and so on. */
+  /** Which shop of the shuffled local set this spot shows (0, 1, 2...). */
   slot: number;
-  /** "tile" = homepage Just posted, "card" = classifieds grid, "forum" = thread row, "feed" = community feed post. */
+  /** "tile" = homepage ads, "card" = classifieds grid, "forum" = thread row, "feed" = feed post, "strip" = one line on tools. */
   variant: "tile" | "card" | "forum" | "feed" | "strip";
   /** For "strip": the short question before the shop, fitted to the page. */
   lead?: string;
-  /** A place to measure from (an ad's region). Leave out for the visitor's rough location. */
+  /** The page's own area (an ad's or a classifieds area's). Leave out for the visitor's rough location. */
   lat?: number | null;
   lng?: number | null;
 }) {
-  const [shop, setShop] = useState<ClaimedShop | null>(null);
+  const [shop, setShop] = useState<NearbyShop | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -141,69 +159,21 @@ export default function FeaturedShopCard({
 
   if (!shop) return null;
   const href = `/stores/${shop.slug}`;
-  const { town, mi, local } = place(shop);
-  const kind = local ? "Local fish store" : "Verified fish store";
+  const { town, mi, kind } = place(shop);
   const picture = shop.cover_url || shop.logo_url;
+  const go = () => countClick(shop.id);
 
-  // An earned badge, like an achievement: a medal with ribbon tails and a
-  // banner reading "Verified Shop". Shops get it by claiming their page.
-  const Medal = ({ size = 28 }: { size?: number }) => (
-    <span className="relative inline-flex shrink-0 flex-col items-center" style={{ width: size }} aria-hidden>
-      <span
-        className="relative z-10 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-300 via-emerald-500 to-emerald-700 shadow-[0_0_12px_rgba(16,185,129,0.65)] ring-2 ring-emerald-200/70"
-        style={{ width: size, height: size }}
-      >
-        <span className="absolute inset-[3px] rounded-full border border-white/40" />
-        <Award className="text-white drop-shadow" style={{ width: size * 0.55, height: size * 0.55 }} strokeWidth={2.25} />
-      </span>
-      <span className="-mt-1 flex gap-[2px]">
-        <span className="block bg-emerald-600" style={{ width: size * 0.22, height: size * 0.38, clipPath: "polygon(0 0,100% 0,100% 100%,50% 75%,0 100%)" }} />
-        <span className="block bg-emerald-700" style={{ width: size * 0.22, height: size * 0.38, clipPath: "polygon(0 0,100% 0,100% 100%,50% 75%,0 100%)" }} />
-      </span>
+  const Tag = () => (
+    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+      <Store className="h-3 w-3" /> {kind}
     </span>
   );
 
-  const Ribbon = ({ small = false }: { small?: boolean }) => (
-    <span
-      className={`inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 font-bold uppercase tracking-[0.12em] text-ocean-950 shadow-[0_2px_10px_rgba(16,185,129,0.45)] ${
-        small ? "px-3 py-0.5 text-[9px]" : "px-3.5 py-1 text-[10px]"
-      }`}
-      style={{ clipPath: "polygon(0 0,100% 0,94% 50%,100% 100%,0 100%,6% 50%)" }}
-    >
-      Verified Shop
-    </span>
-  );
-
-  // The achievement as it sits on a picture: medal plus banner.
-  const FeaturedPill = ({ className = "", small = false }: { className?: string; small?: boolean }) => (
-    <span className={`inline-flex items-center gap-1 ${className}`}>
-      <Medal size={small ? 24 : 30} />
-      <span className="-ml-2.5 mb-2">
-        <Ribbon small={small} />
-      </span>
-    </span>
-  );
-
-  // The shop's logo with a glowing ring and the medal pinned to it.
-  const LogoWithMedal = ({ size }: { size: number }) => (
-    <span className="relative inline-flex shrink-0">
-      <span className="relative overflow-hidden rounded-full p-[2.5px] shadow-[0_0_14px_rgba(94,92,230,0.5)]">
-        <span aria-hidden className={`absolute inset-0 rounded-full ${RAINBOW} ${SPIN}`} />
-        <span className="relative block rounded-full bg-ocean-950">
-          <ShopLogo name={shop.name} url={shop.logo_url} size={size} />
-        </span>
-      </span>
-      <span className="absolute -bottom-2 -right-2">
-        <Medal size={Math.round(size * 0.45)} />
-      </span>
-    </span>
-  );
-
-  const Photo = ({ size }: { size: number }) =>
+  const Picture = ({ size }: { size: number }) =>
     picture ? (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={picture}
+        src={thumb(picture, 640)}
         alt={shop.name}
         loading="lazy"
         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -213,182 +183,110 @@ export default function FeaturedShopCard({
     );
 
   if (variant === "strip") {
-    // One slim line for busy tool pages: helpful, not in the way.
     return (
-<RgbFrame frameRef={ref} className="">
-      <Link
-        href={href}
-        onClick={() => countClick(shop.id)}
-        className="group flex items-center gap-3 rounded-[14px] bg-ocean-900/40 px-3.5 py-2.5"
-      >
-        <span className="pb-1.5 pr-1.5">
-          <LogoWithMedal size={30} />
-        </span>
-        <span className="min-w-0 flex-1 text-sm">
-          <span className="text-ocean-300">{local ? lead : lead.replace(/ near you:?$/, ":")} </span>
-          <span className="font-semibold text-white group-hover:underline">{shop.name}</span>
-          <span className="text-ocean-400">{` · ${town ? `${town} · ` : ""}${mi}`}</span>
-        </span>
-        <span className="hidden shrink-0 sm:inline-flex">
-          <Ribbon small />
-        </span>
-      </Link>
+      <RgbFrame frameRef={ref}>
+        <Link
+          href={href}
+          onClick={go}
+          className="group flex items-center gap-3 rounded-[14px] bg-ocean-900/40 px-3.5 py-2.5"
+        >
+          <ShopLogo name={shop.name} url={shop.logo_url} size={30} />
+          <span className="min-w-0 flex-1 text-sm">
+            <span className="text-ocean-300">{lead} </span>
+            <span className="font-semibold text-white group-hover:underline">{shop.name}</span>
+            <span className="text-ocean-400">{` · ${town ? `${town} · ` : ""}${mi}`}</span>
+          </span>
+        </Link>
       </RgbFrame>
     );
   }
 
-  if (variant === "feed") {
-    // Looks like a feed post from the shop: header, a line of text, the
-    // shop's banner if it has one, and a footer row like Like/Comment/Share.
+  if (variant === "feed" || variant === "forum") {
     return (
-<RgbFrame frameRef={ref} className="">
-      <article className="relative overflow-hidden rounded-[14px] bg-ocean-800/60 font-sans">
-        <div className="p-4 sm:p-5">
-          <div className="flex items-center gap-3">
-            <Link href={href} onClick={() => countClick(shop.id)} className="shrink-0 pb-2 pr-2">
-              <LogoWithMedal size={42} />
+      <RgbFrame frameRef={ref}>
+        <article className="flex gap-3 rounded-[14px] bg-ocean-900/40 p-4">
+          <Link href={href} onClick={go} className="shrink-0">
+            <ShopLogo name={shop.name} url={shop.logo_url} size={44} />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <Link href={href} onClick={go}>
+              <h3 className="truncate font-medium leading-snug text-white hover:text-ocean-100">{shop.name}</h3>
             </Link>
-            <div className="min-w-0 flex-1">
-              <Link
-                href={href}
-                onClick={() => countClick(shop.id)}
-                className="block truncate font-semibold text-white hover:underline"
-              >
-                {shop.name}
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ocean-500">
+              <Tag />
+              <span>{`${town ? `${town} · ` : ""}${mi}`}</span>
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <Stars rating={shop.rating_avg} count={shop.rating_count} size={12} />
+              <Link href={href} onClick={go} className="inline-flex items-center gap-1.5 text-xs text-ocean-400 hover:text-ocean-200">
+                <Store className="h-3.5 w-3.5" /> Hours, directions and reviews
               </Link>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-ocean-400">
-                <Ribbon small />
-                <span>{town ? `${town} · ` : ""}{mi}</span>
-              </p>
             </div>
           </div>
-          <p className="mt-3 text-[15px] leading-relaxed text-ocean-100">
-            {shop.name} is a verified local fish store on Underground Aquarium. Stop in for livestock,
-            plants and gear, and leave them a review after your visit.
-          </p>
-        </div>
-        {shop.cover_url && (
-          <Link href={href} onClick={() => countClick(shop.id)} className="group block overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={shop.cover_url}
-              alt={`${shop.name} banner`}
-              loading="lazy"
-              className="max-h-80 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-            />
-          </Link>
-        )}
-        <div className="mx-3 flex items-center justify-between gap-3 border-t border-ocean-800/50 px-1 py-2.5 sm:mx-4">
-          <Stars rating={shop.rating_avg} count={shop.rating_count} size={13} />
-          <Link
-            href={href}
-            onClick={() => countClick(shop.id)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-300 transition-colors hover:bg-white/5"
-          >
-            <Store className="h-4 w-4" /> Visit the shop
-          </Link>
-        </div>
-      </article>
-      </RgbFrame>
-    );
-  }
-
-  if (variant === "forum") {
-    return (
-<RgbFrame frameRef={ref} className="">
-      <article className="flex gap-3 rounded-[14px] bg-ocean-900/40 p-4">
-        <Link href={href} onClick={() => countClick(shop.id)} className="shrink-0 pb-2 pr-2">
-          <LogoWithMedal size={44} />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <Link href={href} onClick={() => countClick(shop.id)}>
-            <h3 className="flex items-center gap-1.5 font-medium leading-snug text-white hover:text-ocean-100">
-              <span className="truncate">{shop.name}</span>
-            </h3>
-          </Link>
-          <p className="mt-1 text-xs text-ocean-500">
-            <span className="mr-1.5 inline-block align-middle">
-              <Ribbon small />
-            </span>
-            {`${kind}${town ? ` in ${town}` : ""} · ${mi}`}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <Stars rating={shop.rating_avg} count={shop.rating_count} size={12} />
-            <Link
-              href={href}
-              onClick={() => countClick(shop.id)}
-              className="inline-flex items-center gap-1.5 text-xs text-ocean-400 hover:text-ocean-200"
-            >
-              <Store className="h-3.5 w-3.5" /> Visit the shop
-            </Link>
-          </div>
-        </div>
-      </article>
+        </article>
       </RgbFrame>
     );
   }
 
   if (variant === "tile") {
     return (
-<RgbFrame frameRef={ref} className="transition-transform duration-300 hover:-translate-y-1">
-      <Link
-        href={href}
-        onClick={() => countClick(shop.id)}
-        className="group block h-full overflow-hidden rounded-[14px] bg-ocean-900/50"
-      >
-        <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-900/60 to-ocean-950">
-          <Photo size={72} />
-          <FeaturedPill small className="absolute left-2 top-2" />
-        </div>
-        <div className="p-3.5">
-          <p className="flex items-center gap-1 text-sm text-white">
-            <span className="truncate">{shop.name}</span>
-          </p>
-          <p className="mt-0.5 text-sm text-emerald-300">{kind}</p>
-          <p className="mt-1.5 flex items-center gap-1 text-[11px] text-ocean-500">
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="truncate">{town || "Visit the shop"}</span>
-          </p>
-          <p className="text-[11px] text-ocean-600">{mi}</p>
-        </div>
-      </Link>
+      <RgbFrame frameRef={ref} className="h-full">
+        <Link
+          href={href}
+          onClick={go}
+          className="group block h-full overflow-hidden rounded-[14px] bg-ocean-900/50"
+        >
+          <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-900/50 to-ocean-950">
+            <Picture size={72} />
+            <span className="absolute left-2 top-2">
+              <Tag />
+            </span>
+          </div>
+          <div className="p-3.5">
+            <p className="truncate text-sm text-white">{shop.name}</p>
+            <div className="mt-1">
+              <Stars rating={shop.rating_avg} count={shop.rating_count} size={11} />
+            </div>
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-ocean-500">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{town || "Visit the shop"}</span>
+            </p>
+            <p className="text-[11px] text-ocean-600">{mi}</p>
+          </div>
+        </Link>
       </RgbFrame>
     );
   }
 
   // "card": matches the classifieds grid.
   return (
-<RgbFrame frameRef={ref} className="transition-transform duration-300 hover:-translate-y-0.5">
-    <Link
-      href={href}
-      onClick={() => countClick(shop.id)}
-      className="group relative block h-full overflow-hidden rounded-[14px] bg-ocean-900/60"
-    >
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-900/60 to-ocean-950">
-        <Photo size={88} />
-        <FeaturedPill className="absolute left-3 top-3" />
-      </div>
-      <div className="p-5">
-        <div className="mb-2 flex items-start justify-between gap-3">
-          <h2 className="flex items-center gap-1.5 font-display text-lg leading-snug text-white">
-            {shop.name}
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-ocean-400">
-          Owner-verified local fish store. Stop in for livestock, plants and gear.
-        </p>
-        <div className="flex items-center justify-between gap-3 text-xs text-ocean-500">
-          <span className="inline-flex min-w-0 items-center gap-1.5">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{town}</span>
-          </span>
-          <span className="inline-flex shrink-0 items-center gap-2.5">
-            <Stars rating={shop.rating_avg} count={shop.rating_count} size={11} showCount={false} />
-            <span>{mi}</span>
+    <RgbFrame frameRef={ref} className="h-full">
+      <Link
+        href={href}
+        onClick={go}
+        className="group relative block h-full overflow-hidden rounded-[14px] bg-ocean-900/60"
+      >
+        <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-900/50 to-ocean-950">
+          <Picture size={88} />
+          <span className="absolute left-3 top-3">
+            <Tag />
           </span>
         </div>
-      </div>
-    </Link>
-      </RgbFrame>
+        <div className="p-5">
+          <h2 className="mb-2 font-display text-lg leading-snug text-white">{shop.name}</h2>
+          <p className="mb-4 text-sm text-ocean-400">Livestock, plants and gear. Hours, directions and reviews on its page.</p>
+          <div className="flex items-center justify-between gap-3 text-xs text-ocean-500">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{town}</span>
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-2.5">
+              <Stars rating={shop.rating_avg} count={shop.rating_count} size={11} showCount={false} />
+              <span>{mi}</span>
+            </span>
+          </div>
+        </div>
+      </Link>
+    </RgbFrame>
   );
 }
