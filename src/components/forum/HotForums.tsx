@@ -3,6 +3,7 @@ import { Flame, MessageSquare, MessageSquareDashed, PenLine } from "lucide-react
 import { supabasePublic } from "@/lib/supabase/public";
 import { isFounder } from "@/lib/founder";
 import { thumb } from "@/lib/images/thumb";
+import { getStripExtras, type StripCard } from "@/lib/strip/extras";
 
 type Row = {
   id: string;
@@ -42,7 +43,10 @@ function heat(t: Row, now: number) {
 }
 
 /**
- * "Hot in the forums": a sideways-scrolling strip of story-style cards
+ * "New around the site": a sideways-scrolling strip of story-style cards.
+ * Forum threads take turns with things the feed never shows (shop reviews,
+ * species and word of the day, the next event, a guide, new species), so the
+ * row always has something new without repeating feed posts. It sits
  * above the feed, the way stories sit above the Facebook feed.
  */
 export default async function HotForums() {
@@ -67,7 +71,6 @@ export default async function HotForums() {
     .sort((a, b) => heat(b, now) - heat(a, now));
 
   if (ranked.length === 0) return null;
-
 
   const authorIds = [...new Set(ranked.map((t) => t.author_id).filter((x): x is string => Boolean(x)))];
   const people = new Map<string, { name: string; avatar: string | null; founder: boolean }>();
@@ -95,14 +98,76 @@ export default async function HotForums() {
   // Members' threads first, so the strip looks like the community talking;
   // the founder's guide threads fill in only when there aren't 8 of theirs.
   const byFounder = (t: Row) => Boolean(t.author_id && people.get(t.author_id)?.founder);
-  const threads = [...ranked.filter((t) => !byFounder(t)), ...ranked.filter(byFounder)].slice(0, 8);
+  // Four forum threads at most, so the rest of the row can show what the feed doesn't.
+  const threads = [...ranked.filter((t) => !byFounder(t)), ...ranked.filter(byFounder)].slice(0, 4);
+  const extras = await getStripExtras();
 
   // Only call it "Hot" when people are actually talking. While most threads
   // are still waiting for a first reply, it's honest to call them new.
   const busy = threads.filter((t) => (t.reply_count ?? 0) > 0).length;
-  const heading = busy >= 3 ? "Hot in the forums" : "New in the forums";
+  const heading = busy >= 3 ? "Hot around the site" : "New around the site";
 
   const card = "relative h-44 w-[7.25rem] shrink-0 snap-start overflow-hidden rounded-2xl border sm:h-48 sm:w-32";
+
+  const ThreadCard = ({ t }: { t: Row }) => {
+    const cat = catById.get(t.category_id)!;
+    const look = LOOK[cat.slug as string] ?? DEFAULT_LOOK;
+    const photo = Array.isArray(t.images) ? t.images[0] : undefined;
+    const who = t.author_id ? people.get(t.author_id) : undefined;
+    const gold = t.author_id ? society.has(t.author_id) : false;
+    return (
+      <Link
+        key={t.id}
+        href={`/forums/${cat.slug}/${t.slug}`}
+        className={`${card} group border-white/10 bg-gradient-to-b ${look.bg} to-ocean-950`}
+      >
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumb(photo, 256)}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <span className="absolute inset-x-0 top-9 text-center text-4xl opacity-80" aria-hidden="true">
+            {look.emoji}
+          </span>
+        )}
+        <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
+
+        {/* Author, ringed like a story. Society members get the gold ring, same as everywhere else. */}
+        <span
+          className={`absolute left-2 top-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-ocean-800 text-xs font-semibold uppercase text-white ring-2 ${
+            gold ? "ring-amber-400 shadow-[0_0_12px_rgba(217,160,60,0.35)]" : "ring-ocean-400"
+          }`}
+          title={gold && who ? `${who.name} · Society member` : who?.name}
+        >
+          {who?.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={who.avatar} alt="" className="h-full w-full object-cover" />
+          ) : (
+            (who?.name ?? "?").slice(0, 1)
+          )}
+        </span>
+
+        <span className="absolute inset-x-0 bottom-0 p-2">
+          <span className="mb-1 block truncate text-[10px] font-medium uppercase tracking-wider text-white/60">
+            {cat.name}
+          </span>
+          <span className="line-clamp-3 text-[13px] font-semibold leading-snug text-white">{t.title}</span>
+          {(t.reply_count ?? 0) > 0 ? (
+            <span className="mt-1 flex items-center gap-1 text-[11px] text-white/70">
+              <MessageSquare className="h-3 w-3" /> {t.reply_count}
+            </span>
+          ) : (
+            <span className="mt-1 block text-[11px] font-medium text-cyan-200/90">Add your take</span>
+          )}
+        </span>
+      </Link>
+    );
+
+  };
 
   return (
     <section aria-label={heading} className="pt-1">
@@ -111,7 +176,7 @@ export default async function HotForums() {
           <Flame className="h-4 w-4 text-coral-400" /> {heading}
         </p>
         <Link href="/forums" className="text-xs text-ocean-400 hover:text-white">
-          See all
+          All forums
         </Link>
       </div>
 
@@ -127,64 +192,11 @@ export default async function HotForums() {
           <span className="px-2 text-sm font-semibold leading-tight text-white">Ask the forums</span>
         </Link>
 
-        {threads.map((t) => {
-          const cat = catById.get(t.category_id)!;
-          const look = LOOK[cat.slug as string] ?? DEFAULT_LOOK;
-          const photo = Array.isArray(t.images) ? t.images[0] : undefined;
-          const who = t.author_id ? people.get(t.author_id) : undefined;
-          const gold = t.author_id ? society.has(t.author_id) : false;
-          return (
-            <Link
-              key={t.id}
-              href={`/forums/${cat.slug}/${t.slug}`}
-              className={`${card} group border-white/10 bg-gradient-to-b ${look.bg} to-ocean-950`}
-            >
-              {photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={thumb(photo, 256)}
-                  alt=""
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              ) : (
-                <span className="absolute inset-x-0 top-9 text-center text-4xl opacity-80" aria-hidden="true">
-                  {look.emoji}
-                </span>
-              )}
-              <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
-
-              {/* Author, ringed like a story. Society members get the gold ring, same as everywhere else. */}
-              <span
-                className={`absolute left-2 top-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-ocean-800 text-xs font-semibold uppercase text-white ring-2 ${
-                  gold ? "ring-amber-400 shadow-[0_0_12px_rgba(217,160,60,0.35)]" : "ring-ocean-400"
-                }`}
-                title={gold && who ? `${who.name} · Society member` : who?.name}
-              >
-                {who?.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={who.avatar} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  (who?.name ?? "?").slice(0, 1)
-                )}
-              </span>
-
-              <span className="absolute inset-x-0 bottom-0 p-2">
-                <span className="mb-1 block truncate text-[10px] font-medium uppercase tracking-wider text-white/60">
-                  {cat.name}
-                </span>
-                <span className="line-clamp-3 text-[13px] font-semibold leading-snug text-white">{t.title}</span>
-                {(t.reply_count ?? 0) > 0 ? (
-                  <span className="mt-1 flex items-center gap-1 text-[11px] text-white/70">
-                    <MessageSquare className="h-3 w-3" /> {t.reply_count}
-                  </span>
-                ) : (
-                  <span className="mt-1 block text-[11px] font-medium text-cyan-200/90">Add your take</span>
-                )}
-              </span>
-            </Link>
-          );
-        })}
+        {/* Threads and the other cards take turns: thread, card, thread, card... */}
+        {Array.from({ length: Math.max(threads.length, extras.length) }).flatMap((_, i) => [
+          threads[i] ? <ThreadCard key={threads[i].id} t={threads[i]} /> : null,
+          extras[i] ? <ExtraCard key={extras[i].key} c={extras[i]} card={card} /> : null,
+        ])}
 
         {(unanswered ?? 0) > 0 && (
           <Link
@@ -200,5 +212,46 @@ export default async function HotForums() {
         )}
       </div>
     </section>
+  );
+}
+
+/** A card from somewhere other than the forums (a review, species of the day...). */
+function ExtraCard({ c, card }: { c: StripCard; card: string }) {
+  return (
+    <Link href={c.href} className={`${card} group border-white/10 bg-gradient-to-b ${c.bg} to-ocean-950`}>
+      {c.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumb(c.image, 256)}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      ) : (
+        <span className="absolute inset-x-0 top-9 text-center text-4xl opacity-80" aria-hidden="true">
+          {c.emoji}
+        </span>
+      )}
+      <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
+      {c.avatar && (
+        <span
+          className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-ocean-800 text-xs font-semibold uppercase text-white ring-2 ring-amber-300/70"
+          title={c.avatar.name}
+        >
+          {c.avatar.src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={c.avatar.src} alt="" className="h-full w-full object-cover" />
+          ) : (
+            c.avatar.name.slice(0, 1)
+          )}
+        </span>
+      )}
+      <span className="absolute inset-x-0 bottom-0 p-2">
+        <span className="mb-1 block truncate text-[10px] font-medium uppercase tracking-wider text-white/60">{c.label}</span>
+        <span className="line-clamp-3 text-[13px] font-semibold leading-snug text-white">{c.title}</span>
+        {c.sub && <span className="mt-0.5 block truncate text-[11px] text-white/60">{c.sub}</span>}
+        <span className="mt-1 block truncate text-[11px] font-medium text-cyan-200/90">{c.cta}</span>
+      </span>
+    </Link>
   );
 }
