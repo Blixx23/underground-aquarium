@@ -1,0 +1,24 @@
+{
+  "name": "underground-aquarium-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "The Underground Aquarium iPhone and Android app (Capacitor shell around the live site).",
+  "scripts": {
+    "setup:ios": "bash scripts/setup-ios.sh",
+    "sync": "npx cap sync",
+    "open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.2",
+    "typescript": "^5.6.0"
+  }
+}
