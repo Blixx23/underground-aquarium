@@ -9,6 +9,7 @@ import DailyHeartbeat from "@/components/DailyHeartbeat";
 import TrophySync from "@/components/trophies/TrophySync";
 import SiteAnalytics from "@/components/SiteAnalytics";
 import NavProgress from "@/components/NavProgress";
+import PullToRefresh from "@/components/app/PullToRefresh";
 
 // Fonts are self-hosted from src/app/fonts and served from our own domain, so the
 // page never waits on Google Fonts, and a build can't fail because Google Fonts
@@ -125,6 +126,7 @@ export default function RootLayout({
         <DailyHeartbeat />
         <TrophySync />
         <Navbar />
+        <PullToRefresh />
         <div id="content">{children}</div>
         <Footer />
         <BottomNav />
