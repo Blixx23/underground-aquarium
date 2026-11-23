@@ -10,7 +10,10 @@ import { checkLinks, fetchPage, listSitePages } from "@/lib/ops/siteCheck";
  * The tools an agent can use. Every one of them reads, or writes only to
  * the team's own tables (memory, findings, scorecards). None of them can
  * change member data, send email or touch money. QA can load public pages
- * of the site.
+ * of the site. The one exception: the Community Manager can file a report
+ * into the same queue members' reports go to (/admin/reports), so Chris
+ * reviews it there with the usual Remove / Dismiss buttons. Filing a report
+ * never hides or changes anything by itself.
  */
 
 export type RunState = {
@@ -27,6 +30,17 @@ export type RunState = {
 const MAX_FETCHES = 60;
 
 const KINDS = ["queue", "message", "data", "bug", "decision", "idea"];
+
+// What the AI team can report, matching the Report buttons on the site and the
+// take-down actions in /admin/reports.
+const REPORT_TARGETS = ["feed_post", "forum_post", "listing", "profile"];
+const REPORT_REASONS = ["Spam", "Scam or fraud", "Prohibited or illegal", "Offensive or inappropriate", "Misleading or inaccurate", "Other"];
+const REPORT_TABLE: Record<string, string> = {
+  feed_post: "feed_posts",
+  forum_post: "forum_posts",
+  listing: "listings",
+  profile: "profiles",
+};
 const RISKS = ["low", "medium", "high"];
 
 export function toolsFor(worker: WorkerDef): ToolDef[] {
@@ -93,6 +107,28 @@ export function toolsFor(worker: WorkerDef): ToolDef[] {
         input_schema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
       }
     );
+  }
+
+  if (worker.key === "community") {
+    tools.push({
+      name: "file_report",
+      description:
+        "Put a post, comment, ad or member into Chris's Reports queue (/admin/reports), exactly like a member pressing " +
+        "Report. Use this for spam, scams, fights, protected or banned species, or anything else that should be taken " +
+        "down; do NOT file a finding for it as well. Only for something you found with query_database: give its real id. " +
+        "target_type: feed_post (feed_posts.id), forum_post (forum_posts.id, a thread's opening post or a reply), " +
+        "listing (listings.id), profile (profiles.id, the member). Filing doesn't hide anything; Chris decides.",
+      input_schema: {
+        type: "object",
+        properties: {
+          target_type: { type: "string", enum: REPORT_TARGETS },
+          target_id: { type: "string" },
+          reason: { type: "string", enum: REPORT_REASONS },
+          details: { type: "string", description: "What you saw and why it should come down, with the evidence. Plain words." },
+        },
+        required: ["target_type", "target_id", "reason", "details"],
+      },
+    });
   }
 
   if (worker.key === "reviewer") {
@@ -216,6 +252,34 @@ export function toolsFor(worker: WorkerDef): ToolDef[] {
   return tools;
 }
 
+/** The reported thing, if it really exists: a label and a link for the queue. */
+async function reportTarget(type: string, id: string): Promise<{ label: string; url: string | null } | null> {
+  const table = REPORT_TABLE[type];
+  if (!table) return null;
+  if (type === "listing") {
+    const { data } = await supabaseAdmin.from(table).select("id, title, slug").eq("id", id).maybeSingle();
+    return data ? { label: `Ad: ${data.title ?? "untitled"}`, url: data.slug ? `/listing/${data.slug}` : null } : null;
+  }
+  if (type === "profile") {
+    const { data } = await supabaseAdmin.from(table).select("id, username, full_name").eq("id", id).maybeSingle();
+    return data
+      ? { label: `Member: ${data.full_name || data.username || "unknown"}`, url: data.username ? `/u/${data.username}` : null }
+      : null;
+  }
+  if (type === "feed_post") {
+    const { data } = await supabaseAdmin.from(table).select("*").eq("id", id).maybeSingle();
+    if (!data) return null;
+    const text = String((data as Record<string, unknown>).body ?? "").replace(/\s+/g, " ").trim();
+    return { label: `Feed post: ${text.slice(0, 80) || "(photo)"}`, url: `/feed/${id}` };
+  }
+  // forum_post
+  const { data } = await supabaseAdmin.from(table).select("*").eq("id", id).maybeSingle();
+  if (!data) return null;
+  const row = data as Record<string, unknown>;
+  const text = String(row.body ?? row.content ?? "").replace(/\s+/g, " ").trim();
+  return { label: `Forum post: ${text.slice(0, 80) || "(no text)"}`, url: null };
+}
+
 function str(v: unknown, max = 4000): string {
   return typeof v === "string" ? v.slice(0, max) : "";
 }
@@ -300,6 +364,50 @@ export async function runTool(
         if (error) return { content: error.message, isError: true };
         state.findingsCreated++;
         return { content: `Filed (${data.id}).` };
+      }
+      case "file_report": {
+        if (w.key !== "community") return { content: "Only the Community Manager files reports.", isError: true };
+        const targetType = str(input.target_type);
+        const reason = str(input.reason);
+        const targetId = str(input.target_id, 200);
+        if (!REPORT_TARGETS.includes(targetType) || !REPORT_REASONS.includes(reason) || !targetId) {
+          return { content: "Bad target_type, reason or id.", isError: true };
+        }
+        if (state.findingsCreated >= 12) return { content: "That's enough for one run. Prioritise.", isError: true };
+        const found = await reportTarget(targetType, targetId);
+        if (!found) return { content: `No ${targetType} with id ${targetId}. Check it with query_database.`, isError: true };
+        // One open report per thing from the team is plenty.
+        const { data: open } = await supabaseAdmin
+          .from("reports")
+          .select("id")
+          .eq("target_type", targetType)
+          .eq("target_id", targetId)
+          .eq("status", "open")
+          .limit(1);
+        if (open && open.length > 0) return { content: `Already in the Reports queue (${open[0].id}).` };
+        const row = {
+          target_type: targetType,
+          target_id: targetId,
+          target_label: found.label.slice(0, 300),
+          target_url: found.url,
+          reason,
+          details: `Flagged by the AI team (${w.name}): ${str(input.details, 1800)}`,
+        };
+        // Filed with no member as the reporter, so the queue shows it came from
+        // the team. If the table insists on a reporter, Chris's own account is used.
+        let { error } = await supabaseAdmin.from("reports").insert({ ...row, reporter_id: null });
+        if (error && /null value|not-null|violates not-null/i.test(error.message)) {
+          const { data: chris } = await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .eq("username", "chris_lewis")
+            .maybeSingle();
+          if (!chris) return { content: error.message, isError: true };
+          ({ error } = await supabaseAdmin.from("reports").insert({ ...row, reporter_id: chris.id }));
+        }
+        if (error) return { content: error.message, isError: true };
+        state.findingsCreated++;
+        return { content: "Filed in the Reports queue. Chris will review it at /admin/reports." };
       }
       case "revise_finding": {
         const { data: row } = await supabaseAdmin

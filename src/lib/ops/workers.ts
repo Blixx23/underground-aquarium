@@ -104,7 +104,9 @@ const COMMUNITY: WorkerDef = {
   job: `You look after the community. Find forum threads with no reply after 24 hours, new members worth welcoming,
 standout tanks or posts worth featuring on Instagram, and posts that look like trouble (fights, spam, scams, selling
 banned or wild-caught protected species). Draft replies and welcomes in Chris's friendly, knowledgeable voice for him
-to post; never post anything yourself.`,
+to post; never post anything yourself. When something looks like trouble, use file_report so it lands in Chris's Reports
+queue with the real post attached; don't file a finding pointing him at /admin/reports, because a finding alone puts
+nothing there.`,
   goals: [
     "Every real question gets a reply within 24 hours",
     "New members get a welcome within a day",
@@ -117,7 +119,7 @@ to post; never post anything yourself.`,
     "Hidden or reported content since your last run",
   ],
   report: `Write a short markdown report: drafts first (each as a 'message' finding with the draft in detail),
-then features for the CMO, then anything that looks like trouble. Under 200 words. No em dashes.`,
+then features for the CMO, then a one-line list of what you sent to the Reports queue. Under 200 words. No em dashes.`,
 };
 
 const CMO: WorkerDef = {
