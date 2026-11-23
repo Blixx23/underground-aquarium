@@ -15,6 +15,7 @@ import { RotateCw } from "lucide-react";
  * In a normal browser this renders nothing.
  */
 const PULL = 70; // how far to pull, in px, before letting go refreshes
+const GAP = 56; // the room the arrow gets under the header while refreshing
 
 type Haptics = { impact?: (o: { style: string }) => Promise<void> };
 
@@ -106,6 +107,18 @@ export default function PullToRefresh() {
     };
   }, [inApp, router, spinning]);
 
+  // While refreshing, hold the page down so the arrow has its own gap under
+  // the header (like Mail or Instagram), then let it slide back up.
+  useEffect(() => {
+    const page = document.getElementById("content");
+    if (!inApp || !page) return;
+    page.style.transition = "transform 250ms ease";
+    page.style.transform = spinning ? `translateY(${GAP}px)` : "";
+    return () => {
+      page.style.transform = "";
+    };
+  }, [spinning, inApp]);
+
   // Keep spinning until the refresh lands, and at least long enough to be seen.
   useEffect(() => {
     if (!spinning || pending) return;
@@ -115,16 +128,18 @@ export default function PullToRefresh() {
 
   if (!inApp) return null;
   const progress = Math.min(1, pull / PULL);
-  const visible = spinning || pull > 4;
-
+  // Hidden until the gap under the header is big enough to hold it, so it
+  // never sits on top of the page.
+  const reveal = spinning ? 1 : Math.max(0, Math.min(1, (pull - 24) / 30));
   return (
     <div
       aria-hidden={!spinning}
       role={spinning ? "status" : undefined}
       className="pointer-events-none fixed left-1/2 z-40 -translate-x-1/2 transition-opacity duration-200"
       style={{
-        top: top + (spinning ? 12 : Math.min(pull, PULL + 20) / 2 - 18),
-        opacity: visible ? (spinning ? 1 : Math.max(0.2, progress)) : 0,
+        // Centered in the gap: the gap is GAP tall while refreshing.
+        top: top + (GAP - 36) / 2,
+        opacity: reveal,
       }}
     >
       <span
