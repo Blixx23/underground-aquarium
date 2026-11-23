@@ -16,7 +16,8 @@ import MentionPicker from "@/components/mentions/MentionPicker";
 
 /**
  * Wraps one forum post (the opener or a reply) and adds Edit and Delete for
- * its author and for admins. The thread page is cached for everyone, so it
+ * its author and for admins. Admins also get Archive (hide the reply or the
+ * whole thread, nothing deleted) and Suspend member (/api/admin/moderate). The thread page is cached for everyone, so it
  * renders the post the same for all readers and this component decides, in
  * the reader's browser, whether to show the buttons. The server checks again
  * before changing anything.
@@ -56,6 +57,7 @@ export default function EditablePost({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleted, setDeleted] = useState(false);
+  const [archived, setArchived] = useState<string | null>(null);
 
   const isAuthor = Boolean(viewer && authorId && viewer.id === authorId);
   const isAdmin = Boolean(viewer?.isAdmin);
@@ -142,6 +144,43 @@ export default function EditablePost({
       setError(e instanceof Error ? e.message : "Couldn't delete that.");
       setBusy(false);
     }
+  }
+
+  /** Admin-only quick moderation: archive the reply or thread, or suspend the author. */
+  async function moderate(action: "archive_post" | "archive_thread" | "suspend") {
+    const question =
+      action === "archive_thread"
+        ? "Archive this whole thread? It disappears from the forums for everyone. Nothing is deleted."
+        : action === "archive_post"
+          ? "Archive this reply? It disappears for everyone. Nothing is deleted."
+          : "Suspend this member? They're signed out, can't sign back in, their ads come down and their tanks go private. You can undo it from Suspended accounts on Admin > Reports.";
+    if (!window.confirm(question)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/moderate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, post_id: postId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Couldn't do that.");
+      if (action === "archive_thread") {
+        router.push(data.redirect ?? `/forums/${categorySlug}`);
+        router.refresh();
+        return;
+      }
+      setArchived(action === "archive_post" ? "Reply archived." : "Member suspended.");
+      setBusy(false);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't do that.");
+      setBusy(false);
+    }
+  }
+
+  if (archived === "Reply archived.") {
+    return <p className="text-xs italic text-ocean-500">Reply archived.</p>;
   }
 
   if (deleted) {
@@ -233,6 +272,29 @@ export default function EditablePost({
           >
             {busy ? "Deleting…" : isOp ? "Delete thread" : "Delete"}
           </button>
+          {isAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={() => moderate(isOp ? "archive_thread" : "archive_post")}
+                disabled={busy}
+                className="text-xs text-amber-400/80 transition-colors hover:text-amber-300"
+              >
+                {isOp ? "Archive thread" : "Archive"}
+              </button>
+              {authorId && !isAuthor && archived !== "Member suspended." && (
+                <button
+                  type="button"
+                  onClick={() => moderate("suspend")}
+                  disabled={busy}
+                  className="text-xs text-coral-400/80 transition-colors hover:text-coral-300"
+                >
+                  Suspend member
+                </button>
+              )}
+              {archived === "Member suspended." && <span className="text-xs text-coral-300">Member suspended.</span>}
+            </>
+          )}
           {error && <span className="text-xs text-coral-300">{error}</span>}
         </div>
       )}
