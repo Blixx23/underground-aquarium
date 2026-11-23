@@ -47,6 +47,7 @@ import { Fragment } from "react";
 import { MESSAGING_ENABLED, MY_LISTINGS_ENABLED } from "@/lib/config";
 import { tidyCity, cityState } from "@/lib/marketplace/place";
 import GoogleButton from "@/components/auth/GoogleButton";
+import AppleButton from "@/components/auth/AppleButton";
 import { POST_AD_PATH } from "@/lib/config";
 
 type ListingRow = {
@@ -492,7 +493,10 @@ export default async function ListingPage({
                         to see this seller&apos;s {emailShown && listing.contact_phone ? "email and phone" : emailShown ? "email" : "phone number"}.
                         {/* One tap instead of a trip to the sign-in page. */}
                         <div className="mt-3 max-w-xs">
-                          <GoogleButton next={`/listing/${listing.slug}`} />
+                          <div className="flex flex-col gap-2">
+                            <AppleButton next={`/listing/${listing.slug}`} />
+                            <GoogleButton next={`/listing/${listing.slug}`} />
+                          </div>
                         </div>
                       </div>
                     ))}

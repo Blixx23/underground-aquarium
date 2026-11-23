@@ -9,6 +9,7 @@ import { MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TERMS_VERSION } from "@/lib/terms";
 import GoogleButton from "@/components/auth/GoogleButton";
+import AppleButton from "@/components/auth/AppleButton";
 
 export default function RegisterPage() {
   const carry = useCarrySearch();
@@ -116,7 +117,10 @@ export default function RegisterPage() {
             </p>
             <h1 className="mb-6 font-display text-3xl text-white">Create account</h1>
 
-            <GoogleButton label="Sign up with Google" />
+            <div className="flex flex-col gap-2.5">
+              <AppleButton label="Sign up with Apple" />
+              <GoogleButton label="Sign up with Google" />
+            </div>
 
             <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-widest text-ocean-600">
               <span className="h-px flex-1 bg-white/10" />
