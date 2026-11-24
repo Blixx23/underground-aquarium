@@ -135,14 +135,14 @@ export async function awardedQuarters(): Promise<string[]> {
 }
 
 /**
- * The badge a shop wears: its tier in the latest locked-in quarter. Before
- * the very first quarter is locked in, the live standings stand in, the
- * same list the public leaderboard shows, so the badges and the board agree.
+ * The badge a shop wears: its tier in the quarter that just ended, and only
+ * that one. Badges come from locked-in results, never live standings, and a
+ * shop that drops out of the next quarter's Top 100 loses its badge until it
+ * earns it back.
  */
 export async function shopAward(storeId: string): Promise<{ tier: Tier; quarter: string } | null> {
-  const locked = await getLatestAwards();
-  const { quarter, rows } = locked.quarter ? locked : await getLiveStandings();
-  if (!quarter) return null;
+  const { quarter, rows } = await getLatestAwards();
+  if (!quarter || quarter !== previousQuarter()) return null;
   const row = rows.find((r) => r.store_id === storeId);
   const tier = row ? tierOf(row.rank) : null;
   return tier ? { tier, quarter } : null;

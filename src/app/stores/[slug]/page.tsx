@@ -27,9 +27,8 @@ import StoreReviews from "../StoreReviews";
 import StoreFavoriteButton from "@/components/StoreFavoriteButton";
 import StoreTracker from "@/components/stores/StoreTracker";
 import TrackedLink from "@/components/stores/TrackedLink";
-import TopShopBadge from "@/components/stores/TopShopBadge";
 import TopShopRing from "@/components/stores/TopShopRing";
-import { shopAward, quarterLabel } from "@/lib/stores/topShops";
+import { shopAward } from "@/lib/stores/topShops";
 import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpecialHours";
 import OsmCredit from "@/components/stores/OsmCredit";
 import Stars from "@/components/stores/Stars";
@@ -761,7 +760,6 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
                   <Link href={tabHref("reviews")} scroll={false} className="transition-opacity hover:opacity-80">
                     <Stars rating={ratingAvg} count={ratingCount} size={15} />
                   </Link>
-                  {award && <TopShopBadge tier={award.tier} quarter={quarterLabel(award.quarter)} />}
                   {claimed && (
                     <span className="inline-flex items-center gap-1 text-emerald-300">
                       <BadgeCheck className="h-4 w-4" /> Owner managed
