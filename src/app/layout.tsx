@@ -10,6 +10,7 @@ import TrophySync from "@/components/trophies/TrophySync";
 import SiteAnalytics from "@/components/SiteAnalytics";
 import NavProgress from "@/components/NavProgress";
 import PullToRefresh from "@/components/app/PullToRefresh";
+import GetAppBanner from "@/components/app/GetAppBanner";
 import AppSession from "@/components/app/AppSession";
 import AppPush from "@/components/app/AppPush";
 
@@ -55,9 +56,6 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.undergroundaquarium.com"),
-  // Safari on iPhone shows a slim "Open / Get the app" banner at the top.
-  // The app itself (a web view) ignores it.
-  itunes: { appId: "6838456811" },
   title: {
     default: "Buy, Sell & Trade Aquarium Fish Near You | Underground Aquarium",
     // Two words, the way people search for us.
@@ -149,6 +147,7 @@ export default function RootLayout({
         <div id="content">{children}</div>
         <Footer />
         <BottomNav />
+        <GetAppBanner />
         <SiteAnalytics />
       </body>
     </html>
