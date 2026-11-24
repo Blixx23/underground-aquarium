@@ -16,8 +16,12 @@ function ComingSoon({ label }: { label: string }) {
   );
 }
 
-/** "Get the app" band for the home page. Hidden inside the app itself. */
+/**
+ * "Get the app" band for the home page. Stays hidden until at least one store
+ * link is set in config, and is always hidden inside the app itself.
+ */
 export default function GetTheApp() {
+  if (!APP_STORE_URL && !GOOGLE_PLAY_URL) return null;
   return (
     <section className="web-only mx-auto max-w-7xl px-5 py-12 sm:px-6">
       <div className="relative overflow-hidden rounded-3xl border border-ocean-700/50 bg-gradient-to-br from-ocean-800/80 via-ocean-900 to-ocean-950 p-8 sm:p-10">
