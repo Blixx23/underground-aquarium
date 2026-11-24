@@ -66,6 +66,12 @@ export const MESSAGING_ENABLED: boolean = true;
 
 // The /my/listings manager: publish, renew, mark sold, edit, delete.
 // Shipped in Step 6.
+// App store links. Leave a link empty until that store approves the app:
+// the home page shows "coming soon" for it, then the official badge once the
+// link is filled in.
+export const APP_STORE_URL = "";
+export const GOOGLE_PLAY_URL = "";
+
 export const MY_LISTINGS_ENABLED: boolean = true;
 
 // ============================================================

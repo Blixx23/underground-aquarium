@@ -8,6 +8,7 @@ import ToolGrid from "@/components/sections/ToolGrid";
 import JustPosted from "@/components/sections/JustPosted";
 import SocietyBanner from "@/components/sections/SocietyBanner";
 import CTA from "@/components/sections/CTA";
+import GetTheApp from "@/components/sections/GetTheApp";
 import HotForums from "@/components/forum/HotForums";
 import type { Metadata } from "next";
 
@@ -94,6 +95,7 @@ export default async function HomePage() {
         <HotForums />
       </section>
       <ToolGrid />
+      <GetTheApp />
       <SocietyBanner
         memberCount={societyMembers}
         duesCents={societyRow?.dues_amount_cents ?? 0}
