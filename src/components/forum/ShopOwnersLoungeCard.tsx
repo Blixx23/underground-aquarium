@@ -55,47 +55,33 @@ export default function ShopOwnersLoungeCard() {
 
   if (!lounge) return null;
 
+  // Kept compact: one line to get in, one line saying who can see it.
   return (
-    <div className="relative mb-6">
-      {/* The glow */}
+    <div className="relative mb-5">
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-1 rounded-3xl bg-gradient-to-r from-emerald-500/40 via-teal-400/30 to-sky-500/40 opacity-70 blur-lg animate-pulse"
+        className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-emerald-500/30 via-teal-400/20 to-sky-500/30 opacity-60 blur-md"
       />
-      <div className="relative rounded-2xl border border-emerald-400/60 bg-gradient-to-br from-emerald-950/90 via-ocean-950/95 to-ocean-950 p-5 shadow-[0_0_40px_rgba(52,211,153,0.25)] transition-colors hover:border-emerald-300">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-400/50">
-              <Store className="h-5 w-5 text-emerald-300" />
-            </span>
-            <div className="min-w-0">
-              <Link
-                href={`/forums/${lounge.slug}`}
-                className="font-display text-lg text-white after:absolute after:inset-0 after:rounded-2xl after:content-['']"
-              >
-                {lounge.name}
-              </Link>
-              <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-emerald-300">
-                <Lock className="h-3 w-3" /> Only shop owners can see this
-              </p>
-              {lounge.description && <p className="mt-1.5 text-sm text-emerald-100/70">{lounge.description}</p>}
-              {latest && (
-                <p className="relative z-10 mt-1.5 truncate text-xs text-emerald-200/60">
-                  Latest:{" "}
-                  <Link href={`/forums/${lounge.slug}/${latest.slug}`} className="text-emerald-100 hover:underline">
-                    {latest.title}
-                  </Link>
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 text-emerald-300">
-            <span className="whitespace-nowrap text-xs">
-              {count} {count === 1 ? "thread" : "threads"}
-            </span>
-            <ChevronRight className="h-4 w-4" />
-          </div>
+      <div className="relative flex items-center gap-3 rounded-xl border border-emerald-400/50 bg-gradient-to-r from-emerald-950/90 to-ocean-950/95 px-3.5 py-2.5 transition-colors hover:border-emerald-300">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-400/50">
+          <Store className="h-4 w-4 text-emerald-300" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <Link
+            href={`/forums/${lounge.slug}`}
+            className="block truncate text-sm font-semibold text-white after:absolute after:inset-0 after:rounded-xl after:content-['']"
+          >
+            {lounge.name}
+          </Link>
+          <p className="flex items-center gap-1 truncate text-xs text-emerald-200/80">
+            <Lock className="h-3 w-3 shrink-0" />
+            <span className="truncate">Private: only shop owners can see these threads</span>
+          </p>
         </div>
+        <span className="flex shrink-0 items-center gap-1 text-xs text-emerald-300">
+          {count} {count === 1 ? "thread" : "threads"}
+          <ChevronRight className="h-4 w-4" />
+        </span>
       </div>
     </div>
   );

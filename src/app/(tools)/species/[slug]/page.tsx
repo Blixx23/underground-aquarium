@@ -459,8 +459,8 @@ export default async function SpeciesDetailPage({ params }: Params) {
           spot="species"
           next={`/species/${s.slug as string}?alert=1`}
           icon={<Bell className="h-4 w-4" />}
-          title={`Looking for ${s.common_name as string}?`}
-          body="Join free and we'll let you know when someone near you lists one. You can also save tanks, track your water and ask the community."
+          title={`Want ${s.common_name as string}?`}
+          body="Get alerted when one's listed near you."
           className="mb-6"
         />
 

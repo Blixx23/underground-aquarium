@@ -207,9 +207,10 @@ export default function BottomNav() {
             </Link>
           )}
           <Link href={user ? "/profile" : "/login"} className={tab(is("/profile", "/trophies", "/account"))}>
+            {/* A block the exact size of the other icons, so "Me" lines up with the other labels. */}
             {me ? (
               <span
-                className={`relative rounded-full ${is("/profile", "/trophies", "/account") ? "ring-2 ring-white" : ""}`}
+                className={`relative flex h-6 w-6 items-center justify-center rounded-full ${is("/profile", "/trophies", "/account") ? "ring-2 ring-white" : ""}`}
               >
                 <Avatar name={me.name} src={me.avatar} society={inSociety} size={24} />
                 {myShops.unanswered > 0 && (

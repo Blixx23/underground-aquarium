@@ -115,8 +115,8 @@ export default async function RegionPage({
           spot="classifieds"
           next={`${regionHref(r)}?alert=1`}
           icon={<Bell className="h-4 w-4" />}
-          title={`New ads in ${r.name}, sent to you`}
-          body="Join free to get alerts for the fish and gear you want, message sellers, and post your own ads. No fees."
+          title={`${r.name} fish alerts`}
+          body="New local ads sent to you. Free."
           className="mb-8"
         />
 

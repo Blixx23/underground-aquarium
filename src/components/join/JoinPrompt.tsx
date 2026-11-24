@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { joinHref, loginHref, trackJoinClick } from "@/lib/analytics/join";
+import { joinHref, trackJoinClick } from "@/lib/analytics/join";
 
 /**
  * A friendly "join free" card for visitors who aren't signed in, placed on the
@@ -45,37 +45,32 @@ export default function JoinPrompt({
 
   if (!signedOut) return null;
 
+  // Short and bright: a slowly turning emerald and sky border, one line of
+  // copy and one button. Members sign in from the Create account page.
   return (
-    <section
-      className={`flex flex-col gap-4 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-ocean-900/40 to-sky-500/10 p-5 sm:flex-row sm:items-center sm:justify-between ${className}`}
+    <Link
+      href={joinHref(spot, next)}
+      onClick={() => trackJoinClick(spot)}
+      className={`group relative block overflow-hidden rounded-2xl p-[2px] shadow-[0_0_28px_-8px_rgba(52,211,153,0.6)] ${className}`}
     >
-      <div className="flex items-start gap-3">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 -ml-[150%] -mt-[150%] aspect-square w-[300%] animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_0deg,#34d399,#38bdf8,#0ea5e9,#a7f3d0,#34d399)] motion-reduce:animate-none"
+      />
+      <span className="relative flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-ocean-950 via-ocean-950 to-emerald-950 px-4 py-3">
         {icon && (
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-300 ring-1 ring-emerald-400/40">
             {icon}
           </span>
         )}
-        <div>
-          <p className="font-semibold text-white">{title}</p>
-          <p className="mt-1 text-sm text-ocean-200">{body}</p>
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-3">
-        <Link
-          href={joinHref(spot, next)}
-          onClick={() => trackJoinClick(spot)}
-          className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-ocean-950 transition-colors hover:bg-emerald-400"
-        >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-semibold text-white">{title}</span>
+          <span className="block truncate text-xs text-emerald-100/80">{body}</span>
+        </span>
+        <span className="shrink-0 rounded-full bg-emerald-400 px-4 py-2 text-sm font-bold text-ocean-950 shadow-[0_0_16px_rgba(52,211,153,0.6)] transition-colors group-hover:bg-emerald-300">
           {cta}
-        </Link>
-        <Link
-          href={loginHref(spot, next)}
-          onClick={() => trackJoinClick(spot)}
-          className="text-sm text-ocean-300 transition-colors hover:text-white"
-        >
-          Sign in
-        </Link>
-      </div>
-    </section>
+        </span>
+      </span>
+    </Link>
   );
 }

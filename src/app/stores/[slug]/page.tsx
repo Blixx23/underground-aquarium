@@ -851,12 +851,8 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
             spot="shop"
             next={`/stores/${store.slug}`}
             icon={<Bell className="h-4 w-4" />}
-            title={`Follow ${store.name}`}
-            body={
-              claimed
-                ? "Get their new posts and stock updates, and leave a review. Free, and it takes 30 seconds."
-                : "Leave a review, save your favorite shops, and get alerts when fish you want are listed nearby. Free, and it takes 30 seconds."
-            }
+            title="Follow this shop"
+            body={claimed ? "New stock, posts and deals. Free." : "Reviews, favorites and fish alerts. Free."}
             className="mt-6"
           />
         )}
