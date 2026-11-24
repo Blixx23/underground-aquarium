@@ -28,6 +28,8 @@
 	<string>Your camera is used only when you choose to take a photo or video to post, like a fish for sale, your tank or your profile picture.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Your microphone is used only to record sound with a video you choose to post.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Used only when you choose to save a photo from the app to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Your photo library is used only to pick photos and videos you choose to post.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

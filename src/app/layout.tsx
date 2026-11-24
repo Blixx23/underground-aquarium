@@ -55,6 +55,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.undergroundaquarium.com"),
+  // Safari on iPhone shows a slim "Open / Get the app" banner at the top.
+  // The app itself (a web view) ignores it.
+  itunes: { appId: "6838456811" },
   title: {
     default: "Buy, Sell & Trade Aquarium Fish Near You | Underground Aquarium",
     // Two words, the way people search for us.
