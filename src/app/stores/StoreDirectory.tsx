@@ -153,11 +153,6 @@ export default function StoreDirectory({
       .sort((a, b) => stateName(a[0]).localeCompare(stateName(b[0])));
   }, [stores]);
 
-  const allTypes = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of stores) for (const t of s.tags ?? []) set.add(t);
-    return [...set].sort();
-  }, [stores]);
 
   const words = useMemo(() => queryWords(query), [query]);
   const searching = words.length > 0;
@@ -465,26 +460,6 @@ export default function StoreDirectory({
         {locError && <p className="mt-2 text-xs text-coral-300">{locError}</p>}
         {locNote && coords && <p className="mt-2 text-xs text-ocean-400">{locNote}</p>}
       </div>
-
-      {/* Specialty filters, only once there's a list worth narrowing. */}
-      {!showBrowse && allTypes.length > 0 && (
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          {allTypes.map((t) => (
-            <button
-              key={t}
-              onClick={() => setActiveType(activeType === t ? null : t)}
-              className={
-                "rounded-lg border px-3 py-1.5 text-xs uppercase tracking-wide transition-colors " +
-                (activeType === t
-                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
-                  : "border-white/10 bg-white/5 text-ocean-300 hover:text-white")
-              }
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Where you are, and the way back out. */}
       {!showBrowse && (
