@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 /**
  * Admin only: show or hide a shop in the Shops directory. Hidden means
  * status "hidden": off the list, the map and its public page, but nothing
- * is deleted and it comes straight back when switched on.
+ * is deleted and it comes straight back when switched on. Hiding also files
+ * it in the admin Archive with the date (and a reason, if one was given).
  */
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
   if (!me?.is_admin) return NextResponse.json({ error: "Admins only." }, { status: 403 });
 
-  let body: { storeId?: string; visible?: boolean };
+  let body: { storeId?: string; visible?: boolean; reason?: string };
   try {
     body = await req.json();
   } catch {
@@ -30,7 +31,17 @@ export async function POST(req: Request) {
 
   const { data, error } = await supabaseAdmin
     .from("fish_stores")
-    .update({ status: body.visible ? "published" : "hidden" })
+    .update(
+      body.visible
+        ? // Back from the Archive: clear the archive note.
+          { status: "published", archived_at: null, archived_from: null, archive_reason: null }
+        : {
+            status: "hidden",
+            archived_at: new Date().toISOString(),
+            archived_from: "listed",
+            archive_reason: typeof body.reason === "string" && body.reason.trim() ? body.reason.trim().slice(0, 200) : null,
+          }
+    )
     .eq("id", body.storeId)
     .select("slug, status")
     .maybeSingle();

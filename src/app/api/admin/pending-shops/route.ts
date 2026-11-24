@@ -122,7 +122,12 @@ export async function POST(req: Request) {
   if (action === "reject") {
     const { error } = await supabaseAdmin
       .from("fish_stores")
-      .update({ status: "hidden" })
+      .update({
+        status: "hidden",
+        archived_at: new Date().toISOString(),
+        archived_from: "applied",
+        archive_reason: "Application not approved",
+      })
       .eq("id", id)
       .eq("status", "pending");
     if (error) {

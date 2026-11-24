@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
-/** Admin-only switch: is this shop listed in the Shops directory? */
+/** Admin-only switch: is this shop listed in the Shops directory, or in the Archive? */
 export default function ShopVisibilityToggle({ storeId, visible: initial }: { storeId: string; visible: boolean }) {
   const router = useRouter();
   const [visible, setVisible] = useState(initial);
@@ -43,7 +43,7 @@ export default function ShopVisibilityToggle({ storeId, visible: initial }: { st
         }`}
       >
         {visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        {busy ? "Saving…" : visible ? "Shown in Shops" : "Hidden from Shops"}
+        {busy ? "Saving…" : visible ? "Shown in Shops" : "In Archive (tap to restore)"}
         <span
           aria-hidden
           className={`relative ml-1 inline-block h-4 w-7 rounded-full transition-colors ${visible ? "bg-emerald-500" : "bg-ocean-700"}`}

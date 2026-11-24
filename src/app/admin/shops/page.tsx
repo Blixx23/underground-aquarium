@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Store, LayoutDashboard, ExternalLink, UserRound } from "lucide-react";
+import { Store, LayoutDashboard, ExternalLink, UserRound, Archive } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import ShopVisibilityToggle from "@/components/stores/ShopVisibilityToggle";
 import AdminShopSearch from "@/components/admin/AdminShopSearch";
@@ -18,12 +18,15 @@ type Row = {
   state: string | null;
   status: string | null;
   claimed_by: string | null;
+  archived_at: string | null;
+  archived_from: string | null;
+  archive_reason: string | null;
 };
 
 const VIEWS = [
-  { key: "all", label: "All" },
+  { key: "all", label: "Live" },
   { key: "claimed", label: "Claimed" },
-  { key: "hidden", label: "Hidden" },
+  { key: "archive", label: "Archive" },
 ] as const;
 
 /**
@@ -38,20 +41,29 @@ export default async function AdminShopsPage({
 }) {
   const { q: rawQ, view: rawView } = await searchParams;
   const q = String(rawQ ?? "").trim();
-  const view = VIEWS.some((v) => v.key === rawView) ? (rawView as string) : "all";
+  // Old links used ?view=hidden; that list is the Archive now.
+  const asked = rawView === "hidden" ? "archive" : rawView;
+  const view = VIEWS.some((v) => v.key === asked) ? (asked as string) : "all";
 
   let query = supabaseAdmin
     .from("fish_stores")
-    .select("id, name, slug, city, state, status, claimed_by", { count: "exact" })
-    .order("name", { ascending: true })
+    .select("id, name, slug, city, state, status, claimed_by, archived_at, archived_from, archive_reason", { count: "exact" })
     .limit(60);
+  // The Archive reads newest first; everything else A to Z.
+  query =
+    view === "archive"
+      ? query.order("archived_at", { ascending: false, nullsFirst: false }).order("name")
+      : query.order("name", { ascending: true });
 
   // Keep only characters that are safe inside the or() filter.
   const safe = q.replace(/[^\p{L}\p{N} .'&-]/gu, " ").trim();
   if (safe) query = query.or(`name.ilike.%${safe}%,city.ilike.%${safe}%,state.ilike.%${safe}%`);
   if (view === "claimed") query = query.not("claimed_by", "is", null);
-  if (view === "hidden") query = query.eq("status", "hidden");
-  else query = query.in("status", ["published", "hidden"]);
+  // Live and Claimed show shops in the directory; the Archive holds every
+  // shop taken out of it (hidden after being live, or an application that
+  // was turned down). Nothing in the Archive is deleted: Restore brings it back.
+  if (view === "archive") query = query.eq("status", "hidden");
+  else query = query.eq("status", "published");
 
   const { data, count } = await query;
   const rows = (data ?? []) as Row[];
@@ -89,7 +101,7 @@ export default async function AdminShopsPage({
           <Store className="h-7 w-7 text-amber-300" /> All shops
         </h1>
         <p className="mb-6 text-sm text-ocean-400">
-          Find any shop, open its dashboard, or show and hide it in the directory. Only admins can hide a shop. Switch a business to Wholesale supply to move it to the Wholesale list. Wholesale-only businesses go to the Wholesale list.
+          Find any shop, open its dashboard, or take it off the directory. Shops taken off, and member applications you turn down, go to the Archive, where the switch brings them back. Only admins can do this. Switch a business to Wholesale supply to move it to the Wholesale list. Wholesale-only businesses go to the Wholesale list.
         </p>
 
         <Suspense fallback={<div className="mb-4 h-[46px] rounded-xl border border-ocean-700 bg-ocean-900" />}>
@@ -107,6 +119,7 @@ export default async function AdminShopsPage({
                   : "border-ocean-800/70 bg-ocean-900/40 text-ocean-300 hover:text-white"
               }`}
             >
+              {v.key === "archive" && <Archive className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px" />}
               {v.label}
             </Link>
           ))}
@@ -126,7 +139,7 @@ export default async function AdminShopsPage({
                 </Link>
               </>
             ) : (
-              "No shops here yet."
+              view === "archive" ? "The Archive is empty." : "No shops here yet."
             )}
           </p>
         ) : (
@@ -142,6 +155,14 @@ export default async function AdminShopsPage({
                       {s.claimed_by ? "Claimed" : "Unclaimed"}
                     </span>
                   </p>
+                  {view === "archive" && (
+                    <p className="mt-1 text-xs text-amber-200/90">
+                      {s.archived_from === "applied" ? "Application turned down" : "Taken off the directory"}
+                      {s.archived_at &&
+                        ` · ${new Date(s.archived_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                      {s.archive_reason && <span className="text-ocean-300"> · {s.archive_reason}</span>}
+                    </p>
+                  )}
                   {s.claimed_by && (() => {
                     const o = owners.get(s.claimed_by);
                     return (
