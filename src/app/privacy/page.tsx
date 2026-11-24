@@ -109,7 +109,12 @@ export default function PrivacyPage() {
               <span className="text-white">Location information.</span> To power
               features like &ldquo;near me&rdquo; events and store discovery, we
               convert addresses you provide into approximate coordinates using a
-              geocoding service (OpenStreetMap&apos;s Nominatim).
+              geocoding service (OpenStreetMap&apos;s Nominatim). When you tap
+              &ldquo;Use my location&rdquo;, your position is used on your device to
+              find what&apos;s nearby. Your device keeps a rounded copy of that area
+              (about half a mile, never your exact spot) so we can use it again if
+              location is unavailable later. It stays on your device; we don&apos;t
+              receive or store it. Clearing your browser or app data removes it.
             </p>
             <p>
               <span className="text-white">Information collected

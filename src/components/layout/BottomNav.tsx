@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Newspaper, Tag, Plus, MessageCircle, MessagesSquare, User as UserIcon, PenSquare, X, Store } from "lucide-react";
+import { Newspaper, Tag, Plus, MessageCircle, MessagesSquare, User as UserIcon, PenSquare, X, Store, Droplets } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
@@ -137,6 +137,20 @@ export default function BottomNav() {
                   </span>
                 </Link>
               )}
+              {/* The tool people reach for most, one tap from anywhere in the app. */}
+              <Link
+                href="/water-check"
+                onClick={() => setSheet(false)}
+                className="flex items-center gap-3 rounded-2xl border border-sky-500/30 bg-sky-500/[0.08] px-3 py-3 active:bg-sky-500/20"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sky-500/25">
+                  <Droplets className="h-5 w-5 text-sky-200" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-medium text-sky-50">Check my water</span>
+                  <span className="block truncate text-xs text-sky-200/60">Enter your test results, get a plain answer</span>
+                </span>
+              </Link>
               {postOptions.map(({ href, label, sub, Icon }) => (
                 <Link
                   key={href}

@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { locate as locateArea } from "@/lib/geo/locate";
 import { Search, Crosshair, Loader2, MapPin, Store } from "lucide-react";
 
 export type FinderCity = { label: string; href: string; count: number; lat: number | null; lng: number | null };
@@ -65,12 +66,9 @@ export default function StoreFinder({ cities, shops }: { cities: FinderCity[]; s
 
   function locate() {
     setErr(null);
-    if (!("geolocation" in navigator)) {
-      setErr("Your browser can't share location. Type your city instead.");
-      return;
-    }
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
+    // Shared helper: never hangs, and falls back to the last area this device shared.
+    locateArea(
       (pos) => {
         const { latitude, longitude } = pos.coords;
         let best: FinderCity | null = null;
@@ -92,8 +90,7 @@ export default function StoreFinder({ cities, shops }: { cities: FinderCity[]; s
       () => {
         setLocating(false);
         setErr("Location is blocked. Type your city instead.");
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+      }
     );
   }
 
