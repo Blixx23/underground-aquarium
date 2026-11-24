@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { unstable_cache } from "next/cache";
 import Link from "next/link";
 import { Megaphone } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
@@ -72,11 +73,29 @@ async function getAllStores(): Promise<StoreRow[]> {
     if (data.length < PAGE_SIZE) break;
   }
 
+  // Trimmed for the trip to the phone: the directory never uses the id or
+  // who claimed a shop (only whether it's claimed), and 4 decimals of
+  // latitude/longitude is ~10 m, plenty for a map pin. With 1,500 shops this
+  // takes a big bite out of the page size.
+  const round = (n: number | null) => (n == null ? null : Math.round(n * 1e4) / 1e4);
   return all.map((s) => {
     const r = ratings.get(s.id);
-    return { ...s, rating_avg: r?.avg ?? null, rating_count: r?.count ?? 0 };
+    return {
+      ...s,
+      id: "",
+      claimed_by: s.claimed_by ? "1" : null,
+      lat: round(s.lat),
+      lng: round(s.lng),
+      rating_avg: r?.avg ?? null,
+      rating_count: r?.count ?? 0,
+    };
   });
 }
+
+// The page has to be built per visit (it reads the visitor's rough location),
+// but the shop list itself changes rarely. Keeping it for 10 minutes turns a
+// ~1 second database read on every visit into an instant one.
+const getAllStoresCached = unstable_cache(getAllStores, ["stores-directory"], { revalidate: 600 });
 
 export default async function StoresPage({
   searchParams,
@@ -84,7 +103,7 @@ export default async function StoresPage({
   searchParams: Promise<{ near?: string; q?: string }>;
 }) {
   const { near, q } = await searchParams;
-  const stores = await getAllStores();
+  const stores = await getAllStoresCached();
 
   // Rough location from the visitor's connection (Vercel adds these). Used
   // when the browser won't share a precise location, so "Near me" still works.

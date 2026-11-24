@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Analytics, type BeforeSendEvent } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createClient } from "@/lib/supabase/client";
 
 const FLAG = "ua_no_track";
@@ -55,5 +56,12 @@ export default function SiteAnalytics() {
     });
   }, []);
 
-  return <Analytics beforeSend={(event: BeforeSendEvent) => (optedOut() ? null : event)} />;
+  // Speed Insights: real load times from members' phones and browsers, so we
+  // can see which pages feel slow. Same opt-out as page stats.
+  return (
+    <>
+      <Analytics beforeSend={(event: BeforeSendEvent) => (optedOut() ? null : event)} />
+      <SpeedInsights beforeSend={(event) => (optedOut() ? null : event)} />
+    </>
+  );
 }
