@@ -13,6 +13,7 @@ import PullToRefresh from "@/components/app/PullToRefresh";
 import GetAppBanner from "@/components/app/GetAppBanner";
 import AppSession from "@/components/app/AppSession";
 import AppPush from "@/components/app/AppPush";
+import AppReviewPrompt from "@/components/app/AppReviewPrompt";
 
 // Fonts are self-hosted from src/app/fonts and served from our own domain, so the
 // page never waits on Google Fonts, and a build can't fail because Google Fonts
@@ -140,6 +141,7 @@ export default function RootLayout({
         <PullToRefresh />
         <AppSession />
         <AppPush />
+        <AppReviewPrompt />
         {/* Full screen (the iPhone app, or saved to the home screen) the page starts
             under the phone's clock. The fixed header grows by that much, so the
             page moves down by the same amount. Zero in a normal browser. */}
