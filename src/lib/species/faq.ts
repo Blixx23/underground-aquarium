@@ -45,7 +45,9 @@ export function speciesFaq(
       a += ` Keep them in a group of ${s.min_group_size} or more, and size the tank for the whole group.`;
     }
     out.push({ q: `What size tank does a ${n} need?`, a });
-  } else if (has(s.max_size_in)) {
+  }
+  // "How big do ___ get" / "___ max size" is searched on its own, so it gets its own answer.
+  if (has(s.max_size_in)) {
     out.push({ q: `How big does a ${n} get?`, a: `A ${n} grows to about ${s.max_size_in} inches as an adult.` });
   }
 
@@ -128,5 +130,27 @@ export function speciesFaq(
     out.push({ q: `Where does the ${n} come from?`, a: `The ${n} is native to ${String(s.origin).replace(/^the\s+/i, "the ")}.` });
   }
 
+  return out;
+}
+
+/**
+ * One plain sentence with the numbers people search for most (size, tank,
+ * temperature, lifespan, temperament), shown right under the name so a
+ * visitor (and Google) gets the answer without scrolling.
+ */
+export function atAGlance(s: SpeciesFacts): string | null {
+  const n = s.common_name;
+  const parts: string[] = [];
+  if (has(s.max_size_in)) parts.push(`grows to about ${s.max_size_in} inches`);
+  if (has(s.min_tank_gal)) parts.push(`needs at least a ${s.min_tank_gal} gallon tank`);
+  if (has(s.temp_min_f) && has(s.temp_max_f)) parts.push(`does best at ${tempF(Number(s.temp_min_f), Number(s.temp_max_f))}`);
+  if (has(s.lifespan)) parts.push(`lives ${low(s.lifespan)}`);
+  if (parts.length < 2) return null;
+  const list = parts.length === 2 ? parts.join(" and ") : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  let out = `The ${n} ${list}.`;
+  const extra: string[] = [];
+  if (has(s.temperament)) extra.push(low(s.temperament));
+  if (has(s.care_level)) extra.push(`${low(s.care_level)} care`);
+  if (extra.length) out += ` It's ${extra.join(", ")}.`;
   return out;
 }

@@ -77,7 +77,8 @@ export async function generateMetadata({
   return {
     // One shop and nothing nearby is just a copy of that shop's page.
     robots: { index: n > 1 || nearbyShops.length > 0, follow: true },
-    title: `Aquarium Stores in ${c.name}, ${c.state} (${n} Fish ${n === 1 ? "Shop" : "Shops"})`,
+    // "Fish stores near ..." matches how people actually search ("fish store near me").
+    title: `Fish Stores Near ${c.name}, ${c.state}: ${n + nearbyShops.length} Local Aquarium ${n + nearbyShops.length === 1 ? "Shop" : "Shops"}`,
     description: `${n} aquarium and tropical fish ${n === 1 ? "store" : "stores"} in ${c.name}, ${stateName(
       c.state
     )}: ${names}. Addresses, phone numbers, hours and reviews, plus shops nearby.`,

@@ -37,6 +37,19 @@ export default async function GuidesPage() {
           doesn&apos;t fit your tank, ask right under it and the community will help.
         </p>
 
+        {/* Standalone guides that live outside the forums. */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Link href="/ich-in-fish" className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-sm text-emerald-200 hover:bg-emerald-500/20">
+            Ich (white spot) treatment
+          </Link>
+          <Link href="/fish-swaps" className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-sm text-emerald-200 hover:bg-emerald-500/20">
+            Fish swaps near you
+          </Link>
+          <Link href="/where-to-sell-aquarium-fish" className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-sm text-emerald-200 hover:bg-emerald-500/20">
+            Where to sell aquarium fish
+          </Link>
+        </div>
+
         {groups.length === 0 ? (
           <p className="mt-10 rounded-2xl border border-dashed border-ocean-800/60 p-10 text-center text-ocean-400">
             Guides are on their way.

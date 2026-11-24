@@ -12,7 +12,7 @@ import SpeciesPhotos, { type SpeciesPhoto } from "@/components/species/SpeciesPh
 import SubmitSpeciesPhoto from "@/components/species/SubmitSpeciesPhoto";
 import SpeciesVideos, { type SpeciesVideo } from "@/components/species/SpeciesVideos";
 import SubmitSpeciesVideo from "@/components/species/SubmitSpeciesVideo";
-import { speciesFaq } from "@/lib/species/faq";
+import { atAGlance, speciesFaq } from "@/lib/species/faq";
 import { ldJson } from "@/lib/jsonLd";
 import { tankmatesFor } from "@/lib/tankBuilder/species";
 import { buildPath } from "@/lib/tankBuilder/share";
@@ -220,6 +220,7 @@ export default async function SpeciesDetailPage({ params }: Params) {
       ])
     : null;
   const gl = await glossaryLinker({ max: 8 });
+  const glance = atAGlance(s as Parameters<typeof atAGlance>[0]);
   const faq = speciesFaq(s, {
     hasBreedingGuide,
     tankmates: mates ? { names: mates.picks.map((p) => p.common_name), gallons: mates.gallons } : null,
@@ -349,6 +350,14 @@ export default async function SpeciesDetailPage({ params }: Params) {
         {s.former_names && s.former_names.length > 0 && (
           <p className="text-ocean-400 text-sm mb-1">
             Formerly: {s.former_names.join(", ")}
+          </p>
+        )}
+
+        {/* The numbers people search for, answered before anything else. */}
+        {glance && (
+          <p className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] px-4 py-3 text-sm leading-relaxed text-emerald-50/90">
+            <span className="font-semibold text-emerald-300">At a glance: </span>
+            {glance}
           </p>
         )}
 

@@ -150,22 +150,22 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { store, hidden } = found;
 
   const place = [store.city, store.state].filter(Boolean).join(", ");
-  // "Name: Aquarium Store in City, ST" matches both "name + city" searches
-  // and "aquarium store city" searches.
-  const title = place ? `${store.name}: Aquarium Store in ${place}` : `${store.name}: Aquarium Store`;
+  // People who search a shop's name want hours, reviews and directions, so the
+  // title promises exactly that (Search Console showed shop pages ranking on
+  // page one but rarely clicked with the old "Aquarium Store in" title).
+  const town = store.city && store.state ? `${store.city}, ${store.state}` : place;
+  const title = town ? `${store.name}, ${town}: Hours, Reviews & Directions` : `${store.name}: Hours, Reviews & Directions`;
   const specialty = specialtyPhrase(store.tags);
-  const built =
-    `${store.name} is an independent aquarium store${place ? ` in ${place}` : ""}` +
-    `${store.address ? ` at ${store.address}` : ""}` +
-    `${specialty ? `, carrying ${specialty}` : ""}. ` +
-    `${store.phone ? `Call ${formatPhone(store.phone)}. ` : ""}` +
-    `Directions, hours, photos, shop updates and reviews.`;
-  const raw = store.description?.trim() || built;
+  const { data: ratingRows } = await supabasePublic.from("store_reviews").select("rating").eq("store_id", store.id);
+  const reviews = (ratingRows ?? []).length;
+  const avg = reviews ? (ratingRows ?? []).reduce((n, r) => n + Number((r as { rating: number }).rating || 0), 0) / reviews : 0;
+  // Lead with the stars when there are any: it's the strongest reason to click.
+  const lead = reviews
+    ? `Rated ${avg.toFixed(1)} out of 5 from ${reviews} review${reviews === 1 ? "" : "s"}. `
+    : "";
+  const what = `${store.name} is an independent aquarium store${town ? ` in ${town}` : ""}${specialty ? ` for ${specialty}` : ""}. `;
+  const raw = `${lead}${what}Hours, directions, phone, photos and the latest stock updates.`;
   const description = raw.length > 158 ? `${raw.slice(0, 155).trimEnd()}…` : raw;
-  const { count: reviews } = await supabasePublic
-    .from("store_reviews")
-    .select("id", { count: "exact", head: true })
-    .eq("store_id", store.id);
   // Each shop shares its own designed card: logo, name, town and stars.
   // The version changes when the logo, name, town or review count does,
   // so Facebook and friends fetch the new picture instead of an old copy.

@@ -8,12 +8,13 @@ import {
   Inbox,
   Trash2,
   ChevronDown,
+  Link2,
 } from "lucide-react";
 
 type Tone = "amber" | "emerald" | "ocean" | "coral";
 
 export type AdminSection = {
-  key: "settings" | "dues" | "awards" | "requests" | "danger";
+  key: "settings" | "dues" | "awards" | "requests" | "link-badge" | "danger";
   title: string;
   subtitle?: string;
   badge?: { text: string; tone: Tone };
@@ -26,6 +27,7 @@ const ICONS = {
   dues: CreditCard,
   awards: Trophy,
   requests: Inbox,
+  "link-badge": Link2,
   danger: Trash2,
 } as const;
 

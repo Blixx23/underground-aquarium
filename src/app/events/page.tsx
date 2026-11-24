@@ -128,6 +128,14 @@ export default async function EventsPage() {
           </Link>
         </div>
 
+        {/* The page people search for ("fish swap near me"): swaps, auctions and shows only. */}
+        <Link
+          href="/fish-swaps"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-emerald-400 transition-colors hover:text-emerald-300"
+        >
+          Fish swaps, frag swaps and auctions near you →
+        </Link>
+
         <EventsList events={cards} />
       </div>
     </main>

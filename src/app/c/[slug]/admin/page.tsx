@@ -15,6 +15,7 @@ import { SOCIETY_SLUG } from "@/lib/config";
 import MemberManager from "./MemberManager";
 import ClubPayoutButton from "./ClubPayoutButton";
 import ClubSettings from "./ClubSettings";
+import LinkBadge from "@/components/stores/LinkBadge";
 import DeleteClubButton from "./DeleteClubButton";
 import ClubRequests from "./ClubRequests";
 import AdminSections, { type AdminSection } from "./AdminSections";
@@ -246,6 +247,15 @@ export default async function ClubAdminPage({
         />
       ),
     });
+    // Public, approved clubs get a badge for their own website (links back help them show up in Google).
+    if (club.is_public && club.approved && club.slug !== SOCIETY_SLUG) {
+      sections.push({
+        key: "link-badge",
+        title: "Link to your club page",
+        subtitle: "A badge for your website and Facebook group",
+        slot: <LinkBadge path={`/c/${club.slug}`} name={club.name} />,
+      });
+    }
   }
 
   if (pendingDetailed.length > 0) {
