@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { joinHref, loginHref, trackJoinClick } from "@/lib/analytics/join";
 import {
   Droplets,
   AlertTriangle,
@@ -668,8 +669,20 @@ export default function WaterTestPanel({
     </div>
   ) : !userId && signInNext ? (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-ocean-300">
-      <Link href={`/login?next=${encodeURIComponent(signInNext)}`} className="font-medium text-emerald-400 hover:text-emerald-300">
-        Sign in
+      <Link
+        href={joinHref("water-check", signInNext)}
+        onClick={() => trackJoinClick("water-check")}
+        className="font-medium text-emerald-400 hover:text-emerald-300"
+      >
+        Join free
+      </Link>{" "}
+      or{" "}
+      <Link
+        href={loginHref("water-check", signInNext)}
+        onClick={() => trackJoinClick("water-check")}
+        className="font-medium text-emerald-400 hover:text-emerald-300"
+      >
+        sign in
       </Link>{" "}
       to log readings and track your water over time.
     </div>

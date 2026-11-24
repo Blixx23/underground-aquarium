@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Bell, Plus } from "lucide-react";
+import JoinPrompt from "@/components/join/JoinPrompt";
 import { supabasePublic } from "@/lib/supabase/public";
 import { countFor, getRegion, getRegionCounts, getStateGroup, regionHref } from "@/lib/marketplace/regions";
 import { breadcrumbJsonLd, itemListJsonLd, ldJson } from "@/lib/marketplace/seo";
@@ -109,6 +110,15 @@ export default async function RegionPage({
             Post free ad
           </Link>
         </div>
+
+        <JoinPrompt
+          spot="classifieds"
+          next={`${regionHref(r)}?alert=1`}
+          icon={<Bell className="h-4 w-4" />}
+          title={`New ads in ${r.name}, sent to you`}
+          body="Join free to get alerts for the fish and gear you want, message sellers, and post your own ads. No fees."
+          className="mb-8"
+        />
 
         <ListingsBrowser
           listings={listings}

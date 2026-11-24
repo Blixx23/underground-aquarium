@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import ForSaleNearYou from "@/components/marketplace/ForSaleNearYou";
+import JoinPrompt from "@/components/join/JoinPrompt";
 import { notFound, permanentRedirect } from "next/navigation";
 import { matchSpeciesSlug } from "@/lib/species/match";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Waves, Heart, Fish } from "lucide-react";
+import { ArrowLeft, ChevronRight, Waves, Heart, Fish, Bell } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import RelatedGuides from "@/components/discover/RelatedGuides";
 import { relatedThreads } from "@/lib/discover";
@@ -452,6 +453,16 @@ export default async function SpeciesDetailPage({ params }: Params) {
             )}
           </section>
         )}
+
+        {/* Signed-out visitors from search: join to get a heads-up when this fish is listed nearby. */}
+        <JoinPrompt
+          spot="species"
+          next={`/species/${s.slug as string}?alert=1`}
+          icon={<Bell className="h-4 w-4" />}
+          title={`Looking for ${s.common_name as string}?`}
+          body="Join free and we'll let you know when someone near you lists one. You can also save tanks, track your water and ask the community."
+          className="mb-6"
+        />
 
         {/* Live classified ads for this fish: the library sends shoppers to the classifieds, nearest first. */}
         <ForSaleNearYou

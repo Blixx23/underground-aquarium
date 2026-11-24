@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Info,
   Star,
+  Bell,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -36,6 +37,7 @@ import ShopPhotoGrid, { type GridPhoto } from "@/components/stores/ShopPhotoGrid
 import { formatPhone } from "@/lib/phone";
 import { storeIsStub } from "@/lib/stores/thin";
 import StoreMap from "@/components/stores/StoreMap";
+import JoinPrompt from "@/components/join/JoinPrompt";
 import { milesLabel } from "@/lib/stores/miles";
 
 /** "Joe's Fish" -> "Joe's Fish's", but "Seven Seas" -> "Seven Seas'". */
@@ -842,6 +844,22 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
             ))}
           </nav>
         </header>
+
+        {/* Visitors from search: a reason to join right where they landed. Members never see it. */}
+        {!user && !hidden && (
+          <JoinPrompt
+            spot="shop"
+            next={`/stores/${store.slug}`}
+            icon={<Bell className="h-4 w-4" />}
+            title={`Follow ${store.name}`}
+            body={
+              claimed
+                ? "Get their new posts and stock updates, and leave a review. Free, and it takes 30 seconds."
+                : "Leave a review, save your favorite shops, and get alerts when fish you want are listed nearby. Free, and it takes 30 seconds."
+            }
+            className="mt-6"
+          />
+        )}
 
         {/* ---- Posts (default) ---- */}
         {tab === "posts" && (

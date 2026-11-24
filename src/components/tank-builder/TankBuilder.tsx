@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { joinHref, loginHref, trackJoinClick } from "@/lib/analytics/join";
 import {
   Search,
   X,
@@ -1426,12 +1427,23 @@ export default function TankBuilder({
                   </>
                 )}
               </p>
-              <Link
-                href="/login?next=/tank-builder"
-                className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-ocean-950 hover:bg-emerald-400"
-              >
-                {fishCount >= 3 ? "Save this tank, free" : "Sign in to save"}
-              </Link>
+              {/* Most people here are new, so the main button creates an account; members sign in beside it. */}
+              <div className="flex items-center gap-3">
+                <Link
+                  href={joinHref("tank-builder", "/tank-builder")}
+                  onClick={() => trackJoinClick("tank-builder")}
+                  className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-ocean-950 hover:bg-emerald-400"
+                >
+                  {fishCount >= 3 ? "Save this tank, free" : "Join free to save"}
+                </Link>
+                <Link
+                  href={loginHref("tank-builder", "/tank-builder")}
+                  onClick={() => trackJoinClick("tank-builder")}
+                  className="text-sm text-ocean-300 hover:text-white"
+                >
+                  Sign in
+                </Link>
+              </div>
             </section>
           )}
         </div>

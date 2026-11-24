@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { TERMS_VERSION } from "@/lib/terms";
 import GoogleButton from "@/components/auth/GoogleButton";
 import AppleButton from "@/components/auth/AppleButton";
+import { trackSignedUp } from "@/lib/analytics/join";
 
 export default function RegisterPage() {
   const carry = useCarrySearch();
@@ -63,6 +64,8 @@ export default function RegisterPage() {
       return;
     }
 
+    trackSignedUp("email");
+
     // If email confirmation is on, there's no session yet — show the confirmation panel.
     if (data.user && !data.session) {
       setSubmitted(true);
@@ -115,9 +118,14 @@ export default function RegisterPage() {
             </p>
             <h1 className="mb-6 font-display text-3xl text-white">Create account</h1>
 
+            {/* Counted as a sign-up when the button is tapped (the buttons themselves stay untouched). */}
             <div className="flex flex-col gap-2.5">
-              <AppleButton label="Sign up with Apple" />
-              <GoogleButton label="Sign up with Google" />
+              <div onClickCapture={() => trackSignedUp("apple")}>
+                <AppleButton label="Sign up with Apple" />
+              </div>
+              <div onClickCapture={() => trackSignedUp("google")}>
+                <GoogleButton label="Sign up with Google" />
+              </div>
             </div>
 
             <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-widest text-ocean-600">
