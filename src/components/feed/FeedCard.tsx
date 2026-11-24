@@ -356,9 +356,7 @@ export default function FeedCard({
               </div>
             </div>
           ) : (
-            body && (
-              <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ocean-50"><MentionText text={body} /></p>
-            )
+            body && <ClampedBody body={body} />
           )
         ) : (
           <ActivityBody item={item} />
@@ -515,15 +513,14 @@ function Photos({
   if (shown.length === 1) {
     return (
       <button type="button" onClick={() => tap(0)} className="block w-full bg-ocean-950" aria-label="Open photo">
-        {/* One photo shows at its own shape (no frame, no blurred filler), so
-            its edges are the edges of the card. Very tall photos stop at
-            600px, centred with plain dark sides. */}
+        {/* Every post's photo area is the same 4:3 shape, cropped to fill, so
+            posts line up the same size in the feed. Tap for the whole photo. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={thumb(shown[0], 828)}
           alt={alt}
           loading="lazy"
-          className="block h-auto max-h-[600px] w-full object-contain"
+          className="block aspect-[4/3] w-full object-cover"
         />
       </button>
     );
@@ -615,5 +612,35 @@ function ActivityBody({ item }: { item: FeedItem }) {
     </Link>
   ) : (
     inner
+  );
+}
+
+
+/**
+ * Post text, cut to four lines in the feed so every post is about the same
+ * size. "See more" opens the rest right where it is.
+ */
+function ClampedBody({ body }: { body: string }) {
+  const [open, setOpen] = useState(false);
+  const long = body.length > 220 || body.split("\n").length > 4;
+  return (
+    <div className="mt-3">
+      <p
+        className={`whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ocean-50 ${
+          long && !open ? "line-clamp-4" : ""
+        }`}
+      >
+        <MentionText text={body} />
+      </p>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="mt-1 text-sm font-medium text-ocean-300 hover:text-white"
+        >
+          {open ? "See less" : "See more"}
+        </button>
+      )}
+    </div>
   );
 }
