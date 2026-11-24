@@ -134,9 +134,14 @@ export async function awardedQuarters(): Promise<string[]> {
   return [...new Set(((data ?? []) as { quarter: string }[]).map((r) => r.quarter))];
 }
 
-/** The badge a shop wears: its tier in the latest locked-in quarter. */
+/**
+ * The badge a shop wears: its tier in the latest locked-in quarter. Before
+ * the very first quarter is locked in, the live standings stand in, the
+ * same list the public leaderboard shows, so the badges and the board agree.
+ */
 export async function shopAward(storeId: string): Promise<{ tier: Tier; quarter: string } | null> {
-  const { quarter, rows } = await getLatestAwards();
+  const locked = await getLatestAwards();
+  const { quarter, rows } = locked.quarter ? locked : await getLiveStandings();
   if (!quarter) return null;
   const row = rows.find((r) => r.store_id === storeId);
   const tier = row ? tierOf(row.rank) : null;

@@ -28,6 +28,7 @@ import StoreFavoriteButton from "@/components/StoreFavoriteButton";
 import StoreTracker from "@/components/stores/StoreTracker";
 import TrackedLink from "@/components/stores/TrackedLink";
 import TopShopBadge from "@/components/stores/TopShopBadge";
+import TopShopRing from "@/components/stores/TopShopRing";
 import { shopAward, quarterLabel } from "@/lib/stores/topShops";
 import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpecialHours";
 import OsmCredit from "@/components/stores/OsmCredit";
@@ -727,12 +728,14 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
           <div className="px-4 pb-5 sm:px-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <div className="relative -mt-12 w-fit sm:-mt-16">
-                <ShopLogo
-                  name={store.name}
-                  url={store.logo_url ?? null}
-                  fluid
-                  className="h-24 w-24 ring-4 ring-ocean-950 sm:h-32 sm:w-32"
-                />
+                <TopShopRing tier={award?.tier ?? null}>
+                  <ShopLogo
+                    name={store.name}
+                    url={store.logo_url ?? null}
+                    fluid
+                    className="h-24 w-24 ring-4 ring-ocean-950 sm:h-32 sm:w-32"
+                  />
+                </TopShopRing>
                 {isOwner && user && (
                   <div className="absolute -bottom-1 -right-1">
                     <BrandingButton
