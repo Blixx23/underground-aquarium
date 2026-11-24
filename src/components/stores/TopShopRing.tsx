@@ -21,11 +21,13 @@ export default function TopShopRing({ tier, children }: { tier: 25 | 50 | 100 | 
   if (!tier) return <>{children}</>;
   return (
     <div className="relative w-fit">
-      <div className={`rounded-full bg-gradient-to-br p-[4px] ${RING[tier]}`}>{children}</div>
+      {/* flex keeps the logo from sitting on a text baseline (that gap made the ring lopsided).
+          The padding is wider than the logo's own 4px dark edge, so an even band of metal shows. */}
+      <div className={`flex rounded-full bg-gradient-to-br p-[8px] leading-none ${RING[tier]}`}>{children}</div>
       <Link
         href="/top-stores"
         aria-label={`Top ${tier} Store. See the leaderboard`}
-        className={`absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-white/40 bg-gradient-to-b px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider shadow-lg transition-transform hover:scale-105 sm:text-xs ${TAB[tier]}`}
+        className={`absolute -top-3.5 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-white/40 bg-gradient-to-b px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider shadow-lg transition-transform hover:scale-105 sm:text-xs ${TAB[tier]}`}
       >
         <Trophy className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Top {tier}
       </Link>

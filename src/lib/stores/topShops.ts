@@ -30,6 +30,8 @@ export type TopShopRow = {
 
 export type AwardRow = TopShopRow & {
   quarter: string;
+  /** Launch badges issued mid-quarter; replaced when the quarter locks in. */
+  provisional: boolean;
   awarded_at: string;
   reward_sent_at: string | null;
   reward_note: string | null;
@@ -122,6 +124,7 @@ export async function awardsFor(quarter: string): Promise<AwardRow[]> {
   return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
     ...num(r),
     quarter: String(r.quarter),
+    provisional: Boolean(r.provisional),
     awarded_at: String(r.awarded_at),
     reward_sent_at: (r.reward_sent_at as string | null) ?? null,
     reward_note: (r.reward_note as string | null) ?? null,
@@ -135,14 +138,14 @@ export async function awardedQuarters(): Promise<string[]> {
 }
 
 /**
- * The badge a shop wears: its tier in the quarter that just ended, and only
- * that one. Badges come from locked-in results, never live standings, and a
- * shop that drops out of the next quarter's Top 100 loses its badge until it
- * earns it back.
+ * The badge a shop wears: its tier in the latest issued set of awards (the
+ * last locked-in quarter, or launch badges until the first one locks). It
+ * holds until the next set replaces it, and a shop that drops out loses its
+ * badge until it earns it back.
  */
 export async function shopAward(storeId: string): Promise<{ tier: Tier; quarter: string } | null> {
   const { quarter, rows } = await getLatestAwards();
-  if (!quarter || quarter !== previousQuarter()) return null;
+  if (!quarter) return null;
   const row = rows.find((r) => r.store_id === storeId);
   const tier = row ? tierOf(row.rank) : null;
   return tier ? { tier, quarter } : null;
@@ -150,7 +153,7 @@ export async function shopAward(storeId: string): Promise<{ tier: Tier; quarter:
 
 /** Lock in a finished quarter. Running it twice does nothing the second time. */
 export async function lockInQuarter(quarter: string): Promise<{ added: number; error?: string }> {
-  const { data, error } = await supabaseAdmin.rpc("award_top_shops", { p_quarter: quarter });
+  const { data, error } = await supabaseAdmin.rpc("award_top_shops", { p_quarter: quarter, p_provisional: false });
   if (error) return { added: 0, error: error.message };
   revalidateTag("top-shops", { expire: 0 });
   return { added: Number(data ?? 0) };

@@ -85,6 +85,12 @@ export default async function AdminTopShopsPage({ searchParams }: { searchParams
         Top 50 and Top 100. This quarter locks in on {lockDate}; then the winners get their badge and show up here with a
         reward checklist.
       </p>
+      {view !== "live" && rows.length > 0 && "provisional" in rows[0] && (rows[0] as AwardRow).provisional && (
+        <p className="mb-4 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+          These are launch badges, issued from mid-quarter standings so shops wear them now. They are replaced by the final
+          results when this quarter locks in, so hold off on sending rewards until then.
+        </p>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {tabs.map((t) => (

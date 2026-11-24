@@ -30,8 +30,10 @@ const TIERS: { tier: Tier; title: string; tone: string }[] = [
 ];
 
 export default async function TopStoresPage() {
-  const awards = await getLatestAwards();
-  // Until the first quarter is locked in, show this quarter's standings so far.
+  const latest = await getLatestAwards();
+  // Launch badges are a stand-in, not results: the board shows the live race
+  // until a quarter's final results are locked in.
+  const awards = latest.quarter && !latest.rows[0]?.provisional ? latest : { quarter: null, rows: [] };
   const live = awards.quarter ? null : await getLiveStandings();
   const quarter = awards.quarter ?? live?.quarter ?? "";
   const rows = awards.quarter ? awards.rows : (live?.rows ?? []);
