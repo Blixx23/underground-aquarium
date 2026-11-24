@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import Link from "next/link";
-import { Megaphone } from "lucide-react";
+import { Trophy, Megaphone } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase/public";
 import StoreDirectory from "./StoreDirectory";
 import SuggestStore from "./SuggestStore";
@@ -178,6 +178,12 @@ export default async function StoresPage({
               ? `${stores.length} independent aquarium shops across ${stateCount} states. No chains.`
               : "Real aquarium shops worth visiting, wherever you are."}
           </p>
+          <Link
+            href="/top-stores"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl border border-amber-300/50 bg-gradient-to-r from-amber-400/20 to-yellow-300/10 px-4 py-2 text-sm font-semibold text-amber-100 transition-colors hover:from-amber-400/30"
+          >
+            <Trophy className="h-4 w-4" /> Top Stores leaderboard
+          </Link>
         </div>
 
         {stores.length === 0 ? (

@@ -38,7 +38,9 @@ export default function ListingGallery({
       // Storage blocked — counting once per page load is still fine.
     }
 
-    supabase.rpc("increment_listing_views", { p_listing_id: listingId });
+    supabase.rpc("increment_listing_views", { p_listing_id: listingId })
+      // A Supabase call only runs once something asks for its result, so ask.
+      .then(() => {}, () => {});
   }, [supabase, listingId, countView]);
 
   if (images.length === 0) {

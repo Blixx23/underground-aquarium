@@ -1,4 +1,5 @@
 import {
+  Trophy,
   LayoutDashboard, Mail, Megaphone, Store, Wrench, Flag, Fish, BookOpen,
   GraduationCap, Droplets, MessageSquare, Users, Camera, Clapperboard, BarChart3, LifeBuoy,
   CalendarDays, MapPin, Warehouse, Bot, Egg, Award, Bell,
@@ -124,6 +125,10 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   {
     href: "/admin/wholesale", label: "Wholesale", sub: "Wholesale-only businesses", group: "shops", Icon: Warehouse,
     about: "Wholesale-only businesses, kept off the public directory.",
+  },
+  {
+    href: "/admin/top-shops", label: "Top Stores", sub: "Quarterly Top 25, 50, 100 and rewards", group: "shops", Icon: Trophy,
+    about: "This quarter's standings, and each finished quarter's winners with a checklist for sending their reward.",
   },
   {
     href: "/admin/shop-highlights", label: "Shop highlights", sub: "Top shops by times seen", group: "shops", Icon: Award,

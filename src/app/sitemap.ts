@@ -187,6 +187,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/courses", 0.7, "weekly"],
     ["/events", 0.7, "weekly"],
     ["/fish-swaps", 0.8, "weekly"],
+    ["/top-stores", 0.8, "weekly"],
     ["/ich-in-fish", 0.7, "monthly"],
     [SOCIETY_PATH, 0.7, "weekly"],
     ["/glossary", 0.6, "weekly"],

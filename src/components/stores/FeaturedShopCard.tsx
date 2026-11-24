@@ -62,11 +62,15 @@ function countSeen(shopId: string) {
   } catch {
     /* private browsing: count it anyway */
   }
-  createClient().rpc("record_store_event", { p_store: shopId, p_kind: "featured" });
+  createClient().rpc("record_store_event", { p_store: shopId, p_kind: "featured" })
+      // A Supabase call only runs once something asks for its result, so ask.
+      .then(() => {}, () => {});
 }
 
 function countClick(shopId: string) {
-  createClient().rpc("record_store_event", { p_store: shopId, p_kind: "featured_click" });
+  createClient().rpc("record_store_event", { p_store: shopId, p_kind: "featured_click" })
+      // A Supabase call only runs once something asks for its result, so ask.
+      .then(() => {}, () => {});
 }
 
 // A slowly turning rainbow border: the shop card's highlight.

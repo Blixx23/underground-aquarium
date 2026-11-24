@@ -29,7 +29,9 @@ export default function TrackedLink({
       rel={rel}
       className={className}
       onClick={() => {
-        createClient().rpc("record_store_event", { p_store: storeId, p_kind: kind });
+        createClient().rpc("record_store_event", { p_store: storeId, p_kind: kind })
+      // A Supabase call only runs once something asks for its result, so ask.
+      .then(() => {}, () => {});
       }}
     >
       {children}

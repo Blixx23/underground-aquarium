@@ -27,6 +27,8 @@ import StoreReviews from "../StoreReviews";
 import StoreFavoriteButton from "@/components/StoreFavoriteButton";
 import StoreTracker from "@/components/stores/StoreTracker";
 import TrackedLink from "@/components/stores/TrackedLink";
+import TopShopBadge from "@/components/stores/TopShopBadge";
+import { shopAward, quarterLabel } from "@/lib/stores/topShops";
 import StoreSpecialHours, { type SpecialDay } from "@/components/stores/StoreSpecialHours";
 import OsmCredit from "@/components/stores/OsmCredit";
 import Stars from "@/components/stores/Stars";
@@ -403,6 +405,8 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   const phoneHref = store.phone ? `tel:${store.phone.replace(/[^0-9+]/g, "")}` : null;
 
   const ratingCount = initialReviews.length;
+  // Top Stores badge: the shop's tier in the last finished quarter.
+  const award = hidden ? null : await shopAward(store.id);
   const ratingAvg = ratingCount ? initialReviews.reduce((n, r) => n + r.rating, 0) / ratingCount : null;
 
   const siteUrl = "https://www.undergroundaquarium.com";
@@ -754,6 +758,7 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
                   <Link href={tabHref("reviews")} scroll={false} className="transition-opacity hover:opacity-80">
                     <Stars rating={ratingAvg} count={ratingCount} size={15} />
                   </Link>
+                  {award && <TopShopBadge tier={award.tier} quarter={quarterLabel(award.quarter)} />}
                   {claimed && (
                     <span className="inline-flex items-center gap-1 text-emerald-300">
                       <BadgeCheck className="h-4 w-4" /> Owner managed

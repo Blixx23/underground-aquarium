@@ -21,7 +21,9 @@ export default function StoreTracker({ storeId }: { storeId: string }) {
     } catch {
       /* private browsing: count it anyway */
     }
-    createClient().rpc("record_store_event", { p_store: storeId, p_kind: "view" });
+    createClient().rpc("record_store_event", { p_store: storeId, p_kind: "view" })
+      // A Supabase call only runs once something asks for its result, so ask.
+      .then(() => {}, () => {});
   }, [storeId]);
   return null;
 }
