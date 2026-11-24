@@ -83,14 +83,14 @@ export default async function TopStoresPage() {
                   {inTier.map((r) => {
                     const s = shops.get(r.store_id) as Shop;
                     return (
-                      <li key={s.id}>
+                      <li key={s.id} className="flex">
                         <Link
                           href={`/stores/${s.slug}`}
-                          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors hover:border-emerald-500/40 hover:bg-white/10"
+                          className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors hover:border-emerald-500/40 hover:bg-white/10"
                         >
                           {s.logo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={s.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" loading="lazy" />
+                            <img src={s.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-full bg-white object-cover" loading="lazy" />
                           ) : (
                             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-ocean-800 font-display text-lg text-white">
                               {s.name.slice(0, 1)}
@@ -102,11 +102,10 @@ export default async function TopStoresPage() {
                               <MapPin className="h-3.5 w-3.5" />
                               {[s.city, s.state].filter(Boolean).join(", ") || "Location on page"}
                             </span>
-                            {r.reviews > 0 && (
-                              <span className="mt-1 block">
-                                <Stars rating={r.rating} count={r.reviews} size={13} />
-                              </span>
-                            )}
+                            {/* Always shown (dimmed with no reviews) so every card is the same height. */}
+                            <span className="mt-1 block">
+                              <Stars rating={r.reviews > 0 ? r.rating : null} count={r.reviews} size={13} />
+                            </span>
                           </span>
                         </Link>
                       </li>
