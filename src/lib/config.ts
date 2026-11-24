@@ -70,7 +70,7 @@ export const MESSAGING_ENABLED: boolean = true;
 // The home page "Download our app" section stays hidden while both are empty;
 // once one is filled in it shows that store's badge, with "coming soon" for
 // the other until its link is added too.
-export const APP_STORE_URL = "";
+export const APP_STORE_URL = "https://apps.apple.com/us/app/underground-aquarium/id6838456811";
 export const GOOGLE_PLAY_URL = "";
 
 export const MY_LISTINGS_ENABLED: boolean = true;
