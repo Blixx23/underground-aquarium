@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "582795743212",
+    "project_id": "underground-aquarium-4ed69",
+    "storage_bucket": "underground-aquarium-4ed69.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:582795743212:android:0676e97ec0c24ff695bac9",
+        "android_client_info": {
+          "package_name": "com.undergroundaquarium.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAV9DIeJeyFPY5ifQyuxywNvka9w8whbc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

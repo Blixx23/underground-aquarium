@@ -7,6 +7,11 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
  * notifications (components/app/AppPush.tsx). One phone, one row: if someone
  * else signs in on the same phone, the token moves to them.
  */
+/** Apple tokens are hex; Firebase (Android) tokens are long and use letters, digits, : _ and -. */
+function validToken(token: string, platform: string): boolean {
+  return platform === "android" ? /^[A-Za-z0-9_:\-]{100,4096}$/.test(token) : /^[0-9a-f]{64,200}$/i.test(token);
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -14,14 +19,19 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
 
-  const { token } = (await request.json().catch(() => ({}))) as { token?: string };
-  // Apple's device tokens are hex, 64 characters today, longer allowed.
-  if (!token || !/^[0-9a-f]{64,200}$/i.test(token)) {
+  const { token, platform: rawPlatform } = (await request.json().catch(() => ({}))) as { token?: string; platform?: string };
+  const platform = rawPlatform === "android" ? "android" : "ios";
+  if (!token || !validToken(token, platform)) {
     return NextResponse.json({ error: "Bad token." }, { status: 400 });
   }
 
   const { error } = await supabaseAdmin.from("push_devices").upsert(
-    { token: token.toLowerCase(), user_id: user.id, platform: "ios", last_seen_at: new Date().toISOString() },
+    {
+      token: platform === "ios" ? token.toLowerCase() : token,
+      user_id: user.id,
+      platform,
+      last_seen_at: new Date().toISOString(),
+    },
     { onConflict: "token" }
   );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

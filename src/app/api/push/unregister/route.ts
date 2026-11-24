@@ -8,9 +8,10 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
  */
 export async function POST(request: Request) {
   const { token } = (await request.json().catch(() => ({}))) as { token?: string };
-  if (!token || !/^[0-9a-f]{64,200}$/i.test(token)) {
+  if (!token || !/^[A-Za-z0-9_:\-]{64,4096}$/.test(token)) {
     return NextResponse.json({ error: "Bad token." }, { status: 400 });
   }
-  await supabaseAdmin.from("push_devices").delete().eq("token", token.toLowerCase());
+  // Apple tokens are stored lowercase; Android ones exactly as given.
+  await supabaseAdmin.from("push_devices").delete().in("token", [token, token.toLowerCase()]);
   return NextResponse.json({ ok: true });
 }

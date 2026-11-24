@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { apnsConfigured, sendApns, type ApnsEnv } from "@/lib/push/apns";
+import { fcmConfigured, sendFcm } from "@/lib/push/fcm";
 
 /**
  * Turns bell notifications into iPhone push notifications.
@@ -48,12 +49,26 @@ async function pushRow(row: Row): Promise<number> {
 
   const { data: devices } = await supabaseAdmin
     .from("push_devices")
-    .select("id, token, apns_env")
+    .select("id, token, apns_env, platform")
     .eq("user_id", row.user_id);
   if (!devices?.length) return 0;
 
   let sent = 0;
-  for (const d of devices as { id: string; token: string; apns_env: ApnsEnv | null }[]) {
+  for (const d of devices as { id: string; token: string; apns_env: ApnsEnv | null; platform: string | null }[]) {
+    if (d.platform === "android") {
+      if (!fcmConfigured()) continue;
+      const r = await sendFcm(d.token, {
+        title: trim(row.title, 120) ?? "Underground Aquarium",
+        body: trim(row.body, 240),
+        link: row.link,
+        group: row.type ?? "general",
+      });
+      if (r.ok) sent++;
+      else if ("gone" in r) await supabaseAdmin.from("push_devices").delete().eq("id", d.id);
+      else console.error("[push] android send failed", r.reason);
+      continue;
+    }
+    if (!apnsConfigured()) continue;
     const { result, env } = await sendApns(
       d.token,
       {
@@ -80,7 +95,7 @@ async function pushRow(row: Row): Promise<number> {
 
 /** Push one notification, if it's new and nobody has pushed it yet. */
 export async function pushNotificationById(id: string): Promise<number> {
-  if (!apnsConfigured()) return 0;
+  if (!apnsConfigured() && !fcmConfigured()) return 0;
   const since = new Date(Date.now() - RECENT_MINUTES * 60_000).toISOString();
   const { data } = await supabaseAdmin
     .from("notifications")
@@ -96,7 +111,7 @@ export async function pushNotificationById(id: string): Promise<number> {
 
 /** The cron's sweep: anything recent the instant ping missed. */
 export async function pushPending(limit = 100): Promise<{ claimed: number; sent: number }> {
-  if (!apnsConfigured()) return { claimed: 0, sent: 0 };
+  if (!apnsConfigured() && !fcmConfigured()) return { claimed: 0, sent: 0 };
   const since = new Date(Date.now() - RECENT_MINUTES * 60_000).toISOString();
   // Only people with the app installed, so the sweep stays small.
   const { data: owners } = await supabaseAdmin.from("push_devices").select("user_id");

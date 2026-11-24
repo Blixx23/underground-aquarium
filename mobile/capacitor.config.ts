@@ -23,6 +23,13 @@ const config: CapacitorConfig = {
     errorPath: "offline.html",
     allowNavigation: ["www.undergroundaquarium.com", "undergroundaquarium.com"],
   },
+  android: {
+    backgroundColor: "#020b18",
+    // Same marker as the iPhone app, so the site treats both the same way
+    // (no dues checkout, app-only touches).
+    appendUserAgent: "UAApp/1.0",
+    allowMixedContent: false,
+  },
   ios: {
     backgroundColor: "#020b18",
     contentInset: "never",

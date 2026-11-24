@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { isInApp } from "@/lib/app/nativeSignIn";
+import { appPlatform, isInApp } from "@/lib/app/nativeSignIn";
 
 /**
  * Push notifications, inside the iPhone app only.
@@ -94,7 +94,7 @@ export default function AppPush() {
         fetch("/api/push/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: value }),
+          body: JSON.stringify({ token: value, platform: appPlatform() }),
         }).catch(() => {});
       })
     );

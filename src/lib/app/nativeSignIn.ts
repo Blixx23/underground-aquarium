@@ -21,12 +21,13 @@ const APP_CALLBACK = `${APP_SCHEME}://auth-callback`;
 
 type AppAuthPlugin = {
   webSignIn(opts: { url: string; callbackScheme: string }): Promise<{ url: string }>;
-  appleSignIn(opts: { nonce: string }): Promise<{ identityToken: string; givenName?: string; familyName?: string }>;
+  appleSignIn?(opts: { nonce: string }): Promise<{ identityToken: string; givenName?: string; familyName?: string }>;
 };
 
 type CapWindow = {
   Capacitor?: {
     isNativePlatform?: () => boolean;
+    getPlatform?: () => string;
     registerPlugin?: (name: string) => unknown;
     Plugins?: Record<string, unknown>;
   };
@@ -104,12 +105,22 @@ async function sha256Hex(text: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Sign in with Apple through the native iPhone sheet. */
+/** "ios", "android" or "web". */
+export function appPlatform(): string {
+  if (typeof window === "undefined") return "web";
+  const cap = (window as unknown as CapWindow).Capacitor;
+  return cap?.getPlatform?.() ?? (/Android/i.test(navigator.userAgent) ? "android" : "ios");
+}
+
+/** Sign in with Apple: the native sheet on iPhone, Apple's web page on Android. */
 export async function appAppleSignIn(next: string): Promise<void> {
+  // Android has no native Apple sign-in; Apple's own page in a Custom Tab works.
+  if (appPlatform() === "android") return appWebSignIn("apple", next);
   const plugin = appAuth();
   if (!plugin) throw new Error("Update the app to sign in with Apple.");
   // Apple gets the hashed nonce, Supabase the raw one, so a stolen token can't be replayed.
   const nonce = randomNonce();
+  if (!plugin.appleSignIn) throw new Error("Update the app to sign in with Apple.");
   const { identityToken, givenName, familyName } = await plugin.appleSignIn({ nonce: await sha256Hex(nonce) });
   const supabase = createClient();
   const { data: signedIn, error } = await supabase.auth.signInWithIdToken({
