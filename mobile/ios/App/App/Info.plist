@@ -24,6 +24,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Your camera is used only when you choose to take a photo or video to post, like a fish for sale, your tank or your profile picture.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Your microphone is used only to record sound with a video you choose to post.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Your photo library is used only to pick photos and videos you choose to post.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used only to show fish stores, classifieds and events near you. Your exact location isn't saved or shared.</string>
 	<key>LSRequiresIPhoneOS</key>
