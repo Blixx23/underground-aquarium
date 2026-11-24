@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
+import OwnerOfShop from "@/components/stores/OwnerOfShop";
 import {
   Heart,
   MessageCircle,
@@ -222,6 +223,7 @@ export default function FeedCard({
             </span>
           )}
         </div>
+        <OwnerOfShop userId={item.user_id} />
         <p className="truncate text-xs text-ocean-400">
           {!isPost && (
             <span className={ACTIVITY[item.kind as Exclude<FeedItem["kind"], "post">].tone}>

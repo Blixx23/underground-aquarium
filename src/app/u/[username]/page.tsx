@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
-import {
+import { Store,
   Fish,
   Waves,
   MapPin,
@@ -169,6 +169,9 @@ export default async function PublicProfilePage({ params, searchParams }: Params
 
   const { viewer, supabase } = await getViewer();
   const isMe = viewer?.id === profile.id;
+  // The shop(s) this member runs, so their personal profile points to the shop page.
+  const { data: ownedData } = await supabasePublic.rpc("shops_owned_by", { p_users: [profile.id] });
+  const ownedShops = (ownedData ?? []) as { name: string; slug: string; logo_url: string | null }[];
 
   // Everything the header and tabs need, in parallel.
   const [
@@ -340,6 +343,23 @@ export default async function PublicProfilePage({ params, searchParams }: Params
                   </>
                 )}
               </p>
+              {ownedShops.length > 0 && (
+                <Link
+                  href={`/stores/${ownedShops[0].slug}`}
+                  className="mt-2 inline-flex max-w-full items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-100 transition-colors hover:bg-emerald-500/20"
+                >
+                  {ownedShops[0].logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={ownedShops[0].logo_url} alt="" className="h-6 w-6 shrink-0 rounded-full bg-white object-cover" />
+                  ) : (
+                    <Store className="h-4 w-4 shrink-0" />
+                  )}
+                  <span className="truncate">
+                    Personal account of the owner of <strong className="font-semibold text-white">{ownedShops[0].name}</strong>
+                  </span>
+                  <span className="shrink-0 text-emerald-300">Shop page &rarr;</span>
+                </Link>
+              )}
             </div>
           </div>
 

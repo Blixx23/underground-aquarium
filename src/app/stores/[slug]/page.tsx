@@ -407,6 +407,10 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
   const ratingCount = initialReviews.length;
   // Top Stores badge: the shop's tier in the last finished quarter.
   const award = hidden ? null : await shopAward(store.id);
+  // The owner's member handle, so the shop page links to their personal account.
+  const ownerHandle = store.claimed_by
+    ? ((await supabasePublic.from("profiles").select("username").eq("id", store.claimed_by).maybeSingle()).data as { username: string | null } | null)?.username ?? null
+    : null;
   const ratingAvg = ratingCount ? initialReviews.reduce((n, r) => n + r.rating, 0) / ratingCount : null;
 
   const siteUrl = "https://www.undergroundaquarium.com";
@@ -763,6 +767,11 @@ export default async function StoreDetailPage({ params, searchParams }: Params) 
                   {claimed && (
                     <span className="inline-flex items-center gap-1 text-emerald-300">
                       <BadgeCheck className="h-4 w-4" /> Owner managed
+                      {ownerHandle && (
+                        <Link href={`/u/${ownerHandle}`} className="text-emerald-200/80 hover:text-white hover:underline">
+                          · run by @{ownerHandle}
+                        </Link>
+                      )}
                     </span>
                   )}
                 </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import OwnerOfShop from "@/components/stores/OwnerOfShop";
 import { Heart, Loader2, Send, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/profile/Avatar";
@@ -173,6 +174,9 @@ export default function Comments({
               {c.author_name}
               {c.author_society && <SocietySeal size={12} className="h-3 w-3" />}
             </Link>
+            <span className="ml-1.5 inline-block align-middle">
+              <OwnerOfShop userId={c.user_id} compact />
+            </span>
             <p className="whitespace-pre-wrap break-words text-[14px] leading-snug text-slate-200"><MentionText text={c.body} /></p>
             {c.like_count > 0 && (
               <span className="absolute -bottom-2.5 right-1 inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#0b2238] px-1.5 py-0.5 text-[11px] text-slate-300 shadow">
