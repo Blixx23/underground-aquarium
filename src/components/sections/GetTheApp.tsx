@@ -4,13 +4,13 @@ import { APP_STORE_URL, GOOGLE_PLAY_URL } from "@/lib/config";
 // Official badges, linked from Apple's and Google's own badge servers as they
 // ask, so the artwork is always the current approved version.
 const APPLE_BADGE =
-  "https://tools.applemarketingtools.com/api/badges/download-on-the-app-store/white/en-us";
+  "https://tools.applemarketingtools.com/api/badges/download-on-the-app-store/black/en-us";
 const PLAY_BADGE =
   "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png";
 
 function ComingSoon({ label }: { label: string }) {
   return (
-    <span className="inline-flex h-[52px] items-center rounded-xl border border-dashed border-white/40 px-5 text-sm text-white/80">
+    <span className="inline-flex h-[52px] items-center rounded-xl border border-dashed border-ocean-900/40 bg-white/40 px-5 text-sm font-medium text-ocean-900">
       {label} app coming soon
     </span>
   );
@@ -24,29 +24,29 @@ export default function GetTheApp() {
   if (!APP_STORE_URL && !GOOGLE_PLAY_URL) return null;
   return (
     <section className="web-only mx-auto max-w-7xl px-5 py-12 sm:px-6">
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-400/40 bg-gradient-to-br from-emerald-600/40 via-sky-700/30 to-ocean-900 p-8 shadow-[0_0_40px_rgba(16,185,129,0.15)] sm:p-10">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-emerald-400/25 blur-[90px]" />
-        <div className="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-sky-400/20 blur-[90px]" />
+      <div className="relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-emerald-300 via-teal-200 to-sky-300 p-8 shadow-[0_10px_40px_rgba(56,189,248,0.35)] sm:p-10">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/50 blur-[90px]" />
+        <div className="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-white/40 blur-[90px]" />
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.15em] text-emerald-300">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-700/30 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-800">
               <Smartphone className="h-3.5 w-3.5" />
               Download our app
             </div>
-            <h2 className="font-display text-3xl text-white sm:text-4xl">
+            <h2 className="font-display text-3xl text-ocean-950 sm:text-4xl">
               Underground Aquarium in your pocket
             </h2>
-            <ul className="mt-4 space-y-2 text-white/90">
+            <ul className="mt-4 space-y-2 font-medium text-ocean-900">
               <li className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-emerald-400" />
+                <Bell className="h-4 w-4 text-emerald-700" />
                 Alerts when the fish you want is listed near you
               </li>
               <li className="flex items-center gap-2">
-                <Droplets className="h-4 w-4 text-sky-400" />
+                <Droplets className="h-4 w-4 text-sky-700" />
                 Check your water right from the tank
               </li>
               <li className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-ocean-300" />
+                <MessageCircle className="h-4 w-4 text-ocean-700" />
                 Message sellers and friends on the go
               </li>
             </ul>
