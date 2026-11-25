@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AppBackButton from "@/components/layout/AppBackButton";
 import {
   Menu,
   X,
@@ -266,6 +267,8 @@ export default function Navbar() {
           (the iPhone app, or saved to the home screen). Zero in a normal browser. */}
       <div aria-hidden className="h-[env(safe-area-inset-top)]" />
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <div className="flex items-center">
+        <AppBackButton />
         {/* Logo */}
         <Link href={user ? "/feed" : "/"} className="flex items-center gap-3 group">
           <div className="relative w-10 h-10">
@@ -289,6 +292,7 @@ export default function Navbar() {
             </span>
           </div>
         </Link>
+        </div>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
