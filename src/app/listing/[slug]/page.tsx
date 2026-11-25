@@ -328,7 +328,7 @@ export default async function ListingPage({
               )}
             </div>
 
-            <h1 className="font-display text-3xl text-white leading-tight mb-3">
+            <h1 className="font-display text-2xl sm:text-3xl text-white leading-tight mb-3 break-words">
               {listing.title}
             </h1>
 

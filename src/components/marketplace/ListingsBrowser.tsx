@@ -261,16 +261,17 @@ export default function ListingsBrowser({
                 </div>
 
                 <div className="p-5">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h2 className="font-display text-lg text-white leading-snug">
-                      {listing.title}
-                    </h2>
-                    {!listing.is_wanted && (
-                      <span className="shrink-0 font-display text-lg text-ocean-200">
-                        {formatPrice(listing.price_cents)}
-                      </span>
-                    )}
-                  </div>
+                  {/* Title full width, capped at two lines, with the price on its own line
+                      underneath, so long titles and "Make an offer" don't squeeze each other. */}
+                  <h2 className="font-display text-lg text-white leading-snug line-clamp-2 break-words">
+                    {listing.title}
+                  </h2>
+                  {!listing.is_wanted && (
+                    <p className="mt-1 mb-2 font-display text-lg text-emerald-300">
+                      {formatPrice(listing.price_cents)}
+                    </p>
+                  )}
+                  {listing.is_wanted && <div className="mb-2" />}
                   {listing.description && (
                     <p className="text-sm text-ocean-400 line-clamp-2 mb-4">
                       {listing.description}

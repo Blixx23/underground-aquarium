@@ -546,7 +546,8 @@ export default function PostListingForm({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          maxLength={120}
+          // Short titles read better on the ad cards; details go in the description.
+          maxLength={60}
           placeholder={
             kind === "wanted"
               ? "Looking for a 40 gallon breeder"
@@ -554,6 +555,9 @@ export default function PostListingForm({
           }
           className={inputClass}
         />
+        <p className="mt-1 text-xs text-ocean-500">
+          {title.length}/60 · Keep it short. Put the details in the description.
+        </p>
       </div>
 
       <div>
