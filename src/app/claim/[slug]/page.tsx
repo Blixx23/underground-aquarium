@@ -119,7 +119,8 @@ export default async function ClaimPage({
               <p className="mb-1 font-medium text-white">Sign in and it&apos;s yours.</p>
               <p className="mb-5 text-sm text-ocean-400">
                 One account, free, about thirty seconds. This link keeps working, so you&apos;ll
-                land right back here.
+                land right back here. The account is yours personally: pick your own name or a
+                nickname, since {store.name} keeps its own page.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { nextFromLocation } from "@/lib/safeNext";
 import { useCarrySearch } from "@/lib/hooks/useCarrySearch";
@@ -22,6 +22,12 @@ export default function RegisterPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  // Shop owners arrive here from a "claim your shop" link and tend to type the shop's
+  // name as their username, which leaves two look-alike names on the site.
+  const [claimingShop, setClaimingShop] = useState(false);
+  useEffect(() => {
+    setClaimingShop(nextFromLocation("").startsWith("/claim/"));
+  }, []);
 
   async function handleRegister(e: FormEvent) {
     e.preventDefault();
@@ -152,6 +158,12 @@ export default function RegisterPage() {
                 >
                   Letters, numbers, and underscores only — no spaces or symbols.
                 </span>
+                {claimingShop && (
+                  <span className="mt-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs leading-relaxed text-emerald-100">
+                    This is your personal account, not the shop. Your shop keeps its own page and
+                    name, so use your own name or a nickname here, like MikeR or Mike_Reefs.
+                  </span>
+                )}
               </label>
 
               <label className="flex flex-col gap-1 text-sm text-ocean-400">
