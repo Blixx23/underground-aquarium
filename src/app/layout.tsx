@@ -118,6 +118,10 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
+      // The site scrolls smoothly (globals.css). This tells Next to jump, not glide, to the
+      // top when opening a new page; otherwise the glide gets cut off as the page draws
+      // and some pages open slightly scrolled down.
+      data-scroll-behavior="smooth"
       className={`${display.variable} ${body.variable} ${mono.variable}`}
     >
       <body>
