@@ -370,6 +370,17 @@ export default async function ListingPage({
               )}
             </div>
 
+            {/* Details right under the price and location, before the contact box,
+                so people read the ad before they're asked to message about it. */}
+            {listing.description && (
+              <section className="mb-7">
+                <h2 className="font-display text-xl text-white mb-3">Details</h2>
+                <p className="text-ocean-300 leading-relaxed whitespace-pre-wrap break-words">
+                  {listing.description}
+                </p>
+              </section>
+            )}
+
             {/* Contact */}
             <div className="rounded-2xl border border-ocean-800/60 bg-ocean-900/40 p-5 mb-6">
               <p className="text-sm text-ocean-300 mb-1">
@@ -518,11 +529,6 @@ export default async function ListingPage({
               )}
             </div>
 
-            {/* A featured shop near this ad, right under the contact box where everyone looks. */}
-            <div className="mb-6 empty:hidden">
-              <FeaturedShopCard slot={0} variant="forum" lat={region?.lat ?? null} lng={region?.lng ?? null} />
-            </div>
-
             {user && !isOwner && (
               <p className="mb-4 text-sm text-ocean-300">
                 Got extra fry, trimmings or gear?{" "}
@@ -555,16 +561,6 @@ export default async function ListingPage({
             )}
           </div>
         </div>
-
-        {/* Description */}
-        {listing.description && (
-          <section className="mt-12 pt-8 border-t border-ocean-900/70 max-w-3xl">
-            <h2 className="font-display text-xl text-white mb-4">Details</h2>
-            <p className="text-ocean-300 leading-relaxed whitespace-pre-wrap">
-              {listing.description}
-            </p>
-          </section>
-        )}
 
         {related.length > 0 && (
           <section className="mt-14 pt-8 border-t border-ocean-900/70">
