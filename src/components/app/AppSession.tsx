@@ -23,21 +23,31 @@ export default function AppSession() {
     const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
     if (!/UAApp/.test(navigator.userAgent) && !cap?.isNativePlatform?.()) return;
 
-    const app = (cap as { Plugins?: Record<string, unknown> } | undefined)?.Plugins?.App as AppPlugin | undefined;
+    // Wrapped tightly: anything odd from the native side must never break the page.
     let listener: { remove: () => void } | undefined;
-    app
-      ?.addListener("appUrlOpen", ({ url }) => {
-        try {
-          const u = new URL(url);
-          if (!/(^|\.)undergroundaquarium\.com$/.test(u.hostname)) return;
-          const target = `${u.pathname}${u.search}${u.hash}`;
-          if (target !== `${location.pathname}${location.search}${location.hash}`) location.assign(target);
-        } catch {
-          /* not a link we handle */
+    try {
+      const app = (cap as { Plugins?: Record<string, unknown> } | undefined)?.Plugins?.App as AppPlugin | undefined;
+      if (app && typeof app.addListener === "function") {
+        const handle: unknown = app.addListener("appUrlOpen", ({ url }) => {
+          try {
+            const u = new URL(url);
+            if (!/(^|\.)undergroundaquarium\.com$/.test(u.hostname)) return;
+            const target = `${u.pathname}${u.search}${u.hash}`;
+            if (target !== `${location.pathname}${location.search}${location.hash}`) location.assign(target);
+          } catch {
+            /* not a link we handle */
+          }
+        });
+        // Some Capacitor versions return the handle directly, others a promise of it.
+        if (handle && typeof (handle as Promise<unknown>).then === "function") {
+          (handle as Promise<{ remove: () => void }>).then((l) => (listener = l)).catch(() => {});
+        } else if (handle && typeof (handle as { remove?: unknown }).remove === "function") {
+          listener = handle as { remove: () => void };
         }
-      })
-      .then((l) => (listener = l))
-      .catch(() => {});
+      }
+    } catch {
+      /* no app-link support in this build */
+    }
 
     createClient()
       .auth.getSession()
@@ -51,7 +61,11 @@ export default function AppSession() {
         }
       })
       .catch(() => {});
-    return () => listener?.remove();
+    return () => {
+      try {
+        listener?.remove();
+      } catch {}
+    };
   }, []);
   return null;
 }
