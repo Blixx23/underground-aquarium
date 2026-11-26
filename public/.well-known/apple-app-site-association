@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["39FL7XQJU9.com.undergroundaquarium.app"],
+        "components": [
+          { "/": "/api/*", "exclude": true, "comment": "Server endpoints stay on the web" },
+          { "/": "/admin/*", "exclude": true, "comment": "Admin tools stay in the browser" },
+          { "/": "*", "comment": "Everything else opens in the app when it's installed" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["39FL7XQJU9.com.undergroundaquarium.app"]
+  }
+}
