@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 
 /**
- * Save an ad. Saved ads are listed at /marketplace/saved, and their owners'
+ * Save an ad. Saved ads are listed at /my/saved, and their owners'
  * price drops and sales show up as notifications.
  */
 export default function SaveListingButton({
@@ -67,7 +67,7 @@ export default function SaveListingButton({
       {saved && (
         <p className="mt-2 text-center text-xs text-ocean-500">
           We&apos;ll let you know if the price drops or it sells.{" "}
-          <Link href="/marketplace/saved" className="text-ocean-300 underline hover:text-white">
+          <Link href="/my/saved" className="text-ocean-300 underline hover:text-white">
             Your saved ads
           </Link>
         </p>

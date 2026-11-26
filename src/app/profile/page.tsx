@@ -141,7 +141,7 @@ export default async function ProfilePage({
           ? [{ href: `/u/${profile.username}`, label: "Public profile", Icon: ExternalLink }]
           : []),
         { href: "/my/listings", label: "My listings", Icon: Store },
-        { href: "/marketplace/saved", label: "Saved ads", Icon: Heart },
+        { href: "/my/saved", label: "Saved ads", Icon: Heart },
         ...(myShops.length === 0 ? [{ href: "/my/shops", label: "My shops", Icon: Store }] : []),
         { href: "#tanks", label: "My tanks", Icon: Fish },
         { href: "/trophies", label: "Trophies", Icon: Trophy },

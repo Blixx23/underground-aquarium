@@ -31,7 +31,7 @@ export default async function SavedAdsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/marketplace/saved");
+  if (!user) redirect("/login?next=/my/saved");
 
   // Read with the server key (only this member's own saves) so ads that have
   // since sold still show, marked, instead of silently disappearing.

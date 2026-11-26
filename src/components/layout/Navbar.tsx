@@ -499,7 +499,7 @@ export default function Navbar() {
                         ? [
                             { href: "/my/listings", label: "My listings", Icon: ClipboardList },
                             { href: "/my/alerts", label: "My alerts", Icon: BellRing },
-                            { href: "/marketplace/saved", label: "Saved ads", Icon: Heart },
+                            { href: "/my/saved", label: "Saved ads", Icon: Heart },
                           ]
                         : []),
                       { href: "/help", label: "Help Center", Icon: LifeBuoy },
