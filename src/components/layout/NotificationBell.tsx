@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { notificationHref } from "@/lib/notificationLink";
 import { NOTIFICATION_COLUMNS, type Notification } from "@/lib/notifications";
 import NotificationRow from "@/components/notifications/NotificationRow";
-import { markAllRead, markSeen, removeOne, setRead, toggleMuted } from "@/components/notifications/actions";
+import { markAllRead, markSeen, removeOne, setRead, toggleMuted, NOTIFICATIONS_CHANGED } from "@/components/notifications/actions";
 
 const PANEL_SIZE = 20;
 
@@ -152,6 +152,8 @@ export default function NotificationBell({
     start();
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
+    // Notices read or cleared elsewhere (the notifications page): recount.
+    window.addEventListener(NOTIFICATIONS_CHANGED, onFocus);
     const tick = setInterval(load, 60000);
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
       if (channel) {
@@ -163,6 +165,7 @@ export default function NotificationBell({
     return () => {
       active = false;
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener(NOTIFICATIONS_CHANGED, onFocus);
       clearInterval(tick);
       authSub.subscription.unsubscribe();
       if (channel) supabase.removeChannel(channel);
