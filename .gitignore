@@ -27,3 +27,6 @@ store-contacts-progress.json
 
 # Private company documents (systems map, handover packet). Never push these to GitHub.
 Company Docs/
+
+# App Store and Instagram artwork kept on Chris's Mac, not part of the site
+/appstore-screenshots/
