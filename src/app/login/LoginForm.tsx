@@ -24,7 +24,8 @@ export default function LoginForm({ notice = null }: { notice?: string | null })
     setError(null)
     setLoading(true)
 
-    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
+    // Phones sometimes add a space or a capital letter to the email; neither should block a sign-in.
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
 
     if (error) {
       // A suspended account is banned in Supabase Auth: explain it on its own
