@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail, emailLayout } from "@/lib/email";
+import { pushDirect } from "@/lib/push/send";
 import { MESSAGING_ENABLED } from "@/lib/config";
 import { limit } from "@/lib/rateLimit";
 import { notificationFooter, wantsEmail } from "@/lib/notificationEmail";
@@ -256,8 +257,20 @@ export async function POST(request: Request) {
     const threadLink = `/messages/${threadId}`;
 
     // No bell notification: new messages show on the Messages icon's
-    // unread badge and in the inbox, where they belong. The email below
-    // still goes out.
+    // unread badge and in the inbox, where they belong. The phone push and
+    // the email below still go out.
+
+    try {
+      const preview = body.replace(/\s+/g, " ").trim();
+      await pushDirect(recipientId, {
+        title: isDirect ? senderName : `${senderName} · ${listingTitle}`,
+        body: preview.length > 180 ? `${preview.slice(0, 179)}…` : preview,
+        link: threadLink,
+        type: "message",
+      });
+    } catch (pushErr) {
+      console.error("Message push failed:", pushErr);
+    }
 
     try {
       const { data: recipientAuth } =

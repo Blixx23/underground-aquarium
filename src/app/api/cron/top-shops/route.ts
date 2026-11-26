@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cronAuthorised } from "@/lib/email/cronAuth";
 import { lockInQuarter, previousQuarter } from "@/lib/stores/topShops";
+import { topShopAwardNotices } from "@/lib/nudges";
 
 export const dynamic = "force-dynamic";
 
@@ -14,5 +15,10 @@ export async function GET(req: Request) {
   const quarter = previousQuarter();
   const out = await lockInQuarter(quarter);
   if (out.error) return NextResponse.json({ quarter, error: out.error }, { status: 500 });
-  return NextResponse.json({ quarter, added: out.added });
+  // Tell each owner which badge their shop earned. Safe to repeat: already-told owners are skipped.
+  const notified = await topShopAwardNotices(quarter).catch((e) => {
+    console.error("[top shops] notices", e);
+    return 0;
+  });
+  return NextResponse.json({ quarter, added: out.added, notified });
 }

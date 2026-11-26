@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
+import WaterReminder from "@/components/water/WaterReminder";
 import WaterTestPanel, { EMPTY_WATER, type WaterInputs } from "@/components/water/WaterTestPanel";
 import { useUrlParam } from "@/lib/hooks/useUrlState";
 import { BUILDER_SPECIES_COLUMNS, type Species, type StockItem } from "@/lib/tankBuilder/engine";
@@ -133,6 +134,7 @@ export default function WaterCheckPage() {
           <div className="mt-4 max-w-2xl empty:hidden">
             <FeaturedShopCard slot={0} variant="strip" lead="Need a test kit or water treatment? Try" />
           </div>
+          <WaterReminder />
         </div>
 
         <WaterTestPanel

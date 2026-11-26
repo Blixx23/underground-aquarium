@@ -15,6 +15,8 @@ export type NotificationGroup = {
 
 export const NOTIFICATION_GROUPS: NotificationGroup[] = [
   { key: "messages", label: "Messages", sub: "A member messages you or asks about your listing", types: [], bell: false },
+  { key: "reply_nudge", label: "Reply reminders", sub: "Someone's been waiting a day for your reply", types: ["reply_nudge"] },
+  { key: "saved_ads", label: "Saved ads", sub: "An ad you saved drops in price or sells", types: ["saved_ad"] },
   { key: "listing_alerts", label: "Classified alerts", sub: "A new ad matches one of your alerts, or a Wanted post matches your ad", types: ["listing_alert", "wanted_match"] },
   { key: "feed_comments", label: "Feed comments", sub: "Someone comments on your post or replies to your comment", types: ["feed_comment", "feed_reply"] },
   { key: "mentions", label: "Mentions", sub: "Someone tags you with @ in a post or comment", types: ["mention"] },
@@ -32,7 +34,10 @@ export const NOTIFICATION_GROUPS: NotificationGroup[] = [
   { key: "shop_milestone", label: "Your shop: milestones", sub: "Your shop passes a views or followers milestone", types: ["shop_milestone"] },
   { key: "shop_weekly", label: "Your shop: weekly report", sub: "Monday morning: how many people saw your shop, calls, directions and a tip", types: ["shop_weekly"] },
   { key: "society", label: "Society", sub: "Membership applications, dues and Society notices", types: ["club_application", "club_dues", "club_approved", "club_honorary", "club_invite"] },
-  { key: "events", label: "Events", sub: "Events you're part of", types: ["event"] },
+  { key: "events", label: "Events", sub: "Events you're part of, and a reminder the day before", types: ["event", "event_reminder"] },
+  { key: "water_reminder", label: "Water test reminders", sub: "Only if you turn them on in Water Check", types: ["water_reminder"] },
+  { key: "comeback", label: "While you were away", sub: "After two weeks away: what's new near you, once", types: ["comeback"] },
+  { key: "top_shop", label: "Your shop: Top Stores", sub: "Your shop earns a Top Stores badge, or is close to the next tier", types: ["top_shop"] },
   { key: "site", label: "Site news", sub: "Occasional news from Underground Aquarium", types: ["site"] },
 ];
 

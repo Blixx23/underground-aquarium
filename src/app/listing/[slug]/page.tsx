@@ -18,6 +18,7 @@ import { formatPhone } from "@/lib/phone";
 import ListingContact from "@/components/marketplace/ListingContact";
 import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
 import ShareListing from "@/components/marketplace/ShareListing";
+import SaveListingButton from "@/components/marketplace/SaveListingButton";
 import { speciesForAd } from "@/lib/marketplace/speciesAds";
 import { shareCardUrl } from "@/lib/seo/share";
 import { createClient } from "@/lib/supabase/server";
@@ -171,6 +172,18 @@ export default async function ListingPage({
   } as unknown as ListingRow;
 
   const isOwner = !!user && user.id === listing.user_id;
+  // Has this member saved the ad (the heart)?
+  const isSaved =
+    !!user && !isOwner
+      ? !!(
+          await supabase
+            .from("listing_saves")
+            .select("listing_id")
+            .eq("user_id", user.id)
+            .eq("listing_id", listing.id)
+            .maybeSingle()
+        ).data
+      : false;
   if (listing.status !== "active" && !isOwner) notFound();
 
   const nowIso = new Date().toISOString();
@@ -517,6 +530,15 @@ export default async function ListingPage({
                         This poster didn&apos;t leave a way to contact them.
                       </p>
                     )}
+
+                  {listing.status === "active" && (
+                    <SaveListingButton
+                      listingId={listing.id}
+                      initialSaved={isSaved}
+                      signedIn={!!user}
+                      path={`/listing/${listing.slug}`}
+                    />
+                  )}
 
                   <ShareListing
                     path={`/listing/${listing.slug}`}

@@ -94,7 +94,11 @@ export default function AppPush() {
         fetch("/api/push/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: value, platform: appPlatform() }),
+          body: JSON.stringify({
+            token: value,
+            platform: appPlatform(),
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }),
         }).catch(() => {});
       })
     );

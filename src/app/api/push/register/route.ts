@@ -19,7 +19,13 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
 
-  const { token, platform: rawPlatform } = (await request.json().catch(() => ({}))) as { token?: string; platform?: string };
+  const { token, platform: rawPlatform, timeZone } = (await request.json().catch(() => ({}))) as {
+    token?: string;
+    platform?: string;
+    timeZone?: string;
+  };
+  // The phone's time zone (e.g. "America/Chicago"), so pushes can wait out the night.
+  const tz = typeof timeZone === "string" && /^[A-Za-z_]+(\/[A-Za-z0-9_+\-]+){0,2}$/.test(timeZone) ? timeZone : null;
   const platform = rawPlatform === "android" ? "android" : "ios";
   if (!token || !validToken(token, platform)) {
     return NextResponse.json({ error: "Bad token." }, { status: 400 });
@@ -31,6 +37,7 @@ export async function POST(request: Request) {
       user_id: user.id,
       platform,
       last_seen_at: new Date().toISOString(),
+      ...(tz ? { time_zone: tz } : {}),
     },
     { onConflict: "token" }
   );

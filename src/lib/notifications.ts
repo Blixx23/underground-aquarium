@@ -71,6 +71,12 @@ const KINDS: Record<string, KindMeta> = {
   report: { icon: "bell", tone: "sky", category: "other", label: "report updates" },
   moderation: { icon: "bell", tone: "coral", category: "other", label: "account notices" },
   mention: { icon: "comment", tone: "violet", category: "feed", label: "mentions", mutable: true },
+  reply_nudge: { icon: "message", tone: "violet", category: "marketplace", label: "reply reminders", mutable: true },
+  saved_ad: { icon: "heart", tone: "emerald", category: "marketplace", label: "saved ad updates", mutable: true },
+  event_reminder: { icon: "event", tone: "coral", category: "other", label: "event reminders", mutable: true },
+  water_reminder: { icon: "bell", tone: "cyan", category: "other", label: "water test reminders", mutable: true },
+  comeback: { icon: "bell", tone: "emerald", category: "marketplace", label: "while-you-were-away notes", mutable: true },
+  top_shop: { icon: "trophy", tone: "gold", category: "shops", label: "Top Stores notices", mutable: true },
 };
 
 export function kindOf(type: string | null | undefined): KindMeta {
