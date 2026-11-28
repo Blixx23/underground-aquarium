@@ -2,7 +2,7 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { after, type NextRequest } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { safeNext } from "@/lib/safeNext";
+import { safeNext, pagePath } from "@/lib/safeNext";
 import { sendWelcomeOnce } from "@/lib/email/welcome";
 
 /**
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = safeNext(searchParams.get("next"), "/feed");
+  const next = safeNext(pagePath(searchParams.get("next")), "/feed");
 
   // A suspended (banned) member who tries "Continue with Google" is sent
   // back here by Supabase with an error instead of a code. Show them the
