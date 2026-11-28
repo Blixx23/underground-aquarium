@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/marketplace/listings";
 import Avatar from "@/components/profile/Avatar";
 import NewMessage from "@/components/messages/NewMessage";
+import LiveInbox from "@/components/messages/LiveInbox";
+import { Search } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +30,21 @@ type ThreadRow = {
 export default async function MessagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; q?: string; show?: string }>;
 }) {
-  const showArchived = (await searchParams).view === "archived";
+  const sp = await searchParams;
+  const showArchived = sp.view === "archived";
+  // Search by name, @username or listing title. Paging: 30 at a time, "Show older" adds 30.
+  const q = (sp.q ?? "").trim().slice(0, 60);
+  const PAGE = 30;
+  const show = Math.min(300, Math.max(PAGE, Number(sp.show) || PAGE));
+  const qs = (extra: Record<string, string | number | undefined>) => {
+    const u = new URLSearchParams();
+    const all = { view: showArchived ? "archived" : undefined, q: q || undefined, ...extra };
+    for (const [k, v] of Object.entries(all)) if (v !== undefined && v !== "") u.set(k, String(v));
+    const str = u.toString();
+    return str ? `/messages?${str}` : "/messages";
+  };
   const supabase = await createClient();
   const {
     data: { user },
@@ -62,7 +76,7 @@ export default async function MessagesPage({
       "id, listing_id, buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at, buyer_archived_at, seller_archived_at"
     )
     .order("last_message_at", { ascending: false })
-    .limit(100);
+    .limit(300);
 
   const allThreads = (threadData ?? []) as unknown as ThreadRow[];
   // Archived = I archived it and nothing newer has arrived since. A new message brings it back.
@@ -108,21 +122,15 @@ export default async function MessagesPage({
       threads.map((t) => (t.buyer_id === user.id ? t.seller_id : t.buyer_id))
     ),
   ];
-  const threadIds = threads.map((t) => t.id);
 
-  const [{ data: listingData }, { data: profileData }, { data: messageData }] =
-    await Promise.all([
-      listingIds.length
-        ? supabase.from("listings").select("id, title, slug, images").in("id", listingIds)
-        : Promise.resolve({ data: [] }),
-      supabase.from("profiles").select("id, username, full_name, avatar_url").in("id", otherIds),
-      supabase
-        .from("listing_messages")
-        .select("thread_id, body, sender_id, created_at")
-        .in("thread_id", threadIds)
-        .order("created_at", { ascending: false })
-        .limit(400),
-    ]);
+  const [{ data: listingData }, { data: profileData }] = await Promise.all([
+    listingIds.length
+      ? supabase.from("listings").select("id, title, slug, images").in("id", listingIds)
+      : Promise.resolve({ data: [] }),
+    otherIds.length
+      ? supabase.from("profiles").select("id, username, full_name, avatar_url").in("id", otherIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const listings = new Map(
     ((listingData ?? []) as unknown as {
@@ -144,38 +152,60 @@ export default async function MessagesPage({
     ).map((p) => [p.id, p])
   );
 
-  // The query came back newest first, so the first row we see for a thread
-  // is that thread's latest message.
+  // Unread = something newer than when you last opened it. Sending stamps your
+  // own read time, so your own last message never counts as unread.
+  const isUnread = (t: ThreadRow) => {
+    const myRead = t.buyer_id === user.id ? t.buyer_last_read_at : t.seller_last_read_at;
+    return !myRead || new Date(t.last_message_at).getTime() > new Date(myRead).getTime();
+  };
+
+  const needle = q.toLowerCase();
+  const matched = needle
+    ? threads.filter((t) => {
+        const other = people.get(t.buyer_id === user.id ? t.seller_id : t.buyer_id);
+        const title = t.listing_id ? listings.get(t.listing_id)?.title : "";
+        return [other?.full_name, other?.username, title].some((v) => v?.toLowerCase().includes(needle));
+      })
+    : threads;
+  const page = matched.slice(0, show);
+  const hasMore = matched.length > page.length;
+
+  // Each shown conversation's latest message, one small lookup each (in parallel),
+  // so every preview is right however busy the other conversations are.
+  const previews = await Promise.all(
+    page.map((t) =>
+      supabase
+        .from("listing_messages")
+        .select("body, sender_id")
+        .eq("thread_id", t.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    )
+  );
   const latest = new Map<string, { body: string; sender_id: string }>();
-  for (const m of (messageData ?? []) as unknown as {
-    thread_id: string;
-    body: string;
-    sender_id: string;
-  }[]) {
-    if (!latest.has(m.thread_id)) {
-      latest.set(m.thread_id, { body: m.body, sender_id: m.sender_id });
-    }
-  }
+  page.forEach((t, i) => {
+    const m = previews[i].data as { body: string; sender_id: string } | null;
+    if (m) latest.set(t.id, m);
+  });
 
   const now = Date.now();
 
-  const rows = threads.map((t) => {
+  const rows = page.map((t) => {
     const isBuyer = t.buyer_id === user.id;
     const otherId = isBuyer ? t.seller_id : t.buyer_id;
-    const myRead = isBuyer ? t.buyer_last_read_at : t.seller_last_read_at;
     const theirRead = isBuyer ? t.seller_last_read_at : t.buyer_last_read_at;
     const last = new Date(t.last_message_at).getTime();
     const preview = latest.get(t.id);
     const mineLast = preview?.sender_id === user.id;
-    // Unread = something newer than when you last opened it, that you didn't send.
-    const unread = !mineLast && (!myRead || last > new Date(myRead).getTime());
+    const unread = !mineLast && isUnread(t);
     const seen = mineLast && !!theirRead && new Date(theirRead).getTime() >= last;
     return { t, otherId, unread, seen, mineLast, preview };
   });
-  const unreadCount = rows.filter((r) => r.unread).length;
+  const unreadCount = threads.filter(isUnread).length;
   const groups = [
     { title: "Unread", items: rows.filter((r) => r.unread) },
-    { title: unreadCount > 0 ? "Read" : "", items: rows.filter((r) => !r.unread) },
+    { title: rows.some((r) => r.unread) ? "Read" : "", items: rows.filter((r) => !r.unread) },
   ].filter((g) => g.items.length > 0);
 
   return (
@@ -207,7 +237,32 @@ export default async function MessagesPage({
           </div>
         )}
 
-        {threads.length === 0 && (
+        <LiveInbox />
+
+        {(allThreads.length > 8 || q) && (
+          <form action="/messages" className="relative mb-6">
+            {showArchived && <input type="hidden" name="view" value="archived" />}
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-500" />
+            <input
+              type="search"
+              name="q"
+              defaultValue={q}
+              placeholder="Search by name or listing"
+              className="w-full rounded-xl border border-ocean-800/60 bg-ocean-900/50 py-2.5 pl-10 pr-4 text-base text-white placeholder:text-ocean-600 focus:border-ocean-500 focus:outline-none sm:text-sm"
+            />
+          </form>
+        )}
+
+        {q && matched.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-ocean-800/60 py-12 text-center text-sm text-ocean-500">
+            No conversations match &ldquo;{q}&rdquo;.{" "}
+            <Link href={qs({ q: undefined })} className="text-ocean-300 underline">
+              Clear search
+            </Link>
+          </p>
+        )}
+
+        {!q && threads.length === 0 && (
           <p className="rounded-2xl border border-dashed border-ocean-800/60 py-12 text-center text-sm text-ocean-500">
             {showArchived ? "Nothing archived." : "You're all caught up. Archived conversations are in Archived."}
           </p>
@@ -289,6 +344,18 @@ export default async function MessagesPage({
             </div>
           </section>
         ))}
+
+        {hasMore && (
+          <div className="text-center">
+            <Link
+              href={qs({ show: show + PAGE })}
+              scroll={false}
+              className="inline-block rounded-xl border border-ocean-700/60 px-5 py-2.5 text-sm text-ocean-200 transition-colors hover:border-ocean-600 hover:text-white"
+            >
+              Show older conversations
+            </Link>
+          </div>
+        )}
       </div>
     </main>
   );
