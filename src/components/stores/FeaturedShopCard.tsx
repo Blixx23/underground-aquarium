@@ -83,12 +83,12 @@ const SPIN = "animate-[spin_6s_linear_infinite] motion-reduce:animate-none";
  * square spinning behind the card; the card's own background covers all but
  * the edge.
  */
-function RgbFrame({
+export function RgbFrame({
   frameRef,
   className = "",
   children,
 }: {
-  frameRef: React.Ref<HTMLDivElement>;
+  frameRef?: React.Ref<HTMLDivElement>;
   className?: string;
   children: React.ReactNode;
 }) {

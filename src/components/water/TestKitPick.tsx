@@ -1,7 +1,8 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, TestTube } from "lucide-react";
+import { RgbFrame } from "@/components/stores/FeaturedShopCard";
 
 /**
  * "Don't have a test kit?" for people who open Water Check with nothing to
@@ -38,7 +39,48 @@ function amazonUrl(asin: string): string {
   return u.toString();
 }
 
-export default function TestKitPick({ spot, compact = false }: { spot: string; compact?: boolean }) {
+/** The top-of-page version: one line in the same turning rainbow frame the shop strip used. */
+function TopStrip({ spot }: { spot: string }) {
+  return (
+    <RgbFrame>
+      <div className="flex flex-col gap-2 rounded-[14px] bg-ocean-900/40 px-3.5 py-2.5 sm:flex-row sm:items-center">
+        <span className="flex items-center gap-2 text-sm text-white">
+          <TestTube className="h-4 w-4 shrink-0 text-emerald-400" />
+          Need a test kit?
+        </span>
+        <span className="flex flex-wrap gap-2 sm:ml-auto">
+          {KITS.map((k) => (
+            <a
+              key={k.kind}
+              href={amazonUrl(k.asin)}
+              target="_blank"
+              rel="sponsored nofollow noopener noreferrer"
+              onClick={() => track("Test kit clicked", { kind: k.kind, spot })}
+              className="inline-flex items-center gap-1.5 rounded-full border border-ocean-700/60 bg-ocean-950/60 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:border-emerald-500/60"
+            >
+              {k.kind === "strips" ? "API test strips" : "API Master liquid kit"}
+              <ExternalLink className="h-3 w-3 text-ocean-500" />
+            </a>
+          ))}
+        </span>
+      </div>
+      <p className="rounded-b-[14px] bg-ocean-950 px-3.5 pb-1.5 text-[10px] text-ocean-500">
+        Opens Amazon. We may earn a small commission, at no cost to you.
+      </p>
+    </RgbFrame>
+  );
+}
+
+export default function TestKitPick({
+  spot,
+  compact = false,
+  top = false,
+}: {
+  spot: string;
+  compact?: boolean;
+  top?: boolean;
+}) {
+  if (top) return <TopStrip spot={spot} />;
   return (
     <div className={compact ? "mt-3" : "mt-6 border-t border-white/10 pt-5 text-left"}>
       <p className={compact ? "mb-2 text-xs text-ocean-300" : "mb-3 text-sm font-medium text-white"}>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import FeaturedShopCard from "@/components/stores/FeaturedShopCard";
+import TestKitPick from "@/components/water/TestKitPick";
 import WaterReminder from "@/components/water/WaterReminder";
 import WaterTestPanel, { EMPTY_WATER, type WaterInputs } from "@/components/water/WaterTestPanel";
 import { useUrlParam } from "@/lib/hooks/useUrlState";
@@ -130,9 +130,9 @@ export default function WaterCheckPage() {
             Enter your test-kit numbers and get a plain-English read on what&apos;s healthy, what isn&apos;t, and how to fix it.
             Fill in only what you have. For freshwater tanks.
           </p>
-          {/* A local shop near the visitor (rotates), for test kits and water treatments. */}
-          <div className="mt-4 max-w-2xl empty:hidden">
-            <FeaturedShopCard slot={0} variant="strip" lead="Need a test kit or water treatment? Try" />
+          {/* Test kit picks (Amazon, Chris's demand test for his own strips). Replaced the local shop strip here. */}
+          <div className="mt-4 max-w-2xl">
+            <TestKitPick spot={fishless ? "fishless-top" : "water-check-top"} top />
           </div>
           <WaterReminder />
         </div>
