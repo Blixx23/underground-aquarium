@@ -16,24 +16,24 @@ import { ExternalLink } from "lucide-react";
 // Chris's Amazon Associates tracking ID (e.g. "undergroundaq-20"). Empty = plain links, no commission.
 const AMAZON_TAG = "undergroundaq-20";
 
+// Specific products Chris picked (Amazon ASINs), so it's a real recommendation, not a search page.
 const KITS = [
   {
     kind: "strips",
     title: "Test strips",
-    sub: "Quick and easy. Dip, wait a minute, match the colors.",
-    query: "aquarium test strips freshwater",
+    sub: "API 5-in-1 strips, 100 count. Dip, wait a minute, match the colors.",
+    asin: "B077YS7Y4Y",
   },
   {
     kind: "liquid",
     title: "Liquid test kit",
-    sub: "Most accurate. Takes about 10 minutes with test tubes.",
-    query: "API freshwater master test kit",
+    sub: "API Freshwater Master Test Kit. Most accurate, about 10 minutes with test tubes.",
+    asin: "B000255NCI",
   },
 ] as const;
 
-function amazonUrl(query: string): string {
-  const u = new URL("https://www.amazon.com/s");
-  u.searchParams.set("k", query);
+function amazonUrl(asin: string): string {
+  const u = new URL(`https://www.amazon.com/dp/${asin}`);
   if (AMAZON_TAG) u.searchParams.set("tag", AMAZON_TAG);
   return u.toString();
 }
@@ -48,7 +48,7 @@ export default function TestKitPick({ spot, compact = false }: { spot: string; c
         {KITS.map((k) => (
           <a
             key={k.kind}
-            href={amazonUrl(k.query)}
+            href={amazonUrl(k.asin)}
             target="_blank"
             rel="sponsored nofollow noopener noreferrer"
             onClick={() => track("Test kit clicked", { kind: k.kind, spot })}
