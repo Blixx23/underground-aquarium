@@ -741,9 +741,13 @@ export default function PostListingForm({
 
       {/* Photos */}
       <div>
-        <label className="block text-sm text-ocean-300 mb-2">
+        <label className="block text-sm text-ocean-300 mb-1">
           Photos ({photoCount}/{MAX_PHOTOS})
         </label>
+        {/* Sellers were using screenshots of text lists as the cover, which looks broken in the grid. */}
+        <p className="mb-2 text-xs text-ocean-500">
+          Your first photo is the cover buyers see. Use a picture of the fish or item, not a screenshot of text. Put lists in the description.
+        </p>
 
         {photoCount > 0 && (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
