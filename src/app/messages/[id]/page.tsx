@@ -145,14 +145,16 @@ export default async function ThreadPage({
     .join(" / ");
 
   return (
-    <main className="min-h-screen pt-28 pb-20 px-6">
+    // Messenger layout: the page is one screen tall, messages scroll inside their own
+    // box, and the reply box stays pinned underneath (no endless page with photos).
+    <main className="flex h-[calc(100dvh-env(safe-area-inset-top))] flex-col px-4 pb-4 pt-20 sm:px-6 sm:pt-24">
       <MarkThreadRead threadId={thread.id} role={isBuyer ? "buyer" : "seller"} stamp={messages.length} />
       <LiveThread threadId={thread.id} messageCount={messages.length} />
 
-      <div className="max-w-3xl mx-auto">
+      <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
         <Link
           href="/messages"
-          className="inline-flex items-center gap-2 text-sm text-ocean-400 hover:text-white transition-colors mb-6"
+          className="inline-flex shrink-0 items-center gap-2 self-start text-sm text-ocean-400 hover:text-white transition-colors mb-3"
         >
           <ArrowLeft className="w-4 h-4" />
           All messages
@@ -160,8 +162,8 @@ export default async function ThreadPage({
 
         {/* What this conversation is about: a person, or a listing */}
         {direct ? (
-          <div className="flex items-center gap-4 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-4 py-4 mb-8">
-            <Avatar name={otherName} src={other?.avatar_url ?? null} size={56} />
+          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-4 py-3 mb-3">
+            <Avatar name={otherName} src={other?.avatar_url ?? null} size={44} />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-ocean-500 mb-0.5">Direct message</p>
               {other?.username ? (
@@ -178,8 +180,8 @@ export default async function ThreadPage({
             </div>
           </div>
         ) : (
-        <div className="flex items-center gap-4 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-4 py-4 mb-8">
-          <div className="shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-ocean-950 border border-ocean-800/60 flex items-center justify-center">
+        <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-ocean-800/60 bg-ocean-900/40 px-4 py-3 mb-3">
+          <div className="shrink-0 w-12 h-12 rounded-xl overflow-hidden bg-ocean-950 border border-ocean-800/60 flex items-center justify-center">
             {image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={image} alt="" className="w-full h-full object-cover" />
@@ -214,8 +216,15 @@ export default async function ThreadPage({
         </div>
         )}
 
-        {/* Messages */}
-        <div className="space-y-3 mb-8">
+        {/* Messages: their own scrolling box */}
+        <div
+          id="thread-scroll"
+          className="mb-3 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain rounded-2xl border border-ocean-900/60 bg-ocean-950/30 p-3"
+        >
+          <p className="mx-auto max-w-md pb-2 text-center text-[11px] leading-relaxed text-ocean-600">
+            Keep the conversation on the site until you agree to meet. Never wire money or send gift cards to someone
+            you haven&apos;t met.
+          </p>
           {messages.map((m) => {
             const mine = m.sender_id === user.id;
             const photos = m.images ?? [];
@@ -234,7 +243,7 @@ export default async function ThreadPage({
                       {photos.map((src) => (
                         <a key={src} href={src} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={src} alt="Photo" loading="lazy" className="max-h-72 w-full object-cover" />
+                          <img src={src} alt="Photo" loading="lazy" className="max-h-60 w-full object-cover" />
                         </a>
                       ))}
                     </div>
@@ -260,15 +269,15 @@ export default async function ThreadPage({
           })}
         </div>
 
-        <MessageComposer
-          threadId={thread.id}
-          placeholder={`Reply to ${otherName}…`}
-          quickReplies={direct ? undefined : isBuyer ? QUICK_REPLIES.buyer : QUICK_REPLIES.seller}
-        />
-        {/* Scroll target: below the reply box, so the box and Send stay on screen after a new message. */}
-        <div id="thread-end" className="scroll-mb-6" />
+        <div className="shrink-0">
+          <MessageComposer
+            threadId={thread.id}
+            placeholder={`Reply to ${otherName}…`}
+            quickReplies={direct ? undefined : isBuyer ? QUICK_REPLIES.buyer : QUICK_REPLIES.seller}
+          />
+        </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+        <div className="mt-3 flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2">
           <BlockButton userId={otherId} name={otherName} />
           <ReportButton
             targetType="profile"
@@ -278,12 +287,6 @@ export default async function ThreadPage({
           />
           <ArchiveThreadButton threadId={thread.id} role={isBuyer ? "buyer" : "seller"} archived={archived} />
         </div>
-
-        <p className="text-xs text-ocean-600 mt-6 leading-relaxed">
-          Keep the conversation on the site until you agree to meet. Underground
-          Aquarium doesn&apos;t handle payment for free listings, so never wire
-          money or send gift cards to someone you haven&apos;t met.
-        </p>
       </div>
     </main>
   );

@@ -34,26 +34,11 @@ export default function MessageComposer({
   const supabase = useMemo(() => createClient(), []);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
   const [body, setBody] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [preparing, setPreparing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Photo previews sit above the text box and push it down, so keep the box and
-  // Send on screen whenever photos are added or removed (twice: once now, once
-  // after the previews have drawn).
-  useEffect(() => {
-    if (!photos.length && !preparing) return;
-    const show = () => rootRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    const a = setTimeout(show, 50);
-    const b = setTimeout(show, 400);
-    return () => {
-      clearTimeout(a);
-      clearTimeout(b);
-    };
-  }, [photos.length, preparing]);
 
   // Free any leftover preview images when the box goes away (removed ones are freed in removePhoto).
   const photosRef = useRef<Photo[]>([]);
@@ -148,7 +133,7 @@ export default function MessageComposer({
   const canSend = (body.trim() || photos.length) && !busy && !preparing;
 
   return (
-    <div ref={rootRef} className="scroll-mb-6">
+    <div>
       {error && (
         <div className="rounded-xl border border-coral-500/40 bg-coral-500/10 px-4 py-3 text-sm text-coral-300 mb-3">
           {error}

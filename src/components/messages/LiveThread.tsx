@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
  * Keeps an open conversation current without reloading:
  *  - a new message from either side shows up right away (Supabase live updates),
  *  - "Seen" appears when the other person opens it,
- *  - the page opens at the newest message and follows new ones down.
+ *  - the message box opens at the newest message and follows new ones down.
  * A slow check every 30 seconds covers phones that drop the live connection.
  */
 export default function LiveThread({
@@ -23,22 +23,22 @@ export default function LiveThread({
   const supabase = useMemo(() => createClient(), []);
   const first = useRef(true);
 
-  // Keep the newest message and the reply box on screen: when the chat opens and
-  // whenever a message arrives. Next.js resets the scroll just after a page opens
-  // and photos grow the page as they load, so we try a few times over about two
-  // seconds, and stop as soon as the member scrolls on their own.
+  // Keep the newest message in view inside the message box: when the chat opens
+  // and whenever a message arrives. Photos grow the box as they load, so we try a
+  // few times over about two seconds, and stop as soon as the member scrolls.
   useEffect(() => {
+    const box = document.getElementById("thread-scroll");
+    if (!box) return;
     const opening = first.current;
     first.current = false;
-    const toEnd = (smooth: boolean) =>
-      document.getElementById("thread-end")?.scrollIntoView({ behavior: smooth ? "smooth" : "instant", block: "end" });
+    const toEnd = (smooth: boolean) => box.scrollTo({ top: box.scrollHeight, behavior: smooth ? "smooth" : "instant" });
 
     let userMoved = false;
     const stop = () => {
       userMoved = true;
     };
-    window.addEventListener("wheel", stop, { passive: true });
-    window.addEventListener("touchmove", stop, { passive: true });
+    box.addEventListener("wheel", stop, { passive: true });
+    box.addEventListener("touchmove", stop, { passive: true });
     const timers = [0, 150, 500, 1000, 1800].map((ms, i) =>
       setTimeout(() => {
         if (!userMoved) toEnd(!opening && i === 0);
@@ -46,8 +46,8 @@ export default function LiveThread({
     );
     return () => {
       timers.forEach(clearTimeout);
-      window.removeEventListener("wheel", stop);
-      window.removeEventListener("touchmove", stop);
+      box.removeEventListener("wheel", stop);
+      box.removeEventListener("touchmove", stop);
     };
   }, [messageCount]);
 
