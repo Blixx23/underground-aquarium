@@ -10,6 +10,7 @@ import MessageComposer from "@/components/messages/MessageComposer";
 import MarkThreadRead from "@/components/messages/MarkThreadRead";
 import Avatar from "@/components/profile/Avatar";
 import LiveThread from "@/components/messages/LiveThread";
+import ZoomPhoto from "@/components/photos/ZoomPhoto";
 import ArchiveThreadButton from "@/components/messages/ArchiveThreadButton";
 import ReportButton from "@/components/ReportButton";
 import { PHOTO_ONLY_BODY, QUICK_REPLIES, looksLikePaymentTalk } from "@/lib/messages";
@@ -240,11 +241,12 @@ export default async function ThreadPage({
                 >
                   {photos.length > 0 && (
                     <div className={`grid gap-1.5 ${photos.length > 1 ? "grid-cols-2" : "grid-cols-1"} ${text ? "mb-2" : ""}`}>
-                      {photos.map((src) => (
-                        <a key={src} href={src} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl">
+                      {/* Tap opens the site's own full-screen viewer (swipe between photos), instead of leaving for a browser. */}
+                      {photos.map((src, i) => (
+                        <ZoomPhoto key={src} images={photos} start={i} className="w-full overflow-hidden rounded-xl">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={src} alt="Photo" loading="lazy" className="max-h-60 w-full object-cover" />
-                        </a>
+                        </ZoomPhoto>
                       ))}
                     </div>
                   )}
