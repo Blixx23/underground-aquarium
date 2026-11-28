@@ -65,6 +65,9 @@ No, and you don't need one. Use **Continue with Google** on the Log in page. If 
 
 Signing out takes you to the home page, and pressing Back won't reopen signed in pages. Signing out can also end your session on other devices, so you may need to log in again there.
 
+## Signing in on the iPhone app
+The [iPhone app](/help/using-the-site-on-your-phone) uses the same account: sign in with the same email and password, or **Continue with Google**. If you saved your password for undergroundaquarium.com in Safari or iCloud Keychain, the app offers it above the keyboard when you tap the Email or Password box.
+
 ## How long do I stay signed in?
 You stay signed in on that browser until you sign out, clear your browser's cookies, or your session can't be renewed. The site refreshes your session in the background as you use it, so you normally won't be asked to log in again on a device you use regularly.
 
@@ -74,7 +77,7 @@ If you asked us to delete your account, logging in with your email and password 
 ## Common problems
 
 **"Invalid login credentials"**
-The email and password don't match an account. Check for typos and for Caps Lock, make sure you're using your email address and not your username, and try the address you signed up with. If you signed up with Google, use **Continue with Google** instead. If you still can't get in, reset your password.
+The email and password don't match an account. Check for typos and for Caps Lock, make sure you're using your email address and not your username, and try the address you signed up with. Capital letters and spaces before or after the email don't matter. If you signed up with Google, use **Continue with Google** instead. If you still can't get in, reset your password.
 
 **"Email not confirmed"**
 You haven't clicked the confirmation link we sent when you registered. Find that email (check spam) and click it. See [Confirming your email](/help/confirming-your-email).

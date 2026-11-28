@@ -33,7 +33,7 @@ Results come back in groups, in this order, and a group only shows when it has m
 - **People:** members, matched on their display name or @username. People always come first. A leading @ is fine ("@salmon"), and part of a username works too ("fish" finds fish_guy). Each result shows their photo and @username and opens their profile. Deleted and suspended accounts never appear.
 - **Help answers:** answers from the [Help Center](/help) that contain every word you typed, linked straight to the right spot in the guide.
 - **Fish species & care:** species pages, matched on the common name, scientific name, other names, former names and trade codes such as L046, and also on the care guide itself: the summary, full care write-up, diet, temperament, origin, care level and water type. So a search like "peaceful schooling fish", "blackwater" or "driftwood" finds the species whose care guides talk about it. Species whose name matches always come before ones that only mention your words in their care guide.
-- **Classifieds:** active ads that haven't expired, matched on the title, description, town, state and category. Each result shows the price (or Free or Wanted) and the area.
+- **Classifieds:** live ads, matched on the title, description, town, state and category. Each result shows the price (or Free or Wanted) and the area.
 - **Fish stores:** published shops, matched on the shop name, city and state. "fish store sacramento" works. Claimed shops say **Claimed**.
 - **Forums:** forum threads, using the same search as [Searching the forums](/help/searching-the-forums).
 - **Breeding guides:** species that members have bred, from the [breeding guides](/breeding), with how many breeding records each has.
@@ -86,7 +86,7 @@ No. The search box on the [Help Center](/help) only looks through help answers, 
 
 **My word was "fixed" into the wrong word.** Check the "you typed" line above the results. Try the word spelled differently, or use a more specific word.
 
-**An ad I know exists doesn't appear.** Only active ads that haven't expired show. Sold, removed and expired ads never appear in search. See [Why did my ad expire?](/help/editing-renewing-and-expiry)
+**An ad I know exists doesn't appear.** Only live ads show. Sold, removed and expired ads never appear in search. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
 
 **A shop I know exists doesn't appear.** Only published shops show. Try the shop's town instead of its name, or open the [store directory](/stores). If it's missing entirely, you can [suggest it](/help/suggesting-a-store).
 

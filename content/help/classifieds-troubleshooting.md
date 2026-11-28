@@ -19,7 +19,7 @@ If you were signed in but your session ran out while you were filling in the for
 ## The post form says a field is missing
 The form checks these before posting, in this order:
 
-- **"Give your listing a title."** The **Title** box is empty. Add a short title (up to 120 characters).
+- **"Give your listing a title."** The **Title** box is empty. Add a short title (up to 60 characters).
 - **"Pick a category."** Choose one from the **Category** menu.
 - **"Choose the area you're posting in."** You need both **1 · State** and **2 · Closest metro area**. The area menu stays greyed out until you pick a state.
 - **"Enter a valid price, or leave it blank for 'make an offer'."** The **Price (USD)** box has something that isn't a number, or a negative number. Type just the number, like 25 or 12.50, or leave it empty.
@@ -66,23 +66,21 @@ After a successful post you're taken straight to your new listing page. If you c
 ## What do the statuses in My listings mean?
 Each listing in [My listings](/my/listings) shows a status:
 
-- **active**: live and visible to everyone. You'll see how many days are left.
+- **active**: live and visible to everyone. It stays up until you mark it sold or delete it.
 - **draft**: not published. Tap **Publish** to put it live. Drafts mostly came across from the old version of the marketplace.
 - **sold**: you marked it sold (or found). Hidden from buyers. Tap **Repost** to put it back up.
-- **expired**: its 45 days ran out. Hidden from buyers. Tap **Repost** to put it back up for another 45 days.
+- **expired**: an older ad from when ads used to expire. Hidden from buyers. Tap **Repost** to put it back up.
 - **removed**: taken down by our team. Removed listings can't be reposted.
 
 When you open your own listing that isn't live, a banner says it's only visible to you. See [My listings](/help/my-listings).
 
-## Why did my listing expire?
-Every ad stays up for 45 days from when it's posted or last renewed. After that it's automatically marked **expired** and comes off the classifieds. There's no email or notification when that happens, so keep an eye on the days left in [My listings](/my/listings), which turns amber in the last 7 days and says "expires today" on the final day.
-
-To keep an ad up, tap **Renew 45 days** any time while it's active. It also moves the ad back to the top of the newest list. To bring back an expired ad, tap **Repost**. Editing an ad doesn't reset its expiry date. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
+## Why does my listing say expired?
+Ads don't expire anymore: they stay up until you mark them sold or delete them. An ad marked **expired** is from before that change (or from an account that was deleted). Tap **Repost** in [My listings](/my/listings) to put it back up. To move a live ad back to the top of the newest list, tap **Bump to top**. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
 
 ## My listing was removed
 If an ad breaks the [listing rules](/rules) or is reported and our team agrees, it can be removed. A removed ad disappears from the classifieds and search, shows the **removed** status in [My listings](/my/listings) and can't be reposted. You get a **Listing removed** notification saying your listing "[title]" was removed by a moderator, which links to My listings. You can still delete it.
 
-If your account is suspended, your live ads are also taken down. If the suspension is lifted, those ads come back (or come back as expired if their 45 days ran out in the meantime).
+If your account is suspended, your live ads are also taken down. If the suspension is lifted, those ads come back.
 
 If you think it was removed by mistake, email support@undergroundaquarium.com with the listing title.
 

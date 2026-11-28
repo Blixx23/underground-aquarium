@@ -48,7 +48,10 @@ There's no block button on a listing itself. To block a seller, tap their name u
 Once unblocked, you can message each other again. They aren't told about that either.
 
 ## How do I report someone who's messaging me?
-There isn't a report button inside conversations. Instead:
+1. Open the conversation.
+2. Tap **Report** under the reply box, next to **Block**.
+
+Your report goes to our team along with their most recent messages, so we can see what was said. You can also:
 
 - **Report their profile:** open their profile, scroll to the bottom and tap **Report**.
 - **Report their listing:** if the conversation is about one of their ads, open the listing and tap **Report** under the safety note.

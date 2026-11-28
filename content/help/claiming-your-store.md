@@ -12,7 +12,7 @@ If you own or manage an independent fish store, you can claim its page and run i
 ## How do I claim my store?
 1. Find your shop on [Fish stores](/stores) and open its page.
 2. In the contact column (near the top on a phone, on the right on a computer), find **Own this store?** ("Claim [shop] to manage its page.") and tap **Claim it**.
-3. [Sign in](/login) or create a free account if asked. Signed out, you'll see "Sign in to claim this store."
+3. [Sign in](/login) or create a free account if asked. Signed out, you'll see "Sign in to claim this store." The account is you, not the shop: use your own name, since the shop keeps its own page with its own name, and you'll manage it from your account.
 4. Fill in the claim form (see below).
 5. Tap **Submit claim**. It says **Submitting…** while it sends.
 

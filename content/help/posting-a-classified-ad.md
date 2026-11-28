@@ -7,7 +7,7 @@ keywords: sell fish, post ad, new listing, craigslist, rehome, give away, trade,
 pages: /post, /listing/[slug], /my/listings, /marketplace, /marketplace/[state]/[region], /listings
 ---
 
-Posting a classified ad on Underground Aquarium is free. You fill in one form on the [Post it free](/post) page, and your ad goes live straight away for 45 days. Buyers reach you through on-site messages.
+Posting a classified ad on Underground Aquarium is free. You fill in one form on the [Post it free](/post) page, and your ad goes live straight away and stays up until you mark it sold or delete it. Buyers reach you through on-site messages.
 
 ## How do I post a free classified ad?
 1. Tap **Post Free Ad** in the top bar. On a phone, tap the **+** button in the middle of the bottom bar and choose **Post a free ad**. The footer also has a **Post a free ad** link, and every area page and the [Every listing](/listings) page has a **Post free ad** button. All of them open [Post it free](/post).
@@ -20,7 +20,7 @@ Posting a classified ad on Underground Aquarium is free. You fill in one form on
 8. Decide whether to show your email or a phone number under **How people reach you**.
 9. Tap **Post it, free**. The button changes to **Posting…** while it works, then you land on your new listing page.
 
-The page tells you under the button: "Stays up for 45 days. Renew or delete it any time."
+The page tells you under the button: "Stays up until you mark it sold or delete it."
 
 ## Do I need an account to post?
 Yes. If you open [Post it free](/post) while signed out, you see **Sign in to post** with the note "Posting is free. An account just keeps the site free of spam and lets buyers message you." Tap **Sign in** if you have an account or **Create account** to make one. Browsing listings never needs an account. See [Creating an account](/help/creating-an-account).
@@ -31,7 +31,7 @@ The form is one page, top to bottom:
 | Field | Required? | Limits and notes |
 |---|---|---|
 | **What are you posting?** | Yes (defaults to **For sale**) | For sale, Free or Wanted |
-| **Title** | Yes | Up to 120 characters |
+| **Title** | Yes | Up to 60 characters, with a counter under the box |
 | **Category** | Yes | One of 12 categories, starts on "Select a category…" |
 | **1 · State** | Yes | Starts on "Choose your state…" |
 | **2 · Closest metro area** | Yes | Locked until you pick a state |
@@ -102,7 +102,7 @@ Just above the post button, the form says: "By posting you confirm this listing 
 - Your photos upload, then the ad is saved as **active**.
 - You land on your new listing page, where you see "This is your listing.", a highlighted **Your ad is live. Now get it seen.** box for sharing it, and buttons for **Mark as sold** (or **Mark as found**) and **Manage this listing**.
 - Your ad appears in your metro area's page, on the nationwide [Every listing](/listings) page, on your public profile's **Listings** tab, and it can show up in [The Feed](/feed) as something you listed.
-- It stays up for 45 days. You can edit, renew, mark sold or delete it from [My listings](/my/listings).
+- It stays up until you mark it sold or delete it. You can edit, bump it to the top, mark it sold or delete it from [My listings](/my/listings).
 
 Your ad's web address is made from the title you first gave it plus a short code. Editing the title later doesn't change the address.
 

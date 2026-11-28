@@ -37,15 +37,14 @@ Your ads are listed newest first (by the date you first posted them). Each row s
 - The **price** (or "Free" or "Make an offer") and the **area**, with your town if you gave one. Wanted ads skip the price.
 - **Views**, like "34 views".
 - **Unread**, like "2 unread", if buyers have messages you haven't read. Tap it to go to [Messages](/messages).
-- **Bumped**, like "Bumped 3 days ago": when the ad was posted or last renewed or reposted.
-- For active ads only, **days left**, like "12 days left". It turns amber at 7 days or fewer and reads "expires today" on the last day.
+- **Bumped**, like "Bumped 3 days ago": when the ad was posted or last bumped or reposted.
 
 The page shows up to your 200 most recent ads.
 
 ## What does each status mean?
 - **active**: live. Buyers can see it on area pages, [Every listing](/listings), search and your profile.
 - **sold**: you tapped **Mark sold**, **Mark found**, **Mark as sold** or **Mark as found**. It's off the classifieds and only you can see it. Wanted ads marked found also show as sold.
-- **expired**: its 45 days ran out. Off the classifieds, only you can see it, nothing deleted.
+- **expired**: only on older ads from when ads used to expire, or ads from an account that was deleted. Off the classifieds, only you can see it, nothing deleted. Ads don't expire anymore.
 - **draft**: an ad carried over from the old version of the site that hasn't been published yet. Only you can see it.
 - **removed**: our team took it down for breaking the [listing rules](/rules), and you got a **Listing removed** notification. Only you can see it, and it can't be reposted.
 
@@ -56,9 +55,9 @@ The buttons under each ad depend on its status:
 
 | Button | Shows on | What it does |
 |---|---|---|
-| **Publish** | draft | Puts the ad live for 45 days, at the top of Newest first |
-| **Repost** | expired, sold | Puts the ad live again for a fresh 45 days, at the top of Newest first |
-| **Renew 45 days** | active | Resets the ad to 45 days from now and bumps it to the top |
+| **Publish** | draft | Puts the ad live, at the top of Newest first |
+| **Repost** | expired, sold | Puts the ad live again, at the top of Newest first |
+| **Bump to top** | active | Moves the ad back to the top of Newest first |
 | **Mark sold** (**Mark found** for Wanted ads) | active | Takes the ad off the classifieds and sets it to sold. No confirmation step |
 | **Edit** | every ad | Opens the **Edit listing** page |
 | **Delete** | every ad | Asks you to confirm with **Delete for good** or **Cancel** |
@@ -71,7 +70,7 @@ A view is counted when someone opens your active ad's page. To keep the number h
 - Each person's browser counts once per browsing session, so going back and forth doesn't add extra views.
 - Views only count while the ad is active.
 
-Views show on your listing page and cards once there's at least one. Views stay with the ad when you edit, renew or repost it.
+Views show on your listing page and cards once there's at least one. Views stay with the ad when you edit, bump or repost it.
 
 ## What does "unread" mean?
 The unread number is how many conversations about that ad have a new message you haven't opened yet. It's per conversation, not per message: one buyer sending three messages counts as 1. Tap it to go to your [Messages](/messages) inbox. Once you open those conversations, the number clears the next time you load My listings. See [Messages overview](/help/messages-overview).
@@ -85,10 +84,10 @@ To publish a draft:
 3. Tap **Save changes**. This saves the ad but it's still a draft.
 4. Go back to [My listings](/my/listings) and tap **Publish**.
 
-It goes live for 45 days. If you don't want a draft, tap **Delete**. You can't create new drafts yourself: new ads go live as soon as you post them.
+It goes live and stays up until you mark it sold or delete it. If you don't want a draft, tap **Delete**. You can't create new drafts yourself: new ads go live as soon as you post them.
 
 ## Why did I get a "Still available?" note?
-If one of your ads hasn't been renewed or bumped in 30 days, you get one note (and the usual notification email) asking if it's still for sale. Tap **Renew** to move it back to the top, or **Mark sold** if it's gone. You won't be asked again for 30 days. Turn these off under **Your ads: still available?** in your notification settings.
+If one of your ads hasn't been bumped in 30 days, you get one note (and the usual notification email) asking if it's still for sale. Tap **Bump to top** in My listings to move it back up, or **Mark sold** if it's gone. You won't be asked again for 30 days. Turn these off under **Your ads: still available?** in your notification settings.
 
 ## What is the "This week near you" note?
 On Monday mornings, members with an area (a saved alert, an ad of their own, or a shop they follow) get one note listing new ads and shop posts within 40 miles. It only comes when there's something new. Turn it off under **Weekly near you** in your notification settings.
@@ -99,7 +98,7 @@ On Monday mornings, members with an area (a saved alert, an ad of their own, or 
 Check you're signed in to the same account you posted with. The page shows your 200 most recent ads, so very old ones beyond that won't appear. Deleted ads are gone for good.
 
 **My ad says active but I can't find it on the area page.**
-If its days left say "expires today", it may already be hidden from buyers. Tap **Renew 45 days**. Otherwise, check you're looking in the right area: the area is shown on the row.
+Check you're looking in the right area: the area is shown on the row. Lists can take a minute or two to refresh. If it's still missing, email support@undergroundaquarium.com with the ad's link.
 
 **The unread count didn't go away after I read the messages.**
 Reload My listings. The count updates when the page loads.
@@ -108,7 +107,7 @@ Reload My listings. The count updates when the page loads.
 The action didn't go through. Reload the page and try again. If it keeps happening, email support@undergroundaquarium.com with the message.
 
 **I tapped Mark sold by mistake.**
-Tap **Repost** on the ad. It goes live again with a fresh 45 days.
+Tap **Repost** on the ad. It goes live again right away.
 
 **I have a draft I don't recognize.**
 It came across from your ads on the old version of the site. Publish it or delete it.

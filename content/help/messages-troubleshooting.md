@@ -19,11 +19,14 @@ Your message is still in the box when sending fails, so you won't lose it. Look 
 - **"That member isn't available."** That account has been deleted.
 - **"That didn't send. Check your connection and try again."** Your internet connection dropped. Check it and tap **Send** again.
 - **"That didn't send. Try again."** Something went wrong on our side. Try again in a moment.
+- **"A photo didn't upload. Try again."** A photo you attached didn't make it. Check your connection and tap **Send** again.
+- **"One of those photos couldn't be read. Try a different one."** That file isn't a photo the site can open. Pick another.
+- **"Up to 4 photos per message."** Send the rest in a second message.
 
 If you see a different message, or the same error keeps coming back, email support@undergroundaquarium.com with the exact wording.
 
 ## The Send button is greyed out
-The button stays disabled until you've typed something. Messages made of only spaces or blank lines can't be sent. It's also disabled while a message is sending (the button says **Sending…**).
+The button stays disabled until you've typed something or added a photo. Messages made of only spaces or blank lines can't be sent. It's also disabled while a message is sending (the button says **Sending…**) and while a photo you picked is still being prepared.
 
 ## My message sent before I finished typing
 Pressing **Enter** sends your message. For a new line, press **Shift + Enter**. On a phone, the return key on your keyboard may also send, so it's easiest to write your message as one paragraph, or type longer messages somewhere else and paste them in.
@@ -48,10 +51,11 @@ See [Starting a conversation](/help/starting-a-conversation).
 - **They don't appear in New message search.** Members without a username don't show up. Open their profile and use the **Message** button there instead.
 
 ## New replies aren't showing in the conversation
-An open conversation doesn't add new incoming messages by itself. Refresh the page, or tap **All messages** and open the conversation again. Your chat bubble badge does update on its own, so it may show a new message before the conversation does.
+New messages appear in an open conversation by themselves, usually within a second or two. If your phone dropped its connection or the page sat in the background, it catches up when you come back to it, and checks again every 30 seconds. If something still looks out of date, refresh the page.
 
 ## A conversation is missing from my inbox
-- Your inbox is sorted by most recent activity and shows your 100 most recently active conversations. Scroll down and check both **Unread** and **Read**.
+- Your inbox is sorted by most recent activity and shows 30 at a time. Tap **Show older conversations** at the bottom, or use the search box above the list.
+- Check **Archived** at the top of your inbox. Archived conversations come back by themselves when a new message arrives.
 - Make sure you're signed in to the right account. Conversations belong to the account that sent or received them.
 - Conversations can't be deleted by either person, and blocking doesn't remove them, so it's usually a matter of finding it.
 
@@ -78,8 +82,9 @@ The badge and inbox can disagree for a moment right after you read or send a mes
 
 Your inbox and chat bubble always show new messages, even when an email doesn't arrive. See [Message notifications](/help/message-notifications).
 
-## The listing in my conversation says "Listing removed" or "no longer listed"
-- **"no longer listed"** next to the price means the ad sold, expired or went off the market. The conversation still works.
+## The listing in my conversation says "sold", "no longer listed" or "Listing removed"
+- **"sold"** next to the price means the seller marked it sold. The conversation still works.
+- **"no longer listed"** means the ad went off the market another way (for example an old expired ad, or one our team removed). The conversation still works.
 - **"Listing removed"** means the seller deleted the ad. The conversation and its messages stay, and you can keep replying.
 
 ## Someone says they messaged me but I don't see it

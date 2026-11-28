@@ -21,7 +21,7 @@ It does **not** search the category name. So if someone searches "shrimp", an ad
 Search ignores capital letters and matches part of a word, so searching "neo" finds an ad that says "neocaridina". It doesn't work the other way: searching "neocaridina" won't find an ad that only says "neo". Spell names out in full, and include both a common name and a scientific or trade name when they differ.
 
 ## Writing a strong title
-Your title (up to 120 characters) is the biggest line on listing cards and your listing page, and it's the start of how your ad appears in Google and when shared.
+Your title (up to 60 characters) is the biggest line on listing cards and your listing page, and it's the start of how your ad appears in Google and when shared.
 
 Tips:
 - Lead with **what it is**: species or item, then the key detail. "Blue dream neocaridina, adult breeders" beats "Shrimp for sale!!".
@@ -84,7 +84,7 @@ See [Listing categories and ad types](/help/listing-categories-and-ad-types).
 Ads with photos stand out on cards and get far more replies. Put your best photo first, since it's the cover everywhere. See [Listing photos](/help/listing-photos).
 
 ## Keep your ad fresh
-Listings sort by **Newest first** by default, based on when they were posted or last renewed. Tapping **Renew 45 days** in [My listings](/my/listings) moves your ad back up and resets it to 45 days. Editing does not move it up. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
+Listings sort by **Newest first** by default, based on when they were posted or last bumped. Tapping **Bump to top** in [My listings](/my/listings) moves your ad back up. Editing does not move it up. See [Editing, renewing and expiry](/help/editing-renewing-and-expiry).
 
 When it's gone, tap **Mark as sold** so people stop messaging you. See [Marking sold and deleting](/help/marking-sold-and-deleting).
 
@@ -103,7 +103,7 @@ Search only looks at your title, description and town. Add the words buyers woul
 Check that it has a clear cover photo, a real price instead of "Make an offer", and a description that answers the obvious questions (size, quantity, pickup area).
 
 **My ad has dropped down the list.**
-Newer ads push it down. Tap **Renew 45 days** in [My listings](/my/listings) to move it back up.
+Newer ads push it down. Tap **Bump to top** in [My listings](/my/listings) to move it back up.
 
 **My formatting disappeared.**
 Descriptions are plain text. Use line breaks and dashes for lists.

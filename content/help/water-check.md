@@ -1,9 +1,9 @@
 ---
 title: Using Water Check
 category: Tools & learning
-summary: How to use Water Check: entering test kit numbers, reading the banner, colors and fix-it cards, checking against one of your tanks, logging a reading, and the water testing FAQ.
+summary: How to use Water Check: entering test kit numbers, reading the banner, colors and fix-it cards, checking against one of your tanks, logging a reading, test reminders, and the water testing FAQ.
 order: 150
-keywords: water test, test kit, water parameters, api master test kit, test strips, water quality, is my water ok, water tester, aquarium water check, ammonia, nitrite, nitrate, ph, kh, gh, hardness, cloudy water, fish dying, check against my tank, log reading, save water test, glossary, water testing faq
+keywords: water test, test kit, water parameters, api master test kit, test strips, water quality, is my water ok, water tester, aquarium water check, ammonia, nitrite, nitrate, ph, kh, gh, hardness, cloudy water, fish dying, check against my tank, log reading, save water test, glossary, water testing faq, reminder, remind me to test, test schedule, weekly reminder, buy test kit, where to buy test strips
 pages: /water-check, /tank-builder
 ---
 
@@ -143,8 +143,19 @@ Below the tool, the **Water testing FAQ** answers the questions people most ofte
 
 Tap a question to open its answer. Under the FAQ, **Keep going** links to **Plan your tank**, **Browse fish species** and the **Aquarium glossary**.
 
+## Can Water Check remind me to test?
+Yes. Near the top of [Water Check](/water-check), under **Remind me to test my water**, tap:
+
+- **Weekly** or **Every 2 weeks** to get a reminder on that schedule, in the morning. It arrives in your notification bell, by email (unless you've turned notification emails off) and on your phone if you use the [iPhone app](/help/using-the-site-on-your-phone). Tapping it opens Water Check.
+- **Off** to stop reminders.
+
+The highlighted choice is your current setting. You need to be signed in; signed out, it says **Sign in to turn on reminders**. You can also turn reminders off with the **Water test reminders** switch in your [notification settings](/notifications#settings).
+
+## Where can I get a test kit?
+If you don't have one yet, **Need a test kit?** at the top of Water Check has two picks that open on Amazon: **API test strips** (quick: dip, wait a minute and match the colors) and the **API Master liquid kit** (the most accurate, about 10 minutes with test tubes). Your local fish store will have kits too. See [Finding a fish store](/help/finding-a-fish-store).
+
 ## How often should I test my water?
-Water Check doesn't set a schedule or send reminders. Its advice mentions testing again after a fix (for example, doing another water change "tomorrow if it's still high," or re-testing after raising KH). If you log readings to a saved tank, logging at least once each week earns you bubbles. See [Logging water tests](/help/logging-water-tests).
+Turn on a weekly reminder (above) if you'd like a nudge. Water Check's advice also mentions testing again after a fix (for example, doing another water change "tomorrow if it's still high," or re-testing after raising KH). If you log readings to a saved tank, logging at least once each week earns you bubbles. See [Logging water tests](/help/logging-water-tests).
 
 ## What's the difference between Water Check and the Tank Builder's Water test tab?
 Both use the same thresholds and the same result text, and both can check against your fish and log to a saved tank. The differences:

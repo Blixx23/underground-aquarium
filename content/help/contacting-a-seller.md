@@ -13,10 +13,10 @@ The main way to reach a seller is the **Message** button on their listing. It op
 1. Open the listing.
 2. Tap **Message** followed by the seller's first name (or **Message the seller**), in the box under **Posted by**.
 3. Sign in if you're asked.
-4. Write your message. The box starts with a suggestion, "Hi, is this still available?", which you can replace.
+4. Write your message, or tap one of the quick starters above the box ("Is this still available?", "What's your best price?", "Can you send more photos?" or "When could I pick it up?") and edit it.
 5. Tap **Send message**.
 
-You're taken straight to the conversation, and the seller is emailed your message. Their replies show up in [Messages](/messages). See [Messages overview](/help/messages-overview).
+You're taken straight to the conversation, and the seller gets your message by email and, if they use the app, on their phone. Their replies show up in [Messages](/messages). See [Messages overview](/help/messages-overview).
 
 The same button works on **Wanted** ads: it messages the person who's looking, so you can offer what you have.
 
@@ -66,7 +66,7 @@ Sellers get a lot of "is this available?" messages. A few details help you stand
 Messages can be up to 4,000 characters. Press **Enter** to send, or **Shift + Enter** for a new line.
 
 ## Can I send photos in a message?
-No. Messages are text only. If you want to show the seller something (your setup, a similar fish), describe it, or point them to a tank or post on your profile.
+Yes. Tap **Photo** next to the Send button to attach up to 4 photos, for example your setup or the fish you're looking to pair with. Sellers can send you more photos of the fish the same way. See [Messages overview](/help/messages-overview).
 
 ## What does the seller's listing tell me about them?
 Under **Posted by**, the seller's name links to their public profile. There you can see when they joined, their public tanks and their other live listings. A seal next to their name means they're an Underground Aquarium Society member. See [Your public profile](/help/your-public-profile).
@@ -77,7 +77,7 @@ No. On your own listing, instead of a **Message** button you'll see "This is you
 You'll also see **Mark as sold** (or **Mark as found** for a wanted ad) and **Manage this listing**. See [Marking sold and deleting](/help/marking-sold-and-deleting).
 
 ## Can I keep talking after the listing sells?
-Yes. An existing conversation stays in [Messages](/messages) and you can both keep replying after the ad is marked sold, expires or is deleted. At the top of the conversation, the price line adds "no longer listed" when the ad is off the market, and the listing name is replaced with "Listing removed" if the seller deleted it.
+Yes. An existing conversation stays in [Messages](/messages) and you can both keep replying after the ad is marked sold or is deleted. At the top of the conversation, the price line adds "sold" when the seller marks it sold (or "no longer listed" if it's off the market another way), and the listing name is replaced with "Listing removed" if the seller deleted it.
 
 What you can't do is start a new conversation about an ad that's no longer live.
 

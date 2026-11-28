@@ -41,6 +41,7 @@ Below the Society card are three groups of tiles.
 ### Your stuff
 - **Public profile**: your /u/ page (only shown once you have a username).
 - **My listings**: your classified ads. See [My listings](/help/my-listings).
+- **Saved ads**: ads you saved with the heart. See [Saving ads](/help/saving-ads).
 - **My shops**: fish stores you manage. See [Shop dashboard overview](/help/shop-dashboard-overview).
 - **My tanks**: jumps down to **Your tanks** on this page.
 - **Trophies**: your full trophy cabinet. See [Trophies](/help/trophies).

@@ -1,13 +1,35 @@
 ---
 title: Using the site on your phone
 category: Getting started
-summary: How the bottom bar, the + Create button, the phone menu and the Me tab work, and how to add Underground Aquarium to your home screen like an app.
+summary: The Underground Aquarium iPhone app, phone notifications and the app icon badge, plus how the bottom bar, + Create button, phone menu and Me tab work.
 order: 80
-keywords: mobile, phone, iphone, android, app, download app, install, add to home screen, home screen icon, bottom bar, tab bar, hamburger menu, plus button, me tab, tablet, pwa, notch, ipad
+keywords: mobile, phone, iphone, android, app, app store, download app, install, iphone app, ios app, push notifications, phone notifications, badge, app icon, quiet hours, back button, saved passwords, add to home screen, home screen icon, bottom bar, tab bar, hamburger menu, plus button, me tab, tablet, pwa, notch, ipad
 pages: /, /feed, /profile
 ---
 
-Underground Aquarium works in your phone's web browser, with a layout built for small screens. There's no app store download: you can add the site to your home screen and it opens like an app.
+Underground Aquarium has a free iPhone app on the App Store, and the website also works in any phone's browser with a layout built for small screens. The app and the website are the same account and show the same things.
+
+## Is there an Underground Aquarium app?
+Yes, for iPhone. [Download Underground Aquarium on the App Store](https://apps.apple.com/app/id6838456811), or search "Underground Aquarium" in the App Store. It's free. Sign in with the same email and password (or Google) you use on the website.
+
+An Android app is on the way. Until then, Android phones can use the website and add it to the home screen (see below).
+
+## What does the app do that the website doesn't?
+- **Phone notifications.** New messages, replies, mentions, alerts for ads you're watching and more pop up on your phone, even when the app is closed. See the next section.
+- **A badge on the app icon** with your unread conversations plus unread notifications. It clears as you read them.
+- **Links open in the app.** Tap an Underground Aquarium link in an email or a text and it opens right in the app instead of your browser.
+- **Saved passwords fill in.** If you saved your password in Safari or iCloud Keychain for the website, the app offers it on the sign-in screen.
+- **Downloads open the share sheet.** Things like Society certificates, shop posters and your data export open the iPhone share sheet, so you can save them to Files, print or send them.
+- **A back arrow** next to the logo on pages away from the bottom bar tabs. You can also swipe from the left edge of the screen to go back, and pull down at the top of a page to refresh it.
+
+## Does the app send phone notifications?
+Yes, if you tap **Allow** when the app asks. You'll get a notification for the same things that reach your notification bell, plus new messages. A few small or frequent things (small bubble earns, likes on comments, weekly summaries and site news) stay in the bell only, so your phone doesn't buzz all day.
+
+- **Quiet hours:** between 9pm and 8am (your phone's time), notifications wait and arrive at 8am. New messages and account notices still come through right away.
+- **Choose what you get:** the switches in your [notification settings](/notifications#settings) control the app too. If a kind is off for the bell, it won't reach your phone either. See [Notifications](/help/notifications).
+- **Turn them all off or back on:** on your iPhone, open **Settings > Notifications > Underground Aquarium**.
+
+The website itself, including a home screen shortcut, doesn't send phone notifications.
 
 ## How is the site different on a phone?
 On phones and small tablets, the long top menu is replaced by:
@@ -53,7 +75,7 @@ The phone menu is for places on the site. Your own things (listings, shops, sett
 
 - your photo, name, @username, email and bubbles, with **Edit profile** and **Public** (your public profile)
 - a Society card: **Society member area** for members, or **Join the Underground Aquarium Society**
-- **Your stuff:** Public profile, My listings, My shops, My tanks, Trophies, and Certificates for Society members
+- **Your stuff:** Public profile, My listings, Saved ads, My shops, My tanks, Trophies, and Certificates for Society members
 - **Tools:** Tank Builder, Water Check
 - **Settings:** Account & data
 - **Sign out**
@@ -64,8 +86,8 @@ From **Account & data**, a row of buttons across the top lets you swipe between 
 ## Where are notifications on a phone?
 Tap the bell at the top of the screen, next to the menu button. On phones the bell opens the full [Notifications](/notifications) page instead of a small panel. A red number on the bell shows how many new notifications have arrived since you last checked (up to "9+"). The bell only appears when you're signed in. See [Notifications](/help/notifications).
 
-## How do I add Underground Aquarium to my home screen?
-Adding the site to your home screen gives you an icon that opens Underground Aquarium full screen, without the browser's address bar, starting on the Feed.
+## How do I add the website to my home screen?
+On iPhone, the app is the better choice. On Android, or if you'd rather not install the app, adding the site to your home screen gives you an icon that opens Underground Aquarium full screen, without the browser's address bar, starting on the Feed.
 
 ### iPhone or iPad (Safari)
 1. Open undergroundaquarium.com in Safari.
@@ -80,11 +102,6 @@ Adding the site to your home screen gives you an icon that opens Underground Aqu
 
 The icon is labeled "Underground Aq" (the full name is "Underground Aquarium"). The exact wording of these menus depends on your phone and browser version.
 
-## Is there an Underground Aquarium app?
-There's no separate app in the App Store or Google Play. The website is the app: add it to your home screen (see above) and it opens like one. Everything you do there is the same account and the same site as in your browser.
-
-## Does the home screen version send push notifications?
-No. The site doesn't send push notifications to your phone. You'll see new notifications on the bell and messages on the **Messages** tab whenever you open the site, and we send some notifications by email. See [Emails we send](/help/emails-we-send).
 
 ## Will the bottom bar cover the page or my phone's home indicator?
 No. The site leaves space at the bottom of every page so the bar never hides the footer or the last item on a page. On phones with no home button, the bar sits above the home indicator line and the page fills the screen edge to edge around the notch or camera cutout.
@@ -96,10 +113,19 @@ The bottom bar is hidden on the Log in, Create account and Reset password pages,
 **I can't find the bottom bar.**
 It's hidden on sign in pages and inside a conversation. Go back or tap the logo to get it back. On a wide screen (like a large tablet) you get the computer layout with the menu across the top instead.
 
+**I'm not getting notifications from the app.**
+Check **Settings > Notifications > Underground Aquarium** on your iPhone and make sure **Allow Notifications** is on. Then open the app and sign in, since notifications go to the account you're signed in with. Remember quiet hours (9pm to 8am) hold most notifications until morning.
+
+**The app icon shows a number but I've read everything.**
+Open the app. The badge updates when the app is open and when your next notification arrives. Check **Messages** and the bell for anything unread.
+
+**A link in an email opened Safari instead of the app.**
+Your iPhone may have remembered an earlier choice. On the page in Safari, pull down slightly and tap **Open** in the banner at the top. After that, links should open in the app.
+
 **When I open the home screen icon, I'm not signed in.**
 Some phones keep the home screen version separate from your browser. Log in once in the home screen version and it will remember you.
 
-**There's no Back button in the home screen version.**
+**There's no Back button in the home screen version.** (The app has one next to the logo.)
 Because it opens without the browser's toolbar, use your phone's back gesture (swipe from the left edge on iPhone, or the Back button or gesture on Android), or use the bottom bar and menu to move around.
 
 **I don't see "Add to Home Screen" on my iPhone.**

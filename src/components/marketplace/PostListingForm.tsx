@@ -16,7 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CATEGORIES } from "@/lib/marketplace/categories";
 import { CONDITIONS } from "@/lib/marketplace/listings";
 import type { MarketRegion } from "@/lib/marketplace/regions";
-import { LISTING_LIFETIME_DAYS } from "@/lib/config";
+import { LISTING_LIFETIME_DAYS, LISTINGS_EXPIRE } from "@/lib/config";
 import { prepareImage } from "@/lib/images/prepareImage";
 import { tidyCity } from "@/lib/marketplace/place";
 
@@ -941,8 +941,9 @@ export default function PostListingForm({
           </Link>
         ) : (
           <p className="text-xs text-ocean-500">
-            Stays up for {LISTING_LIFETIME_DAYS} days. Renew or delete it any
-            time.
+            {LISTINGS_EXPIRE
+              ? `Stays up for ${LISTING_LIFETIME_DAYS} days. Renew or delete it any time.`
+              : "Stays up until you mark it sold or delete it."}
           </p>
         )}
       </div>

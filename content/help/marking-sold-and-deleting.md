@@ -10,7 +10,7 @@ pages: /listing/[slug], /my/listings
 When your item is gone, mark the ad as sold so people stop messaging you. If you never want it back, you can delete it. Marking sold can be undone; deleting can't.
 
 ## How do I mark a listing as sold?
-You can do it from two places.
+You can do it from three places.
 
 ### From your listing page
 1. Open your ad (tap it in [My listings](/my/listings) or anywhere on the site).
@@ -25,15 +25,23 @@ The page refreshes and shows a banner that the ad is now sold and only you can s
 
 There's no confirmation step here: the ad is marked sold straight away.
 
+### From a conversation with a buyer
+1. Open the conversation about that ad in [Messages](/messages).
+2. Tap the green **Mark as sold** button (**Mark as found** for Wanted ads) under the listing title at the top.
+3. Confirm with **OK**.
+
+Handy when you've just agreed a sale in the chat.
+
 ## What happens when I mark something sold?
 - The ad comes off area pages, the [Every listing](/listings) page, search and your public profile right away.
 - Its status becomes **sold** in [My listings](/my/listings). Wanted ads marked found also show as sold.
-- Other people who open its link get a "page not found" page. You can still open it.
+- Other people who open its link see a short **Sold** page with the photo and title, plus buttons to see what's listed nearby or set an alert. You can still open the full ad.
 - Buyers can no longer start a new conversation about it.
-- Conversations that already exist stay in both people's [Messages](/messages). Under the ad title, the conversation shows the price followed by "· no longer listed". You can both keep messaging.
+- Conversations that already exist stay in both people's [Messages](/messages). Under the ad title, the price line adds "· sold". You can both keep messaging.
 - Nothing is deleted, and your views are kept.
+- Members who saved the ad (the heart) get a **Sold** notification. See [Saving ads](/help/saving-ads).
 
-The site doesn't send any message to people who asked about the ad, so if you promised someone a reply, let them know yourself.
+The site doesn't send a message to people who only asked about the ad, so if you promised someone a reply, let them know yourself. The **Sorry, it's sold.** quick reply in the conversation makes that one tap.
 
 ## Can I mark an ad as "pending" or "on hold"?
 No. The only statuses are active and sold. If a sale is pending, leave the ad active and add "Pending pickup" to the start of the title or description with **Edit**. Mark it sold once it's done.
@@ -67,7 +75,7 @@ Marking sold is usually the better choice. Sold ads are only visible to you, so 
 No. Each ad is deleted one at a time with **Delete** and **Delete for good**. If you want to remove all your content, see [Deleting your account](/help/deleting-your-account).
 
 ## Does anyone see that my item sold?
-No. There's no public "sold" badge. A sold ad simply disappears from the classifieds and your profile. Only people already talking to you about it see "no longer listed" in their conversation.
+A sold ad disappears from the classifieds, search and your profile. There's no "sold" badge on lists. People who follow an old link to it see a **Sold** page, members who saved it get a notification, and people already talking to you about it see "sold" in their conversation.
 
 ## Common problems
 

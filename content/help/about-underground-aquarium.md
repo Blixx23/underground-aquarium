@@ -60,7 +60,7 @@ No. We don't sell livestock or gear ourselves, and we don't take part in classif
 Independent fish stores keep healthy stock, share hard-won advice and build the local community. Our directory points people to real local shops worth visiting and is free for shops to claim, update and use to reply to reviews.
 
 ## Is there an app?
-There's no app store download. The website works on any phone, and you can add it to your home screen so it opens like an app. See [Using the site on your phone](/help/using-the-site-on-your-phone).
+There's a free iPhone app: [Underground Aquarium on the App Store](https://apps.apple.com/app/id6838456811). An Android app is on the way, and the website works on any phone in the meantime. See [Using the site on your phone](/help/using-the-site-on-your-phone).
 
 ## How do I find my way around?
 On a computer, use the top menu (Feed, Forums, Classifieds, Shops Near Me, The Society and More). On a phone, use the bottom bar (Feed, Classifieds, +, Messages, Me) and the menu button. See [Getting around the site](/help/getting-around-the-site).

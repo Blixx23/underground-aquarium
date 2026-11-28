@@ -22,6 +22,9 @@ The red badge counts notifications that arrived since you last opened the bell o
 
 Opening the bell (or visiting the Notifications page) clears the badge, but it doesn't mark anything as read. Unread notifications stay bold with a blue dot until you open them or mark them read. So the badge is "new since you last looked", and bold is "not opened yet".
 
+## Do I get notifications on my phone?
+In the iPhone app, yes. Most things that reach your bell also pop up on your phone, and new messages always do. Between 9pm and 8am your phone's time, most wait until morning. See [Using the site on your phone](/help/using-the-site-on-your-phone).
+
 ## Does the bell update by itself?
 Yes. New notifications appear in the bell as they arrive, without refreshing the page. The bell also checks again every minute and whenever you come back to the tab.
 
@@ -70,6 +73,9 @@ Changes save immediately. If one doesn't save you'll see "Couldn't save that. Tr
 | Category | What it covers | Email starts |
 | --- | --- | --- |
 | **Messages** | A member messages you or asks about your listing (always on the Messages icon) | On, sent right away |
+| **Reply reminders** | Someone's been waiting a day for your reply | On |
+| **Saved ads** | An ad you saved drops in price or sells | On |
+| **Classified alerts** | A new ad matches one of your alerts, or a Wanted post matches your ad | On |
 | **Feed comments** | Someone comments on your post or replies to your comment | On |
 | **Mentions** | Someone tags you with @ in a post or comment | On |
 | **Forum replies** | Someone replies to your post or comment | On |
@@ -77,12 +83,18 @@ Changes save immediately. If one doesn't save you'll see "Couldn't save that. Tr
 | **Trophies and new tiers** | You earn a trophy or reach a new bubbles tier | On, tiers sent right away |
 | **Bubbles** | You earn bubbles for something you did | Off |
 | **Your contributions** | Species, photos, videos and shops you suggested are approved | On |
+| **Your ads: still available?** | Once a month, if one of your ads hasn't been bumped in 30 days | On |
+| **Weekly near you** | Monday morning: new ads and shop posts within 40 miles of you | On |
 | **Shop updates** | A shop you follow posts something | On |
 | **Review replies** | A shop replies to a review you wrote | On |
-| **Your shop: new reviews, listing reports, milestones, weekly report** | Alerts for a shop you run | On, sent right away |
+| **Your shop: new reviews, listing reports, milestones, weekly report, Top Stores** | Alerts for a shop you run, including when it earns a Top Stores badge or is close to the next tier | On, sent right away |
 | **Society** | Membership applications, dues and Society notices | On |
-| **Events** | Events you're part of | On |
+| **Events** | Events you're part of, and a reminder the day before one you RSVP'd to | On |
+| **Water test reminders** | Only if you turn them on in [Water Check](/water-check) | On |
+| **While you were away** | After two weeks away: what's new near you, sent once | On |
 | **Site news** | Occasional news from Underground Aquarium | On |
+
+If you use the [iPhone app](/help/using-the-site-on-your-phone), the bell switch also controls phone notifications: when a kind is off for the bell, it won't reach your phone either.
 
 You're only emailed about things you haven't already seen. A notice waits about 10 minutes, and if you've opened it on the site by then, no email goes out. Nothing older than three days is ever emailed.
 

@@ -23,7 +23,7 @@ The top of the edit page says: "Changes go live straight away."
 Everything you filled in when posting:
 
 - **What are you posting?** (For sale, Free or Wanted)
-- **Title** (up to 120 characters)
+- **Title** (up to 60 characters)
 - **Category**
 - **State**, **Closest metro area** and **Your town**
 - **Price (USD)** and **Condition (optional)**, when they apply
@@ -65,9 +65,9 @@ An ad also shows expired if you deleted your account (see [Deleting your account
 It goes live again right away, at the top of Newest first, with the same link as before, and stays up until you mark it sold or delete it. If anything's changed (price, photos), tap **Edit** first and save, then **Repost**.
 
 ## Will I get a reminder to take my ad down?
-No. The site doesn't send reminders about ads. Mark it sold as soon as it's gone so buyers aren't messaging you about something you no longer have.
+Sometimes. If one of your ads hasn't been bumped in 30 days, you get one **Still available?** notification (and the usual notification email) asking whether it's still for sale, with the choice to bump it or mark it sold. You won't be asked again about that ad for 30 days. You can turn these off under **Your ads: still available?** in your [notification settings](/notifications#settings).
 
-The only email your ads trigger is when someone messages you about one: you get an email titled "(name) messaged you about (your ad title)". See [Message notifications](/help/message-notifications).
+Either way, mark it sold as soon as it's gone so buyers aren't messaging you about something you no longer have. People who saved the ad are told it sold.
 
 ## Can I undo an edit?
 No. There's no edit history. If you change something by mistake, edit it back. If you removed photos and haven't saved yet, tap **Cancel** and they stay. Once saved, removed photos have to be uploaded again.

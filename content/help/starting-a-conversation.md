@@ -12,7 +12,7 @@ There are three ways to start a conversation: the **Message** button on a classi
 ## Messaging someone about a listing
 1. Open the listing.
 2. Tap **Message** followed by the seller's name, under **Posted by**.
-3. Write your message. The box suggests "Hi, is this still available?" to start.
+3. Write your message. The box suggests "Hi, is this still available?", and quick starters above it ("Is this still available?", "What's your best price?" and more) fill it in with one tap.
 4. Tap **Send message**.
 
 The page shows the listing's photo, title and price above the box so you know what you're asking about. **Back to the listing** takes you back without sending.

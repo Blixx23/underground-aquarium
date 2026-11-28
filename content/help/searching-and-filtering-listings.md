@@ -68,7 +68,7 @@ You can also sort by **Price: low to high**, which puts free ads first.
 ## Sorting listings
 Use the sort menu next to the search box:
 
-- **Newest first** (the default): most recently posted or renewed at the top.
+- **Newest first** (the default): most recently posted or bumped at the top.
 - **Price: low to high**: free ads ($0) first, then cheapest to most expensive.
 - **Price: high to low**: most expensive first.
 
@@ -96,7 +96,7 @@ Some ways to get close:
 - **Condition:** condition shows on gear cards (New, Like new, Good, Fair or For parts), so you can scan for it.
 
 ## How many listings does search look through?
-Search, pills and sorting work on the ads loaded on that page: up to 500 live ads, the ones most recently posted or renewed. An area page almost always holds every live ad in that area. On the nationwide list, if you're not finding something, try the search on the specific area page instead.
+Search, pills and sorting work on the ads loaded on that page: up to 500 live ads, the ones most recently posted or bumped. An area page almost always holds every live ad in that area. On the nationwide list, if you're not finding something, try the search on the specific area page instead.
 
 ## Common problems
 **"Nothing matches" appears.**

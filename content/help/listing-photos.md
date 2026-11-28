@@ -50,6 +50,8 @@ Two fixes:
 Most photos straight off a phone are fine, because they're shrunk before upload. The one limit you might hit: when a HEIC photo has to be converted on our server (in Chrome or Firefox), it must be under 4 MB. A bigger one shows "That photo is too large to convert here. Email it to yourself first and it'll arrive as a JPEG." A normal 12 megapixel iPhone HEIC is well under that.
 
 ## Which photo is the cover?
+The form reminds you under **Photos**: "Your first photo is the cover buyers see. Use a picture of the fish or item, not a screenshot of text. Put lists in the description."
+
 The **first** photo is the cover. It's marked with a small **Cover** label on the form, and it's the photo shown on listing cards, in [My listings](/my/listings), on your profile, in search results and when your ad is shared as a link. Photos appear on your listing page in the order you added them.
 
 ## Can I reorder photos or change the cover?

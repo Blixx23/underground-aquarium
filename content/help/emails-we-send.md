@@ -14,7 +14,7 @@ Underground Aquarium only emails you about things that involve you directly: a m
 | --- | --- |
 | Sign-up confirmation | Right after you register with an email and password |
 | Password reset link | When you ask for one on **Forgot your password?** |
-| New message | Every time another member messages you |
+| New message | Every time another member messages you (you can switch these off) |
 | New bubble tier | When your bubbles carry you into a new tier |
 | Bubbles from our team | When our team awards or removes bubbles |
 | Society and club emails | Application approved or declined, honorary membership, dues requests, dues reminders, dues receipts, club invites |
@@ -61,7 +61,7 @@ If you manage a claimed fish store, you get an email for each shop alert:
 Each one says at the bottom: "You're getting this because you run [shop] on Underground Aquarium," with a link to notification settings. See [Shop notifications and emails](/help/shop-notifications-and-emails).
 
 ## Which emails can I turn off?
-**You choose by category.** On [Notifications](/notifications), open **Choose what you hear about, on the site and by email**. Pick how often under **Emails** (As it happens, Once a day or Never), then use the envelope switch on each category: messages, comments, mentions, forum replies, likes, trophies and new tiers, bubbles, your contributions, shop updates, review replies, the four shop alerts, Society, events and site news. Every notification email also has a one-click **stop notification emails** link at the bottom.
+**You choose by category.** On [Notifications](/notifications), open **Choose what you hear about, on the site and by email**. Pick how often under **Emails** (As it happens, Once a day or Never), then use the envelope switch on each category: messages, reply reminders, saved ads, classified alerts, comments, mentions, forum replies, likes, trophies and new tiers, bubbles, your contributions, ad check-ins, weekly near you, shop updates, review replies, the shop alerts (including Top Stores), Society, events, water test reminders, while you were away and site news. See [Notifications](/help/notifications) for what each one covers. Every notification email also has a one-click **stop notification emails** link at the bottom.
 
 **Always sent:** sign-in emails, Society dues requests, reminders and receipts, and notices about your own account.
 

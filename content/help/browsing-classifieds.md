@@ -73,19 +73,19 @@ Each ad in a list appears as a card with:
 - **The first couple of lines of the description.**
 - **The town**, when the seller added one, and the **condition** for gear (New, Like new, Good, Fair or For parts), when they chose one.
 - **Views**, with an eye icon, once the ad has been viewed at least once.
-- **How long ago** it was posted or last renewed, like "3 hours ago" or "2 days ago".
+- **How long ago** it was posted or last bumped, like "3 hours ago" or "2 days ago".
 
 Tap anywhere on the card to open the full listing.
 
 ## How are listings sorted?
-On area pages and the nationwide list, the default sort is **Newest first**. "Newest" means the most recently posted or renewed. When a seller renews an ad, it moves back to the top, and the time on the card resets to when it was renewed.
+On area pages and the nationwide list, the default sort is **Newest first**. "Newest" means the most recently posted or bumped. When a seller bumps an ad, it moves back to the top, and the time on the card resets to when it was bumped.
 
 You can switch to **Price: low to high** or **Price: high to low** with the sort menu. See [Searching and filtering listings](/help/searching-and-filtering-listings) for how free, wanted and "Make an offer" ads sort.
 
 The **Just posted** row on the Classifieds home page is different: it always shows the 8 ads posted most recently, and renewing doesn't move an ad into it.
 
 ## Is there a next page? How many ads can I see?
-There are no page numbers. An area page or the nationwide list loads up to 500 live ads at once, the 500 most recently posted or renewed, and you scroll through them. Search, category pills and sorting work within those ads.
+There are no page numbers. An area page or the nationwide list loads up to 500 live ads at once, the 500 most recently posted or bumped, and you scroll through them. Search, category pills and sorting work within those ads.
 
 In practice, area pages hold far fewer than that. If the nationwide list ever reaches that size, the easiest way to see older ads is to go to a specific area page, where only that area's ads are counted.
 

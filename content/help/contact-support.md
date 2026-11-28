@@ -27,9 +27,8 @@ A few details help us sort things out on the first reply:
 - **The link** to the page, listing, thread or store you're asking about
 - **What you were trying to do**, and what happened instead
 - **Any error message**, word for word (or a screenshot)
-- **Your device and browser**, for example "iPhone, Safari" or "Windows laptop, Chrome"
+- **Your device and where you were**, for example "iPhone app", "iPhone, Safari" or "Windows laptop, Chrome"
 - **Your username**, and send from the email address on your account if it's about your account
-- **The build code** from the very bottom of any page (it looks like "build" followed by a short code), if you're reporting a bug
 
 A screenshot is often the quickest way to show us. Attach it if you can.
 

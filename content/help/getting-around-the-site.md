@@ -56,6 +56,8 @@ Click or hover over your photo and first name at the top right. The menu has:
 - **The Feed**
 - **Trophies**
 - **My listings**
+- **My alerts**: your classified alerts. See [Classified alerts](/help/classified-alerts).
+- **Saved ads**: ads you saved with the heart. See [Saving ads](/help/saving-ads).
 - **Help Center**
 - **Sign out**
 
@@ -93,7 +95,7 @@ The bottom of every page has three columns of links plus the support email icon.
 - **Resources:** Fish Species, Tank Builder, Glossary, Breeding guides, Water Check, Find a fish store
 - **Community:** Feed, Forums, The Society, Verify a certificate, Events, About Us, Help Center
 
-The envelope icon under the logo opens an email to support@undergroundaquarium.com. The very bottom has **Privacy Policy**, **Terms of Service**, the copyright line and a small "build" code that tells us exactly which version of the site you're seeing (handy to include when you report a bug).
+The envelope icon under the logo opens an email to support@undergroundaquarium.com. The very bottom has **Privacy Policy**, **Terms of Service** and the copyright line.
 
 ## Is there a search box for the whole site?
 Yes. Tap the **magnifying glass** at the top of any page (next to the bell on a computer, next to the menu button on a phone). It opens a search pop-out over the page you're on, which looks through help answers, classifieds, fish species, fish stores, forum threads, upcoming events, the glossary and courses all at once. See [Searching the whole site](/help/searching-the-site).
