@@ -41,7 +41,14 @@ const config: CapacitorConfig = {
   plugins: {
     // Show notifications even while the app is open.
     PushNotifications: {
-      presentationOptions: ["alert", "sound"],
+      presentationOptions: ["badge", "alert", "sound"],
+    },
+    // The number on the app icon: unread notifications plus unread message
+    // threads. The site sets it (components/app/AppBadge.tsx) and every push
+    // carries the current count, so it's right even when the app is closed.
+    Badge: {
+      persist: false,
+      autoClear: false,
     },
     SplashScreen: {
       launchShowDuration: 1200,

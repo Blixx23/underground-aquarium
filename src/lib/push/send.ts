@@ -44,17 +44,55 @@ function trim(text: string | null, max: number): string | null {
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 }
 
+/**
+ * The number for the app icon: unread notifications plus message threads with
+ * something new. Sent with every push so the icon is right even with the app closed.
+ */
+export async function badgeCount(userId: string): Promise<number> {
+  const since = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
+  const [{ count }, { data: threads }] = await Promise.all([
+    supabaseAdmin
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("read", false)
+      .gte("created_at", since),
+    supabaseAdmin
+      .from("listing_threads")
+      .select("buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at")
+      .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+      .gte("last_message_at", since)
+      .limit(200),
+  ]);
+  const unreadThreads = ((threads ?? []) as {
+    buyer_id: string;
+    last_message_at: string;
+    buyer_last_read_at: string | null;
+    seller_last_read_at: string | null;
+  }[]).filter((t) => {
+    const readAt = t.buyer_id === userId ? t.buyer_last_read_at : t.seller_last_read_at;
+    return !readAt || readAt < t.last_message_at;
+  }).length;
+  return Math.min(99, (count ?? 0) + unreadThreads);
+}
+
 async function pushRow(row: Row): Promise<number> {
   if (NOT_WORTH_A_BUZZ.has(row.type ?? "")) return 0;
 
+  // "*" so this keeps working whichever optional columns exist.
   const { data: devices } = await supabaseAdmin
     .from("push_devices")
-    .select("id, token, apns_env, platform")
+    .select("*")
     .eq("user_id", row.user_id);
   if (!devices?.length) return 0;
+  // Only phones whose app can clear the number get one (1.0.2 and later);
+  // older builds would be stuck showing it.
+  const badge = (devices as { badges?: boolean | null }[]).some((d) => d.badges)
+    ? await badgeCount(row.user_id).catch(() => undefined)
+    : undefined;
 
   let sent = 0;
-  for (const d of devices as { id: string; token: string; apns_env: ApnsEnv | null; platform: string | null }[]) {
+  for (const d of devices as { id: string; token: string; apns_env: ApnsEnv | null; platform: string | null; badges?: boolean | null }[]) {
     if (d.platform === "android") {
       if (!fcmConfigured()) continue;
       const r = await sendFcm(d.token, {
@@ -76,6 +114,7 @@ async function pushRow(row: Row): Promise<number> {
         body: trim(row.body, 240),
         link: row.link,
         threadId: row.type ?? "general",
+        ...(d.badges && typeof badge === "number" ? { badge } : {}),
       },
       d.apns_env
     );

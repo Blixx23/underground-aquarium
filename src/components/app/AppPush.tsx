@@ -46,6 +46,16 @@ function pushPlugin(): PushPlugin | null {
   return p?.register ? p : null;
 }
 
+/** Builds 1.0.2 and later can put a number on the app icon. */
+function badgeSupported(): boolean {
+  try {
+    const cap = (window as unknown as { Capacitor?: { isPluginAvailable?: (n: string) => boolean } }).Capacitor;
+    return !!cap?.isPluginAvailable?.("Badge");
+  } catch {
+    return false;
+  }
+}
+
 function read(key: string): string | null {
   try {
     return localStorage.getItem(key);
@@ -98,6 +108,7 @@ export default function AppPush() {
             token: value,
             platform: appPlatform(),
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            badges: badgeSupported(),
           }),
         }).catch(() => {});
       })

@@ -19,10 +19,12 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
 
-  const { token, platform: rawPlatform, timeZone } = (await request.json().catch(() => ({}))) as {
+  const { token, platform: rawPlatform, timeZone, badges } = (await request.json().catch(() => ({}))) as {
     token?: string;
     platform?: string;
     timeZone?: string;
+    /** True from app builds that can set and clear the icon number (1.0.2+). */
+    badges?: boolean;
   };
   // The phone's time zone (e.g. "America/Chicago"), so pushes can wait out the night.
   const tz = typeof timeZone === "string" && /^[A-Za-z_]+(\/[A-Za-z0-9_+\-]+){0,2}$/.test(timeZone) ? timeZone : null;
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
       platform,
       last_seen_at: new Date().toISOString(),
       ...(tz ? { time_zone: tz } : {}),
+      badges: badges === true,
     },
     { onConflict: "token" }
   );

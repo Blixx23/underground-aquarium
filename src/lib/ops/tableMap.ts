@@ -118,7 +118,7 @@ ${MODERATION_QUEUES}
 - profiles.email_off (categories a member doesn't want emailed), profiles.email_digest ('bundled' max hourly, 'daily', 'off'),
   profiles.last_digest_at. notifications.emailed_at is set once a notice was emailed or skipped. The job is
   /api/cron/notification-emails (src/lib/notificationEmail.ts), every 15 minutes.
-- Phone pushes: push_devices (user_id, token, platform, time_zone). notifications.pushed_at = pushed;
+- Phone pushes: push_devices (user_id, token, platform, time_zone, badges = app build can show the icon number). notifications.pushed_at = pushed;
   notifications.push_after = held for quiet hours (9pm to 8am on the phone) and sent then. New messages push directly.
 - Nudges (/api/cron/nudges, hourly): reply_nudge (unanswered 24h), event_reminder (day before), saved_ad (price drop or
   sold), water_reminder (profiles.water_reminder_days 7 or 14, water_reminder_last_at), comeback (14+ days away,
