@@ -23,12 +23,34 @@ export default function LiveThread({
   const supabase = useMemo(() => createClient(), []);
   const first = useRef(true);
 
-  // Open at the newest message, then follow new ones.
+  // Open at the newest message, then follow new ones. Next.js resets the scroll
+  // just after a page opens and photos grow the page as they load, so on open we
+  // try a few times, and stop as soon as the member scrolls on their own.
   useEffect(() => {
-    const end = document.getElementById("thread-end");
-    if (!end) return;
-    end.scrollIntoView({ behavior: first.current ? "auto" : "smooth", block: "end" });
+    const toEnd = (smooth: boolean) =>
+      document.getElementById("thread-end")?.scrollIntoView({ behavior: smooth ? "smooth" : "instant", block: "end" });
+
+    if (!first.current) {
+      toEnd(true);
+      return;
+    }
     first.current = false;
+    let userMoved = false;
+    const stop = () => {
+      userMoved = true;
+    };
+    window.addEventListener("wheel", stop, { passive: true });
+    window.addEventListener("touchmove", stop, { passive: true });
+    const timers = [0, 120, 400, 900, 1600].map((ms) =>
+      setTimeout(() => {
+        if (!userMoved) toEnd(false);
+      }, ms)
+    );
+    return () => {
+      timers.forEach(clearTimeout);
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchmove", stop);
+    };
   }, [messageCount]);
 
   useEffect(() => {
