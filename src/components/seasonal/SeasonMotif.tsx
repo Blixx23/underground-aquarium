@@ -46,7 +46,7 @@ export default function SeasonMotif({
     );
   }
 
-  if (motif === "snowflake") {
+  if (motif === "snowflake" || motif === "holiday") {
     return (
       <svg {...common}>
         <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" />

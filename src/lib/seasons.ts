@@ -13,9 +13,9 @@
  * can read in the source, and this file is in its content list.
  */
 
-export type SeasonId = "pumpkin" | "harvest" | "frost" | "blossom";
+export type SeasonId = "pumpkin" | "harvest" | "holiday" | "frost" | "blossom";
 
-export type Motif = "pumpkin" | "leaf" | "snowflake" | "blossom";
+export type Motif = "pumpkin" | "leaf" | "holiday" | "snowflake" | "blossom";
 
 export type Season = {
   id: SeasonId;
@@ -73,7 +73,8 @@ export const SEASONS: Season[] = [
     id: "harvest",
     label: "Thanksgiving",
     start: "11-01",
-    end: "11-30",
+    // Ends the day after Thanksgiving at the earliest (Nov 22 to 28 depending on the year); then the holidays take over.
+    end: "11-26",
     motif: "leaf",
     hero: {
       glow: "radial-gradient(closest-side, rgba(245,158,11,0.15), rgba(185,28,28,0.07) 50%, transparent 80%)",
@@ -90,9 +91,29 @@ export const SEASONS: Season[] = [
     },
   },
   {
+    // Christmas season without anything religious: snowflakes, string lights, a snowman.
+    id: "holiday",
+    label: "Holidays",
+    start: "11-27",
+    end: "12-31",
+    motif: "holiday",
+    hero: {
+      glow: "radial-gradient(closest-side, rgba(239,68,68,0.12), rgba(16,185,129,0.07) 50%, transparent 80%)",
+      headline: "from-red-300 via-white to-emerald-300",
+      searchFrame: "from-red-400/60 via-white/30 to-emerald-400/60",
+      motifColor: "text-sky-100/90",
+    },
+    composer: {
+      card: "border-red-300/30",
+      topLine: "via-emerald-300/50",
+      motifColor: "text-sky-100/90",
+      promptSuffix: " this holiday season",
+    },
+  },
+  {
     id: "frost",
     label: "Winter",
-    start: "12-01",
+    start: "01-01",
     end: "02-28",
     motif: "snowflake",
     hero: {
@@ -131,7 +152,7 @@ export const SEASONS: Season[] = [
 
 /** Seasons with a decoration resting on the box edge; the rest are just colors and an icon. */
 export function hasGarland(motif: Motif): boolean {
-  return motif === "pumpkin" || motif === "leaf";
+  return motif === "pumpkin" || motif === "leaf" || motif === "holiday";
 }
 
 /** Today's month-day in Pacific time, as "MM-DD". */

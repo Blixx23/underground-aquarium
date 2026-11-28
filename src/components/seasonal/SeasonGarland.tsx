@@ -23,6 +23,7 @@ export default function SeasonGarland({
   className?: string;
 }) {
   if (motif === "leaf") return <Turkey id={id} className={className} />;
+  if (motif === "holiday") return <Holiday id={id} className={className} />;
   if (motif !== "pumpkin") return null;
 
   const vine = `${id}-vine`;
@@ -200,6 +201,97 @@ function Turkey({ id, className }: { id: string; className: string }) {
       <circle cx="493.2" cy="36.4" r="1.1" fill="#1c1917" />
       <path d="M487 40l3 3 3-3z" fill="#f59e0b" />
       <path d="M491.5 42c2 1 2.5 4 1 6-1.5 1.5-3 0-2.5-2z" fill="#dc2626" />
+    </svg>
+  );
+}
+
+/** Holidays: a strand of colored lights along the edge, a few snowflakes, and a snowman sitting on the right. */
+function Holiday({ id, className }: { id: string; className: string }) {
+  const snow = `${id}-snow`;
+  const glow = `${id}-bulb-glow`;
+  // Bulbs hang from the wire; colors cycle red, gold, green, blue.
+  const bulbs = [30, 70, 110, 150, 190, 230, 270, 310, 350, 390];
+  const colors = ["#ef4444", "#facc15", "#22c55e", "#38bdf8"];
+  // The wire sags between hooks; y of the wire at each bulb.
+  const wireY = (x: number) => 80 + 7 * Math.sin(((x - 10) / 80) * Math.PI) ** 2;
+  return (
+    <svg
+      viewBox="0 0 560 100"
+      aria-hidden
+      className={`pointer-events-none select-none drop-shadow-[0_6px_10px_rgba(0,0,0,0.45)] ${className}`}
+    >
+      <defs>
+        <radialGradient id={snow} cx="0.4" cy="0.35" r="0.7">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#cbd5e1" />
+        </radialGradient>
+        <filter id={glow} x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+      </defs>
+
+      {/* The wire */}
+      <path
+        d={`M10 80 ${bulbs.map((x) => `L${x} ${wireY(x).toFixed(1)}`).join(" ")} L420 80`}
+        fill="none"
+        stroke="#14532d"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+
+      {/* Bulbs, each with a soft glow */}
+      {bulbs.map((x, i) => {
+        const c = colors[i % colors.length];
+        const y = wireY(x);
+        return (
+          <g key={x} transform={`translate(${x} ${y.toFixed(1)}) rotate(${i % 2 ? 12 : -12})`}>
+            <ellipse cx="0" cy="9" rx="6" ry="8" fill={c} opacity="0.55" filter={`url(#${glow})`} />
+            <rect x="-2.5" y="0" width="5" height="4" rx="1" fill="#374151" />
+            <ellipse cx="0" cy="9" rx="3.6" ry="5.5" fill={c} />
+            <ellipse cx="-1" cy="7.5" rx="1" ry="2" fill="#fff" opacity="0.5" />
+          </g>
+        );
+      })}
+
+      {/* Snowflakes drifting above the edge */}
+      <g stroke="#e0f2fe" strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.85">
+        {[
+          [60, 40, 7],
+          [170, 22, 5],
+          [250, 48, 6],
+          [330, 18, 8],
+          [410, 44, 5],
+          [120, 58, 4],
+        ].map(([x, y, r]) => (
+          <g key={`${x}-${y}`} transform={`translate(${x} ${y})`}>
+            <path d={`M0 ${-r}V${r}M${-r * 0.87} ${-r / 2}L${r * 0.87} ${r / 2}M${-r * 0.87} ${r / 2}L${r * 0.87} ${-r / 2}`} />
+          </g>
+        ))}
+      </g>
+
+      {/* Snowman on the edge */}
+      <g transform="translate(492 0)">
+        <ellipse cx="0" cy="80" rx="30" ry="3" fill="#000" opacity="0.25" />
+        <circle cx="0" cy="62" r="19" fill={`url(#${snow})`} />
+        <circle cx="0" cy="33" r="13" fill={`url(#${snow})`} />
+        {/* scarf */}
+        <path d="M-12 42c8 4 16 4 24 0v5c-8 4-16 4-24 0z" fill="#dc2626" />
+        <path d="M6 46l4 12h5l-3-12z" fill="#b91c1c" />
+        {/* hat */}
+        <rect x="-15" y="18" width="30" height="4" rx="1.5" fill="#1f2937" />
+        <rect x="-9" y="3" width="18" height="16" rx="2" fill="#1f2937" />
+        <rect x="-9" y="13" width="18" height="3" fill="#16a34a" />
+        {/* face */}
+        <circle cx="-4.5" cy="30" r="1.6" fill="#1f2937" />
+        <circle cx="4.5" cy="30" r="1.6" fill="#1f2937" />
+        <path d="M0 33l9 2.5-9 1.5z" fill="#f97316" />
+        {/* buttons */}
+        <circle cx="0" cy="56" r="1.8" fill="#1f2937" />
+        <circle cx="0" cy="64" r="1.8" fill="#1f2937" />
+        <circle cx="0" cy="72" r="1.8" fill="#1f2937" />
+        {/* stick arms */}
+        <path d="M-17 54l-16-10M-27 48l-4-6M17 54l15-12M27 46l5-5" stroke="#78350f" strokeWidth="2" strokeLinecap="round" />
+      </g>
     </svg>
   );
 }
