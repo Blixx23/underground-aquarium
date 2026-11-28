@@ -581,3 +581,26 @@ function qr(page: PDFPage, text: string, x: number, y: number, size: number) {
   // drawSvgPath's y axis points down, which is exactly how QR rows run.
   page.drawSvgPath(d, { x, y: y + size, scale: cell, color: INK });
 }
+
+/**
+ * Letters in a name that the certificate can't print (the name is drawn in
+ * Garamond, with accents falling back to the plain letter). Checked before a
+ * certificate is issued, so a name never prints with letters silently missing.
+ */
+export async function unprintableNameChars(name: string): Promise<string[]> {
+  const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
+  const fonts = [
+    await pdf.embedFont(b64(GARAMOND_600), { subset: true }),
+    await pdf.embedFont(b64(GARAMOND_600_EXT), { subset: true }),
+  ];
+  const bad = new Set<string>();
+  for (const ch of name) {
+    if (ch === " ") continue;
+    if (fonts.some((f) => hasGlyph(f, ch))) continue;
+    const plain = ch.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    if (plain && fonts.some((f) => hasGlyph(f, plain))) continue;
+    bad.add(ch);
+  }
+  return [...bad];
+}

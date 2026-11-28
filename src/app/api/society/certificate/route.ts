@@ -8,6 +8,8 @@ import { isMasterySlug } from "@/lib/courses/mastery";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const SITE = "https://www.undergroundaquarium.com";
+
 type CertRow = {
   kind: "membership" | "title" | "species" | "course";
   title: string | null;
@@ -60,6 +62,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // A course certificate is only created once the member has confirmed the
+  // name on the certificate page. Until then, send them there.
+  if (kind === "course" && courseId) {
+    const { data: existing } = await supabase
+      .from("society_certificates")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("kind", "course")
+      .eq("course_id", courseId)
+      .limit(1)
+      .maybeSingle();
+    if (!existing) {
+      const { data: c } = await supabase.from("courses").select("slug").eq("id", courseId).maybeSingle();
+      return NextResponse.redirect(new URL(c?.slug ? `/courses/${c.slug}/certificate` : "/courses", request.url));
+    }
+  }
+
   const { data, error } =
     kind === "species"
       ? await supabase.rpc("issue_species_certificate", { p_log: logId })
@@ -97,6 +116,7 @@ export async function GET(request: NextRequest) {
   // The founder's signature lives at /public/society/signature.png. Until it
   // exists the certificate uses a typeset signature line instead.
   const origin = request.nextUrl.origin;
+  // What's printed always points at the main site, whichever address made the PDF.
   let signaturePng: Uint8Array | null = null;
   try {
     const res = await fetch(`${origin}/society/signature.png`, { cache: "force-cache" });
@@ -125,7 +145,7 @@ export async function GET(request: NextRequest) {
     issuedAt: new Date(cert.issued_at),
     memberSince,
     code: cert.code,
-    verifyUrl: `${origin}/verify/${cert.code}`,
+    verifyUrl: `${SITE}/verify/${cert.code}`,
     signaturePng,
   });
 

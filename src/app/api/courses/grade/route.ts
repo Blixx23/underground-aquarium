@@ -13,6 +13,36 @@ import {
 } from "@/lib/courses/mastery";
 import { getMasteryStatus } from "@/lib/courses/masteryStatus";
 
+/**
+ * Records a finished course. Tries up to three times, because a passed course
+ * must never go unsaved (a mastery exam can't be retaken to try again).
+ * A duplicate means it was already saved, which counts as success.
+ */
+async function saveCompletion(userId: string, courseId: string) {
+  let lastError: { code?: string; message?: string } | null = null;
+  for (let i = 0; i < 3; i++) {
+    const { data, error } = await supabaseAdmin
+      .from("course_completions")
+      .insert({ user_id: userId, course_id: courseId })
+      .select("certificate_code")
+      .maybeSingle();
+    if (!error) return { ok: true as const, certificateCode: (data?.certificate_code as string | null) ?? null, isNew: true };
+    if (error.code === "23505") {
+      const { data: row } = await supabaseAdmin
+        .from("course_completions")
+        .select("certificate_code")
+        .eq("user_id", userId)
+        .eq("course_id", courseId)
+        .maybeSingle();
+      return { ok: true as const, certificateCode: (row?.certificate_code as string | null) ?? null, isNew: false };
+    }
+    lastError = error;
+    await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+  }
+  console.error("course completion save failed", { userId, courseId, error: lastError });
+  return { ok: false as const };
+}
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
@@ -175,15 +205,18 @@ export async function POST(req: Request) {
     if (existing) {
       certificateCode = existing.certificate_code;
     } else {
-      const { data: inserted } = await supabaseAdmin
-        .from("course_completions")
-        .insert({ user_id: user.id, course_id: courseId })
-        .select("certificate_code")
-        .maybeSingle();
-      certificateCode = inserted?.certificate_code ?? null;
-      // First time completing this course — reward it (also serves as the
+      // Never say "complete" unless it's saved.
+      const saved = await saveCompletion(user.id, courseId);
+      if (!saved.ok) {
+        return NextResponse.json(
+          { error: "You passed, but we couldn't save your completion. Tap the button again to retry." },
+          { status: 500 }
+        );
+      }
+      certificateCode = saved.certificateCode;
+      // First time completing this course: reward it (also serves as the
       // "first certification" earn, since certifications are course completions).
-      await awardBubbles(user.id, "course_completed", `course_${courseId}`);
+      if (saved.isNew) await awardBubbles(user.id, "course_completed", `course_${courseId}`);
     }
   }
 
@@ -340,13 +373,19 @@ async function gradeMastery(
   if (existing) {
     certificateCode = existing.certificate_code;
   } else {
-    const { data: inserted } = await supabaseAdmin
-      .from("course_completions")
-      .insert({ user_id: userId, course_id: courseId })
-      .select("certificate_code")
-      .maybeSingle();
-    certificateCode = inserted?.certificate_code ?? null;
-    await awardBubbles(userId, "course_completed", `course_${courseId}`);
+    const saved = await saveCompletion(userId, courseId);
+    if (!saved.ok) {
+      // The passed attempt is on file (course_exam_attempts), so it can be restored by hand.
+      return NextResponse.json(
+        {
+          error:
+            "You passed! We had trouble saving it, and your passing score is on file. Email support@undergroundaquarium.com and we'll add your certificate.",
+        },
+        { status: 500 }
+      );
+    }
+    certificateCode = saved.certificateCode;
+    if (saved.isNew) await awardBubbles(userId, "course_completed", `course_${courseId}`);
   }
 
   // Passed: the attempt is on file and can't be retaken, so it's safe to

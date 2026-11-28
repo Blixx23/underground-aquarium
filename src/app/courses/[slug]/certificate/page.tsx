@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CertificateActions from "../../CertificateActions";
+import CertificateNameConfirm from "../../CertificateNameConfirm";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +22,14 @@ export default async function CertificatePage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?redirect=/courses/${slug}/certificate`);
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/courses/${slug}/certificate`)}`);
 
+  // Not limited to published courses: a certificate someone already earned
+  // stays theirs even if the course is taken down later.
   const { data: course } = await supabase
     .from("courses")
-    .select("id, slug, title, badge_title")
+    .select("id, slug, title, badge_title, is_published")
     .eq("slug", slug)
-    .eq("is_published", true)
     .maybeSingle();
   if (!course) notFound();
 
@@ -38,23 +40,57 @@ export default async function CertificatePage({
     .eq("course_id", course.id)
     .maybeSingle();
 
-  // Haven't earned it yet — send them to take the course.
-  if (!completion) redirect(`/courses/${slug}`);
+  // Haven't earned it yet: send them to take the course.
+  if (!completion) redirect(course.is_published ? `/courses/${slug}` : "/courses");
 
   const pdfUrl = `/api/society/certificate?kind=course&course=${course.id}`;
 
-  // The certificate's registry code, for a share link anyone can open. It's
-  // issued the first time the PDF is made, so it may not exist on a first visit.
+  // The certificate itself, found by course (not title, so renaming a course
+  // never loses it). It doesn't exist until the member confirms their name.
   const { data: issued } = await supabase
     .from("society_certificates")
-    .select("code")
+    .select("code, status")
     .eq("user_id", user.id)
     .eq("kind", "course")
-    .eq("title", course.title)
-    .eq("status", "valid")
+    .eq("course_id", course.id)
     .limit(1)
     .maybeSingle();
-  const certCode = (issued as { code?: string } | null)?.code ?? null;
+  const cert = issued as { code: string; status: string } | null;
+  const certCode = cert?.status === "valid" ? cert.code : null;
+
+  if (!cert) {
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+    return (
+      <main className="min-h-screen px-4 pt-24 pb-20 sm:px-6 sm:pt-28">
+        <div className="mx-auto max-w-4xl">
+          <Link
+            href={`/courses/${slug}`}
+            className="mb-6 inline-flex items-center gap-2 text-sm text-ocean-400 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to course
+          </Link>
+          <CertificateNameConfirm
+            courseId={course.id}
+            courseTitle={course.title}
+            suggestedName={(profile?.full_name as string | null)?.trim() ?? ""}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  if (cert.status !== "valid") {
+    return (
+      <main className="min-h-screen px-4 pt-24 pb-20 sm:px-6 sm:pt-28">
+        <div className="mx-auto max-w-lg text-center">
+          <h1 className="font-display text-2xl text-white">This certificate isn&apos;t available</h1>
+          <p className="mt-3 text-ocean-300">
+            It was revoked. If you think that&apos;s a mistake, email support@undergroundaquarium.com.
+          </p>
+        </div>
+      </main>
+    );
+  }
   const shareUrl = certCode ? `https://www.undergroundaquarium.com/verify/${certCode}` : null;
 
   return (

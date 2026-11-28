@@ -47,7 +47,7 @@ You can also look up columns: select column_name from information_schema.columns
   joined_at, paid_through (dues good until), member_number, role, officer_title.
   Society members = club_members joined to the Society club id.
 - dues_payments: dues paid (amount and dates; check columns), dues_reminders.
-- spawn_logs (status, species_name, decided_at), society_certificates (kind, status), club_award_submissions.
+- spawn_logs (status, species_name, decided_at), society_certificates (kind, status; course certificates: one per user per course_id, name confirmed by the member and locked once issued), club_award_submissions.
 
 ## Classifieds marketplace (free, local pickup)
 - listings: title, category, status ('active' is live; check the others), price_cents, is_free, is_wanted,
