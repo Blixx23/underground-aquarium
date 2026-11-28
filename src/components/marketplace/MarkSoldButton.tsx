@@ -9,9 +9,12 @@ import { createClient } from "@/lib/supabase/client";
 export default function MarkSoldButton({
   listingId,
   isWanted,
+  compact = false,
 }: {
   listingId: string;
   isWanted: boolean;
+  /** Small pill for tight spots like the message thread header. */
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -31,6 +34,23 @@ export default function MarkSoldButton({
     }
     router.refresh();
     setBusy(false);
+  }
+
+  if (compact) {
+    return (
+      <span className="inline-flex flex-col">
+        <button
+          type="button"
+          onClick={markSold}
+          disabled={busy}
+          className="mt-1 inline-flex items-center gap-1.5 self-start rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-medium text-ocean-950 transition-colors hover:bg-emerald-400 disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+          {label}
+        </button>
+        {error && <span className="mt-1 text-xs text-coral-300">{error}</span>}
+      </span>
+    );
   }
 
   return (

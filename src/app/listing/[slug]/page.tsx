@@ -17,6 +17,7 @@ import {
 import { formatPhone } from "@/lib/phone";
 import ListingContact from "@/components/marketplace/ListingContact";
 import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
+import SoldNotice from "@/components/marketplace/SoldNotice";
 import ShareListing from "@/components/marketplace/ShareListing";
 import SaveListingButton from "@/components/marketplace/SaveListingButton";
 import { speciesForAd } from "@/lib/marketplace/speciesAds";
@@ -79,6 +80,18 @@ type ListingRow = {
 
 const DETAIL_COLUMNS = `${LISTING_COLUMNS}, user_id, status, expires_at, allow_messages, show_email`;
 
+/** The few public bits of a sold ad, read with the server key. Null unless it's sold. */
+async function soldAd(slug: string) {
+  const { data } = await supabaseAdmin
+    .from("listings")
+    .select("title, images, is_wanted, state_code, region_slug, status")
+    .eq("slug", slug)
+    .maybeSingle();
+  const d = data as { title: string; images: string[] | null; is_wanted: boolean; state_code: string | null; region_slug: string | null; status: string } | null;
+  if (!d || d.status !== "sold") return null;
+  return { title: d.title, image: d.images?.[0] ?? null, isWanted: d.is_wanted, stateCode: d.state_code, regionSlug: d.region_slug };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -96,7 +109,11 @@ export async function generateMetadata({
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!data) notFound();
+  if (!data) {
+    const sold = await soldAd(slug);
+    if (sold) return { title: `Sold: ${sold.title}`, robots: { index: false, follow: false } };
+    notFound();
+  }
 
   const l = data as unknown as Listing & { expires_at: string | null; status: string };
   if (l.status !== "active") return { title: l.title, robots: { index: false, follow: false } };
@@ -156,7 +173,13 @@ export default async function ListingPage({
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!data) notFound();
+  if (!data) {
+    // A sold ad the database hides from this visitor: show "sold" instead of a 404,
+    // since saved ads and "Sold" notifications link here.
+    const sold = await soldAd(slug);
+    if (sold) return <SoldNotice {...sold} />;
+    notFound();
+  }
   // Contact info lives in its own private table that the public can't read.
   // The server key reads it here, and the page below decides who sees it
   // (the owner, or signed-in members after a tap; never signed-out visitors).
@@ -184,6 +207,17 @@ export default async function ListingPage({
             .maybeSingle()
         ).data
       : false;
+  if (listing.status === "sold" && !isOwner) {
+    return (
+      <SoldNotice
+        title={listing.title}
+        image={listing.images?.[0] ?? null}
+        isWanted={listing.is_wanted}
+        stateCode={listing.state_code}
+        regionSlug={listing.region_slug}
+      />
+    );
+  }
   if (listing.status !== "active" && !isOwner) notFound();
 
   const nowIso = new Date().toISOString();

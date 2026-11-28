@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Fish } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice, timeAgo } from "@/lib/marketplace/listings";
+import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
 import MessageComposer from "@/components/messages/MessageComposer";
 import MarkThreadRead from "@/components/messages/MarkThreadRead";
 import Avatar from "@/components/profile/Avatar";
@@ -75,7 +76,7 @@ export default async function ThreadPage({
       thread.listing_id
         ? supabase
             .from("listings")
-            .select("title, slug, images, price_cents, is_wanted, status")
+            .select("id, title, slug, images, price_cents, is_wanted, status")
             .eq("id", thread.listing_id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
@@ -94,6 +95,7 @@ export default async function ThreadPage({
   }[];
 
   const listing = listingData as unknown as {
+    id: string;
     title: string;
     slug: string;
     images: string[] | null;
@@ -172,8 +174,11 @@ export default async function ThreadPage({
             {listing && !listing.is_wanted && (
               <p className="text-sm text-ocean-500">
                 {formatPrice(listing.price_cents)}
-                {listing.status !== "active" && " · no longer listed"}
+                {listing.status === "sold" ? " · sold" : listing.status !== "active" && " · no longer listed"}
               </p>
+            )}
+            {listing && !isBuyer && listing.status === "active" && (
+              <MarkSoldButton listingId={listing.id} isWanted={listing.is_wanted} compact />
             )}
           </div>
         </div>
