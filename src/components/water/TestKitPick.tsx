@@ -14,7 +14,7 @@ import { ExternalLink } from "lucide-react";
  */
 
 // Chris's Amazon Associates tracking ID (e.g. "undergroundaq-20"). Empty = plain links, no commission.
-const AMAZON_TAG = "";
+const AMAZON_TAG = "undergroundaq-20";
 
 const KITS = [
   {
