@@ -258,7 +258,6 @@ export default async function ThreadPage({
               </div>
             );
           })}
-          <div id="thread-end" className="scroll-mb-40" />
         </div>
 
         <MessageComposer
@@ -266,6 +265,8 @@ export default async function ThreadPage({
           placeholder={`Reply to ${otherName}…`}
           quickReplies={direct ? undefined : isBuyer ? QUICK_REPLIES.buyer : QUICK_REPLIES.seller}
         />
+        {/* Scroll target: below the reply box, so the box and Send stay on screen after a new message. */}
+        <div id="thread-end" className="scroll-mb-6" />
 
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
           <BlockButton userId={otherId} name={otherName} />
