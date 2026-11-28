@@ -97,8 +97,6 @@ export default function Footer() {
           <p className="text-xs text-ocean-600 font-mono" data-build={BUILD_LABEL}>
             © {new Date().getFullYear()} UndergroundAquarium.com. Built for the
             hobby, by the hobby.
-            {/* Required by the Amazon Associates agreement (the Water Check test kit links). */}
-            <span className="mt-1 block">As an Amazon Associate we earn from qualifying purchases.</span>
           </p>
           <div className="flex gap-6 text-xs text-ocean-600">
             <Link
