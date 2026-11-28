@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import WaterPlanCard from "@/components/water/WaterPlanCard";
+import TestKitPick from "@/components/water/TestKitPick";
 import { WaterTrends } from "@/components/tank-builder/Insights";
 import type { StockItem } from "@/lib/tankBuilder/engine";
 import {
@@ -449,6 +450,12 @@ export default function WaterTestPanel({
           ? "Fishless cycle is on: no fish in the tank yet, so ammonia and nitrite are expected and the advice changes."
           : "Fill in only what your kit tests. Cycling a new tank with no fish yet? Turn on Fishless cycle."}
       </p>
+      {/* Cyclers test every day or two and run through kits; the empty state below covers first-timers. */}
+      {fishless && waterResult.status !== "empty" && (
+        <div className="-mt-2 mb-5">
+          <TestKitPick spot="fishless" compact />
+        </div>
+      )}
 
       <div className="space-y-6">
         {GROUPS.map((group) => (
@@ -509,6 +516,7 @@ export default function WaterTestPanel({
         <Droplets className="mx-auto mb-3 h-8 w-8 text-ocean-600" />
         <p className="mb-1 font-medium text-white">Enter a reading to begin</p>
         <p className="text-sm text-ocean-400">Fill in at least one value and your results appear here.</p>
+        <TestKitPick spot={fishless ? "fishless-empty" : "water-check-empty"} />
       </div>
     ) : (
       <>

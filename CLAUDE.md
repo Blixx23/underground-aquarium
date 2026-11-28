@@ -28,7 +28,8 @@ This is undergroundaquarium.com, a live aquarium hobby community with real membe
 ## Rules for fixes
 - Keep changes small and focused on the issue. Don't refactor unrelated code.
 - Never add `Co-Authored-By`, Claude, or Anthropic attribution lines to commits or pull requests.
-- Never put promotional or third-party links in the site; only undergroundaquarium.com URLs.
+- Never put promotional or third-party links in the site; only undergroundaquarium.com URLs. One approved exception:
+  the Amazon test kit links in `src/components/water/TestKitPick.tsx` (Chris's demand test). Don't add others.
 - Don't touch payments, Stripe, dues, sign-in, or database structure (SQL). If a fix needs any of these, stop and
   explain in a comment instead.
 - Don't change data belonging to real members.
