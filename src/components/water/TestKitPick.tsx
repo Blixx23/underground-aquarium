@@ -64,9 +64,6 @@ function TopStrip({ spot }: { spot: string }) {
           ))}
         </span>
       </div>
-      <p className="rounded-b-[14px] bg-ocean-950 px-3.5 pb-1.5 text-[10px] text-ocean-500">
-        Opens Amazon. We may earn a small commission, at no cost to you.
-      </p>
     </RgbFrame>
   );
 }
