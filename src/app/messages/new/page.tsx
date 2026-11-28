@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabasePublic } from "@/lib/supabase/public";
 import { formatPrice } from "@/lib/marketplace/listings";
 import MessageComposer from "@/components/messages/MessageComposer";
+import { QUICK_REPLIES } from "@/lib/messages";
 import Avatar from "@/components/profile/Avatar";
 
 export const dynamic = "force-dynamic";
@@ -144,7 +145,8 @@ export default async function NewMessagePage({
           listingSlug={listing.slug}
           autoFocus
           submitLabel="Send message"
-          placeholder={`Hi — is this still available?`}
+          placeholder="Hi, is this still available?"
+          quickReplies={QUICK_REPLIES.buyer}
         />
 
         <p className="text-xs text-ocean-600 mt-6 leading-relaxed">

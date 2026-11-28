@@ -21,9 +21,16 @@ type ThreadRow = {
   last_message_at: string;
   buyer_last_read_at: string | null;
   seller_last_read_at: string | null;
+  buyer_archived_at: string | null;
+  seller_archived_at: string | null;
 };
 
-export default async function MessagesPage() {
+export default async function MessagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const showArchived = (await searchParams).view === "archived";
   const supabase = await createClient();
   const {
     data: { user },
@@ -52,14 +59,21 @@ export default async function MessagesPage() {
   const { data: threadData } = await supabase
     .from("listing_threads")
     .select(
-      "id, listing_id, buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at"
+      "id, listing_id, buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at, buyer_archived_at, seller_archived_at"
     )
     .order("last_message_at", { ascending: false })
     .limit(100);
 
-  const threads = (threadData ?? []) as unknown as ThreadRow[];
+  const allThreads = (threadData ?? []) as unknown as ThreadRow[];
+  // Archived = I archived it and nothing newer has arrived since. A new message brings it back.
+  const isArchived = (t: ThreadRow) => {
+    const at = t.buyer_id === user.id ? t.buyer_archived_at : t.seller_archived_at;
+    return !!at && new Date(at).getTime() >= new Date(t.last_message_at).getTime();
+  };
+  const archivedCount = allThreads.filter(isArchived).length;
+  const threads = allThreads.filter((t) => isArchived(t) === showArchived);
 
-  if (threads.length === 0) {
+  if (allThreads.length === 0) {
     return (
       <main className="min-h-screen pt-28 pb-20 px-6">
         <div className="max-w-3xl mx-auto">
@@ -178,6 +192,26 @@ export default async function MessagesPage() {
             <NewMessage />
           </div>
         </div>
+
+        {(archivedCount > 0 || showArchived) && (
+          <div className="-mt-4 mb-6 text-sm">
+            {showArchived ? (
+              <Link href="/messages" className="text-ocean-400 transition-colors hover:text-white">
+                ← Back to inbox
+              </Link>
+            ) : (
+              <Link href="/messages?view=archived" className="text-ocean-500 transition-colors hover:text-white">
+                Archived ({archivedCount})
+              </Link>
+            )}
+          </div>
+        )}
+
+        {threads.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-ocean-800/60 py-12 text-center text-sm text-ocean-500">
+            {showArchived ? "Nothing archived." : "You're all caught up. Archived conversations are in Archived."}
+          </p>
+        )}
 
         {groups.map((g) => (
           <section key={g.title || "all"} className="mb-8">

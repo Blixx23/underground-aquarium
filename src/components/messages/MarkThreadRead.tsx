@@ -11,9 +11,12 @@ import { createClient } from "@/lib/supabase/client";
 export default function MarkThreadRead({
   threadId,
   role,
+  stamp = 0,
 }: {
   threadId: string;
   role: "buyer" | "seller";
+  /** Message count: a new message arriving while the chat is open counts as read too. */
+  stamp?: number;
 }) {
   const supabase = useMemo(() => createClient(), []);
 
@@ -27,7 +30,7 @@ export default function MarkThreadRead({
       .then(() => {
         // Nothing to do — the badge updates on the next page load.
       });
-  }, [supabase, threadId, role]);
+  }, [supabase, threadId, role, stamp]);
 
   return null;
 }

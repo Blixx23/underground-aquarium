@@ -6,6 +6,7 @@ import { pushDirect } from "@/lib/push/send";
 import { MESSAGING_ENABLED } from "@/lib/config";
 import { limit } from "@/lib/rateLimit";
 import { notificationFooter, wantsEmail } from "@/lib/notificationEmail";
+import { MAX_MESSAGE_PHOTOS, PHOTO_ONLY_BODY } from "@/lib/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -55,9 +56,18 @@ export async function POST(request: Request) {
       /** Starting a direct conversation with a person (no listing). */
       toUserId?: string;
       body?: string;
+      /** Photos the browser already uploaded to the sender's own folder. */
+      images?: string[];
     };
 
-    const body = (payload.body ?? "").trim();
+    // Only accept photos from our own storage, in this sender's folder.
+    const photoPrefix = `${(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "")}/storage/v1/object/public/listing-images/${user.id}/`;
+    const images = (Array.isArray(payload.images) ? payload.images : [])
+      .filter((u): u is string => typeof u === "string" && u.startsWith(photoPrefix))
+      .slice(0, MAX_MESSAGE_PHOTOS);
+
+    const typed = (payload.body ?? "").trim();
+    const body = typed || (images.length ? PHOTO_ONLY_BODY : "");
     if (!body) {
       return NextResponse.json({ error: "Write a message first." }, { status: 400 });
     }
@@ -217,7 +227,7 @@ export async function POST(request: Request) {
 
     const { error: messageError } = await supabaseAdmin
       .from("listing_messages")
-      .insert({ thread_id: threadId, sender_id: user.id, body });
+      .insert({ thread_id: threadId, sender_id: user.id, body, images: images.length ? images : null });
     if (messageError) throw new Error(messageError.message);
 
     // The sender has obviously read their own message.

@@ -58,8 +58,9 @@ You can also look up columns: select column_name from information_schema.columns
   radius_miles, include_wanted, active, last_hit_at), listing_alert_hits (alert_id, listing_id: ads each alert told
   about), listing_wanted_matches (wanted_id, listing_id: Wanted posts matched with ads). Matched every 10 minutes by
   /api/cron/listing-alerts.
-- listing_threads (listing_id, buyer_id, seller_id, last_message_at), listing_messages (thread_id, sender_id, created_at;
-  bodies are private). market_regions, listing_region_counts.
+- listing_threads (listing_id, buyer_id, seller_id, last_message_at, buyer/seller_last_read_at, buyer/seller_archived_at:
+  each side can archive; it un-archives itself when a newer message arrives), listing_messages (thread_id, sender_id,
+  created_at, images = chat photos in listing-images/<sender>/msg-*.jpg; bodies are private). market_regions, listing_region_counts.
 - listing_saves (user_id, listing_id, price_cents = price last told about, sold_notified): ads members saved with the
   heart. Price drops and sales are announced by /api/cron/nudges (src/lib/nudges.ts).
 - orders/products: the retired paid marketplace (a few legacy orders).

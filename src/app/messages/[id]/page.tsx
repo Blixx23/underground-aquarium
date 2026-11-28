@@ -9,6 +9,10 @@ import MarkSoldButton from "@/components/marketplace/MarkSoldButton";
 import MessageComposer from "@/components/messages/MessageComposer";
 import MarkThreadRead from "@/components/messages/MarkThreadRead";
 import Avatar from "@/components/profile/Avatar";
+import LiveThread from "@/components/messages/LiveThread";
+import ArchiveThreadButton from "@/components/messages/ArchiveThreadButton";
+import ReportButton from "@/components/ReportButton";
+import { PHOTO_ONLY_BODY, QUICK_REPLIES, looksLikePaymentTalk } from "@/lib/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +54,9 @@ export default async function ThreadPage({
   // RLS means a non-participant simply gets nothing back here.
   const { data: threadData } = await supabase
     .from("listing_threads")
-    .select("id, listing_id, buyer_id, seller_id")
+    .select(
+      "id, listing_id, buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at, buyer_archived_at, seller_archived_at"
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -60,6 +66,11 @@ export default async function ThreadPage({
     listing_id: string | null;
     buyer_id: string;
     seller_id: string;
+    last_message_at: string;
+    buyer_last_read_at: string | null;
+    seller_last_read_at: string | null;
+    buyer_archived_at: string | null;
+    seller_archived_at: string | null;
   };
 
   const isBuyer = thread.buyer_id === user.id;
@@ -69,7 +80,7 @@ export default async function ThreadPage({
     await Promise.all([
       supabase
         .from("listing_messages")
-        .select("id, sender_id, body, created_at")
+        .select("id, sender_id, body, images, created_at")
         .eq("thread_id", thread.id)
         .order("created_at", { ascending: true })
         .limit(500),
@@ -91,6 +102,7 @@ export default async function ThreadPage({
     id: string;
     sender_id: string;
     body: string;
+    images: string[] | null;
     created_at: string;
   }[];
 
@@ -115,9 +127,27 @@ export default async function ThreadPage({
   const now = Date.now();
   const image = listing?.images?.[0];
 
+  // "Seen" goes under my latest message once the other person has opened the chat after it.
+  const theirRead = isBuyer ? thread.seller_last_read_at : thread.buyer_last_read_at;
+  const lastMine = [...messages].reverse().find((m) => m.sender_id === user.id);
+  const lastIsMine = messages.length > 0 && messages[messages.length - 1].sender_id === user.id;
+  const seen = !!lastMine && !!theirRead && new Date(theirRead).getTime() >= new Date(lastMine.created_at).getTime();
+
+  // Archived for me, and nothing new has arrived since.
+  const myArchived = isBuyer ? thread.buyer_archived_at : thread.seller_archived_at;
+  const archived = !!myArchived && new Date(myArchived).getTime() >= new Date(thread.last_message_at).getTime();
+
+  // Their recent words, so a report shows Chris what was actually said.
+  const theirRecent = messages
+    .filter((m) => m.sender_id === otherId && m.body !== PHOTO_ONLY_BODY)
+    .slice(-3)
+    .map((m) => m.body.replace(/\s+/g, " "))
+    .join(" / ");
+
   return (
     <main className="min-h-screen pt-28 pb-20 px-6">
-      <MarkThreadRead threadId={thread.id} role={isBuyer ? "buyer" : "seller"} />
+      <MarkThreadRead threadId={thread.id} role={isBuyer ? "buyer" : "seller"} stamp={messages.length} />
+      <LiveThread threadId={thread.id} messageCount={messages.length} />
 
       <div className="max-w-3xl mx-auto">
         <Link
@@ -188,11 +218,10 @@ export default async function ThreadPage({
         <div className="space-y-3 mb-8">
           {messages.map((m) => {
             const mine = m.sender_id === user.id;
+            const photos = m.images ?? [];
+            const text = photos.length && m.body === PHOTO_ONLY_BODY ? "" : m.body;
             return (
-              <div
-                key={m.id}
-                className={`flex ${mine ? "justify-end" : "justify-start"}`}
-              >
+              <div key={m.id} className={`flex flex-col ${mine ? "items-end" : "items-start"}`}>
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                     mine
@@ -200,29 +229,53 @@ export default async function ThreadPage({
                       : "bg-ocean-900/70 border border-ocean-800/60"
                   }`}
                 >
-                  <p className="text-ocean-50 text-sm leading-relaxed whitespace-pre-wrap break-words">
-                    {m.body}
-                  </p>
-                  <p
-                    className={`text-[11px] mt-1.5 ${
-                      mine ? "text-ocean-300" : "text-ocean-600"
-                    }`}
-                  >
+                  {photos.length > 0 && (
+                    <div className={`grid gap-1.5 ${photos.length > 1 ? "grid-cols-2" : "grid-cols-1"} ${text ? "mb-2" : ""}`}>
+                      {photos.map((src) => (
+                        <a key={src} href={src} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={src} alt="Photo" loading="lazy" className="max-h-72 w-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {text && (
+                    <p className="text-ocean-50 text-sm leading-relaxed whitespace-pre-wrap break-words">{text}</p>
+                  )}
+                  <p className={`text-[11px] mt-1.5 ${mine ? "text-ocean-300" : "text-ocean-600"}`}>
                     {mine ? "You" : otherName} · {timeAgo(m.created_at, now)}
                   </p>
                 </div>
+                {/* A gentle nudge when the other person brings up payment apps, deposits or shipping. */}
+                {!mine && looksLikePaymentTalk(m.body) && (
+                  <p className="mt-1 max-w-[80%] rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] leading-snug text-amber-200">
+                    Tip: paying in person at pickup is safest. Never send gift cards or a deposit to someone you haven&apos;t met.
+                  </p>
+                )}
+                {mine && m.id === lastMine?.id && lastIsMine && (
+                  <p className="mt-1 text-[11px] text-ocean-500">{seen ? "Seen" : "Sent"}</p>
+                )}
               </div>
             );
           })}
+          <div id="thread-end" className="scroll-mb-40" />
         </div>
 
         <MessageComposer
           threadId={thread.id}
           placeholder={`Reply to ${otherName}…`}
+          quickReplies={direct ? undefined : isBuyer ? QUICK_REPLIES.buyer : QUICK_REPLIES.seller}
         />
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
           <BlockButton userId={otherId} name={otherName} />
+          <ReportButton
+            targetType="profile"
+            targetId={otherId}
+            targetLabel={`Messages from ${otherName}${theirRecent ? `: "${theirRecent.slice(0, 240)}"` : ""}`}
+            targetUrl={other?.username ? `/u/${other.username}` : null}
+          />
+          <ArchiveThreadButton threadId={thread.id} role={isBuyer ? "buyer" : "seller"} archived={archived} />
         </div>
 
         <p className="text-xs text-ocean-600 mt-6 leading-relaxed">
